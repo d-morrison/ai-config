@@ -18,8 +18,9 @@ Rerun `bootstrap.sh` any time a new top-level dir is added to the repo
 ## What's tracked
 
 - `skills/` — user-level skills (`~/.claude/skills/`)
+- `commands/` — user-level slash commands (`~/.claude/commands/`)
 
-Add more by creating a top-level dir here (e.g., `agents/`, `commands/`,
+Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.
 
 ## What's deliberately NOT tracked
