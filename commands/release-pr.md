@@ -50,7 +50,7 @@ If only one positional arg is given, treat it as `pr_number`.
 
 4. Post the comment:
 
-    `mcp__github__add_issue_comment(owner = <owner>, repo = <repo>, issueNumber = <pr_number>, body = <body>)`.
+    `mcp__github__add_issue_comment(owner = <owner>, repo = <repo>, issue_number = <pr_number>, body = <body>)`.
 
 5. Reply with one short confirmation including the PR's URL — no further PR comment, no further work on the branch.
 
