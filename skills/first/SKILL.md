@@ -19,8 +19,10 @@ finishing what you're in the middle of.** It is the counter to [`also`](../also/
 This is the highest-priority slot in the queue family:
 
 - `/first` — head of queue; may pause in-progress work to run now.
-- `/next` — runs right after the current task finishes (no preemption).
-- `/also` — tail of queue; runs last.
+- `/next` — immediately after the current (in-progress) task.
+- `/before <target>` — immediately before the referenced queued task.
+- `/also` — tail of queue.
+- `/last` — sticky tail; stays last even as new `/also` tasks arrive.
 
 ## What fires this
 

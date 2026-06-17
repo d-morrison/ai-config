@@ -16,11 +16,13 @@ also do `<instructions>`.** The `/also` text is a tail task appended to the
 queue — it does not interrupt, reprioritize, or replace the work already
 underway.
 
-It is the lowest-priority slot in the queue family:
+It is the lowest-priority non-sticky slot in the queue family:
 
 - `/first` — head of queue; may pause in-progress work to run now.
-- `/next` — runs right after the current task finishes (no preemption).
-- `/also` — tail of queue; runs last.
+- `/next` — immediately after the current (in-progress) task.
+- `/before <target>` — immediately before the referenced queued task.
+- `/also` — tail of queue.
+- `/last` — sticky tail; stays last even as new `/also` tasks arrive.
 
 ## What fires this
 
@@ -70,3 +72,5 @@ that you haven't finished yet) is the **preceding work**.
   task faster.
 - Not a silent hand-off — always confirm the deferred task's outcome in your
   recap.
+- Not the sticky-tail variant — `/last` stays last even as new `/also` tasks
+  arrive; `/also` tasks can be displaced by a later `/also`.

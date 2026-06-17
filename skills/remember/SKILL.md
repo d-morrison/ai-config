@@ -12,6 +12,7 @@ allowed-tools:
   - Write
   - Edit
   - Bash
+  - Glob
 ---
 
 # remember

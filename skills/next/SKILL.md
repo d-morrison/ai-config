@@ -17,11 +17,13 @@ before anything else that's queued.** It slots a task immediately after the
 currently in-progress task — jumping the rest of the queue, but not interrupting
 work already in flight.
 
-It sits between its two siblings in the queue family:
+It sits between its siblings in the queue family:
 
 - `/first` — head of queue; may pause in-progress work to run now.
-- `/next` — runs right after the current task finishes (no preemption).
-- `/also` — tail of queue; runs last.
+- `/next` — immediately after the current (in-progress) task.
+- `/before <target>` — immediately before the referenced queued task.
+- `/also` — tail of queue.
+- `/last` — sticky tail; stays last even as new `/also` tasks arrive.
 
 ## What fires this
 

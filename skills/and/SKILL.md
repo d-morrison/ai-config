@@ -26,8 +26,11 @@ The user types `/and` followed by a revision to what they just asked, e.g.:
 
 ## How to handle it
 
-1. **Identify the previous command** — the most recent instruction the user
-   gave (the one before this `/and`), whether it is done, in progress, or queued.
+1. **Identify the previous command** — the most recent explicit instruction the
+   user gave within the current exchange (the one immediately before this `/and`),
+   whether it is done, in progress, or queued. If the nearest explicit instruction
+   is more than a few turns back or the target is ambiguous, ask the user to
+   clarify rather than guessing.
 2. **Merge the revision into it.** Treat the previous command + `/and <revision>`
    as a single combined instruction.
    - Previous command **not yet started** → update the queued task in place
