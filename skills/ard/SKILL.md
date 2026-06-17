@@ -42,7 +42,7 @@ After processing all findings, post a single structured comment on the PR/MR
 summarizing your dispositions. Format:
 
 ```
-Addressed findings from review of <commit>:
+Addressed findings from review of <commit-sha>:
 
 | # | Finding | Disposition | Detail |
 |---|---------|-------------|--------|

@@ -2,6 +2,11 @@
 name: simplify
 description: "Simplify code where feasible without feature loss — prune dead code paths, remove unreachable branches, collapse unnecessary indirection, and simplify variable assignments that can never take their fallback values. Use after any refactor that changes invocation context, after removing a feature, or when reviewing code that has accumulated historical cruft."
 user-invocable: true
+allowed-tools:
+  - Bash
+  - Read
+  - Edit
+  - Write
 ---
 
 # simplify

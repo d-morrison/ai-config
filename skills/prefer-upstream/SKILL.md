@@ -32,7 +32,7 @@ well-maintained packages or tools that already solve the problem.
 - Scientific: numpy, pandas, scipy, scikit-learn
 
 ### Shell / CI
-- Existing CI templates (e.g., HACtions templates)
+- Your project's shared CI templates (e.g., reusable workflow libraries)
 - Standard Unix tools before custom scripts
 - GitHub Actions marketplace / GitLab CI templates
 
