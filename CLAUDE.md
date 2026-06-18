@@ -24,15 +24,13 @@ a directive — e.g. "also fix the test", "remember that ...", "and bold it",
 corresponding skill's semantics rather than as ordinary prose. When the word is
 genuinely just part of a sentence (ambiguous), fall back to the plain reading.
 
-## Link PRs and MRs
+## Link PRs in tables
 
-**Every** time you mention a PR or MR — in a table, in prose, in a recap,
-anywhere — make the number a markdown link to its URL, e.g.
-`[#237](https://github.com/<owner>/<repo>/pull/237)` (GitHub PR) or
-`[!42](https://gitlab.com/<group>/<project>/-/merge_requests/42)` (GitLab MR).
-This applies to inline references too (`#8`, `!42`), not just lists/tables.
-The plain-text form forces the user to copy/paste; the linked form lets them
-open it in one click. The same goes for issues.
+When listing PRs in a table (or anywhere they could be clickable), make
+each PR number a markdown link to the PR URL —
+`[#237](https://github.com/<owner>/<repo>/pull/237)`. The plain text form
+forces the user to copy/paste; the linked form lets them open the PR in
+one click.
 
 ## Re-check for latest review findings before reporting PR status
 
