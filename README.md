@@ -82,28 +82,31 @@ is the `@claude` **CI bot** running on *this* repo's PRs/issues
 That bot runs `claude-code-action`, which does **not** auto-discover skills from
 `~/.claude` (the runner's home is fresh) or from a plugin unless it's installed.
 It *does* load **project** skills from `.claude/skills/` in the checked-out
-repo — but a **committed** `.claude/skills` symlink is silently **dropped during
-checkout** (confirmed by a live `@claude` test), so committing one doesn't work.
+repo.
 
-Instead, the reusable workflow recreates the link **at runtime**. The
-[`d-morrison/gha`](https://github.com/d-morrison/gha) `claude.yml` exposes an
-opt-in `link-skills` input that, after the final checkout and right before
-Claude runs, does:
+The `.claude/skills → ../skills` symlink is **committed** to this repo. It
+works via a subtle two-step mechanism:
 
-```
-ln -s ../skills .claude/skills
-```
+1. `claude-code-action` has a security feature called `restoreConfigFromBase`
+   that, for every PR, restores `.claude/` from the **base branch** (`main`)
+   using `git checkout origin/main -- .claude`. This prevents malicious PR
+   branches from injecting hooks or settings.
+2. Because `.claude/skills` is committed to `main`, `restoreConfigFromBase`
+   always restores the symlink — even if the PR branch doesn't have it.
+3. `git checkout origin/main -- .claude` correctly materializes the symlink on
+   disk (unlike `gh pr checkout`, which dropped it due to `core.symlinks`
+   handling — a separate failure mode that was the original blocker).
 
-This repo's caller (`.github/workflows/claude-bot.yml`) sets `link-skills:
-true`, so every top-level skill becomes available to the bot by **bare name**.
-Comment **`@claude ardi`** (or any other skill trigger) on a PR or issue and the
-bot can invoke the `ardi` skill, exactly like the local CLI does. No duplication
-(`skills/` stays the one source of truth) and new skills are picked up
-automatically.
+Once the symlink is in place every top-level skill becomes available to the bot
+by **bare name**. Comment **`@claude ardi`** (or any other skill trigger) on a
+PR or issue and the bot can invoke the `ardi` skill, exactly like the local CLI
+does. No duplication (`skills/` stays the one source of truth) and new skills
+are picked up automatically.
 
-> Other repos that use the same `d-morrison/gha` bot can opt in the same way
-> (`link-skills: true`) if they ship a top-level `skills/` dir; it's a no-op
-> otherwise.
+> **Note:** On PRs that predate the merge of this feature to `main`, the
+> symlink is absent (`restoreConfigFromBase` restores from the `main` at the
+> time Claude runs). Skills become available to the bot for all sessions after
+> this PR merges.
 
 ## What's tracked
 

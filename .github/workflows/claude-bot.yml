@@ -24,9 +24,3 @@ jobs:
       setup-r: false
       eager-pr: true
       review-workflow-file: claude-review.yml
-      # Expose this repo's top-level skills/ to the bot as project skills, so an
-      # "@claude <skill>" mention (e.g. "@claude ardi") can invoke them. The
-      # reusable workflow recreates .claude/skills -> ../skills at runtime
-      # (a committed symlink gets dropped during checkout). Requires gha @v1 at
-      # or past the link-skills commit (v1 slid 2026-06-18).
-      link-skills: true
