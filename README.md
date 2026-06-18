@@ -26,13 +26,13 @@ runs `bootstrap.sh` once the repo is on disk, symlinking `skills/` and
 `commands/` into `~/.claude/`. The hook is a no-op outside remote sessions
 (`CLAUDE_CODE_REMOTE`) and idempotent, so local machines are unaffected.
 
-## Use as a Claude Code plugin (web / remote sessions)
+## Use these skills in another repo's web sessions (plugin marketplace)
 
-`bootstrap.sh` only covers local machines. Claude Code on the web starts each
-cloud session in a fresh container where `~/.claude` is empty and
-`bootstrap.sh` never runs — and skills uploaded to claude.ai/customize do **not**
-cross over into Claude Code. So this repo also publishes itself as a **plugin
-marketplace**, the supported way to load these skills in cloud sessions.
+The `SessionStart` hook above only fires when **ai-config itself** is the open
+project. To get these skills when a **different** repo is open in a cloud
+session — where that repo's hooks know nothing about ai-config, `~/.claude`
+starts empty, and skills uploaded to claude.ai/customize do **not** cross over
+into Claude Code — this repo also publishes itself as a **plugin marketplace**.
 
 The repo is simultaneously:
 
@@ -61,9 +61,10 @@ Claude Code installs the plugin at session start (needs network access to reach
 GitHub). Plugin skills are namespaced, e.g. `/ai-config:reprexes`,
 `/ai-config:grade-work`.
 
-Locally (or to try it), add and install interactively:
+Locally (or to try it), run these as slash commands inside a Claude Code
+session (or prefix with `claude ` to run them in a terminal):
 
-```sh
+```
 /plugin marketplace add d-morrison/ai-config
 /plugin install ai-config@d-morrison
 ```
