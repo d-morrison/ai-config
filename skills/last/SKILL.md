@@ -18,8 +18,8 @@ behind it. Only another `/last` goes after a previous `/last`. It is the sticky
 tail of the queue family:
 
 - `/first` — head of queue; may pause in-progress work to run now.
-- `/next` — immediately after the current task.
-- `/before <target>` — immediately before a referenced queued task.
+- `/next` — immediately after the current (in-progress) task.
+- `/before <target>` — immediately before the referenced queued task.
 - `/also` — tail of queue (a later `/also` goes after an earlier one).
 - `/last` — sticky tail; stays last even as new `/also` tasks arrive.
 

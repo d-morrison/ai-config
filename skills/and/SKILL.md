@@ -53,7 +53,8 @@ The user types `/and` followed by a revision to what they just asked, e.g.:
   conflicting part (it is a revision); keep the rest.
 - **Ambiguous whether it is a revision or a new task.** If `/and <x>` reads as an
   independent task rather than an amendment, ask — or treat it as `/also` and
-  note the assumption.
+  note the assumption. Default to `/also` (tail) rather than a higher-priority
+  slot so a misread never preempts work the user already queued.
 
 ## What this is not
 
