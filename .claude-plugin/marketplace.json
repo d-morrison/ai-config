@@ -1,0 +1,14 @@
+{
+  "name": "d-morrison",
+  "owner": {
+    "name": "d-morrison"
+  },
+  "description": "d-morrison's personal Claude Code plugins.",
+  "plugins": [
+    {
+      "name": "ai-config",
+      "source": "./",
+      "description": "Personal skills (PR/review workflow, grading, reprexes, R-package helpers) and slash commands."
+    }
+  ]
+}
