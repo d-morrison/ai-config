@@ -26,6 +26,52 @@ runs `bootstrap.sh` once the repo is on disk, symlinking `skills/` and
 `commands/` into `~/.claude/`. The hook is a no-op outside remote sessions
 (`CLAUDE_CODE_REMOTE`) and idempotent, so local machines are unaffected.
 
+## Use these skills in another repo's web sessions (plugin marketplace)
+
+The `SessionStart` hook above only fires when **ai-config itself** is the open
+project. To get these skills when a **different** repo is open in a cloud
+session — where that repo's hooks know nothing about ai-config, `~/.claude`
+starts empty, and skills uploaded to claude.ai/customize do **not** cross over
+into Claude Code — this repo also publishes itself as a **plugin marketplace**.
+
+The repo is simultaneously:
+
+- the marketplace — `.claude-plugin/marketplace.json`
+- a single plugin — `.claude-plugin/plugin.json` with `source: "./"`, which
+  bundles the existing top-level `skills/` and `commands/` (no duplication;
+  `skills/` and `commands/` are auto-discovered at the plugin root).
+
+To load these skills in another repo's cloud sessions, commit this to **that
+repo's** `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "d-morrison": {
+      "source": { "source": "github", "repo": "d-morrison/ai-config" }
+    }
+  },
+  "enabledPlugins": {
+    "ai-config@d-morrison": true
+  }
+}
+```
+
+Claude Code installs the plugin at session start (needs network access to reach
+GitHub). Plugin skills are namespaced, e.g. `/ai-config:reprexes`,
+`/ai-config:grade-work`.
+
+Locally (or to try it), run these as slash commands inside a Claude Code
+session (or prefix with `claude ` to run them in a terminal):
+
+```
+/plugin marketplace add d-morrison/ai-config
+/plugin install ai-config@d-morrison
+```
+
+No `version` is pinned, so every commit to this repo counts as a new version —
+sessions with marketplace auto-update pick up the latest automatically.
+
 ## What's tracked
 
 - `skills/` — reusable workflow skills (`~/.claude/skills/`)
