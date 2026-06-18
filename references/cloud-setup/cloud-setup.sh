@@ -172,7 +172,10 @@ echo "==> Installing the renv package"
 # is intentionally left to that background hook -- it reads renv.lock and exceeds
 # the setup script's cache-build budget.
 # [review] Idempotent: skip the install when renv is already present so re-runs
-# (resume/rebuild on the cached image) don't reinstall it.
+# (resume/rebuild on the cached image) don't reinstall it. NOTE: $SUDO installs
+# into the system R library, which is correct for this container build; an
+# adapter doing a per-USER R install should drop $SUDO so renv lands in the
+# user library instead.
 $SUDO Rscript -e 'if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv", repos = "https://cloud.r-project.org")'
 
 # [review] Resolve JULIA_MINOR BEFORE it is referenced in the banner below, so
@@ -263,7 +266,7 @@ if ! command -v quarto >/dev/null 2>&1; then
   #       a failure there is best-effort (warn + continue) like the comment
   #       says, instead of aborting the whole build under `set -e`.
   if [ -n "$quarto_ver" ] \
-     && printf '%s' "$quarto_ver" | grep -qE '^[0-9]+\.[0-9]+' \
+     && printf '%s' "$quarto_ver" | grep -qE '^[0-9]+(\.[0-9]+)+$' \
      && curl -fsSL \
           "https://github.com/quarto-dev/quarto-cli/releases/download/v${quarto_ver}/quarto-${quarto_ver}-linux-${arch}.deb" \
           -o "$tmp_deb" \
@@ -292,10 +295,16 @@ find_tlmgr() {
   if command -v tlmgr >/dev/null 2>&1; then
     printf 'tlmgr\n'; return 0
   fi
+  # Glob ~/.TinyTeX with `nullglob` set inside a subshell (so the option stays
+  # local to this lookup) -- a no-match then expands to nothing instead of the
+  # literal pattern, which sidesteps the SC2144/SC2045 glob footgun and needs no
+  # per-iteration existence guard.
   local cand
-  for cand in "$HOME"/.TinyTeX/bin/*/tlmgr; do
-    if [ -x "$cand" ]; then printf '%s\n' "$cand"; return 0; fi
-  done
+  cand="$(shopt -s nullglob
+          for c in "$HOME"/.TinyTeX/bin/*/tlmgr; do
+            if [ -x "$c" ]; then printf '%s\n' "$c"; break; fi
+          done)"
+  if [ -n "$cand" ]; then printf '%s\n' "$cand"; return 0; fi
   return 1
 }
 
