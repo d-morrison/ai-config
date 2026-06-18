@@ -69,9 +69,9 @@ for p in active[1:]:
 ```
 
 3. **Execute the cancels.** Once the preview looks right, re-run the same query
-   and pipe the emitted `glab api` commands straight into a shell — the IDs are
-   filled in automatically, so there's nothing to copy-paste or substitute by
-   hand. `sh -x` echoes each command as it runs:
+   and pipe the emitted `glab api` commands into a loop — the IDs are filled in
+   automatically (nothing to copy-paste), and each cancel's resulting status is
+   printed, so a failure is visible rather than silent:
 
 ```bash
 glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
@@ -80,16 +80,25 @@ import json, sys
 active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
 for p in active[1:]:
     print(f'glab api -X POST projects/$PROJECT_ID/pipelines/{p[\"id\"]}/cancel')
-" | sh -x
+" | while read -r cmd; do
+    echo "+ $cmd"
+    eval "$cmd" 2>&1 | python3 -c "import json,sys; print('  ->', json.load(sys.stdin).get('status','?'))" \
+      || echo "  -> FAILED (cancel did not return valid JSON)"
+  done
 ```
 
+`$PROJECT_ID` inside the Python f-string is expanded by the **shell** before
+Python runs (the `python3 -c` body is in a double-quoted string), so each
+emitted line carries the real numeric project id — it is not a missing Python
+variable.
+
 > The preview (step 2) **is** the confirmation gate — eyeball it before running
-> step 3. To re-add an explicit prompt, drop `| sh -x` and pipe through
-> `while read c; do read -p \"run: $c ? \" a </dev/tty && [ \"\$a\" = y ] && eval \"\$c\"; done` instead.
+> step 3. For a per-command y/n prompt instead, replace the loop body with
+> `read -p "run: $cmd ? " a </dev/tty && [ "$a" = y ] && eval "$cmd"`.
 
 4. **For multi-branch cleanup** (e.g., after pushing fixes to multiple MR
-   branches), cancel superseded pipelines on each ref in one pass. Emit the
-   `glab api` commands and pipe to `sh -x` (same eval-able pattern as step 3):
+   branches), cancel superseded pipelines on each ref in one pass, piping into
+   the same status-surfacing loop as step 3:
 
 ```bash
 for BRANCH in branch1 branch2; do
@@ -100,11 +109,17 @@ import json, sys
 active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
 for p in active[1:]:
     print(f'glab api -X POST projects/$PROJECT_ID/pipelines/{p[\"id\"]}/cancel')
-" | sh -x
+" | while read -r cmd; do
+      echo "+ $cmd"
+      eval "$cmd" 2>&1 | python3 -c "import json,sys; print('  ->', json.load(sys.stdin).get('status','?'))" \
+        || echo "  -> FAILED"
+    done
 done
 ```
 
-(Drop `| sh -x` → `| cat` to preview without canceling.)
+To dry-run instead, replace the `while read … done` loop with `cat` — that
+prints the raw `glab api … cancel` commands without running them. For the
+friendly `Would cancel: #N` listing, run step 2's preview per branch.
 
 ## Notes
 
