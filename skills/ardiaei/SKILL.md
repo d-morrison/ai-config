@@ -14,9 +14,10 @@ allowed-tools:
 Clear the open-PR review queue **and** capture what doing so taught you, by
 composing two existing skills in sequence:
 
-1. **Phase 1 — [`ardia`](../ardia/SKILL.md)** (ARD + Iterate-All): drive every
-   open PR/MR to a clean review verdict, in series.
-2. **Phase 2 — [`ums`](../ums/SKILL.md)** (Update Memories and Skills): review
+1. **Phase 1 — `ardia`** (`~/.claude/skills/ardia/SKILL.md`, ARD +
+   Iterate-All): drive every open PR/MR to a clean review verdict, in series.
+2. **Phase 2 — `ums`** (`~/.claude/skills/ums/SKILL.md`, Update Memories and
+   Skills): review
    what the ARDIA loop surfaced — recurring review findings, CI quirks, tool
    gotchas, workflow gaps — and persist it by editing memory files and skill
    definitions.
@@ -34,18 +35,12 @@ not the PR code.
 
 ## Procedure
 
-### 0. Establish context
-
-Detect the forge (GitHub `gh` / GitLab `glab`) from `git remote get-url
-origin`. Note the default branch (`main` / `master`).
-
 ### Phase 1 — ARDIA (drive every open PR/MR to clean)
 
-Run the full [`ardia`](../ardia/SKILL.md) procedure: list every open PR/MR and
-drive each to a clean verdict in series (claim → ARD every finding → push →
-post summary → re-request review → repeat until clean). Per-PR rules from
-`ardi` apply. If there are zero open PRs/MRs, Phase 1 is a no-op — note it and
-go to Phase 2.
+Run the full `ardia` procedure (`~/.claude/skills/ardia/SKILL.md`): list every
+open PR/MR and drive each to a clean verdict in series. `ardia` handles forge
+detection (GitHub `gh` / GitLab `glab`) and all per-PR rules from `ardi`. If
+there are zero open PRs/MRs, Phase 1 is a no-op — note it and go to Phase 2.
 
 **While iterating, keep a running lessons list** — the raw material Phase 2
 persists. Capture anything reusable:
@@ -56,8 +51,9 @@ persists. Capture anything reusable:
 
 ### Phase 2 — UMS (edit instructions)
 
-Once every PR is clean, run the full [`ums`](../ums/SKILL.md) procedure against
-the lessons list from Phase 1: for each lesson decide whether it belongs in a
+Once every PR is clean, run the full `ums` procedure
+(`~/.claude/skills/ums/SKILL.md`) against the lessons list from Phase 1: for
+each lesson decide whether it belongs in a
 **memory** file, a **skill** definition, or both, and make the edits. Don't
 invent lessons to look busy — if the loop was uneventful, say so and persist
 nothing.
