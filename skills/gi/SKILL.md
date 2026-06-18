@@ -29,7 +29,7 @@ it to a clean review verdict via ARDI.
 gh issue list --state open --limit 20 --json number,title,labels,assignees,createdAt | cat
 
 # GitLab
-glab issue list --opened --per-page=20 2>&1 | cat
+glab issue list --per-page=20 2>&1 | cat
 ```
 
 ### 2. Triage / prioritize
