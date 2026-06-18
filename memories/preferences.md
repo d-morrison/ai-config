@@ -6,6 +6,11 @@
   (via `gh issue create` or `glab issue create`) capturing the deferred item. Don't just
   mention it in a comment — create the issue so it's tracked.
 - Always open MRs/PRs after pushing — never ask first ("always yes").
+- After creating a PR in a remote/web session (where PR-activity subscription is
+  available), always subscribe to its CI/review activity (`subscribe_pr_activity`)
+  and follow through — autofix CI failures and address review comments per the
+  ARD framework — without asking first. Keep following until the PR is merged or
+  closed (or I say stop). Don't ask "want me to watch it?"; just do it.
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
