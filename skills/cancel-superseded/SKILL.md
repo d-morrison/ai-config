@@ -42,7 +42,7 @@ groups), set `PROJECT_ID` by hand from `glab api "projects?search=<name>"`.
 ```bash
 BRANCH=$(git branch --show-current)
 # Get pipelines for this branch, newest first
-glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
   python3 -c "
 import json, sys
 pipelines = json.load(sys.stdin)
@@ -56,7 +56,7 @@ for p in pipelines:
    cancel candidate. This step only *prints* — nothing is canceled yet:
 
 ```bash
-glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
   python3 -c "
 import json, sys
 active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
@@ -74,7 +74,7 @@ for p in active[1:]:
    printed, so a failure is visible rather than silent:
 
 ```bash
-CANCEL_CMDS=$(glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+CANCEL_CMDS=$(glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
   python3 -c "
 import json, sys
 active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
@@ -95,7 +95,14 @@ fi
 `$PROJECT_ID` inside the Python f-string is expanded by the **shell** before
 Python runs (the `python3 -c` body is in a double-quoted string), so each
 emitted line carries the real numeric project id — it is not a missing Python
-variable.
+variable. `eval "$cmd"` is safe here: every emitted command is a fixed
+`glab api -X POST …/{id}/cancel` string whose only interpolated value is an
+integer pipeline `id` straight from the API — no user-controlled or
+free-text fields are evaled.
+
+(The listing calls don't redirect `2>&1` into Python: on an API error `glab`
+writes to stderr and Python sees empty stdin, so the failure shows up directly
+rather than being parsed as pipeline JSON.)
 
 > The preview (step 2) **is** the confirmation gate — eyeball it before running
 > step 3. For a per-command y/n prompt instead, replace the loop body with
@@ -108,7 +115,7 @@ variable.
 ```bash
 for BRANCH in branch1 branch2; do
   echo "=== $BRANCH ==="
-  CANCEL_CMDS=$(glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+  CANCEL_CMDS=$(glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
     python3 -c "
 import json, sys
 active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
