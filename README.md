@@ -1,19 +1,20 @@
-# claude-config
+# ai-config
 
-Portable Claude Code config — synced across machines via git.
+Portable AI agent config — skills, memories, and commands synced across
+machines via git. Works with Claude Code, VS Code Copilot, and any agent
+that reads markdown instruction files.
 
-Each top-level subdir mirrors a directory under `~/.claude/`. `bootstrap.sh`
-symlinks each one into place.
+Each top-level subdir is symlinked into the appropriate consumer directory
+by `bootstrap.sh`.
 
 ## Setup on a new machine
 
 ```sh
-git clone <this-repo-url> ~/Documents/GitHub/claude-config
-bash ~/Documents/GitHub/claude-config/bootstrap.sh
+git clone https://github.com/d-morrison/ai-config.git ~/ai-config
+bash ~/ai-config/bootstrap.sh
 ```
 
-Rerun `bootstrap.sh` any time a new top-level dir is added to the repo
-(e.g., `agents/`, `commands/`).
+Rerun `bootstrap.sh` any time a new top-level dir is added to the repo.
 
 ## Claude Code on the web
 
@@ -27,8 +28,9 @@ runs `bootstrap.sh` once the repo is on disk, symlinking `skills/` and
 
 ## What's tracked
 
-- `skills/` — user-level skills (`~/.claude/skills/`)
-- `commands/` — user-level slash commands (`~/.claude/commands/`)
+- `skills/` — reusable workflow skills (`~/.claude/skills/`)
+- `commands/` — slash commands (`~/.claude/commands/`)
+- `memories/` — persistent notes & preferences (symlinked into VS Code Copilot memory dir)
 
 Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.

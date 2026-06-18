@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Symlink each top-level subdir of this repo into ~/.claude/<name>.
+# Bootstrap ai-config: symlink skills, commands, top-level files, and memories
+# into their respective consumer directories (Claude Code, VS Code Copilot, etc.).
 #
-# For each subdir (skills/, commands/, ...):
+# For each top-level subdir (skills/, commands/, ...):
 #   - if ~/.claude/<name> doesn't exist yet, symlink the whole dir (so new
 #     files added to the repo later appear automatically);
 #   - if ~/.claude/<name> already exists as a real dir (e.g. cloud/web
@@ -14,6 +15,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
+
+# VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
+COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/memory-tool/memories}"
 
 mkdir -p "$CLAUDE_DIR"
 
@@ -46,7 +50,16 @@ link_one() {
   printf 'link  %s -> %s\n' "$name" "$src"
 }
 
+# --- Top-level files (CLAUDE.md, etc.) ---
 shopt -s nullglob
+for src in "$SCRIPT_DIR"/*.md; do
+  [ -f "$src" ] || continue
+  fname="$(basename "$src")"
+  [[ "$fname" == "README.md" ]] && continue   # don't symlink repo README
+  link_one "$src" "$CLAUDE_DIR/$fname"
+done
+
+# --- Directories (skills, commands, memories, etc.) ---
 for src in "$SCRIPT_DIR"/*/; do
   src="${src%/}"
   name="$(basename "$src")"
@@ -71,3 +84,14 @@ for src in "$SCRIPT_DIR"/*/; do
     link_one "$src" "$dest"
   fi
 done
+
+# --- Memories: symlink individual .md files into VS Code Copilot memory dir ---
+if [ -d "$SCRIPT_DIR/memories" ] && [ -d "$COPILOT_MEMORY_DIR" ]; then
+  printf '\n--- VS Code Copilot memories ---\n'
+  for src in "$SCRIPT_DIR"/memories/*.md; do
+    [ -f "$src" ] || continue
+    link_one "$src" "$COPILOT_MEMORY_DIR/$(basename "$src")"
+  done
+else
+  printf '\nskip  memories/ (dir not found or Copilot memory dir missing)\n'
+fi
