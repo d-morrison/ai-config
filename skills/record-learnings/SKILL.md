@@ -1,6 +1,6 @@
 ---
 name: record-learnings
-description: "Persist discoveries, debugging insights, and working patterns to memory and shared instruction files as you work. Ensures knowledge survives across sessions and is accessible to other AI agents via the shared claude-config repo. Use continuously — after solving a tricky bug, discovering a codebase convention, or learning a tool quirk."
+description: "Persist discoveries, debugging insights, and working patterns to memory and shared instruction files as you work. Ensures knowledge survives across sessions and is accessible to other AI agents via the shared ai-config repo. Use continuously — after solving a tricky bug, discovering a codebase convention, or learning a tool quirk."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -103,7 +103,7 @@ skill-driven workflows.
 
 After adding or updating any skill file, always commit and push to origin:
 - If a PR/branch for skill changes is already open, push there.
-- Otherwise, create a new branch + PR on the claude-config repo.
+- Otherwise, create a new branch + PR on the ai-config repo.
 - Never leave skill edits as local-only uncommitted changes.
 
 ## Anti-patterns

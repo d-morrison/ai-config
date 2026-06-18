@@ -52,13 +52,14 @@ includes:
 
 - **Workflow syntax errors** — fix them in this repo.
 - **Upstream template bugs** — if the failure is in a reusable workflow from
-  HACtions or a GitHub Action, file an issue (or open a PR) upstream using
+  a shared CI library (e.g., HACtions) or a GitHub Action, file an issue (or open a PR) upstream using
   the `sup` skill, then either pin a working version or apply a local
   workaround until the upstream fix lands.
 - **Flaky / infra failures** — retry once; if it persists, investigate root
   cause.
 
 The goal is green CI + clean review, not just clean review.
+
 ## The bar
 
 Zero flagged items under any heading. "Looks good" / "no findings" / "approved"
