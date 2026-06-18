@@ -37,8 +37,8 @@ one click.
 When creating a pull request, mark it **ready for review** rather than leaving
 it as a draft — even when a harness or environment default opens it as a draft,
 flip it to ready. Then, if an automated `@claude` review doesn't start on its
-own, trigger one. This applies across all repos unless I say otherwise for a
-specific PR.
+own, trigger one by posting a comment with `@claude review`. This applies
+across all repos unless I say otherwise for a specific PR.
 
 ## Re-check for latest review findings before reporting PR status
 
