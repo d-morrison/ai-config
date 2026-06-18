@@ -40,13 +40,17 @@ install_julia() {
   fi
   curl -fsSL https://install.julialang.org | sh -s -- --yes || return 1
 
-  # juliaup installs its shims (julia, juliaup) into ~/.juliaup/bin; persist it
-  # on PATH for interactive session shells (which source ~/.bashrc).
-  if ! grep -qs '.juliaup/bin' "$HOME/.bashrc" 2>/dev/null; then
+  # juliaup installs its shims (julia, juliaup) into ~/.juliaup/bin. Export it
+  # so processes this hook spawns next can find Julia, and persist it on PATH
+  # for future interactive session shells (which source ~/.bashrc). Neither can
+  # reach the already-running parent process — see docs/julia-setup.md. The -F
+  # keeps the literal dot in '.juliaup/bin' from acting as a regex wildcard.
+  export PATH="$HOME/.juliaup/bin:$PATH"
+  if ! grep -qsF '.juliaup/bin' "$HOME/.bashrc" 2>/dev/null; then
     echo "export PATH=\"\$HOME/.juliaup/bin:\$PATH\"" >> "$HOME/.bashrc"
   fi
 }
 
 if ! install_julia; then
-  printf 'warning: Julia install skipped (juliaup install failed — check the network allowlist for *.julialang.org; see docs/julia-setup.md)\n' >&2
+  printf 'warning: Julia install incomplete (juliaup unavailable or PATH update failed — check the network allowlist for *.julialang.org; see docs/julia-setup.md)\n' >&2
 fi

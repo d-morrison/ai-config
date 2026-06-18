@@ -20,6 +20,21 @@ Julia automatically. After it symlinks the config into `~/.claude/`, it runs
 So the **only** thing you must configure at the environment level is the
 **network allowlist** below — the hook handles the install itself.
 
+Once installed, `julia` is exported onto `PATH` for processes the hook spawns
+next and written to `~/.bashrc` for future shells — but the already-running
+session that triggered the install can't be reached, so it may need a fresh
+tool invocation (or `source ~/.bashrc`) before `julia` resolves.
+
+> **Caveat — juliaup vs. a TLS-intercepting proxy.** Some cloud environments
+> route HTTPS through a TLS-intercepting proxy. juliaup's HTTP client (rustls)
+> bundles its own CA roots and rejects such a proxy, so the install can fail
+> (`invalid peer certificate: UnknownIssuer`) even with every host allowlisted.
+> If you hit that, install Julia by downloading the official binary tarball from
+> `julialang-s3.julialang.org` over `curl` (which trusts the system CA store)
+> instead — the worked
+> [`references/cloud-setup/cloud-setup.sh`](../references/cloud-setup/cloud-setup.sh)
+> does exactly this and explains the trade-off.
+
 ## Network allowlist (required)
 
 The install only succeeds if the environment's network policy permits these
@@ -54,7 +69,8 @@ if ! command -v juliaup >/dev/null 2>&1; then
 fi
 
 # juliaup installs its shims into ~/.juliaup/bin; persist on PATH for shells.
-if ! grep -qs '.juliaup/bin' "$HOME/.bashrc" 2>/dev/null; then
+# -F keeps the literal dot from acting as a regex wildcard.
+if ! grep -qsF '.juliaup/bin' "$HOME/.bashrc" 2>/dev/null; then
   echo "export PATH=\"\$HOME/.juliaup/bin:\$PATH\"" >> "$HOME/.bashrc"
 fi
 
