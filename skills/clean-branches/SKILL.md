@@ -174,7 +174,7 @@ Print a summary:
 - `typo-fix` (last commit 2025-01-02, merged into main)
 
 ### Rebased + MR opened (stale)
-- `wip-refactor` → [!85](url#note_latest) (rebased, 3 commits ahead)
+- `wip-refactor` → [!85](url) (rebased, 3 commits ahead)
 
 ### Skipped (active/new)
 - `fix/42-typo` — open MR !80

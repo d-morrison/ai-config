@@ -75,10 +75,13 @@ for p in active[1:]:
 " | cat
 ```
 
-Then execute the cancel commands:
+The step above is a **dry run** — it prints one ready-to-run `glab api -X POST
+.../cancel` line per superseded pipeline (with the real IDs already filled in).
+Review them, then run each printed command to actually cancel:
 
 ```bash
-glab api -X POST "projects/$PROJECT_ID/pipelines/<OLD_ID>/cancel" 2>&1 | \
+# paste a printed line, e.g.:
+glab api -X POST "projects/$PROJECT_ID/pipelines/99/cancel" 2>&1 | \
   python3 -c "import json,sys; print(json.load(sys.stdin).get('status','done'))" | cat
 ```
 
