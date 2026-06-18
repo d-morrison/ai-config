@@ -1,22 +1,28 @@
 # Recommended egress allowlist for Claude Code on the web
 # ---------------------------------------------------------------------------
 # Paste these hosts into the environment's custom network allowlist (claude.ai
-# web UI) when the environment can't use the 'Full' network policy. This is the
-# paste-ready form of the per-host allowlist documented in cloud-setup.sh's
-# header; it covers the R / Quarto / TinyTeX / Julia toolchain that script
-# installs, plus the per-session renv::restore() and Julia Pkg.instantiate().
+# web UI) when the environment can't use the 'Full' network policy. It's a
+# superset of the per-host allowlist documented in cloud-setup.sh's header: it
+# covers the R / Quarto / TinyTeX / Julia toolchain that script installs at
+# build time, plus the runtime hosts the per-session renv::restore() and Julia
+# Pkg.instantiate() reach.
 #
 # One host per line. If your allowlist parser rejects '#' comments or blank
 # lines, strip them — the bare hostnames are all that's required.
 
 # --- R / CRAN ---
+# Where a specific host and a wildcard overlap, both are kept: the wildcard is
+# the real requirement, the specific entry is a fallback for allowlist parsers
+# that don't honor wildcards.
 cloud.r-project.org           # renv bootstrap/fallback (often already allowed)
-*.r-project.org               # CRAN mirrors
+*.r-project.org               # CRAN mirrors (superset of cloud.r-project.org)
 packagemanager.posit.co       # Posit Package Manager (renv.lock's repo)
-*.posit.co                    # Posit PPM CDN / redirects
-rspm-sync.rstudio.com         # PPM binary sync
-api.r-hub.io                  # R-hub system-requirements lookups
+*.posit.co                    # Posit PPM CDN / redirects (superset of packagemanager.posit.co)
 bioconductor.org              # Bioconductor-tagged packages in renv.lock
+# Runtime hosts — needed by the session-start renv::restore(), not the
+# build-time cloud-setup.sh itself (so they're not in that script's header):
+rspm-sync.rstudio.com         # PPM binary package sync
+api.r-hub.io                  # R-hub system-requirements lookups
 
 # --- GitHub (Quarto .deb, TinyTeX, GitHub-sourced R packages) ---
 github.com                    # Quarto .deb + GitHub-sourced R pkgs
@@ -26,7 +32,9 @@ release-assets.githubusercontent.com   # GitHub release asset downloads
 objects.githubusercontent.com           # GitHub release / object storage
 
 # --- Quarto / LaTeX ---
-quarto.org                    # optional: the Quarto .deb itself comes from github.com
+# quarto.org is NOT required — the Quarto .deb is fetched from github.com (see
+# cloud-setup.sh header). Kept as a comment-only line so it isn't allowlisted
+# needlessly.
 ctan.math.illinois.edu        # one pinned CTAN mirror for tlmgr (TinyTeX) installs
 
 # --- Julia ---
