@@ -68,6 +68,7 @@ Say so and route it there; don't store a note that will never fire.
    repo — use plain `readlink` (portable; BSD/macOS `readlink` rejects `-f`):
 
    ```bash
+   [ -L ~/.claude/memories ] || { echo "~/.claude/memories isn't a symlink — run bootstrap.sh first"; return 1; }
    repo="$(dirname "$(readlink ~/.claude/memories)")"   # ai-config repo root
    rel="CLAUDE.md"   # or memories/<file>.md, memories/repo/<repo-name>.md, …
    git -C "$repo" add "$rel" \
