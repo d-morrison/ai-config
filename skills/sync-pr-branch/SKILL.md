@@ -72,17 +72,20 @@ Synonyms: `sync`, `resync-branch`, `merge-main` — all route here.
    Don't push a half-resolved merge.
 
 6. **Run the repo's pre-commit checks before committing a conflict
-   resolution.** For this repo (rme) that's the mandatory checklist — render
-   each affected parent chapter, lint changed R/`.qmd`, spellcheck:
+   resolution.** Run whatever the current repo's checks are — build, lint,
+   test, spellcheck — and only proceed once they pass. If the repo ships
+   `render` / `lint` / `spell` / `test` skills, use them. A clean,
+   conflict-free merge auto-commits and needs no extra commit.
+
+   <details><summary>Example: an R + Quarto package (e.g. <code>rme</code>)</summary>
+
    ```bash
    quarto render <chapter.qmd> --to html      # each parent chapter touched by the merge
    Rscript -e 'lintr::lint("path/to/file")'   # each changed .R / .qmd
    Rscript -e 'spelling::spell_check_package()'
    ```
-   (If the repo ships `quarto-preflight` / `render` / `lint` / `spell` skills,
-   use them.) Only proceed once they pass. In a different repo, run that repo's
-   equivalent checks. A clean, conflict-free merge auto-commits and needs no
-   extra commit.
+   (Or use that repo's `quarto-preflight` / `render` / `lint` / `spell` skills.)
+   </details>
 
 7. **Push the branch back to origin:**
    ```bash

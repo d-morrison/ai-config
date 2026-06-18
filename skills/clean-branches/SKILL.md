@@ -130,7 +130,7 @@ git branch -d <local-tracking-branch>  # if it exists locally
 For each stale branch:
 
 ```bash
-git checkout -b <branch> origin/<branch>
+git checkout -B <branch> origin/<branch>   # -B (not -b) force-resets if the branch already exists locally
 git rebase origin/main
 ```
 
@@ -149,11 +149,12 @@ git push --force-with-lease origin <branch>
 For stale branches that have no open MR after rebasing:
 
 ```bash
-# GitLab
+# GitLab — assign to the current glab user (override ASSIGNEE to assign someone else)
+ASSIGNEE="$(glab api user 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['username'])")"
 glab mr create --source-branch=<branch> --target-branch=main \
   --title "<inferred title from branch name>" \
   --description "Orphaned branch rebased onto main. Review or close if no longer needed." \
-  --assignee demorrison
+  ${ASSIGNEE:+--assignee "$ASSIGNEE"}
 
 # GitHub
 gh pr create --head=<branch> --base=main \

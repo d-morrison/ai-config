@@ -22,8 +22,19 @@ HDRS=(-H "x-api-key: $ANTHROPIC_API_KEY"
 [ -d "$STAGE" ] || { echo "No staging dir: $STAGE" >&2; exit 1; }
 : > "$MAP"
 
-# Pull existing skills once for idempotency (match on display_title).
-existing="$(curl -fsS "${HDRS[@]}" "$API" 2>/dev/null || echo '{"data":[]}')"
+# Pull existing skills once for idempotency (match on display_title). Capture
+# the HTTP status so an auth failure bails out loudly instead of falling through
+# to an empty-workspace fallback (which would make every POST below fail 401).
+resp="$(curl -sS -w '\n%{http_code}' "${HDRS[@]}" "$API" 2>/dev/null || true)"
+http_code="$(tail -n1 <<<"$resp")"
+existing="$(sed '$d' <<<"$resp")"
+case "$http_code" in
+  200) : ;;
+  401|403) echo "ERROR: Skills API auth failed (HTTP $http_code) — check ANTHROPIC_API_KEY (must be a workspace key)" >&2; exit 1 ;;
+  "") echo "ERROR: could not reach Skills API at $API" >&2; exit 1 ;;
+  *) echo "WARN: unexpected HTTP $http_code listing existing skills; treating workspace as empty" >&2; existing='{"data":[]}' ;;
+esac
+existing="${existing:-{\"data\":[]}}"
 
 created=0 skipped=0 failed=0
 for dir in "$STAGE"/*/; do

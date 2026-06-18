@@ -1,11 +1,20 @@
 ---
+name: cancel-superseded
 description: "Cancel superseded (older) pipelines on the same branch, freeing runners for the latest push. Use when asked to 'cancel old pipelines', 'cancel superseded', 'free up runners', or when you notice stale pipelines blocking newer ones."
+user-invocable: true
+allowed-tools:
+  - Bash
 ---
 
 # Cancel Superseded Pipelines
 
 Cancel older pipelines on the same branch that have been superseded by a newer push,
 freeing CI runners for the latest pipeline.
+
+> **GitLab-only.** This skill drives `glab` against GitLab CI pipelines. There
+> is no GitHub equivalent here — on a GitHub repo, cancel superseded runs with
+> `gh run cancel <run-id>` instead (or rely on per-PR `concurrency` in the
+> workflow, which auto-cancels superseded runs).
 
 ## When to use
 
@@ -16,12 +25,24 @@ freeing CI runners for the latest pipeline.
 
 ## Procedure
 
+0. **Resolve the project ID once** (so the rest of the steps reference
+   `$PROJECT_ID` instead of a manual placeholder):
+
+```bash
+PROJECT_ID="$(glab api "projects?search=$(basename "$(git rev-parse --show-toplevel)")" 2>/dev/null | \
+  python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")"
+echo "PROJECT_ID=$PROJECT_ID"
+```
+
+If the search returns more than one project (same repo name in different
+groups), set `PROJECT_ID` by hand from `glab api "projects?search=<name>"`.
+
 1. **Identify the current branch and its latest pipeline:**
 
 ```bash
 BRANCH=$(git branch --show-current)
 # Get pipelines for this branch, newest first
-glab api "projects/<PROJECT_ID>/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
   python3 -c "
 import json, sys
 pipelines = json.load(sys.stdin)
@@ -35,7 +56,7 @@ for p in pipelines:
 Keep the **first** (newest) pipeline. Cancel any older ones that are `running` or `pending`:
 
 ```bash
-glab api "projects/<PROJECT_ID>/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
+glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" 2>&1 | \
   python3 -c "
 import json, sys
 pipelines = json.load(sys.stdin)
@@ -50,14 +71,14 @@ print(f'Keeping pipeline #{keep[\"id\"]} ({keep[\"status\"]})')
 for p in active[1:]:
     print(f'Canceling pipeline #{p[\"id\"]} ({p[\"status\"]})')
     # Print the cancel command
-    print(f'  -> glab api -X POST projects/<PROJECT_ID>/pipelines/{p[\"id\"]}/cancel')
+    print(f'  -> glab api -X POST projects/$PROJECT_ID/pipelines/{p[\"id\"]}/cancel')
 " | cat
 ```
 
 Then execute the cancel commands:
 
 ```bash
-glab api -X POST "projects/<PROJECT_ID>/pipelines/<OLD_ID>/cancel" 2>&1 | \
+glab api -X POST "projects/$PROJECT_ID/pipelines/<OLD_ID>/cancel" 2>&1 | \
   python3 -c "import json,sys; print(json.load(sys.stdin).get('status','done'))" | cat
 ```
 
@@ -66,7 +87,7 @@ glab api -X POST "projects/<PROJECT_ID>/pipelines/<OLD_ID>/cancel" 2>&1 | \
 ```bash
 for BRANCH in branch1 branch2; do
   echo "=== $BRANCH ==="
-  glab api "projects/<PROJECT_ID>/pipelines?ref=$BRANCH&sort=desc&per_page=5" 2>&1 | \
+  glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=5" 2>&1 | \
     python3 -c "
 import json, sys
 pipelines = json.load(sys.stdin)
@@ -82,8 +103,9 @@ done
 
 ## Notes
 
-- **Project ID**: Look it up from the repo's `.gitlab-ci.yml` context or use
-  `glab api "projects?search=<repo-name>" | python3 -c "..."` to find it.
+- **Project ID**: step 0 resolves it automatically from the repo name. If that
+  fails (ambiguous name, no API access), look it up manually with
+  `glab api "projects?search=<repo-name>" | python3 -c "..."`.
 - **Don't cancel across branches** — only cancel older pipelines on the *same* ref.
 - **Don't cancel `success` or `failed`** pipelines — they're already done.
 - The `claude-review` job runs early and fast; the `check-package` job is usually

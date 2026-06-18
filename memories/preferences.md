@@ -44,7 +44,7 @@
   - Commits: `[320d7ad](https://host/project/-/commit/320d7ad)`
 - When linking to MRs/PRs, link to the bottom of the page so the user doesn't have to scroll:
   - GitLab: append `#note_latest` or the specific note anchor (e.g., `#note_11437`)
-  - GitHub: append `#issuecomment-latest` or similar anchor to land at the bottom
+  - GitHub: use a specific comment anchor (e.g., `#issuecomment-4739921085`); there is no symbolic "latest" anchor
 - When stopping work on an MR/PR (end of conversation, pausing, handing off), always post
   the MR/PR link so the user can click through immediately.
 - When the user provides general guidance or a new preference, always update BOTH the
