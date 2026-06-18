@@ -39,7 +39,7 @@
   Julia binaries live ONLY on `julialang-s3.julialang.org` — the
   `JuliaLang/julia` GitHub releases attach source tarballs only. `Pkg`
   operations need `pkg.julialang.org` allowlisted too.
-- Worked, reviewed example: `references/cloud-setup/cloud-setup.sh` in ai-config
+- Reference implementation: `references/cloud-setup/cloud-setup.sh` in ai-config
   (curl+tarball, `$SUDO`-aware, best-effort/non-fatal).
 - Layering: the build-time **Setup script** is the right place for slow,
   repo-independent toolchain installs (R, Julia, Quarto); the **SessionStart
