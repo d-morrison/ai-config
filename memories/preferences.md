@@ -1,11 +1,19 @@
 # User preferences (cross-workspace)
 
+- NEVER assume; ALWAYS verify. Before stating a status/fact/outcome (PR or issue
+  state, merge status, CI/review verdict, branch position, file contents) or acting
+  on one, confirm it with a tool call — don't rely on what was true earlier in the
+  session or what "should" be the case. State drifts between turns. "It should be X" /
+  "I left it as X" / "presumably X" are red flags; replace with a fresh check.
 - ALWAYS record what I learn in memory/AI-instruction notes as I work (standing request).
 - When creating a GitHub PR, request reviewer `d-morrison` (see request-pr-review skill).
 - When deferring work out of scope during a review iteration, always file a follow-up issue
   (via `gh issue create` or `glab issue create`) capturing the deferred item. Don't just
   mention it in a comment — create the issue so it's tracked.
 - Always open MRs/PRs after pushing — never ask first ("always yes").
+- Always ARDI an open PR/MR to a clean review verdict — don't ask "want me to ARDI it?"
+  first, just drive it to clean. (Still don't merge unless asked; "always ardi" means
+  always drive to clean, not always merge.)
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
