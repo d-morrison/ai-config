@@ -14,6 +14,11 @@
 - Always ARDI an open PR/MR to a clean review verdict — don't ask "want me to ARDI it?"
   first, just drive it to clean. (Still don't merge unless asked; "always ardi" means
   always drive to clean, not always merge.)
+- After creating a PR in a remote/web session (where PR-activity subscription is
+  available), always subscribe to its CI/review activity (`subscribe_pr_activity`)
+  and follow through — autofix CI failures and address review comments per the
+  ARD framework — without asking first. Keep following until the PR is merged or
+  closed (or I say stop). Don't ask "want me to watch it?"; just do it.
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),

@@ -113,6 +113,9 @@ are picked up automatically.
 - `skills/` — reusable workflow skills (`~/.claude/skills/`)
 - `commands/` — slash commands (`~/.claude/commands/`)
 - `memories/` — persistent notes & preferences (symlinked into VS Code Copilot memory dir)
+- `references/` — reviewed reference material / worked examples (e.g. a cloud
+  Setup script). Documentation only: `bootstrap.sh` skips it, so it is **not**
+  symlinked into `~/.claude`.
 
 Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.
