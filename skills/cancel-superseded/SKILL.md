@@ -45,7 +45,8 @@ BRANCH=$(git branch --show-current)
 glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
   python3 -c "
 import json, sys
-pipelines = json.load(sys.stdin)
+try: pipelines = json.load(sys.stdin)
+except json.JSONDecodeError: sys.exit(1)   # glab error already on stderr; don't add a traceback
 for p in pipelines:
     print(f'{p[\"id\"]:>6}  {p[\"status\"]:12s}  {p[\"ref\"]}')
 " | cat
@@ -59,7 +60,9 @@ for p in pipelines:
 glab api "projects/$PROJECT_ID/pipelines?ref=$BRANCH&sort=desc&per_page=10" | \
   python3 -c "
 import json, sys
-active = [p for p in json.load(sys.stdin) if p['status'] in ('running', 'pending', 'created')]
+try: pipelines = json.load(sys.stdin)
+except json.JSONDecodeError: sys.exit(1)   # glab error already on stderr; don't add a traceback
+active = [p for p in pipelines if p['status'] in ('running', 'pending', 'created')]
 if len(active) <= 1:
     print('Nothing to cancel — at most one active pipeline.'); sys.exit(0)
 print(f'Keeping newest: #{active[0][\"id\"]} ({active[0][\"status\"]})')
