@@ -49,14 +49,24 @@ reflect, and persist.
    - If updating a skill: the change should be specific enough that following
      the skill next time would avoid the mistake
 
-4. **Commit and push ALL ai-config changes.** Skills AND memory files both
-   live in the ai-config repo (`~/.claude/skills/` → discover actual path
-   with `readlink`). After editing anything in that repo:
+4. **Commit and push ALL ai-config changes — via a branch + PR, not direct to
+   `main`.** Skills AND memory files both live in the ai-config repo
+   (`~/.claude/skills/` → discover actual path with `readlink`). Never leave
+   ANY changes (skills, memories, etc.) as local-only uncommitted edits.
    ```bash
    cd "$(dirname "$(readlink ~/.claude/skills)")"
-   git add -A && git commit -m "ums: <brief summary>" && git push origin HEAD
+   # If a PR for this work is already open, commit + push to its branch.
+   # Otherwise branch off main — pushing skill/memory changes straight to main
+   # is denied by auto-mode and bypasses review:
+   git fetch origin main && git checkout -b ums-<topic> origin/main
+   git add -A && git commit -m "ums: <brief summary>"
+   git push -u origin HEAD && gh pr create --fill   # then request d-morrison as reviewer
    ```
-   Never leave ANY changes (skills, memories, etc.) as local-only uncommitted edits.
+   **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing*
+   was committed — verify with `git status` / `git log` before any `git reset
+   --hard`, or you'll silently discard the still-uncommitted edits (happened
+   this session: a denied direct-to-main push left edits uncommitted, then a
+   reset wiped them).
 
 5. **Report what was updated.** Provide a brief summary table:
 
