@@ -70,6 +70,13 @@
 - Always simplify code where feasible (without feature loss) — prune dead code paths,
   remove unreachable branches, simplify variable assignments that can never take their
   fallback values given the current invocation context.
+- Avoid nested function calls and nested function definitions where feasible — prefer
+  named intermediate variables (or a pipe, e.g. `|>` / `%>%`) over `f(g(h(x)))`, and
+  prefer top-level function definitions over functions defined inside other functions.
+  Keep the nesting only when flattening it would be more convoluted. (CLAUDE.md "Coding
+  style" section has the full rationale.)
+- Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding and
+  collaboration conventions.
 - When mentioning GitLab/GitHub pipelines, jobs, or commits in prose, always hyperlink them:
   - Pipelines: `[#3330](https://host/project/-/pipelines/3330)`
   - Jobs: `[job 11056](https://host/project/-/jobs/11056)`
