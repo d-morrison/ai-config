@@ -56,6 +56,12 @@
   `update-memories-and-skills`) that points to the canonical file.
 - During ARDI loops: if a round has only Rebut/Defer dispositions (no code pushed),
   still explicitly re-request review — the push won't auto-trigger the reviewer bot.
+- Always leave yourself handoff notes proactively when pausing — don't wait to be asked —
+  especially while a long-running job is in flight (SLURM arrays, builds, CI, background
+  tasks, remote agents). Snapshot branch/HEAD, unpushed commits, job IDs + how to check
+  status, expected outputs + paths, backups, open decisions, and the exact pick-up steps
+  into a project memory, and post a paused-state note on any active PR/MR. See the
+  `handoff` and `wait-for-results` skills.
 - Always look for opportunities to create new reusable skills from multi-step processes.
   When a workflow emerges that could be codified, proactively suggest creating a skill for it.
 - "slide <tag>" means force-move a floating Git tag to current main HEAD (delete + recreate + push).
