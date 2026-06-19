@@ -12,7 +12,11 @@
   failure to retry (it's expected per the standing request-pr-review rule when
   the author == the requested reviewer).
 - `gh` is NOT available in these sessions — use the `mcp__github__*` tools for
-  all GitHub interactions (PRs, issues, comments, CI status, reviews).
+  all GitHub interactions (PRs, issues, comments, reviews). CI status comes from
+  `mcp__github__pull_request_read` (`get_check_runs` / `get_status`) and the
+  `mcp__github__actions_*` tools — all under the same `mcp__github__*` prefix.
+  (There is no separate `mcp__github_ci__*` namespace in these sessions; verified
+  via ToolSearch on PR #44.)
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
