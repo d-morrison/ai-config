@@ -83,8 +83,11 @@ Exit codes let you gate work:
 | `3`  | **same working tree** — another live session shares this exact checkout | isolate (step 3) **before editing** |
 | `4`  | same branch in a *different* worktree — pushes may race | coordinate pushes, or use a distinct branch |
 
-`check` also refreshes your own heartbeat, so calling it as you work keeps your
-session marked live.
+`check` also refreshes your own heartbeat (when run with a `--id` that is
+already registered), so calling it as you work keeps your session marked live.
+Run without a registered id it is purely **read-only** — it still reports
+conflicts, but can't refresh a heartbeat, so register first for a normal
+session.
 
 ### 3. Isolate into your own worktree on a `SAME WORKING TREE` conflict
 
@@ -96,8 +99,9 @@ is no shared-edit contention at all:
 ai-session.sh worktree <new-branch> [--base <ref>]   # default base: HEAD
 ```
 
-This creates `…/<repo>.worktrees/<new-branch>/` on `<new-branch>`. Then move
-your session there and re-register:
+This creates `…/<repo>.worktrees/<new-branch>/` on `<new-branch>` (override the
+parent dir with `$AI_WORKTREE_DIR`). Then move your session there and
+re-register:
 
 ```bash
 cd <printed path>

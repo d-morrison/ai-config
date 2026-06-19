@@ -35,11 +35,12 @@ read_json_field() { # field-name
     printf '%s' "$payload" | jq -r --arg f "$field" '.[$f] // empty' 2>/dev/null && return
   fi
   if command -v python3 >/dev/null 2>&1; then
+    # Pass the field name as a positional arg so code and data stay separate.
     printf '%s' "$payload" | python3 -c "
 import json,sys
-try: print(json.load(sys.stdin).get('$field',''))
+try: print(json.load(sys.stdin).get(sys.argv[1],''))
 except Exception: pass
-" 2>/dev/null && return
+" "$field" 2>/dev/null && return
   fi
 }
 
@@ -60,6 +61,6 @@ SCRIPT="$HOOK_DIR/../scripts/ai-session.sh"
 ID="${SID:-cli-$(whoami 2>/dev/null || echo user)-$$}"
 
 ( cd "$CWD" && AI_SESSION_ID="$ID" "$SCRIPT" register --agent "claude-code" \
-    --task "session $ID" ) || true
+    --task "auto-registered via SessionStart hook" ) || true
 
 exit 0

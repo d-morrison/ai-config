@@ -139,6 +139,9 @@ prune_stale() {
       removed=$((removed + 1))
     fi
   done
+  # Belt-and-suspenders: sweep temp files orphaned by a SIGKILL (where the EXIT
+  # trap in write_record can't fire). Only old ones, never a write in flight.
+  find "$REG_DIR" -maxdepth 1 -name '.tmp.*' -type f -mmin +60 -delete 2>/dev/null || true
   [ "$removed" -eq 0 ] && printf 'no stale sessions\n'
   return 0
 }
@@ -155,6 +158,7 @@ write_record() { # id task agent
     started="$NOW"
   fi
   tmp="$(mktemp "$REG_DIR/.tmp.XXXXXX")"
+  trap 'rm -f "${tmp:-}"' EXIT     # don't leak the temp file if killed before the rename
   {
     printf 'id=%s\n'        "$id"
     printf 'agent=%s\n'     "${agent:-unknown-agent}"
@@ -168,12 +172,13 @@ write_record() { # id task agent
     printf 'task=%s\n'      "$task"
   } > "$tmp"
   mv -f "$tmp" "$existing"     # atomic on the same filesystem
+  trap - EXIT
 }
 
 # Dashboard view: report any worktree or branch held by >=2 live sessions —
 # true contention anywhere in the repo, independent of who is asking.
 summarize_contention() {
-  local f n=0 i j
+  local f n=0 i j k
   local WT=() BR=() ID=() TK=() HS=()        # parallel indexed arrays
   for f in "$REG_DIR"/*.session; do
     [ -e "$f" ] || continue
