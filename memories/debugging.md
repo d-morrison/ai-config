@@ -30,10 +30,12 @@
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
 - **`mktemp` + rename: add a cleanup trap.** A process killed between `mktemp`
-  and the `mv` orphans `.tmp.XXXXXX` files forever. Pattern: `tmp=$(mktemp …);
+  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp <dir>/.tmp.XXXXXX);
   trap 'rm -f "${tmp:-}"' EXIT; … > "$tmp"; mv -f "$tmp" "$dest"; trap - EXIT`.
   Belt-and-suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find <dir> -name '.tmp.*' -mmin +60 -delete`.
+  `find <dir> -name '.tmp.*' -mmin +60 -delete` — but the `-name` glob must match
+  the `mktemp` prefix you chose, or it silently misses every orphan
+  (`.tmp.XXXXXX` → `'.tmp.*'`; mktemp's bare `tmp.XXXXXX` default → `'tmp.*'`).
 - **Bounds-check value-taking flags before `shift 2`.** In a `set -e` arg
   parser, `--flag` as the last arg makes `${2:-}` expand to "" but the following
   `shift 2` fail (count out of range) → script aborts with a cryptic error.
