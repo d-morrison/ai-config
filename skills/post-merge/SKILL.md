@@ -1,0 +1,100 @@
+---
+name: post-merge
+description: "Wrap up a just-merged PR/MR: verify the merge actually landed (never assume), tidy the local branch (switch to main, pull, delete the merged branch), confirm any deferred follow-up issues are tracked, then run UMS to capture what the PR's review lifecycle taught — mistakes corrected and guidance given along the way. Use right after a PR merges, or when asked to 'post-merge', 'wrap up the merged PR', or 'clean up after the merge'."
+user-invocable: true
+allowed-tools:
+  - Bash
+  - Read
+  - Edit
+  - Write
+---
+
+# post-merge — wrap up a merged PR (verify, tidy, then UMS)
+
+The per-PR bookend to a piece of work. Once a PR/MR merges: confirm it landed,
+clean up the local branch, make sure nothing was left dangling, and — the
+point of the skill — **run UMS to learn from how the PR went** while the
+review lifecycle is still fresh in context.
+
+## When this fires
+
+- A PR/MR you were working on just merged.
+- "post-merge", "wrap up the merged PR", "clean up after the merge", "the PR
+  merged — now what?"
+- Distinct from **`wrap-up`** (session-level, may span several PRs/issues) —
+  `post-merge` is the single-PR version, run each time a PR lands.
+
+## Procedure
+
+### 1. Verify the merge — never assume
+
+```bash
+gh pr view <N> --json number,title,state,mergedAt,mergeCommit,headRefName
+# GitLab
+glab mr view <N>
+```
+
+Confirm `state == MERGED` and `mergedAt` is set. If it isn't actually merged,
+**stop and report** — don't tidy a branch whose work hasn't landed. (The
+standing **never assume; always verify** rule applied to closing out a PR.)
+
+### 2. Tidy the local branch
+
+```bash
+git checkout main
+git pull --ff-only origin main
+git branch -d <merged-branch>     # -d, NOT -D
+```
+
+Use `git branch -d` (not `-D`): `-d` refuses to delete a branch with commits
+that aren't merged. If it refuses, the branch has unmerged work — investigate
+before forcing anything.
+
+If other local branches were **stacked** on this one, offer to rebase them onto
+the new `main` rather than deleting silently (see `cb` / `clean-branches`).
+
+### 3. Confirm deferred items are tracked
+
+If the PR's review loop deferred or acknowledged anything, make sure each has a
+follow-up issue (preferences: *never leave deferred items untracked*). List
+them, linked. File any that slipped through.
+
+### 4. Run UMS — learn from the PR's lifecycle
+
+Run the full `ums` procedure (invoke the `ums` skill by name), focused on what
+**this PR** taught:
+
+- **Recurring review findings** — anything the reviewer flagged across rounds
+  → encode the fix so the next PR avoids it from the start.
+- **Corrections / guidance the user gave mid-PR** → preference + skill update
+  (per "update BOTH skills AND preferences").
+- **Tool / CI quirks** hit during the loop → `tools.md` / `debugging.md`.
+- **A multi-step pattern that emerged** → consider a new skill.
+
+This is the "learn from mistakes and guidance along the way" step — a merge is
+the natural checkpoint to bank those lessons before the context is gone. If
+nothing durable emerged, say so explicitly rather than manufacturing edits.
+(UMS commits its own changes via a branch + PR.)
+
+### 5. Report
+
+A linked summary: the merged PR, the auto-closed issue, any deferred follow-up
+issues, what UMS updated, and a Pacific-time timestamp
+(`date "+%Y-%m-%d %H:%M %Z"`).
+
+## Relationship to other skills
+
+- **`wrap-up`** — session-level bookend; also embeds UMS. `post-merge` is the
+  per-PR version: run it each time a PR lands; run `wrap-up` once at session
+  end. They share the verify-then-UMS shape.
+- **`ums`** — step 4 invokes it.
+- **`cb` / `clean-branches`** — for stacked or stale sibling branches.
+- **`st` / `gi`** — the front of the lifecycle that `post-merge` closes.
+
+## Anti-patterns
+
+- ❌ Deleting the branch before confirming the merge actually landed.
+- ❌ Reaching for `git branch -D` (force) without checking why `-d` refused.
+- ❌ Skipping UMS — the just-merged PR is exactly when the lessons are freshest.
+- ❌ Leaving deferred/acknowledged items without follow-up issues.
+- ❌ Reporting "all cleaned up" while a stacked sibling branch dangles unmentioned.

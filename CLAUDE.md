@@ -82,6 +82,29 @@ This applies to:
 It does **not** apply to read-only inspection: `show me PR #X`, `what's the
 status of #Y`, `explain the diff on #Z`. Those don't risk a parallel session.
 
+## File an issue before starting a new task
+
+When starting a **new** piece of work, go **issue-first**: before branching,
+editing, or opening a PR, make sure a tracking issue exists. Search the tracker
+first; if no open issue covers the task, **file one** (`gh issue create` /
+`glab issue create`), then proceed. Never jump straight into a PR without a
+tracking issue behind it.
+
+The issue is the durable record of intent, scope, and "done" criteria — it
+gives reviewers context, lets the PR auto-close it via `Closes #N`, and keeps
+the work discoverable even if the PR stalls. The `st` (Start Task) skill
+operationalizes this; `gi` (Grab Issue) is the path when the issue already
+exists. Skip only when the task is already tracked by an open issue.
+
+## Wrap up a merged PR with UMS
+
+When a PR/MR you were working on **merges**, run the `post-merge` skill:
+verify the merge actually landed, tidy the local branch (checkout `main`,
+pull, `git branch -d`), confirm any deferred items have follow-up issues, then
+run **UMS** to capture what the PR's review lifecycle taught — recurring review
+findings, corrections, and guidance given along the way. A merge is the natural
+checkpoint to bank lessons before the context is lost.
+
 ## Always run ARDI on PRs you touch
 
 Whenever I'm working a PR/MR, run the full **ARDI** loop by default, without

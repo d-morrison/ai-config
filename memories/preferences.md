@@ -19,6 +19,10 @@
   and follow through — autofix CI failures and address review comments per the
   ARD framework — without asking first. Keep following until the PR is merged or
   closed (or I say stop). Don't ask "want me to watch it?"; just do it.
+- Before starting a new task, always go issue-first: search the tracker for an existing issue;
+  if none covers it, FILE one before branching or opening a PR. Never jump straight into a PR
+  without a tracking issue behind it. (see the `st` / `start-task` skill — the issue is the
+  durable record of intent/scope/"done" and lets the PR auto-close it via `Closes #N`.)
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
@@ -37,6 +41,10 @@
 - When noticing potential improvements to the codebase while working, proactively suggest them
   (don't wait to be asked). The user wants to hear about improvements as they come up.
 - Always run /ums (Update Memories and Skills) after finishing a task — don't wait to be asked.
+- After a PR/MR merges, run the `post-merge` skill: verify the merge actually landed, tidy the
+  local branch (checkout main, pull, `git branch -d`), confirm any deferred items are tracked,
+  then run UMS to capture what the PR's review lifecycle taught — mistakes corrected and guidance
+  given along the way. A merge is the natural checkpoint to bank lessons before context is lost.
 - Keep it simple. Don't over-explain or ask permission for straightforward fixes — just do them.
 - When finishing work on an MR/PR (clean review, ready to merge, etc.), always provide a
   clickable link to the MR/PR in the chat message.
@@ -92,3 +100,6 @@
   Common for repos with floating major-version tags that consumers reference.
 
 - "dew it" means "do it".
+- After implementing a feature or fix, ALWAYS commit and push immediately — don't wait
+  for the user to ask "why haven't you pushed?" The implementation isn't done until the
+  code is committed, pushed, and (if applicable) an MR is opened.
