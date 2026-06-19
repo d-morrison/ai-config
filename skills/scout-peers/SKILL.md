@@ -12,7 +12,6 @@ user-invocable: true
 allowed-tools:
   - WebSearch
   - WebFetch
-  - Task
   - Agent
   - Bash
   - Read
