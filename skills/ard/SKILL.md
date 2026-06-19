@@ -193,7 +193,7 @@ The loop continues until the PR/MR is **fully clean** — zero findings, all CI
 workflows green, and every inline review thread resolved (the only open
 conversation being the final all-clear exchange — the reviewer's all-clear and
 your reply to it). A rebuttal counts only once it convinces the reviewer; on an
-impasse, escalate to a human reviewer (`d-morrison`).
+impasse, escalate to a human reviewer (`d-morrison`; see step 4b for how).
 
 ## Edge cases
 
