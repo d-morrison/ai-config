@@ -9,6 +9,12 @@
 - Can't use `git push --force origin <tag>` on some GitLab instances (protected tags). The delete+recreate pattern always works.
 - `git fetch --tags` silently refuses to update a local tag that already exists if the remote moved it. Use `git fetch --tags --force` to get the latest remote tag positions. Without `--force`, you'll see stale local tags and draw wrong conclusions about what the tag includes.
 
+## GitLab Discussions API (inline diff comments)
+- Endpoint: `POST /projects/:id/merge_requests/:iid/discussions`
+- For inline comments, include `position` object: `position_type: "text"`, `base_sha`, `head_sha`, `start_sha`, `new_path`, `old_path`, `new_line`
+- Get SHAs from MR Versions API: `GET /projects/:id/merge_requests/:iid/versions` → `[0].base_commit_sha`, `[0].head_commit_sha`, `[0].start_commit_sha`
+- If the position is rejected (e.g., line not in diff), the API returns 400 — handle gracefully
+
 ## glab (GitLab CLI)
 - Installed via Homebrew (macOS) or system package manager — verify with `which glab`.
 - Authenticated on your GitLab instance — run `glab auth status` to verify host and username
