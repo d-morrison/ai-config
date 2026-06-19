@@ -353,10 +353,10 @@ CMD="$1"; shift
 OPT_ID=""; OPT_TASK=""; OPT_AGENT=""; OPT_ALL=""; OPT_BASE=""; OPT_WT_BRANCH=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --id)    OPT_ID="${2:-}"; shift 2 ;;
-    --task)  OPT_TASK="${2:-}"; shift 2 ;;
-    --agent) OPT_AGENT="${2:-}"; shift 2 ;;
-    --base)  OPT_BASE="${2:-}"; shift 2 ;;
+    --id)    [ "${2+set}" = set ] || die "--id requires a value";    OPT_ID="$2";    shift 2 ;;
+    --task)  [ "${2+set}" = set ] || die "--task requires a value";  OPT_TASK="$2";  shift 2 ;;
+    --agent) [ "${2+set}" = set ] || die "--agent requires a value"; OPT_AGENT="$2"; shift 2 ;;
+    --base)  [ "${2+set}" = set ] || die "--base requires a value";  OPT_BASE="$2";  shift 2 ;;
     --all)   OPT_ALL=1; shift ;;
     -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     --*)     die "unknown option: $1" ;;
