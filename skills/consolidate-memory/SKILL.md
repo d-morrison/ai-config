@@ -167,8 +167,10 @@ git push -u origin HEAD && gh pr create --fill
 - **`memorize` / `record-learnings`** — they *write* memory entries; this *merges*
   the redundant ones they accumulate. Step 3's "check existing notes" in those
   skills prevents most duplicates; this is the cleanup when one slips through.
-- **`link-skills`** — for adjacent-but-distinct entries that should reference
-  each other but stay separate, cross-link instead of merging.
+- **`link-skills`** — the skills-corpus analogue: for adjacent-but-distinct
+  *skills* that should cross-reference each other but not merge. For memory
+  cross-links, add the `[[link]]` manually (as step 2 describes) — `link-skills`
+  only scans `skills/*/SKILL.md`.
 
 ## Anti-patterns
 
