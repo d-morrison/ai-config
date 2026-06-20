@@ -77,12 +77,29 @@
 - The reusable `claude.yml@v1` agent workflow restores config files (`CLAUDE.md`,
   `.claude/**`) to `origin/main` during its run (`restoreConfigFromBase`), so a
   PR can't rewrite the reviewer's own instructions. With `eager-pr: true` +
-  `contents: write`, the **residual auto-commit step then commits that reset**
-  onto the PR branch as `claude[bot]` "chore: auto-commit residual @claude
-  session changes" — **deleting the PR's own `CLAUDE.md` edits**. `memories/**`
-  and `skills/**` are untouched; only the restored-config paths are affected.
-- Workaround on a PR that edits `CLAUDE.md`: restore the section
-  (`git checkout <my-commit> -- CLAUDE.md`, commit) and **merge promptly** — it
-  can recur on later runs. Before merging, run
-  `git show origin/<branch>:CLAUDE.md` and confirm the section is still there.
-  Tracked upstream: d-morrison/gha#39.
+  `contents: write`, the **residual auto-commit step** historically then committed
+  that reset onto the PR branch as `claude[bot]` "chore: auto-commit residual
+  @claude session changes" — **deleting the PR's own `CLAUDE.md` edits**.
+  `memories/**` and `skills/**` were untouched; only the restored-config paths
+  were affected.
+- **FIXED in gha `v1` (≈2026-06-20):** the residual sweep now force-reverts the
+  protected config paths (incl. `CLAUDE.md`, `.claude`, `.mcp.json`, `.gitmodules`,
+  `.husky`) back to **PR-tip (HEAD)** before `git add -A`, so it no longer commits
+  the reset. A follow-up commit (`78fe7bc`, "honor PR deletions of config files in
+  the residual sweep") prevents the sweep from reverting legitimate config-file
+  deletions in the PR.
+  Verified on ai-config#41: once the fix landed, the gut stopped recurring (the
+  config-edit payload stayed on the branch across later bot runs). Was tracked as
+  d-morrison/gha#39.
+- If a repo pins an **older** gha tag (pre-fix), the workaround still applies. The
+  symptom was `claude[bot]` "auto-commit residual @claude session changes" commits
+  that reverted only config paths. Restore the section
+  (`git checkout <my-commit> -- CLAUDE.md`, commit), then before merging verify with
+  `git diff origin/main -- CLAUDE.md` being **non-empty** (an empty diff means the
+  payload was silently reverted to main), and merge promptly.
+
+## AskUserQuestion (Claude Code harness tool)
+- Each entry in `questions[]` **requires a `question` field** (the full question
+  text) — `header` + `options` alone fail with `InputValidationError: required
+  parameter questions[0].question is missing`. Easy to omit when you build the
+  call from options first; include the `question` string every time.
