@@ -100,15 +100,19 @@ git -C <path> status --porcelain    # any output → DIRTY, skip (or --force onl
 
 ```bash
 git -C <path> rev-parse --abbrev-ref HEAD                 # the branch
+gh pr list --head <branch> --state open --json number,url  # open PR? (glab mr list on GitLab)
 git rev-list --count origin/main..<branch>                # commits ahead of main
 git rev-list --count <branch>@{upstream}..<branch> 2>/dev/null \
   || echo "no-upstream"                                   # unpushed commits (or no remote)
-gh pr list --head <branch> --state open --json number,url  # open PR? (glab mr list on GitLab)
 ```
 
-Ahead of main **and** (unpushed or no upstream) → **Dirty** (unpushed work),
-skip. Ahead of main but fully pushed, or carrying an **open PR** → **Active**,
-skip.
+Evaluate in this order so the label matches the Definitions table:
+
+1. **Open PR** → **Active**, skip (short-circuits — takes precedence even if the
+   branch also has unpushed commits).
+2. Else ahead of main **and** (unpushed or no upstream) → **Dirty** (unpushed
+   work), skip.
+3. Else ahead of main but fully pushed → **Active**, skip.
 
 #### c. Branch-landed check — is the work safely on main?
 
