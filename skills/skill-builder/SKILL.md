@@ -153,6 +153,11 @@ Then, as their own explicit steps (don't leave them buried in a comment):
 - **`request-pr-review`, `ardi`** — used to ship and clean the new skill's PR.
 - **`simplify` / `tidy`** — when extending, prefer collapsing into an existing
   skill over proliferating near-duplicates.
+- **`heal-skill`** — the repair counterpart: this skill authors a skill,
+  `heal-skill` fixes one that misfired after it shipped.
+- **`link-skills`** — this skill cross-links the one skill it authors;
+  `link-skills` is the corpus-wide audit that catches cross-reference gaps a
+  single authoring pass missed.
 
 ## Anti-patterns
 
