@@ -59,11 +59,14 @@ go read the history first (step 2).
 2. **Understand BOTH sides before editing a single hunk.** For each conflicted
    file, look at the three-way picture and *why* each side diverged:
    ```bash
-   git log --merge --oneline -- <file>   # commits from both sides touching it
+   git log --merge --oneline -- <file>   # commits from both sides (during a MERGE)
    git show :1:<file>                    # BASE (common ancestor)
    git show :2:<file>                    # OURS  (HEAD / current side)
    git show :3:<file>                    # THEIRS (incoming side)
    ```
+   The `:1:`/`:2:`/`:3:` index stages work in any conflicted operation;
+   `git log --merge` is merge-only — mid-rebase, inspect the commit being
+   replayed with `git show REBASE_HEAD` instead.
    Ask: what problem was each side solving? Different features? One refactor +
    one fix? A move/rename vs an in-place edit? The answer dictates the merge.
 
@@ -75,7 +78,7 @@ go read the history first (step 2).
 4. **Prove no markers (or whitespace damage) slipped through:**
    ```bash
    git diff --check                      # flags leftover markers + whitespace errors
-   grep -rn '^<<<<<<<\|^=======$\|^>>>>>>>' . --exclude-dir=.git   # belt and suspenders
+   grep -rnE '^(<<<<<<<|=======|>>>>>>>)' . --exclude-dir=.git   # belt and suspenders (portable -E)
    ```
 
 5. **Run the repo's pre-commit checks before committing the resolution.** A
