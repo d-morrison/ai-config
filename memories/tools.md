@@ -60,6 +60,10 @@
 - Can't use `git push --force origin <tag>` on some GitLab instances (protected tags). The delete+recreate pattern always works.
 - `git fetch --tags` silently refuses to update a local tag that already exists if the remote moved it. Use `git fetch --tags --force` to get the latest remote tag positions. Without `--force`, you'll see stale local tags and draw wrong conclusions about what the tag includes.
 
+## Git branch create/reset (`git switch -C`)
+- `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
+- Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` makes git read the next token as a start-point/ref, so it fails with `fatal: invalid reference: <name>` and never creates the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)
+
 ## GitLab Discussions API (inline diff comments)
 - Endpoint: `POST /projects/:id/merge_requests/:iid/discussions`
 - For inline comments, include `position` object: `position_type: "text"`, `base_sha`, `head_sha`, `start_sha`, `new_path`, `old_path`, `new_line`
