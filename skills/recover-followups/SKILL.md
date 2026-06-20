@@ -1,6 +1,6 @@
 ---
 name: recover-followups
-description: "Retrieve untracked follow-up items from closed PRs and issues — sweep their bodies, comments, review threads, and ARD 'Deferred'/'Acknowledged' summaries for promised future work, cross-reference against open issues, and surface (then offer to file) the ones that were never tracked. Use when asked to 'recover followups', 'rfu', 'find untracked followups', 'audit closed PRs for dropped follow-ups', 'what follow-ups slipped through', or 'did we lose any deferred work?'."
+description: "Retrieve untracked follow-up items from closed PRs and issues. Sweeps their bodies, comments, review threads, and ARD 'Deferred'/'Acknowledged' summaries for promised future work, then cross-references against open issues and surfaces (and offers to file) the ones never tracked. Use when asked to 'recover followups', 'rfu', 'find untracked followups', 'audit closed PRs for dropped follow-ups', 'what follow-ups slipped through', or 'did we lose any deferred work?'."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -12,7 +12,7 @@ allowed-tools:
 The recovery counterpart to `defer-issue`. `defer-issue` files a follow-up
 *when you defer*; this skill goes back through **already-closed** PRs and issues
 to catch the follow-ups that were mentioned but never turned into a tracked open
-issue — then offers to file them.
+issue, then offers to file them.
 
 ## When this fires
 
@@ -22,13 +22,9 @@ issue — then offers to file them.
 - Periodically, or after a burst of merges, to make sure nothing promised in a
   review thread or PR body fell on the floor.
 
-Distinct from the forward/single-scope skills:
-
-- **`defer-issue`** files a follow-up at the moment you defer (forward).
-- **`post-merge`** checks deferrals for the **one** PR that just merged.
-- **`wrap-up`** surfaces what's open in the **current session**.
-
-`recover-followups` is the *retroactive, cross-PR sweep* none of those do.
+This is the retroactive, cross-PR sweep that the forward and single-scope skills
+don't do. `defer-issue` files a follow-up at defer-time, `post-merge` checks only
+the one PR that just merged, and `wrap-up` covers only the current session.
 
 ## Procedure
 
@@ -49,14 +45,14 @@ gh repo view --json nameWithOwner --jq .nameWithOwner   # confirm the repo
 The commands below are written for GitHub/`gh`; step 2 also gives the
 GitLab/`glab` equivalents for the data-pull. Steps 3–5 use GitHub field names
 (`stateReason`, `closedByPullRequestsReferences`) that have direct GitLab
-analogues (an MR's `merged` vs `closed` state, an issue's closing MR) — adapt
-them. If the matching CLI isn't installed, say so and stop — don't hit the raw
-API blind.
+analogues (an MR's `merged` vs `closed` state, an issue's closing MR); adapt
+them. If the matching CLI isn't installed, say so and stop, and don't hit the
+raw API blind.
 
 ### 2. Pull the closed items + their discussion
 
 The follow-up promise can live in the body, a comment, or an inline review
-thread — fetch all three.
+thread; fetch all three.
 
 ```bash
 # Closed PRs and issues in the window
@@ -114,8 +110,8 @@ gh pr view <N> --json body,comments,reviews --jq '.body, (.comments[].body), (.r
 
 Keep, for each hit: the **source** (PR/issue # + the comment's `html_url`), the
 **snippet**, and a one-line **suggested issue title**. Discard obvious
-false positives — a `TODO` quoted from code under review, or a follow-up that
-the same thread says was already done.
+false positives, like a `TODO` quoted from code under review, or a follow-up
+that the same thread says was already done.
 
 ### 4. Cross-reference: tracked or untracked?
 
@@ -146,7 +142,7 @@ For each candidate decide whether it's **already tracked**:
 
 ### 5. Report the untracked items
 
-A linked table — never a bare `#N` (repo policy):
+A linked table, never a bare `#N` (repo policy):
 
 | Source | Promised follow-up | Raised in | Suggested issue title |
 |--------|--------------------|-----------|-----------------------|
@@ -154,15 +150,15 @@ A linked table — never a bare `#N` (repo policy):
 
 Order by confidence (explicit `**Deferred**` items first, fuzzy `we should…`
 last). Add the **window you swept** ("last 30 closed PRs + issues") and a
-Pacific-time timestamp (`TZ=America/Los_Angeles date "+%Y-%m-%d %H:%M %Z"` —
-the explicit `TZ` enforces PT on a machine set to any other zone), so the user
-knows the coverage and the "as of when".
+Pacific-time timestamp (`TZ=America/Los_Angeles date "+%Y-%m-%d %H:%M %Z"`; the
+explicit `TZ` enforces PT on a machine set to any other zone), so the user knows
+the coverage and the "as of when".
 
-If the sweep came back empty, say so plainly — don't manufacture candidates.
+If the sweep came back empty, say so plainly; don't manufacture candidates.
 
 ### 6. Offer to file (hand off to `defer-issue`)
 
-Don't auto-file a pile of issues — that breeds duplicates and noise. Present the
+Don't auto-file a pile of issues; that breeds duplicates and noise. Present the
 list, let the user pick which to file, then for each chosen one run the
 **`defer-issue`** flow: it composes the issue with a `Deferred from PR #X`
 context line and a back-reference, checks for a `followup`/`deferred` label, and
