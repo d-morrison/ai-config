@@ -138,7 +138,7 @@ repoint it too. Don't leave a reference resolving to an entry you removed.
 
 ```bash
 python3 scripts/validate-skills.py      # this skill's own frontmatter must pass
-python3 scripts/check-links.py          # no broken relative links / [[links]]
+python3 scripts/check-links.py          # no broken relative links
 ```
 
 Memories live in the ai-config repo — never leave changes local-only. Branch +
