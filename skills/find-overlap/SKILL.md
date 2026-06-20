@@ -23,11 +23,10 @@ allowed-tools:
 
 Find where a corpus says the same thing twice — and change nothing. This is the
 *detection* half of de-duplication, factored out so it's reusable: an action
-skill calls it for its audit (today `consolidate-skills`; a memory-corpus
-`consolidate-memory` is planned — [#97](https://github.com/d-morrison/ai-config/issues/97)),
-and you can run it standalone to ask "what's redundant here?" over any body of
-content. It is to `consolidate-skills` what `pr-status` is to `ardi` — it reports,
-it does not act.
+skill calls it for its audit (`consolidate-skills` for the skills corpus,
+`consolidate-memory` for the memory corpus), and you can run it standalone to ask
+"what's redundant here?" over any body of content. It is to `consolidate-skills`
+what `pr-status` is to `ardi` — it reports, it does not act.
 
 ## When this fires
 
