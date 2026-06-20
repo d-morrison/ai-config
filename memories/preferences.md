@@ -176,6 +176,12 @@
   numbers that came from the analysis (means, counts, p-values, sample sizes) so the
   text never goes stale on re-render. Hard-coded literals are fine for genuine constants
   (a chosen threshold, a year). Example: [ucdavis/bcs#191 review comment r3437005734](https://github.com/ucdavis/bcs/pull/191/changes#r3437005734).
+- Always leave yourself handoff notes proactively when pausing — don't wait to be asked —
+  especially while a long-running job is in flight (SLURM arrays, builds, CI, background
+  tasks, remote agents). Snapshot branch/HEAD, unpushed commits, job IDs + how to check
+  status, expected outputs + paths, backups, open decisions, and the exact pick-up steps
+  into a project memory, and post a paused-state note on any active PR/MR. See the
+  `handoff` and `wait-for-results` skills.
 - Always look for opportunities to create new reusable skills from multi-step processes.
   When a workflow emerges that could be codified, proactively suggest creating a skill for it.
 - When asked to build/create a new skill, FIRST check whether an existing skill should be
@@ -217,3 +223,9 @@
   any single tell is innocent — clustering is the signal. Code, terse status lines, and
   short conversational replies are exempt. This is the scan-after counterpart to the
   plain-prose style above. (see the `find-ai-tells` skill, alias `ai-tells`.)
+- It's always OK to register a repo as a consumer in one of our upstream repos'
+  reverse-dependency list, without asking — e.g. add it to `d-morrison/gha`'s `REVDEPS.md`
+  when a repo starts calling its reusable workflows. Open a small doc-only PR off the
+  upstream's `main`. Applies across our orgs: d-morrison, UCD-SERG, ucdavis, UCLA-PHP,
+  UCD-IDDRC. The REVDEPS list lets us warn consumers before a breaking tag move, so adding
+  is pure upside.

@@ -79,6 +79,16 @@ If the misfire reflects a pattern worth remembering (a recurring over-trigger,
 a phrasing the user favors), hand off to `ums` to persist it, so the next skill
 is authored without the same flaw.
 
+## Relationship to other skills
+
+- **`skill-builder`** — the authoring counterpart; it writes a skill, this skill
+  repairs one after it ships and misfires.
+- **`link-skills`** — the proactive, whole-corpus cross-link audit; `heal-skill`
+  is the single-skill reactive repair, and fixing an ambiguous overlap here
+  means cross-linking the two skills (exactly what `link-skills` sweeps for).
+- **`ums` / `record-learnings`** — hand off to persist a recurring misfire as a
+  remembered lesson, so the next skill is authored without the same flaw.
+
 ## What NOT to do
 
 - Don't delete or disable a skill to "fix" a single misfire — repair the
