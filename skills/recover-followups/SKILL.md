@@ -76,7 +76,9 @@ glab mr list    --closed --per-page 30
 glab issue list --closed --per-page 30
 glab mr view <N> --comments          # body + discussion
 glab issue view <N> --comments
-# inline MR-thread notes, the glab counterpart to `gh api …/pulls/<N>/comments`:
+# inline MR-thread notes, the glab counterpart to `gh api …/pulls/<N>/comments`
+# (`:id` is glab's placeholder for the current repo's project — auto-resolved
+#  when run inside the repo; no numeric ID needed):
 glab api "projects/:id/merge_requests/<N>/notes" --paginate
 ```
 
@@ -101,7 +103,7 @@ grep; `TODO`/`FIXME` may over-match, which the false-positive cull below handles
 
 ```bash
 gh pr view <N> --json body,comments,reviews --jq '.body, (.comments[].body), (.reviews[].body)' \
-  | grep -inE "follow[- ]?up|defer|out of scope|separate (pr|issue)|future pr|TODO|FIXME|we'll need to|let's revisit|leave .* later|down the line|acknowledged"
+  | grep -inE "follow[- ]?up|defer|out of scope|separate (pr|issue)|future pr|another pr|for later|down the line|eventually|TODO|FIXME|we should|we'll need to|should probably|worth doing|let's revisit|i'll open an issue|leave .* later|for the next release|acknowledged"
 ```
 
 Keep, for each hit: the **source** (PR/issue # + the comment's `html_url`), the
