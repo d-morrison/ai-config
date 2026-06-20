@@ -77,14 +77,16 @@ nothing durable emerged, say so explicitly rather than manufacturing edits.
 (UMS commits its own changes via a branch + PR.)
 
 **Guard against recursion: skip this step when the merged PR was itself a
-UMS/learnings PR** (its diff is the memory/skill edits that captured a previous
-PR's lessons) **and no new lessons emerged from its own review loop.** Re-running
-UMS there is redundant — the lessons are already encoded in the PR that just
-merged — and spawns an endless UMS-on-UMS chain (each UMS PR merges → triggers
-post-merge → triggers another UMS PR). Still do steps 1–3 and 5; just don't
+UMS/learnings PR — one whose diff is entirely memory/skill edits capturing a
+previous PR's lessons — and no new lessons emerged from its own review loop.**
+Re-running UMS there is redundant — the lessons are already encoded in the PR
+that just merged — and spawns an endless UMS-on-UMS chain (each UMS PR merges →
+triggers post-merge → triggers another UMS PR). Still do steps 1–3 and 5; just don't
 manufacture a fresh UMS PR. (If the UMS PR's *own* review surfaced a genuinely
 new, separate lesson, capture that — but not a restatement of what the PR
-already banked.)
+already banked. Concretely: a reviewer approving with no comments means nothing
+new, so skip; a reviewer flagging a missing anti-pattern that isn't already in
+the UMS diff is a new lesson worth a follow-up.)
 
 ### 5. Report
 
