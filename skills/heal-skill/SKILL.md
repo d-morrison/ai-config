@@ -86,6 +86,8 @@ is authored without the same flaw.
 - **`link-skills`** — the proactive, whole-corpus cross-link audit; `heal-skill`
   is the single-skill reactive repair, and fixing an ambiguous overlap here
   means cross-linking the two skills (exactly what `link-skills` sweeps for).
+- **`consolidate-skills`** — when two skills have real bodies for the same
+  workflow, that's a merge, not a heal; hand it there.
 - **`ums` / `record-learnings`** — hand off to persist a recurring misfire as a
   remembered lesson, so the next skill is authored without the same flaw.
 

@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-# consolidate-skills
+# consolidate-skills — merge overlapping skills into one canonical + alias stubs
 
 The corpus accretes near-duplicates: two sessions each author a skill for the
 same workflow, or a skill drifts until it overlaps a neighbor. This skill
@@ -170,7 +170,9 @@ then **ARDI to clean** (`ardi`).
 ```bash
 git checkout -b consolidate-<canonical>-skill origin/main
 # write the canonical, overwrite absorbed skills as stubs, fix references
-git add skills/ memories/ CLAUDE.md     # stage only what you touched, not -A
+git add skills/<canonical>/ skills/<absorbed-1>/ skills/<absorbed-2>/   # only the
+# dirs you touched — plus memories/preferences.md and/or CLAUDE.md ONLY if you
+# edited them. Never `git add -A` or a bare `skills/`, which sweeps in unrelated edits.
 git commit -m "skills: consolidate <a>/<b> into <canonical> (+ alias stubs)"
 git push -u origin HEAD && gh pr create --fill
 ```
