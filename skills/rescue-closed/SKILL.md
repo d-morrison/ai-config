@@ -48,7 +48,7 @@ on.
 
 ```bash
 gh issue list --state closed --limit 100 \
-  --json number,title,closedAt,stateReason,labels,comments,url \
+  --json number,title,closedAt,stateReason,labels,url \
   --jq 'sort_by(.closedAt) | reverse
         | .[] | "\(.stateReason // "?")\t#\(.number)\t\(.title)\t\(.url)"'
 ```
@@ -119,7 +119,7 @@ that links the old one, then hand off to `st` / `gi`.
 ```bash
 gh pr reopen <N>
 git fetch origin
-git switch --track origin/<headRefName>   # explicit remote; falls back to
+git switch --track origin/<headRefName>   # explicit remote; on older Git:
                                           # checkout -b <headRefName> origin/<headRefName>
 git merge origin/main                     # resync onto current main; resolve, run checks
 ```
