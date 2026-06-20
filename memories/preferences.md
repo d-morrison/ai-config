@@ -94,7 +94,12 @@
   the MR/PR link so the user can click through immediately.
 - When the user provides general guidance or a new preference, always update BOTH the
   relevant skills AND `/memories/preferences.md`. Skills encode the behavior; preferences
-  ensure it persists and is visible across all contexts.
+  ensure it persists and is visible across all contexts. When the same rule lives in two
+  copies (an expanded one in `CLAUDE.md`, a terse one in `preferences.md`), keep
+  load-bearing qualifiers/caveats consistent across both — the short copy is the one that
+  most easily drops a qualifier and becomes misleading. (Learned on PR #43: the terse
+  pipe-examples bullet dropped the "in R" qualifier that `CLAUDE.md` had, which a reviewer
+  flagged as implying `|>` / `%>%` exist in Python/JS.)
 - After adding or updating skills OR memory files in the ai-config repo, always commit
   and push everything to origin (on the current branch if a PR is already open, or
   create a new branch + PR if the change is out of scope). Never leave ANY changes in
