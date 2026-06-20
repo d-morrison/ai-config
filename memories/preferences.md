@@ -175,4 +175,13 @@
   conjunctions (and/but/so/or) over subordinate constructions. Apply this by default to my
   OWN drafts, not just on request. Keep meaning, scope, and load-bearing hedges exact. When
   PSW and the skill disagree, PSW wins. (see the `use-preferred-style` skill, alias `style`;
-  the `find-ai-tells` detector — not yet built, issue #49 — is the planned scan-after counterpart.)
+  the `find-ai-tells` detector, alias `ai-tells`, is the scan-after counterpart.)
+- Before presenting non-trivial prose I authored (PR/issue descriptions, commit bodies,
+  README/doc/vignette text, long answers meant as deliverable prose), self-check the draft
+  for AI tells and cut them — overused vocabulary (delve, tapestry, testament, robust,
+  seamless…), the "it's not just X, it's Y" antithesis, mechanical rule-of-three lists,
+  hedging stacks, signposting filler ("it's worth noting"), em-dash overuse, bold-leading
+  bullets, emoji headers, promotional register. De-slop, don't ban words or flatten voice;
+  any single tell is innocent — clustering is the signal. Code, terse status lines, and
+  short conversational replies are exempt. This is the scan-after counterpart to the
+  plain-prose style above. (see the `find-ai-tells` skill, alias `ai-tells`.)

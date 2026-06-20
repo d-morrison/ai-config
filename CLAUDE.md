@@ -218,5 +218,30 @@ This is a default, not an absolute rule. Keep a clause or a technical term when
 removing it would lose meaning or precision. Never trade an honest hedge for
 false confidence. The `use-preferred-style` skill (alias `style`) spells out the
 procedure, the PSW chapter links, and a filler/jargon swap table; the
-`find-ai-tells` skill (not yet built — issue #49) is the planned scan-after
-detector counterpart.
+`find-ai-tells` skill (alias `ai-tells`) is the scan-after detector counterpart.
+
+## Writing style: scan for AI tells
+
+The detector counterpart to the plain-prose guide above: write plainly up
+front, then **scan the draft for AI tells before sending**. Before presenting
+non-trivial prose I authored — PR/issue descriptions, commit bodies,
+README/doc/vignette text, or a long answer meant as deliverable prose —
+self-check it and cut the tells. Watch for:
+
+- **Overused vocabulary:** delve, leverage, utilize, tapestry, testament, realm,
+  robust, seamless, holistic, nuanced, multifaceted, pivotal, crucial, "in
+  today's fast-paced world", "stands as a testament to".
+- **Rhetorical reflexes:** the "it's not just X, it's Y" antithesis (the biggest
+  tell), mechanical rule-of-three lists, signposting filler ("it's worth noting
+  that", "importantly"), hedging stacks, hollow "in conclusion" restatements.
+- **Structural/typographic:** em-dash overuse as a default connector,
+  bold-leading `**Term:**` bullets applied mechanically, emoji section headers,
+  conspicuously uniform paragraph rhythm.
+- **Tonal:** promotional register, reflexive both-sidesing, vague universals
+  with no concrete names or numbers.
+
+De-slop — cut the filler and the reflexes — **don't** ban words outright or sand
+the text into a flat, voiceless register. Any single tell is innocent;
+clustering and mechanical repetition are the signal. Code, terse status lines,
+and short conversational replies are exempt. The `find-ai-tells` skill (alias
+`ai-tells`) runs this same catalog on demand against any target text.
