@@ -38,13 +38,17 @@ them into one "OK".
      --jq '.[] | "\(.number)\t\(.headRefName)\t\(.isDraft)\t\(.title)"'
    ```
 
-2. **For each PR, gather three independent signals:**
+2. **For each PR, gather four independent signals:**
 
    - **Latest review verdict** — read the *most recent* review comment and
      parse it for findings (see next section). Do **not** trust an earlier
      cached verdict; a newer review may have landed.
    - **CI state** — `gh pr checks <N>` (note any failing/pending checks by
      name; don't just say "red").
+   - **Unresolved threads** — count open inline review threads via the GraphQL
+     snippet in [`pr-status`](../pr-status/SKILL.md) (*Check thread-resolution
+     state*; the resolve mutation lives in `ard` step 4b). >0 means the PR
+     isn't fully clean even if the review body reads "approved."
    - **Behind main?** — `git fetch origin main -q && git rev-list --count
      <headRefName>..origin/main` (or compare via the API). >0 means main has
      moved ahead and the branch should be synced.
@@ -67,13 +71,15 @@ report as "clean": broaden the filter or flag that no review was found.
 Scan the latest body for any "Findings", "Issues", "Remaining",
 "Non-blocking", "Minor", "Could improve", "Consider", etc. section. The bar for
 **clean**: "Looks good" / "no findings" / "approved" with **zero** follow-on
-bullets under any heading. Anything else is **open** — count the items.
+bullets under any heading. Anything else is **open** — count the items. A
+posted rebuttal the reviewer is still disputing is **open**, not clean: a
+rebuttal only counts once it convinced the reviewer (they dropped the item).
 
 ## Output
 
 A Markdown table, one row per open PR, with these columns:
 
-| PR | Title | Branch | CI | Review | Behind main |
+| PR | Title | Branch | CI | Review | Threads | Behind main |
 
 - **PR** — make the number a bare clickable URL
   (`https://github.com/<owner>/<repo>/pull/<N>`), not plain text, so it's
@@ -82,12 +88,16 @@ A Markdown table, one row per open PR, with these columns:
 - **Review** — `clean`, `N open` (with the headline finding), `none found`
   (filter didn't match / no review yet), or `in-flight` if a review run is
   still going.
+- **Threads** — `resolved` (none open) or `N open` (unresolved inline review
+  threads).
 - **Behind main** — `up to date` or `N commits` (offer `sync-pr-branch`).
 
 Below the table, list each PR's open findings briefly (or "none"), and call out
 anything needing action: branches behind main, failing CI, drafts, or reviews
-that returned `null`. Do **not** label a PR "ready to merge" unless its review
-is genuinely clean *and* CI is green *and* it's not behind main — and never
+that returned `null`. Do **not** label a PR "ready to merge" unless it is
+**fully clean** — its review is genuinely clean *and* all CI workflows are
+green *and* it's not behind main *and* every inline review thread is resolved
+(the only open conversation being the final all-clear and your reply). Never
 hedge with "ready except for one nit."
 
 ## Notes

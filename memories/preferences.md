@@ -14,6 +14,17 @@
 - Always ARDI an open PR/MR to a clean review verdict — don't ask "want me to ARDI it?"
   first, just drive it to clean. (Still don't merge unless asked; "always ardi" means
   always drive to clean, not always merge.)
+- "Fully clean" (the ARDI/iterate terminal state) means BOTH: (1) all CI workflows green
+  (every required check, not just the review job), AND (2) the latest review is totally
+  clean — no nits, and every item not directly Addressed is either Deferred to a tracked
+  issue or Rebutted with a rebuttal that actually CONVINCED the reviewer (they didn't
+  re-raise it). A rebuttal the reviewer still disputes does NOT count as clean. At
+  fully-clean, every INLINE review thread is resolved, and the only open conversation is
+  the final all-clear exchange (the reviewer's all-clear comment and your reply to it).
+- If you and the reviewer(s) can't reach consensus on an item (rebuttal exchanged, neither
+  side budging), escalate to a HUMAN reviewer for the final decision — request `d-morrison`
+  via the `request-pr-review` skill (or `gh pr edit <N> --add-reviewer d-morrison`) and
+  `@`-mention them with the impasse. Don't loop forever and don't unilaterally override.
 - After creating a PR in a remote/web session (where PR-activity subscription is
   available), always subscribe to its CI/review activity (`subscribe_pr_activity`)
   and follow through — autofix CI failures and address review comments per the

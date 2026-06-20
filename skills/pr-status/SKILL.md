@@ -50,12 +50,37 @@ GitHub tools like `mcp__github_ci__get_ci_status` are an alternative where the
 Read the full latest review body and scan for any "Findings", "Issues",
 "Remaining", "Non-blocking", "Minor", "Could improve", "Consider", etc.
 section. The bar for reporting **clean**: "Looks good" / "no findings" /
-"approved" with **zero** follow-on bullets under any heading.
+"approved" with **zero** follow-on bullets under any heading. A posted rebuttal
+the reviewer is still disputing is **open**, not clean — a rebuttal counts only
+once it convinced the reviewer (they dropped the item).
 
-Do **not** report "ready to merge with one minor nit noted" / "harmless
-as-is" / "can address if you want" — that hedging just pushes triage back to
-the user. If there are open items, report them as open (and offer to run
-`iterate` to clear them).
+A PR is only **fully clean / ready to merge** when its review is clean *and*
+all CI workflows are green *and* every inline review thread is resolved (the
+only open conversation being the final all-clear and your reply to it — see
+*Check thread-resolution state* below). Do **not** report "ready to merge with
+one minor nit noted" / "harmless as-is" / "can address if you want" — that
+hedging just pushes triage back to the user. If there are open items, report
+them as open (and offer to run `iterate` to clear them).
+
+## Check thread-resolution state
+
+A clean review *body* isn't the whole bar — unresolved inline threads count as
+open too. Count the unresolved ones via GraphQL:
+
+```bash
+gh api graphql -f query='query {
+  repository(owner:"<owner>", name:"<repo>") {
+    pullRequest(number:<N>) {
+      reviewThreads(first:100) { nodes { isResolved } }
+    }
+  }
+}' --jq '[.data.repository.pullRequest.reviewThreads.nodes[]
+          | select(.isResolved | not)] | length'
+```
+
+A non-zero count means open threads remain — **not** fully clean, even if the
+latest review body reads "approved." (The resolve mutation lives in the `ard`
+skill, step 4b.)
 
 ## Output
 

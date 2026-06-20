@@ -56,7 +56,9 @@ finding → push → post summary → re-request review → repeat until clean.
 
    Then wait for the new verdict.
 
-7. **Repeat from step 2** until the verdict has zero findings.
+7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
+   "fully clean"* below — zero findings **and** all CI workflows green **and**
+   every inline thread resolved). Don't exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
@@ -74,15 +76,37 @@ includes:
 
 The goal is green CI + clean review, not just clean review.
 
-## The bar
+## The bar: "fully clean"
 
-Zero flagged items under any heading. "Looks good" / "no findings" / "approved"
-with no follow-on bullets. Don't stop at "ready with one minor nit."
+The loop ends only at **fully clean**, which means **both**:
 
-## Asymptotic-noise guard
+1. **All CI workflows green** — every required check, not just the review job
+   (see *Fix broken CI/workflows too* above).
+2. **The latest review is totally clean** — zero flagged items under any
+   heading. "Looks good" / "no findings" / "approved" with no follow-on
+   bullets. Every item that wasn't directly **Addressed** is either
+   **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually
+   convinced the reviewer** (they didn't re-raise it on the next round). A
+   rebuttal the reviewer still disputes does **not** count as clean. Don't stop
+   at "ready with one minor nit."
 
-If after 3–4 rounds the reviewer keeps generating new nits (not converging),
-surface that to the user and ask whether to continue or accept.
+**Threads:** at fully-clean, every **inline** review thread is resolved, and
+the only conversation left open is the final all-clear exchange — the
+reviewer's all-clear comment (usually a top-level PR comment, not an inline
+thread) and your reply to it. (Thread mechanics live in the `ard` skill, step
+4b.)
+
+## Asymptotic-noise guard and deadlocks
+
+- **Deadlock on an item:** if you and the reviewer can't reach consensus (your
+  rebuttal didn't convince them, and their re-raise didn't convince you),
+  **escalate to a human reviewer** for the final decision rather than looping or
+  unilaterally overriding. Request `d-morrison` via the `request-pr-review`
+  skill (or `gh pr edit <N> --add-reviewer d-morrison`), `@`-mention them in a
+  comment summarizing the impasse, and surface the open item to the user.
+- **Asymptotic noise:** if after 3–4 rounds the reviewer keeps generating new
+  nits (not converging), surface that to the user and ask whether to continue
+  or accept.
 
 ## On clean
 

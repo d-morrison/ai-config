@@ -125,10 +125,13 @@ For each round:
    comment summarizing what you addressed and how (fixed vs. deferred + issue
    link).
 
-7. **Re-request review (back to step 3) and repeat** until the verdict
+7. **Re-request review (back to step 3) and repeat** until the PR is **fully
+   clean** (see *The bar: "fully clean"* below). That means the verdict
    contains **zero** flagged items under any heading — no "non-blocking",
-   "minor observation", "could improve", etc. "Looks good" / "no findings" /
-   "approved" with no follow-on bullets is the bar.
+   "minor observation", "could improve", etc.; "Looks good" / "no findings" /
+   "approved" with no follow-on bullets — **and** all CI workflows are green
+   **and** every inline thread is resolved. Don't exit on a clean review body
+   alone.
 
 ## Fix broken CI/workflows too
 
@@ -146,18 +149,40 @@ includes:
 
 The goal is green CI + clean review, not just clean review.
 
-## The bar for "clean"
+## The bar: "fully clean"
+
+The loop ends only at **fully clean**, which means **both**:
+
+1. **All CI workflows green** — every required check, not just the review job
+   (see *Fix broken CI/workflows too* above).
+2. **The latest review is totally clean** — nothing flagged under any heading.
+   Every item that wasn't directly **Addressed** is either **Deferred** to a
+   tracked issue or **Rebutted with a rebuttal that actually convinced the
+   reviewer** (they didn't re-raise it on the next round). A rebuttal the
+   reviewer still disputes does **not** count as clean.
+
+**Threads:** at fully-clean, every **inline** review thread is resolved, and
+the only conversation left open is the final all-clear exchange — the
+reviewer's all-clear comment (usually a top-level PR comment, not an inline
+thread) and your reply to it (see the `ard` skill, step 4b, for thread
+mechanics).
 
 Don't stop at, or report, "ready to merge with one minor nit noted" /
 "harmless as-is" / "can address if you want." That hedging just pushes triage
-back to the user. Keep going until there's nothing flagged.
+back to the user.
 
-## Asymptotic-noise guard
+## Asymptotic-noise guard and deadlocks
 
-If after **3–4 rounds** the reviewer keeps generating *new* nits each cycle
-(it's chasing diminishing returns rather than converging), stop and surface
-that to the user: summarize the open items and ask whether to keep going or
-accept the current state. Don't loop forever.
+- **Deadlock on an item:** if you and the reviewer can't reach consensus (your
+  rebuttal didn't convince them, and their re-raise didn't convince you),
+  **escalate to a human reviewer** for the final call rather than looping or
+  unilaterally overriding. Request `d-morrison` via the `request-pr-review`
+  skill (or `gh pr edit <N> --add-reviewer d-morrison`), `@`-mention them with
+  the impasse, and surface the open item to the user.
+- **Asymptotic noise:** if after **3–4 rounds** the reviewer keeps generating
+  *new* nits each cycle (chasing diminishing returns rather than converging),
+  stop and surface that to the user: summarize the open items and ask whether
+  to keep going or accept the current state. Don't loop forever.
 
 ## On clean
 
