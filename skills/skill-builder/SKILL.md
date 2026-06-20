@@ -65,7 +65,7 @@ skills/<name>/SKILL.md
 name: <name>                 # MUST equal the directory name
 description: "<what it does>. Use when asked to '<trigger>', '<trigger>', …"
 user-invocable: true
-allowed-tools:               # include for real skills; omit on thin alias files
+allowed-tools:               # real skill: list its tools. alias: mirror the canonical's list
   - Bash
   - Read
   - Edit
@@ -92,6 +92,11 @@ allowed-tools:               # include for real skills; omit on thin alias files
   name: <alias>
   description: "Alias for `<canonical>`. <one-line>. Use when asked to '<trigger>'."
   user-invocable: true
+  allowed-tools:        # mirror the canonical's allowed-tools exactly
+    - Bash
+    - Read
+    - Edit
+    - Write
   ---
 
   # <alias> (alias for `<canonical>`)
@@ -101,6 +106,9 @@ allowed-tools:               # include for real skills; omit on thin alias files
   → **`~/.claude/skills/<canonical>/SKILL.md`**
   ```
   Keep the real content in **one** canonical file; aliases never duplicate it.
+  The alias's `allowed-tools` is the one exception: copy the canonical's list
+  verbatim so invoking the alias permits exactly what the canonical needs (an
+  alias redirects, so it must not be more restrictive than its target).
 - **Cross-link** related skills under `## Relationship to other skills`.
 - **No registry to update.** Skills are auto-discovered from `skills/` (the
   bootstrap symlink and the plugin root both read the directory) — adding the
