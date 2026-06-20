@@ -148,3 +148,13 @@ The detector counterpart to the plain-prose guide above.
 
 The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand
 against any target text.
+
+## Useful prompt formats for coding agents
+
+<!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
+@shared/vendored/prompt-formats.md
+
+## Review with Copilot before requesting human review
+
+<!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
+@shared/vendored/copilot-review-before-human.md

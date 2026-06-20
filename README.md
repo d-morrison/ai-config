@@ -203,6 +203,21 @@ Conventions for fragments:
 resolve in local CLI sessions; the `@claude` CI bot reads `shared/` from the
 repo root.
 
+### Vendored from the lab manual (`shared/vendored/`)
+
+A few fragments are authored in the **lab manual** instead (prompt formats, the
+Copilot-review workflow). This repo can't add the manual as a submodule — the
+manual already submodules this repo, and a mutual submodule would recurse — so
+it keeps a pinned **copy** under `shared/vendored/`, recorded in
+`shared/vendored/MANIFEST.json` (source repo, per-file commit, and content
+`sha256`). `CLAUDE.md` `@`-imports the copies the same way as any other fragment.
+
+Don't edit the vendored copies here — edit them in the lab manual.
+`scripts/check-vendored-drift.py` (run by `validate.yml`) recomputes each copy's
+hash and fails CI if it stops matching the manifest. A scheduled workflow (via
+`d-morrison/gha`'s `sync-shared-fragments`) refreshes them and opens a PR when
+the upstream files change.
+
 Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.
 
