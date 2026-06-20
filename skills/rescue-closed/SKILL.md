@@ -118,8 +118,10 @@ that links the old one, then hand off to `st` / `gi`.
 
 ```bash
 gh pr reopen <N>
-git fetch origin && git checkout <headRefName>
-git merge origin/main        # resync onto current main; resolve, run checks
+git fetch origin
+git switch --track origin/<headRefName>   # explicit remote; falls back to
+                                          # checkout -b <headRefName> origin/<headRefName>
+git merge origin/main                     # resync onto current main; resolve, run checks
 ```
 
 **PR — branch was deleted:** recreate it from the old diff, then open a fresh PR
