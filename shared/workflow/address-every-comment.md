@@ -7,8 +7,9 @@ For each flagged item, do exactly one of:
 
 1. **Fix it in this PR.** The default path --- most nits are 1--3 line changes.
 2. **Defer to a tracked issue.** Only when the fix expands the PR's scope (new
-   feature, broader refactor, separate concern). File a follow-up issue and
-   reference it in a PR comment so the item isn't lost.
+   feature, broader refactor, separate concern) or the requester has explicitly
+   said this PR shouldn't grow. File a follow-up issue and reference it in a PR
+   comment so the item isn't lost.
 
 Then trigger another review and repeat until the PR is **fully clean** --- zero
 flagged items under any heading, no "non-blocking", "harmless", "minor

@@ -118,7 +118,7 @@ impasse — for the final call rather than looping.
 <!-- Shared with the lab manual; edit shared/workflow/sync-with-main.md, not here. -->
 @shared/workflow/sync-with-main.md
 
-(Another instance of **never assume; always verify** --- `git fetch` to check
+(Another instance of **never assume; always verify** — `git fetch` to check
 main's actual position instead of assuming the branch is current. The
 `sync-pr-branch` / `merge-main` skill runs this.)
 
