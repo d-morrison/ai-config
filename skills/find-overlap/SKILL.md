@@ -123,7 +123,7 @@ that would carry it out:
 other two model real corpus relationships.)
 
 Disposition routing: duplicate skills → `consolidate-skills`; duplicate memories
-→ `consolidate-memory` (planned — [#97](https://github.com/d-morrison/ai-config/issues/97));
+→ `consolidate-memory`;
 adjacent-but-distinct missing a link → `link-skills`; redundant code → `tidy` /
 `simplify`; prose/docs → a manual edit. Always end with a recommendation per
 cluster — a raw similarity list with no disposition just pushes the judgment back
@@ -134,7 +134,7 @@ to the reader.
 - **`consolidate-skills`** — the action counterpart for the skills corpus; it
   delegates its audit to this skill, then merges the genuine-duplicate clusters.
   find-overlap finds; consolidate-skills acts.
-- **`consolidate-memory`** (planned — [#97](https://github.com/d-morrison/ai-config/issues/97)) — the action counterpart for the memory corpus.
+- **`consolidate-memory`** — the action counterpart for the memory corpus.
 - **`link-skills`** — finds the *inverse* (distinct skills that should reference
   each other but don't); hand it the adjacent-but-distinct clusters.
 - **`find-ai-tells`** — sibling read-only scanner over prose, for a different

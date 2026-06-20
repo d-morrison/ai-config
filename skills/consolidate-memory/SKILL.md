@@ -121,18 +121,18 @@ alias stub** — nothing invokes a memory by name, so a removed entry leaves no
 dangling invocation. Only the survivor remains. Never delete a whole memory
 *file* unless consolidation empties it.
 
-### 6. Fix every dangling link
+### 6. Fix every dangling reference
 
-A merged-away entry's topic may be referenced by a `[[link]]` elsewhere. Find
-and repoint them at the canonical:
+A merged-away entry may be referenced elsewhere — by a `[[name]]` cross-link or
+by prose that names it. Grep for every such reference across the memory files
+and skill bodies, then repoint any that pointed at an absorbed entry at the
+surviving canonical:
 
 ```bash
 grep -rn "\[\[" memories/ skills/*/SKILL.md CLAUDE.md 2>/dev/null
 ```
 
-`[[link]]` cross-links resolve to skill directories, so a memory consolidation
-rarely moves a link target — but if an absorbed entry was the anchor for a
-cross-reference in prose, repoint that prose at the surviving entry.
+Don't leave a reference resolving to an entry you removed.
 
 ### 7. Validate, then ship via branch + PR
 
