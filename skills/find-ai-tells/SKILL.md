@@ -1,6 +1,6 @@
 ---
 name: find-ai-tells
-description: "Scan a target text — a file, a PR/MR diff, or pasted prose — for the telltale signs of AI/LLM authorship (overused vocabulary like 'delve'/'tapestry'/'testament', the 'it's not just X, it's Y' antithesis, mechanical rule-of-three lists, hedging stacks, signposting filler, em-dash overuse, bold-leading bullets, emoji headers, promotional register) and report each tell with its location, severity, and a concrete de-slopped revision. ALSO a standing self-check: before presenting non-trivial prose I wrote, scan my OWN draft against this catalog first. Use when asked to 'find AI tells', 'find-ai-tells', 'ai-tells', 'does this sound like AI / ChatGPT', 'de-slop this', 'remove the AI tells', 'make this not sound AI-generated', or 'check if this was written by AI'."
+description: "Scan a target text — a file, a PR/MR diff, or pasted prose — for the telltale signs of AI/LLM authorship (overused vocabulary like 'delve'/'tapestry'/'testament', the 'it's not just X, it's Y' antithesis, mechanical rule-of-three lists, hedging stacks, signposting filler, em-dash overuse, bold-leading bullets, emoji headers, promotional register) and report each tell with its location, severity, and a concrete de-slopped revision. Also a standing self-check: before presenting non-trivial prose I wrote, scan my OWN draft against this catalog first. Use when asked to 'find AI tells', 'find-ai-tells', 'ai-tells', 'does this sound like AI / ChatGPT', 'de-slop this', 'remove the AI tells', 'make this not sound AI-generated', or 'check if this was written by AI'."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -43,13 +43,15 @@ reflexes — **not** to ban words or flatten a real human voice.
    ready-to-run command). This finds the mechanical ones fast and cheaply.
 3. **Second pass, read for the rhetorical and structural tells** that grep can't
    see — antithesis, triads, both-sidesing, hollow conclusions, uniform rhythm.
-4. **Report.** A table — *tell · location (`file:line` or quoted snippet) ·
-   why it reads as AI · suggested revision* — followed by a one-line **density
-   verdict**: is this an isolated word or a pervasive pattern? Don't cry wolf on
-   a single innocent em-dash.
-5. **Offer to apply.** On request, rewrite in place with `Edit`, preserving the
-   author's meaning and voice. When scanning my OWN draft, just fix it silently
-   before presenting — no report needed.
+4. **Report** *(external targets only — skip for the self-check)*. A table —
+   *tell · location (`file:line` or quoted snippet) · why it reads as AI ·
+   suggested revision* — followed by a one-line **density verdict**: is this an
+   isolated word or a pervasive pattern? Don't cry wolf on a single innocent
+   em-dash.
+5. **Offer to apply** *(external targets)* / **just fix it silently**
+   *(self-check)*. For an external target, on request rewrite in place with
+   `Edit`, preserving the author's meaning and voice. When scanning my OWN
+   draft, skip the report (step 4) and simply cut the tells before presenting.
 
 ## The catalog
 
@@ -68,11 +70,13 @@ Reflex vocabulary that LLMs reach for far more than human writers:
   heart of", "when it comes to", "more than just", "stands as a testament to",
   "plays a crucial/pivotal role".
 
-Quick first-pass grep (case-insensitive, prints `file:line`):
+Quick first-pass grep (case-insensitive, prints `file:line`). Define the
+pattern once, then run it through whichever tool is on hand:
 
 ```bash
-rg -niE '\b(delve|leverage|utilize|seamless(ly)?|robust|holistic|nuanced|multifaceted|intricate|tapestry|testament|realm|landscape|beacon|plethora|myriad|pivotal|crucial|paramount|underscore|foster|harness|embark|unlock|elevate|game-?changer|cutting-edge|state-of-the-art|ever-evolving|treasure trove|fast-paced|in the realm of|at the heart of|more than just|shed light|dive in(to)?|deep dive)\b' <target>
-# no ripgrep? swap in:  grep -rniE '<same pattern>' <target>
+tells='delve|leverage|utilize|seamless(ly)?|robust|holistic|nuanced|multifaceted|intricate|tapestry|testament|realm|landscape|beacon|plethora|myriad|pivotal|crucial|paramount|underscore|foster|harness|embark|unlock|elevate|game-?changer|cutting-edge|state-of-the-art|ever-evolving|treasure trove|fast-paced|in the realm of|at the heart of|more than just|shed light|dive in(to)?|deep dive'
+rg -niE "\b($tells)\b" <target>      # ripgrep
+grep -rniE "($tells)" <target>       # no ripgrep — same pattern, via grep
 ```
 
 ### B. Rhetorical tells (sentence-level reflexes)
