@@ -86,13 +86,14 @@
   protected config paths (incl. `CLAUDE.md`, `.claude`, `.mcp.json`, `.gitmodules`,
   `.husky`) back to **PR-tip (HEAD)** before `git add -A`, so it no longer commits
   the reset. A follow-up commit (`78fe7bc`, "honor PR deletions of config files in
-  the residual sweep") keeps legit PR deletions of config files from being reverted.
+  the residual sweep") prevents the sweep from reverting legitimate config-file
+  deletions in the PR.
   Verified on ai-config#41: once the fix landed, the gut stopped recurring (the
   config-edit payload stayed on the branch across later bot runs). Was tracked as
   d-morrison/gha#39.
-- If a repo pins an **older** gha tag (pre-fix), the workaround still applies: the
-  gut showed itself as `claude[bot]` "auto-commit residual @claude session changes"
-  commits that reverted only config paths. Restore the section
+- If a repo pins an **older** gha tag (pre-fix), the workaround still applies. The
+  symptom was `claude[bot]` "auto-commit residual @claude session changes" commits
+  that reverted only config paths. Restore the section
   (`git checkout <my-commit> -- CLAUDE.md`, commit), then before merging verify with
   `git diff origin/main -- CLAUDE.md` being **non-empty** (an empty diff means the
   payload was silently reverted to main), and merge promptly.
