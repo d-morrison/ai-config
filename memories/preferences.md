@@ -167,4 +167,4 @@
   conjunctions (and/but/so/or) over subordinate constructions. Apply this by default to my
   OWN drafts, not just on request. Keep meaning, scope, and load-bearing hedges exact. When
   PSW and the skill disagree, PSW wins. (see the `use-preferred-style` skill, alias `style`;
-  the `find-ai-tells` detector is the scan-after counterpart.)
+  the `find-ai-tells` detector — not yet built, issue #49 — is the planned scan-after counterpart.)
