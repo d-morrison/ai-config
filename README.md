@@ -171,6 +171,37 @@ them.
 - `references/` — reviewed reference material / worked examples (e.g. a cloud
   Setup script). Documentation only: `bootstrap.sh` skips it, so it is **not**
   symlinked into `~/.claude`.
+- `shared/` — single-topic guidance fragments shared with the UCD-SERG lab
+  manual (see below).
+
+## Shared content (`shared/`)
+
+`shared/` holds small, single-topic markdown fragments for guidance that lives
+in **both** this repo and the [UCD-SERG lab
+manual](https://ucd-serg.github.io/lab-manual/) (coding style, writing style,
+PR/agent workflow). Each fragment is the one source of truth for its topic, and
+two consumers pull it in:
+
+- **`CLAUDE.md`** imports it with Claude Code's `@path` syntax (e.g.
+  `@shared/writing/plain-prose.md`). Harness-only specifics (skill names, queue
+  keywords) stay inline in `CLAUDE.md` around the import.
+- **The lab manual** transcludes the same file with `{{< include
+  .ai-config/shared/<area>/<topic>.md >}}` (e.g.
+  `.ai-config/shared/writing/plain-prose.md`), via its `.ai-config` git
+  submodule (this repo). Manual-specific framing stays in the `.qmd` around the
+  include.
+
+Conventions for fragments:
+
+- Write in an **audience-neutral** voice that reads correctly for both a lab
+  member and an agent. Keep first-person and harness/skill references out of the
+  fragment body.
+- Keep them **ASCII** — write `---` for em-dashes and straight quotes — so the
+  lab manual's non-standard-character check passes when it includes them.
+
+`bootstrap.sh` symlinks `shared/` into `~/.claude/`, so `@shared/...` imports
+resolve in local CLI sessions; the `@claude` CI bot reads `shared/` from the
+repo root.
 
 Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.
