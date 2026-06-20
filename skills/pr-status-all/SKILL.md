@@ -1,6 +1,6 @@
 ---
 name: pr-status-all
-description: Print a table summarizing the true status of every open PR in the repo — for each one, read the LATEST review comment (not a cached verdict) and parse it for remaining findings, alongside CI state and whether the branch is behind main. Use when asked "summarize all open PRs", "status table of my PRs", "what's the state of every PR", "give me a PR dashboard", or any whole-queue status overview. For a single PR use `pr-status`; to actually drive PRs to clean use `iterate-all`.
+description: Print a table summarizing the true status of every open PR in the repo — for each one, read the LATEST review comment (not a cached verdict) and parse it for remaining findings, alongside CI state and whether the branch is behind main. Use when asked "summarize all open PRs", "status table of my PRs", "what's the state of every PR", "give me a PR dashboard", or any whole-queue status overview. For a single PR use `pr-status`; to actually drive PRs to clean use `ardia`.
 user-invocable: true
 allowed-tools:
   - Bash
@@ -13,7 +13,7 @@ whole-queue version of [`pr-status`](../pr-status/SKILL.md): apply the same
 "read the **latest** review and parse it for findings" discipline to every
 open PR, then lay the results out as a table. It is **read-only** — it reports
 status, it does not push, merge, or run review loops (use
-[`iterate-all`](../iterate-all/SKILL.md) for that, or
+[`ardia`](../ardia/SKILL.md) for that, or
 [`sync-pr-branch`](../sync-pr-branch/SKILL.md) to update a branch).
 
 ## When this fires

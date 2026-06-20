@@ -40,7 +40,7 @@ Three kinds, roughly in priority order:
    `skills/B/` link), but B's `## Relationship to other skills` never names A.
    The return link is almost always warranted.
 2. **Thematic-cluster gap** — a set of skills clearly belong to one workflow
-   family (e.g. the review/iterate family `iterate` / `ardi` / `iterate-all`,
+   family (e.g. the review/iterate family `ard` / `ardi` / `ardia`,
    the branch/sync family `sync-pr-branch` / `merge-main` / `clean-branches`),
    but some members don't point to the others.
 3. **Missing section** — a *real* skill (one with `allowed-tools:`, not a thin
