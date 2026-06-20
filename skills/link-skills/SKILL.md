@@ -55,7 +55,7 @@ no Relationship section. Judgment decides which candidates are real — this ski
 ### 1. Move to the repo and inventory the skills
 
 ```bash
-cd "$(git -C ~/.claude/skills rev-parse --show-toplevel)"   # the ai-config repo
+cd "$(git -C ~/.claude/skills/link-skills rev-parse --show-toplevel)"   # the ai-config repo
 ls skills/
 ```
 
@@ -150,8 +150,6 @@ through the `.claude/skills` symlink (`git add` rejects the symlinked path).
 - **`heal-skill`** — repairs one skill that misfired (including fixing an
   ambiguous overlap by cross-linking the two); `link-skills` is the proactive,
   whole-corpus sweep rather than a reaction to one failure.
-- **`tidy` / `simplify`** — sibling maintenance passes; prefer collapsing genuine
-  near-duplicates (their job) over linking two skills that should be one.
 - **`request-pr-review`, `ardi`** — ship and clean the resulting PR.
 
 ## Anti-patterns
@@ -160,6 +158,8 @@ through the `.claude/skills` symlink (`git add` rejects the symlinked path).
   just creates the next audit's gap.
 - ❌ Linking every co-mention. A passing reference isn't a relationship; only
   link skills a reader of one would genuinely want to discover from the other.
+- ❌ Cross-linking two skills that are really near-duplicates — that's a merge
+  job for `simplify` / `tidy`, not a link.
 - ❌ Adding a Relationship section to a thin **alias** file — aliases only
   redirect to their canonical.
 - ❌ Trusting the short-name (`st`, `gi`, …) edges without reading the line —

@@ -89,6 +89,16 @@ is authored without the same flaw.
   reviewable.
 - Don't change behavior the user was happy with; only touch what misfired.
 
+## Relationship to other skills
+
+- **`skill-builder`** — the authoring counterpart; it writes a skill, this skill
+  repairs one after it ships and misfires.
+- **`link-skills`** — the proactive, whole-corpus cross-link audit; `heal-skill`
+  is the single-skill reactive repair, and fixing an ambiguous overlap here
+  means cross-linking the two skills (exactly what `link-skills` sweeps for).
+- **`ums` / `record-learnings`** — hand off to persist a recurring misfire as a
+  remembered lesson, so the next skill is authored without the same flaw.
+
 ---
 
 *The idea for this skill (a retrospective "repair the skill that just
