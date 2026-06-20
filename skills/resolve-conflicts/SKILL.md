@@ -66,10 +66,11 @@ go read the history first (step 2).
    git show :3:<file>                    # THEIRS (incoming side)
    ```
    The `:1:`/`:2:`/`:3:` index stages work in any conflicted operation.
-   `git log --merge` is merge-only; for the others, inspect the incoming commit
-   directly via the operation's pseudo-ref — `git show MERGE_HEAD` (merge),
-   `REBASE_HEAD` (rebase), `CHERRY_PICK_HEAD` (cherry-pick), or `REVERT_HEAD`
-   (revert).
+   `git log --merge` is merge-only; for the others, inspect the incoming side
+   directly via the operation's ref — `git show MERGE_HEAD` (merge),
+   `REBASE_HEAD` (rebase), `CHERRY_PICK_HEAD` (cherry-pick), `REVERT_HEAD`
+   (revert), or the kept `stash@{0}` entry for a stash pop
+   (`git stash show -p stash@{0}`).
    Ask: what problem was each side solving? Different features? One refactor +
    one fix? A move/rename vs an in-place edit? The answer dictates the merge.
 
