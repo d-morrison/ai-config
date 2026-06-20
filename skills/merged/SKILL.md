@@ -12,8 +12,11 @@ allowed-tools:
 # merged (alias for `wrap-up`)
 
 This is a **synonym for [`wrap-up`](../wrap-up/SKILL.md)** — invoking `/merged`
-runs the wrap-up procedure unchanged. The one extra affordance is the optional
-PR indication below.
+runs the wrap-up procedure unchanged. The two are fully interchangeable for
+dispatch: any phrasing that fires `wrap-up` ("wrap up", "finish up", "are we
+done?") fires `merged` too, and both run the same procedure. That is why this
+skill's `description` repeats those triggers. The one extra affordance is the
+optional PR indication below.
 
 **Do this:** read `~/.claude/skills/wrap-up/SKILL.md` and follow its
 instructions exactly. Everything that skill says — verify the real state of
@@ -27,7 +30,7 @@ so the two names stay in sync.
 ## Optional: name the PR that just merged
 
 In a multi-PR session, `/merged` can be given a specific PR — e.g. `/merged #74`,
-"merged 74", or "merged the alias PR". Treat that PR as the **anchor** for the
+"merged 74", or "merged the refactor PR". Treat that PR as the **anchor** for the
 wrap-up:
 
 - Confirm its merge actually landed first —
