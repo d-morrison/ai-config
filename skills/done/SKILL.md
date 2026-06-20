@@ -1,6 +1,6 @@
 ---
 name: done
-description: "Alias for `wrap-up`. End-of-session wrap-up: verify the true state of every PR/issue/branch/working tree (never assume), report a linked final summary that surfaces anything still open or dangling, then run a UMS review to persist what was learned. Use when invoked as `/done`, or on 'done', 'all done', 'are we done?', 'wrap up', or 'finish up' to close out a session."
+description: "Alias for `wrap-up`. End-of-session wrap-up: verify the true state of every PR/issue/branch/working tree (never assume), report a linked final summary that surfaces anything still open or dangling, then run a UMS review to persist what was learned. Use when invoked as `/done`, or on 'done', 'all done', 'are we done?', 'wrap up', 'finish up', 'wrap up the session', or 'let's close out' to close out a session."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -12,7 +12,8 @@ allowed-tools:
 # done (alias for `wrap-up`)
 
 This is a **synonym for [`wrap-up`](../wrap-up/SKILL.md)** — invoking `/done`
-runs the wrap-up procedure unchanged. The two are interchangeable for dispatch:
+runs the wrap-up procedure unchanged. The two are fully interchangeable for
+dispatch:
 any phrasing that fires `wrap-up` ("done", "all done", "are we done?", "wrap
 up", "finish up") fires `done` too, and both run the same procedure. That is why
 this skill's `description` repeats those triggers.
