@@ -48,7 +48,7 @@ For each round:
      `@claude review` where the review (or agent) workflow is comment-triggered,
      **or** dispatch the review workflow directly (`workflow_dispatch`).
      - **Don't double-trigger.** If you **just pushed code**, the push already
-       fires the review workflow (e.g. `claude-code-review` on `pull_request`
+       fires the review workflow (e.g. `claude-code-review.yml` on `pull_request`
        sync) — do **NOT** also post `@claude review`. On workflows with
        `concurrency: cancel-in-progress` the two runs cancel each other and the
        latest commit ends up with no posted verdict. Only post `@claude review`
