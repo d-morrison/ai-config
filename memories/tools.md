@@ -122,14 +122,16 @@
 ## Skill command blocks — resolve the ai-config repo root with the per-skill symlink
 - To `cd` to the repo root from inside a skill, use the **per-skill** form
   `git -C ~/.claude/skills/<this-skill> rev-parse --show-toplevel`, never the
-  bare-parent `git -C ~/.claude/skills …`. `bootstrap.sh` may symlink skills
+  bare-parent `git -C ~/.claude/skills rev-parse --show-toplevel`. `bootstrap.sh`
+  may symlink skills
   *per-child* into a real `~/.claude/skills` directory, so the parent isn't a
   symlink into the repo and `git -C` there fails with "not a git repository".
   The `@claude` reviewer enforces the per-skill form on new skills (it flagged
   the bare-parent form on PR #71); `skill-builder` and `ums` already use it.
 - Open issue #36 proposes standardizing on `git -C ~/.claude/skills rev-parse
-  --show-toplevel` (the bare-parent) — its example is the unsafe one; prefer the
-  per-skill form until #36 is reconciled.
+  --show-toplevel` (the bare-parent) — its example is the unreliable one (it can
+  error with "not a git repository", not a security risk); prefer the per-skill
+  form until #36 is reconciled.
 - **Worktree caveat:** the resolved toplevel is the **MAIN** checkout, often on
   another session's branch — don't author files there. Work in your own
   worktree's `skills/<name>/` dir (full rationale in `skill-builder`'s Ship-it
