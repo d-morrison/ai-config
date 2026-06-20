@@ -71,7 +71,7 @@ claims. Pull out, with file + line for each:
 Use the cheapest check that *proves existence or absence*. Match the tool to
 the reference type:
 
-- **File / path** — `test -e PATH`, `git ls-files -- PATH`, `ls`.
+- **File / path** — `test -e <path>`, `git ls-files -- <path>`, `ls`.
 - **Function / object** — grep for the *definition*, not just a mention
   (`grep -rn "fn <- function" R/`); for an exported R fn check `NAMESPACE` /
   `Rscript -e 'library(pkg); exists("fn")'`. Shell command — `command -v`.
@@ -84,7 +84,7 @@ the reference type:
 - **Memory cross-link** — `[[target]]` links resolve to **skill directories**
   (`ls skills/<target>/`); if no matching skill, search memory headings
   (`grep -rn "^# .*<target>" memories/`).
-- **URL / link** — `curl -sSI -o /dev/null -w '%{http_code}' URL` (local) or
+- **URL / link** — `curl -sSI -o /dev/null -w '%{http_code}' <url>` (local) or
   `WebFetch` (remote). **A 404/410 is fabricated; a timeout, 403, 429, or
   DNS failure is *unverifiable*** — distinguish them.
 - **Citation / package** — CRAN: `https://cran.r-project.org/package=<pkg>`;
