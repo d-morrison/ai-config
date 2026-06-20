@@ -82,7 +82,9 @@ is authored without the same flaw.
 ## What NOT to do
 
 - Don't delete or disable a skill to "fix" a single misfire — repair the
-  trigger or body instead, unless the skill is genuinely redundant.
+  trigger or body instead. If a skill is genuinely redundant with another (two
+  real bodies for one workflow), that's a merge, not a heal — hand it to
+  `consolidate-skills`.
 - Don't broaden a description so far that it starts stealing other skills'
   triggers; healing a missed-trigger shouldn't create a false-trigger.
 - Don't make unrelated edits in the same pass — keep the heal minimal and

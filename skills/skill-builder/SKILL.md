@@ -153,6 +153,9 @@ Then, as their own explicit steps (don't leave them buried in a comment):
 - **`request-pr-review`, `ardi`** — used to ship and clean the new skill's PR.
 - **`simplify` / `tidy`** — when extending, prefer collapsing into an existing
   skill over proliferating near-duplicates.
+- **`consolidate-skills`** — when you discover a near-duplicate that already
+  shipped (two real skills for one workflow), hand the cleanup there: it merges
+  them into one canonical skill plus alias stubs.
 
 ## Anti-patterns
 
