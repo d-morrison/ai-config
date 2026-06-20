@@ -154,10 +154,11 @@
 - Keep the bot's `@`-mention trigger phrase OUT of PR/issue comment prose unless you actually
   intend to dispatch. The `issue_comment` trigger fires on the bare mention ANYWHERE in a
   comment — even in a sentence saying you're NOT triggering a review (e.g. an ARD summary noting
-  "not posting [the mention]"). A stray mention spawns a run that, on `cancel-in-progress` setups,
-  cancels the push-triggered review, and (on the d-morrison/gha mention bot) starts a session whose
+  "not posting [the mention]"). A stray mention spawns a run that cancels the push-triggered review
+  on `cancel-in-progress` setups. On the d-morrison/gha mention bot it also starts a session whose
   residual-commit sweep can churn the branch. Refer to it obliquely ("re-request review", "the
-  review-trigger mention") or split the tokens. (Learned the hard way on ai-config#41; ardi/iterate/ard
+  review-trigger mention") or split the tokens (e.g. `@ claude`, with a space). (Learned the hard
+  way on ai-config#41; ardi/iterate/ard
   carry the warning.)
 - In R/Quarto/Rmd prose, prefer inline R expressions (`` `r ...` ``) over hard-coded
   numbers that came from the analysis (means, counts, p-values, sample sizes) so the

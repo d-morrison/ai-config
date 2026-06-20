@@ -58,11 +58,12 @@ finding → push → post summary → re-request review → repeat until clean.
    trigger fires on the bare bot `@`-mention **anywhere** in a comment body —
    even inside a sentence saying you're *not* triggering a review. In ARD
    summaries and status comments, refer to it obliquely ("re-request review",
-   "the review-trigger mention") or split the tokens; paste the literal
-   `@`-mention only when you actually intend to dispatch. A stray mention
-   spawns a run that, on `cancel-in-progress` setups, cancels the
-   push-triggered review, and (on the d-morrison/gha mention bot) starts a
-   session whose residual-commit sweep can churn the branch.
+   "the review-trigger mention") or split the tokens (e.g. `@ claude`, with a
+   space, so the raw body never contains the contiguous handle); paste the
+   literal `@`-mention only when you actually intend to dispatch. A stray mention
+   spawns a run that cancels the push-triggered review on `cancel-in-progress`
+   setups. On the d-morrison/gha mention bot it also starts a session whose
+   residual-commit sweep can churn the branch.
 
    Then wait for the new verdict.
 
