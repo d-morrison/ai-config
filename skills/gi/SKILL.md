@@ -138,6 +138,20 @@ When ARDI completes clean, report:
 
 Don't merge unless asked.
 
+## Concurrent-session collisions
+
+This repo often has many sessions running at once, so another session can open
+a PR that closes "your" issue *after* you started — the claim comment and the
+opening PR-list scan won't catch a PR that didn't exist yet. Re-check right
+before merging (and treat an unexpected merge conflict as a signal):
+
+- Search open/merged PRs for one that already references `Closes #<N>` for your
+  issue (`gh pr list --search "closes #<N>"` / the GitHub `search_pull_requests`
+  tool). If the issue is already closed, don't merge a now-redundant PR blindly.
+- If a sibling PR landed first, sync `main` into your branch and **read the
+  resulting diff** — keep only the parts the sibling missed, drop the
+  duplicates, and reframe the PR (it no longer `Closes #<N>`; it's a follow-up).
+
 ## Handling blocked issues
 
 If during implementation you discover the issue is blocked (missing
@@ -164,3 +178,6 @@ dependency, needs design decision, upstream bug):
   discussing scope with the user first
 - ❌ Implementing without understanding "done" criteria from the issue
 - ❌ Forgetting `Closes #N` in the MR/PR description
+- ❌ Merging without re-checking that a concurrent session's PR hasn't already
+  closed the issue (resolve a surprise merge conflict by reading the diff, not
+  blindly)
