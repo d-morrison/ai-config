@@ -15,10 +15,11 @@ Capture everything the next session (or a context reset) needs to resume this
 work cleanly, then persist it as a **project memory** and — if a PR/MR is in
 play — a paused-state note on the thread.
 
-This is the manual trigger for the standing policy in the
-`proactive-handoff-notes` memory: *always* leave pick-up notes when pausing,
-especially with long-running jobs in flight. Run it on demand, or fire it
-yourself proactively when you're about to pause and something is still running.
+This is the manual trigger for the standing "always leave handoff notes
+proactively when pausing" policy in `memories/preferences.md`: *always* leave
+pick-up notes when pausing, especially with long-running jobs in flight. Run it
+on demand, or fire it yourself proactively when you're about to pause and
+something is still running.
 
 ## When this fires
 
@@ -67,9 +68,9 @@ absolute. Capture, concretely:
 - **Pick-up steps** — a numbered, copy-pasteable sequence to resume. End with a
   one-line "next session, in one line" summary.
 
-Link related memories with `[[name]]` (e.g. `[[proactive-handoff-notes]]`, and
-any runtime-quirk memory the pick-up steps depend on). Then add a one-line
-pointer to `MEMORY.md` (or update the existing one).
+Link related memories with `[[name]]` (e.g. any runtime-quirk memory the
+pick-up steps depend on). Then add a one-line pointer to `MEMORY.md` (or update
+the existing one).
 
 ## Step 3 — Post a paused-state note on the active PR/MR
 
@@ -95,8 +96,9 @@ PR note link, and the one-line pick-up summary. Include a local-time stamp.
 
 ## Relationship to other skills
 
-- `proactive-handoff-notes` memory — the *policy* (when to hand off
-  automatically); this skill is the *action*.
+- `memories/preferences.md` (the "always leave handoff notes proactively"
+  bullet) — the *policy* (when to hand off automatically); this skill is the
+  *action*.
 - `memorize` / `remember` — general fact persistence; `handoff` is the
   specialized "save session state" case.
 - `claim-pr` — owns the claim/unclaim lifecycle; `handoff` posts the *paused*

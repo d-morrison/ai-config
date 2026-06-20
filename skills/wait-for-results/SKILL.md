@@ -46,13 +46,25 @@ Pin down, concretely:
 
 ## Step 3 — Poll on a sensible cadence
 
-Run the wait as a **background** Bash loop so the session stays responsive and
-you're re-invoked when it exits. Pick the cadence to match how fast the state
-actually changes; don't burn cycles polling every few seconds for a multi-hour
-job.
+Pick the waiting mechanism by whether the wait must survive the session ending
+or a context reset:
+
+- **`ScheduleWakeup` (primary for cross-session survival).** Schedule a
+  re-invocation with a cadence matched to the job and a long fallback
+  heartbeat. This is the only mechanism that wakes the model back up *after*
+  the current session has ended, so prefer it whenever the wait may outlive the
+  session.
+- **Background Bash loop (same-session short waits).** Run the poll as a
+  background Bash command so the session stays responsive; the harness
+  re-invokes you when the command exits — but only while *this* session is
+  still alive. If the session has already ended, a finished loop wakes nobody,
+  so don't rely on it to survive a reset.
+
+Either way, match the cadence to how fast the state actually changes; don't
+burn cycles polling every few seconds for a multi-hour job.
 
 ```bash
-# Example: wait for a SLURM array, then verify chunk count
+# Same-session example: wait for a SLURM array, then verify chunk count
 for i in $(seq 1 240); do
   sleep 60
   if [ -z "$(squeue -u "$USER" --name=<job-name> 2>/dev/null | tail -n +2)" ]; then
@@ -60,11 +72,12 @@ for i in $(seq 1 240); do
     break
   fi
 done
+# Fallback: the loop has a silent 4-hour ceiling (240 × 60s). If it exhausted
+# without breaking, the jobs are still running — make that observable.
+if [ "$i" -eq 240 ] && [ -n "$(squeue -u "$USER" --name=<job-name> 2>/dev/null | tail -n +2)" ]; then
+  echo "TIMEOUT: jobs still running after 240 checks — run a fresh handoff and check manually."
+fi
 ```
-
-For work the harness can't notify you about and that you must survive a context
-reset, prefer `ScheduleWakeup` with a cadence matched to the job (and a long
-fallback heartbeat) over a foreground block.
 
 ## Step 4 — On completion, verify then run the follow-up
 
@@ -81,6 +94,7 @@ fallback heartbeat) over a foreground block.
 
 - `handoff` — run first (Step 1) and refreshed at the end; this skill *includes*
   it so the wait is crash-safe.
-- `proactive-handoff-notes` memory — the policy that makes Step 1 mandatory.
+- `memories/preferences.md` (the "always leave handoff notes proactively"
+  bullet) — the policy that makes Step 1 mandatory.
 - `claim-pr` — the paused note posted via `handoff` lives inside an existing
   claim.
