@@ -38,6 +38,9 @@ def check_manifest(manifest_path: Path, errors: list[str]) -> int:
         return 0
     verified = 0
     for entry in files:
+        if not isinstance(entry, dict):
+            errors.append(f"{rel}: 'files' entry is not an object: {entry!r}")
+            continue
         path_str = entry.get("path")
         expected = entry.get("sha256")
         if not path_str or not expected:

@@ -214,9 +214,10 @@ it keeps a pinned **copy** under `shared/vendored/`, recorded in
 
 Don't edit the vendored copies here — edit them in the lab manual.
 `scripts/check-vendored-drift.py` (run by `validate.yml`) recomputes each copy's
-hash and fails CI if it stops matching the manifest. A scheduled workflow (via
-`d-morrison/gha`'s `sync-shared-fragments`) refreshes them and opens a PR when
-the upstream files change.
+hash and fails CI if it stops matching the manifest. A scheduled caller workflow
+that auto-refreshes them — via `d-morrison/gha`'s `sync-shared-fragments`,
+opening a PR when the upstream files change — is a planned follow-up; until it
+lands, refresh the copies by re-running the vendoring by hand.
 
 Add more by creating a top-level dir here (e.g., `agents/`,
 `output-styles/`) and rerunning `bootstrap.sh`.
