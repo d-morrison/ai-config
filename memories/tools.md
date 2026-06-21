@@ -137,6 +137,19 @@
   (`git checkout <my-commit> -- CLAUDE.md`, commit), then before merging verify with
   `git diff origin/main -- CLAUDE.md` being **non-empty** (an empty diff means the
   payload was silently reverted to main), and merge promptly.
+- **Zero-findings dispatch review = no comment (expected).** `claude-code-review.yml`
+  in dispatch/agent mode only posts via the inline-comment tool. When the review finds
+  nothing to flag, it posts nothing — no top-level verdict comment appears on the PR.
+  This does NOT mean the review failed or didn't run; distinguish by checking the
+  job's turn count in the run logs (a live review run has many turns; a skipped or
+  errored run has very few). The old-comment collapse step still runs and minimizes
+  prior review comments even on a zero-findings run.
+- **Self-mod skip in `claude-code-review.yml` (added in gha#70, now in `v1`).** The
+  review workflow skips the review when the PR modifies `.claude/**` paths or the
+  review workflow file itself (derived from `github.workflow_ref`). CI completes in
+  ~48 s without posting a verdict comment. This prevents 401 errors from the
+  App-token exchange during workflow validation of a not-yet-merged workflow file.
+  Not a CI failure — check the job logs for the skip message.
 
 ## AskUserQuestion (Claude Code harness tool)
 - Each entry in `questions[]` **requires a `question` field** (the full question
