@@ -29,13 +29,13 @@ history to understand what decisions were made previously and why.
    **GitHub:**
    ```bash
    gh pr list --state open --limit 100 --json number,title,body \
-     --jq '.[] | select((.body // "") | test("(Closes|Fixes|Resolves) #<N>"; "i")) | "#\(.number) \(.title)"'
+     --jq '.[] | select((.body // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "#\(.number) \(.title)"'
    ```
 
    **GitLab:**
    ```bash
    glab mr list --state opened --per-page=50 --output json 2>/dev/null \
-     | jq -r '.[] | select((.description // "") | test("(Closes|Fixes|Resolves) #<N>"; "i")) | "!\(.iid) \(.title)"'
+     | jq -r '.[] | select((.description // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "!\(.iid) \(.title)"'
    ```
 
    If an open PR already covers the issue, **review or extend it** instead of
