@@ -88,10 +88,9 @@ run **UMS** to capture what the PR's review lifecycle taught — recurring revie
 findings, corrections, and guidance given along the way. A merge is the natural
 checkpoint to bank lessons before the context is lost.
 
-"merge it" as a bare directive (no slash) first merges the current PR (via
-`gh pr merge` if it isn't already merged), then runs the `post-merge` skill.
-If the phrase is clearly part of ordinary prose rather than a standalone
-directive, treat it as such.
+"merge it" as a bare directive (no slash) triggers the `post-merge` skill
+(which verifies the PR is merged before proceeding). If the phrase is clearly
+part of ordinary prose rather than a standalone directive, treat it as such.
 
 ## What "fully clean" means
 
