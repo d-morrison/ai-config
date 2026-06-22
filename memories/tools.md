@@ -64,6 +64,17 @@
 - Can't use `git push --force origin <tag>` on some GitLab instances (protected tags). The delete+recreate pattern always works.
 - `git fetch --tags` silently refuses to update a local tag that already exists if the remote moved it. Use `git fetch --tags --force` to get the latest remote tag positions. Without `--force`, you'll see stale local tags and draw wrong conclusions about what the tag includes.
 
+## Git — scanning for parallel/in-flight work
+- A remote-only scan (`git branch -r`) **misses** work a parallel CLI session is
+  building in an **unpushed local worktree** — the branch exists only locally
+  until that session pushes. Hit PR #67: a sibling skill was caught by a stray
+  system-reminder, not the scan.
+- To find all in-flight work before starting (skill-builder Step 0, deconflict,
+  scout-peers, etc.), run two scans: `git branch -a` for local + remote refs
+  (catches committed-but-unpushed local branches), and the `git worktree list`
+  working trees for *untracked* files that never reached any ref
+  (`git -C <wt> ls-files --others --exclude-standard -- 'skills/'`).
+
 ## Git branch create/reset (`git switch -C`)
 - `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
 - Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` is consumed as the branch name (the required argument to `-C`), so `$BRANCH` is parsed as the start-point instead and the command fails without creating the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)

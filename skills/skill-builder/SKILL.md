@@ -37,17 +37,30 @@ Rule out extending an existing skill *before* scaffolding anything:
    If a skill already covers it, **extend that skill** (a new alias, a new
    section, an extra trigger phrase) rather than adding a near-duplicate.
 
-2. **Scan EVERY branch for in-flight work** — you, another CLI session, or the
-   `@claude` bot may already be adding it:
+2. **Scan EVERY branch AND every local worktree for in-flight work** — you,
+   another CLI session, or the `@claude` bot may already be adding it. A
+   parallel CLI session usually builds its skill in an **unpushed local
+   worktree**, so a remote-only `git branch -r` scan misses it entirely (this
+   hit PR #67 — a sibling skill was caught only by a stray system-reminder, not
+   the scan). Scan local refs *and* the worktree working trees too:
    ```bash
    git fetch origin --prune
-   for b in $(git branch -r --format='%(refname:short)' | grep -v HEAD); do
+   # local + remote branches — NOT just -r; unpushed local branches count:
+   for b in $(git branch -a --format='%(refname:short)' | grep -v HEAD); do
      git ls-tree -r --name-only "$b" | grep -iE "skills/[^/]*<keyword>" \
        | sed "s|^|$b: |"
    done
+   # uncommitted, ref-less work in sibling worktrees — list only UNTRACKED
+   # files, so shipped skills (committed in the main worktree) don't false-match.
+   # Read paths via sed + `while read` (not $(...)/awk $2) so paths with spaces
+   # survive:
+   git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r wt; do
+     git -C "$wt" ls-files --others --exclude-standard -- 'skills/' 2>/dev/null \
+       | grep -iE "skills/[^/]*<keyword>" | sed "s|^|$wt: |"
+   done
    ```
-   If a branch is already building it, **continue that work** (check it out /
-   extend its PR) instead of opening a colliding parallel branch.
+   If a branch or worktree is already building it, **continue that work** (check
+   it out / extend its PR) instead of opening a colliding parallel branch.
 
 3. **Decide explicitly: extend (preferred) or new.** State which and why before
    writing a line. A new alias or section almost always beats a whole new skill.
