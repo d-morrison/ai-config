@@ -41,6 +41,44 @@ Confirm `state == MERGED` and `mergedAt` is set. If it isn't actually merged,
 **stop and report** — don't tidy a branch whose work hasn't landed. (The
 standing **never assume; always verify** rule applied to closing out a PR.)
 
+### 1.5. Cascade conflict scan
+
+A squash-merge on `main` can knock previously-mergeable open PRs into conflict.
+Scan right after the merge is confirmed:
+
+```bash
+gh pr list --state open \
+  --json number,title,headRefName,mergeable,mergeStateStatus,comments
+```
+
+For each PR where `mergeable == "CONFLICTING"`:
+
+1. **Check claim status.** Read the most recent comment. If it says "Working on
+   this — paws off" (or equivalent), skip it — another session owns it.
+2. **Claim it.**
+   ```bash
+   gh pr comment <N> --body "Working on this — paws off until I'm done."
+   ```
+3. **Create an isolated worktree** for the branch and merge `origin/main`:
+   ```bash
+   git fetch origin <branch>
+   git worktree add .claude/worktrees/pr-<N> origin/<branch>
+   # inside the worktree:
+   git checkout -b <branch>   # or --track origin/<branch> if the local name is free
+   git merge origin/main
+   ```
+4. **Resolve conflicts** using the `resolve-conflicts` skill (consolidate both
+   sides' intent; do not blindly pick one side wholesale).
+5. **Run the repo's pre-commit checks**, then push and remove the worktree.
+6. **Unclaim** with a brief resolution summary:
+   ```bash
+   gh pr comment <N> --body "Conflict resolved — branch is now mergeable. <one-line summary of what conflicted and how it was resolved>"
+   ```
+
+Resolve PRs one at a time to avoid write-write races between worktrees on
+shared files. Skip any PR whose conflict is in a file you can't understand
+without more context — comment asking for clarification rather than guessing.
+
 ### 2. Tidy the local branch
 
 ```bash
