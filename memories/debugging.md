@@ -55,6 +55,25 @@ the PR's intent** and check files that merged "cleanly" but belong to this PR
 PR's own invariant (here: the ref-scrub) over files main re-touched, since A may
 have re-introduced exactly what B removed.
 
+## A parallel session can force-push your PR branch out from under you
+On Lacaedemon/sparta#150 another driver (a second `@claude` task, or GitHub's
+"Update with rebase") force-pushed the PR branch three times, each time replacing
+my sync-merge commit with a rebase that dropped my conflict resolutions and
+reverted fixes. Defenses:
+- **Before pushing to a shared PR branch, `git fetch` and check origin's HEAD is
+  still the parent you built on** — don't assume your last push is still HEAD.
+  `git rev-parse HEAD` vs `git rev-parse origin/<branch>`; if they diverged, a
+  parallel session moved it.
+- **When it was force-pushed, reset to origin and re-verify the content** (refs,
+  the specific fixes, demo/metadata) rather than force-pushing your divergent copy
+  back. The rebase may already carry the same correct content — diff it.
+- **If origin's content is already correct, stand down — don't push.** Pushing a
+  divergent merge just restarts the tug-of-war. Reset local to origin and let the
+  review run.
+- **Escalate to the user to settle who drives the PR** once you see repeated
+  force-pushes — that's the claim-pr/parallel-session collision, and one driver
+  should own it.
+
 ## Writing robust bash scripts (recurring review findings)
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
