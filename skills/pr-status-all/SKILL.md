@@ -96,14 +96,14 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    }' --jq '.data.repository.pullRequest.reviewThreads as $rt |
 >      ($rt.nodes | map(select(.isResolved | not)) | length) as $open |
 >      if $rt.totalCount > ($rt.nodes | length)
->      then "\($open)+ open (totalCount \($rt.totalCount); cap reached — may undercount)"
->      else "\($open)"
+>      then "\($open)+ open (cap)"
+>      else if $open == 0 then "resolved" else "\($open) open" end
 >      end'
 >    ```
->    Interpret the output as: `0` = all resolved (clean); a plain non-zero
->    number = that many unresolved threads; a `+`-suffixed string (e.g.
->    `0+ open (totalCount 150; cap reached — may undercount)`) = the 100-thread
->    cap was hit, **cannot confirm clean** — treat as unresolved.
+>    The command emits one of three normalized values: `resolved` (all threads
+>    resolved), `N open` (e.g. `3 open`) — that many unresolved threads, or
+>    `N+ open (cap)` — the 100-thread cap was hit, **cannot confirm clean** —
+>    treat as unresolved.
 > 4. **Behind main?** — fetch the head ref too (a fresh subagent has no local
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.

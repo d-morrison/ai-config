@@ -30,9 +30,9 @@ each to a clean review verdict in series.
      people's PRs unless told to. If unsure who owns what, ask first.
    - If the list is empty, say so and stop — nothing to do.
 
-   **Detect and sort stacked PRs.** Check each PR's `baseRefName`. If any PR
-   targets another open PR's branch (not `main`/`master`/`trunk`), they are
-   stacked. Sort the list so base PRs come before the PRs stacked on them —
+   **Detect and sort stacked PRs.** Check each PR's `baseRefName`. If any PR's
+   `baseRefName` matches another open PR's `headRefName`, they are stacked.
+   Sort the list so base PRs come before the PRs stacked on them —
    process bases first so derived PRs always sit on a clean, reviewed base. Note
    any stack in the scope report:
    ```
