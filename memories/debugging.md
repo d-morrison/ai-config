@@ -7,7 +7,9 @@
   browser the menu never opened: a framework CSS rule (`nav[role=doc-toc]{display:none}`)
   hid the cloned node, and native `<details>` closed-hiding didn't apply either.
   Neither failure is observable without real CSS.
-- Drive a real headless browser. Playwright is installed globally; the chromium
+- Drive a real headless browser. **In the remote/web-session runner** (paths
+  below are that runner's — they differ on a local CLI setup; `which chromium` /
+  `npm root -g` to find yours), Playwright is installed globally; the chromium
   binary is at `/opt/pw-browsers/chromium-*/chrome-linux/chrome` (the
   `/usr/bin/chromium-browser` is a snap stub that won't launch — pass the real
   path as `executablePath`, plus `args:['--no-sandbox']`). Import Playwright by

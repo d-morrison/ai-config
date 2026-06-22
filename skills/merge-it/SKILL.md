@@ -61,6 +61,11 @@ standing yes (see `preferences.md`).
 gh pr merge <N> --squash --subject "<title>" --body "<accurate summary; Closes #N>"
 ```
 
+In remote/web sessions, load the merge tool's schema with `ToolSearch`
+(`select:mcp__github__merge_pull_request`) before the first call to confirm the
+exact name and parameters — the `d-morrison/gha` CLAUDE.md mapping table
+(`tools.md`) is the canonical `gh`→MCP reference.
+
 ### 3. Verify the merge landed — never assume
 
 Confirm `merged == true` (the merge tool's result) and re-check the PR state and
