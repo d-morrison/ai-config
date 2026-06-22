@@ -87,13 +87,22 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    gh api graphql -f query='query {
 >      repository(owner:"<owner>", name:"<repo>") {
 >        pullRequest(number:<N>) {
->          reviewThreads(first:100) { nodes { isResolved } }
+>          reviewThreads(first:100) {
+>            totalCount
+>            nodes { isResolved }
+>          }
 >        }
 >      }
->    }' --jq '[.data.repository.pullRequest.reviewThreads.nodes[]
->              | select(.isResolved | not)] | length'
+>    }' --jq '.data.repository.pullRequest.reviewThreads as $rt |
+>      ($rt.nodes | map(select(.isResolved | not)) | length) as $open |
+>      if $rt.totalCount > ($rt.nodes | length)
+>      then "\($open)+ open (totalCount \($rt.totalCount); cap reached — may undercount)"
+>      else "\($open)"
+>      end'
 >    ```
->    >0 means not fully clean even if the body says "approved".
+>    A result of `"0"` means all threads are resolved. Any other output means
+>    threads are open; a `+` suffix signals the cap was reached and the true
+>    count may be higher.
 > 4. **Behind main?** — fetch the head ref too (a fresh subagent has no local
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.

@@ -71,16 +71,24 @@ open too. Count the unresolved ones via GraphQL:
 gh api graphql -f query='query {
   repository(owner:"<owner>", name:"<repo>") {
     pullRequest(number:<N>) {
-      reviewThreads(first:100) { nodes { isResolved } }
+      reviewThreads(first:100) {
+        totalCount
+        nodes { isResolved }
+      }
     }
   }
-}' --jq '[.data.repository.pullRequest.reviewThreads.nodes[]
-          | select(.isResolved | not)] | length'
+}' --jq '.data.repository.pullRequest.reviewThreads as $rt |
+  ($rt.nodes | map(select(.isResolved | not)) | length) as $open |
+  if $rt.totalCount > ($rt.nodes | length)
+  then "\($open)+ open (totalCount \($rt.totalCount); cap reached — may undercount)"
+  else "\($open)"
+  end'
 ```
 
-A non-zero count means open threads remain — **not** fully clean, even if the
-latest review body reads "approved." (The resolve mutation lives in the `ard`
-skill, step 4b.)
+A result of `"0"` means all threads are resolved — fully clean on this
+dimension. Any other output (a number, or a `+`-suffixed string) means threads
+are open. The `+` suffix signals the cap was reached and the true count may be
+higher. (The resolve mutation lives in the `ard` skill, step 4b.)
 
 ## Output
 

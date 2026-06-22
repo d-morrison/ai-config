@@ -19,7 +19,7 @@ each to a clean review verdict in series.
 1. **List the open PRs/MRs and decide which are in scope.**
    ```bash
    gh pr list --state open --limit 100 \
-     --json number,title,headRefName,isDraft,author,reviewDecision
+     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision
    ```
    (or `glab mr list`). State the scope rules when you report, so the user can
    correct:
@@ -30,13 +30,32 @@ each to a clean review verdict in series.
      people's PRs unless told to. If unsure who owns what, ask first.
    - If the list is empty, say so and stop — nothing to do.
 
+   **Detect and sort stacked PRs.** Check each PR's `baseRefName`. If any PR
+   targets another open PR's branch (not `main`/`master`/`trunk`), they are
+   stacked. Sort the list so base PRs come before the PRs stacked on them —
+   process bases first so derived PRs always sit on a clean, reviewed base. Note
+   any stack in the scope report:
+   ```
+   Stacked PRs detected: #A → #B (process #A first)
+   ```
+   If a circular stack is found (impossible in practice but check anyway),
+   surface it to the user and skip those PRs.
+
    Report the in-scope list (with bare PR URLs) **before** you start, so the
    user can veto any before the loop pushes commits.
 
 2. **For each PR/MR, in series, run ARDI** (the full single-PR loop — see the
    `ardi` skill): claim → sync main → read latest review → ARD every finding →
    push → post summary → re-request review → repeat until fully clean. Don't
-   reimplement that loop here; follow it per PR. Drive each to a terminal state:
+   reimplement that loop here; follow it per PR.
+
+   **For stacked PRs:** the ideal flow is to merge the base PR before starting
+   ARDI on the derived PR. If the base isn't mergeable yet (pending CI, open
+   review findings), complete ARDI on the base first to drive it to clean and
+   merge it, then start the derived PR. Never run ARDI on a derived PR while its
+   base is still open and unclean — you'd be reviewing against a moving target.
+
+   Drive each to a terminal state:
    - **Clean** — zero flagged items under any heading; post the unclaim
      comment, record the round count.
    - **Asymptotic noise** — per ARDI's guard, if after 3–4 rounds the reviewer
