@@ -82,6 +82,22 @@
 - Can't use `git push --force origin <tag>` on some GitLab instances (protected tags). The delete+recreate pattern always works.
 - `git fetch --tags` silently refuses to update a local tag that already exists if the remote moved it. Use `git fetch --tags --force` to get the latest remote tag positions. Without `--force`, you'll see stale local tags and draw wrong conclusions about what the tag includes.
 
+## Git — bump a submodule pin without initializing it
+- To advance a submodule pointer when the submodule isn't checked out (common in
+  a remote/web session, where the configured submodule URL may be unreachable
+  from the sandbox), update the gitlink directly in the index:
+  `git update-index --cacheinfo 160000,<full-sha>,<path>` (e.g.
+  `git update-index --cacheinfo 160000,2d775be...,.ai-config`). Then commit and
+  push; clones and CI resolve the new SHA from the submodule's own remote.
+- The `<full-sha>` must already exist on the submodule's remote, so push or merge
+  it there first or clones can't resolve the pin.
+- `git diff --cached --submodule=log` reports the change as `Submodule <path>
+  <old>...<new> (commits not present)`. The "commits not present" note just means
+  the submodule isn't checked out locally; it is not an error.
+- This is the manual form of what the `bump-ai-config.yml` and `gha`
+  `bump-submodule` workflows do automatically. Use it for a one-off bump (e.g.
+  lab-manual#338 picked up an ai-config reprexes fix this way).
+
 ## Git — scanning for parallel/in-flight work
 - A remote-only scan (`git branch -r`) **misses** work a parallel CLI session is
   building in an **unpushed local worktree** — the branch exists only locally
