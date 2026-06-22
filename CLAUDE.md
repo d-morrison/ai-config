@@ -88,6 +88,9 @@ run **UMS** to capture what the PR's review lifecycle taught — recurring revie
 findings, corrections, and guidance given along the way. A merge is the natural
 checkpoint to bank lessons before the context is lost.
 
+"merge it" as a bare directive (no slash) triggers this same flow: merge the
+current PR if it isn't already merged, then run `post-merge`.
+
 ## What "fully clean" means
 
 <!-- Shared with the lab manual; edit shared/workflow/fully-clean.md, not here. -->
