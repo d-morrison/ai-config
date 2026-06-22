@@ -64,8 +64,8 @@ score_task_complexity() {
     local task_desc="$1"
     local score=0
 
-    if [[ "$task_desc" =~ [Cc]omplex|[Aa]rchitecture|[Dd]eep|[Rr]efactor ]]; then
-        score=$(( score + 2 ))
+    if [[ "$task_desc" =~ [Cc]omplex|[Aa]rchitecture|[Dd]eep|[Rr]efactor|[Dd]esign|[Pp]lan|[Rr]esearch ]]; then
+        score=$(( score + 3 ))
     fi
 
     if [[ "$task_desc" =~ [Rr]eview|[Bb]ug|[Ss]ecurity|[Pp]erformance ]]; then
@@ -74,10 +74,6 @@ score_task_complexity() {
 
     if [[ "$task_desc" =~ [Mm]any|[Ll]arge|[Ww]ide ]]; then
         score=$(( score + 1 ))
-    fi
-
-    if [[ "$task_desc" =~ [Dd]esign|[Pp]lan|[Aa]nalysis|[Rr]esearch ]]; then
-        score=$(( score + 2 ))
     fi
 
     if [[ "$task_desc" =~ [Mm]ulti-step|[Dd]ecompos|[Ss]tep-by-step|[Cc]ompose ]]; then
@@ -108,11 +104,11 @@ get_current_model() {
 recommend_model() {
     local score="$1"
 
-    if [[ "$score" -lt 1 ]]; then
+    if [[ "$score" -le 1 ]]; then
         echo "fable"
-    elif [[ "$score" -lt 2 ]]; then
+    elif [[ "$score" -le 2 ]]; then
         echo "haiku"
-    elif [[ "$score" -lt 4 ]]; then
+    elif [[ "$score" -le 5 ]]; then
         echo "sonnet"
     else
         echo "opus"
