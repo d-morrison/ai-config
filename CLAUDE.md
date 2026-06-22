@@ -105,6 +105,19 @@ open item to me.
 The `ardi` / `iterate` skill family runs this loop. (See *What "fully clean"
 means* above; the mechanics for each step are in the sections around here.)
 
+## Watch and ARDI every PR you open — don't ask first
+
+When you open (or are handed) a PR/MR in **any** repo, subscribe to its activity
+and run the ARDI loop to clean **automatically** — never ask "should I watch
+this?" or "should I iterate it?" first. That answer is a standing yes across all
+PRs and all repos. Subscribe with `mcp__github__subscribe_pr_activity` (or
+babysit locally), drive every review round to fully-clean, and re-arm a periodic
+check-in since webhooks don't deliver CI-success or merge-conflict transitions.
+
+Surface to me only when an item is ambiguous, architecturally significant, or
+deadlocked (the escalation rule above still applies), or when the PR is clean.
+Stop watching only when the PR merges or closes, or I tell you to back off.
+
 ## Address every in-scope review comment, even non-blockers
 
 <!-- Shared with the lab manual; edit shared/workflow/address-every-comment.md, not here. -->
