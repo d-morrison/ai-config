@@ -98,7 +98,7 @@ score_task_complexity() {
 get_current_model() {
     if [[ -f ~/.claude/settings.json ]]; then
         grep -o '"model"[[:space:]]*:[[:space:]]*"[^"]*"' ~/.claude/settings.json 2>/dev/null | \
-            head -1 | cut -d'"' -f4 || echo "unknown"
+            head -1 | cut -d'"' -f4 || echo "${CLAUDE_MODEL:-unknown}"
     else
         # Fall back to env variable if set
         echo "${CLAUDE_MODEL:-unknown}"
@@ -176,7 +176,7 @@ show_executable_mode() {
     echo "**Recommended model:** $(get_model_display_name "$recommended") (estimated)"
     echo ""
 
-    if [[ "$complexity" -lt 2 ]]; then
+    if [[ "$complexity" -lt 2 ]] && [[ "$recommended_tier" -le "$current_tier" ]]; then
         echo -e "${GREEN}✓ Current model is adequate for this task.${NC}"
         echo ""
         echo "The task appears straightforward with minimal reasoning complexity."
