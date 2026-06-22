@@ -204,9 +204,11 @@
 - When adding or changing math (LaTeX/Quarto equations — `$...$`, `$$...$$`,
   `\begin{equation}`, `\(...\)`), always verify it actually RENDERS — open the rendered
   HTML page and confirm the equation displays, not just that the build succeeded. A typo
-  in a macro can silently break MathJax while the build still passes. For rme, check the
-  PR preview, e.g. https://d-morrison.github.io/rme/pr-preview/pr-772/chapters/proportional-hazards-models.html#eq-anchor-45 .
-  (An instance of never-assume; always verify, applied to math.)
+  in a macro can silently break MathJax while the build still passes. For rme, open your
+  PR's preview page — e.g.
+  `https://d-morrison.github.io/rme/pr-preview/pr-<N>/chapters/proportional-hazards-models.html`
+  (the `pr-<N>` previews are per-PR and get deleted when the PR closes, so `<N>` is a
+  placeholder for your PR number). (An instance of never assume; always verify, applied to math.)
 - When a memory, skill, or doc entry points at a location in *another* file, don't cite
   a specific line number — it goes stale the moment that file changes, and a later reader
   who looks it up comes up empty. Quote the section heading or symbol name (e.g. the
