@@ -63,6 +63,22 @@ declaring a PR ready.
 `memories/preferences.md` — confirm the verdict with a fresh query, don't
 recall it.)
 
+## Post in-chat feedback to the PR
+
+When the user gives feedback, corrections, or guidance in the CLI or chat
+while working a PR, paraphrase it and post it as a PR comment:
+
+```
+gh pr comment <N> --body "..."
+```
+
+One to three sentences is enough. Don't quote verbatim — paraphrase so it
+reads naturally in the PR thread. Skip trivial acknowledgments or
+conversational exchanges with nothing to act on.
+
+This makes context visible to future @claude sessions, other reviewers, and
+contributors who only see the PR thread.
+
 ## Claim a GitHub PR/issue before working on it
 
 <!-- Shared with the lab manual; edit shared/workflow/claim-pr.md, not here. -->
