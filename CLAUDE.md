@@ -79,6 +79,13 @@ applies, and the closing/unclaim comment).
 The `st` (Start Task) skill operationalizes this; `gi` (Grab Issue) is the path
 when the issue already exists.
 
+## Tracking issues in upstream repos
+
+<!-- Shared with the lab manual; edit shared/workflow/upstream-issues.md, not here. -->
+@shared/workflow/upstream-issues.md
+
+The `sup` / `send-upstream` skill operationalizes steps 1--2 (the PR path, including fork-if-needed, and the issue path) and the link-back. Step 3 (own-repo fallback) is not covered by `sup`; use `gh issue create` in the current repo and ask the user to transfer it.
+
 ## Wrap up a merged PR with UMS
 
 When a PR/MR you were working on **merges**, run the `post-merge` skill:
