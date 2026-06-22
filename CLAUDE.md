@@ -130,6 +130,25 @@ Surface to me only when an item is ambiguous, architecturally significant, or
 deadlocked (the escalation rule above still applies), or when the PR is clean.
 Stop watching only when the PR merges or closes, or I tell you to back off.
 
+## Post in-chat feedback to the PR
+
+When the user gives feedback, corrections, or guidance in chat during a PR
+session, paraphrase it and post it as a PR comment:
+
+```bash
+gh pr comment <N> --body "..."
+```
+
+Feedback given only in chat is invisible to other reviewers, the `@claude` bot,
+and future contributors. Posting it to the PR thread makes the context durable.
+
+Post: corrections to your approach, scope or design decisions, style guidance,
+and anything that explains why the PR changed direction.
+
+Skip: conversational back-and-forth with no lasting value (clarifying questions,
+simple confirmations), and feedback the user explicitly asks to keep off the
+thread.
+
 ## Address every in-scope review comment, even non-blockers
 
 <!-- Shared with the lab manual; edit shared/workflow/address-every-comment.md, not here. -->
