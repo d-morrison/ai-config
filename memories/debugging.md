@@ -26,6 +26,33 @@
 - Fix: `perl -i -pe 's/\r\n/\n/g' file`, then re-run `bash -n file`.
 - Prevent: add `.gitattributes` with `*.sh text eol=lf`.
 
+## Programmatic comment edits leave punctuation/grammar artifacts
+Recurring across the sparta scrub PRs (Lacaedemon/sparta#150, #152) — removing
+inline content from comments (issue refs like `(#138)`, parentheticals, clauses)
+via sed/scripted passes repeatedly broke the surrounding prose. The reviewer (and
+Copilot) flagged ~6 of these. After any scripted comment edit, **re-audit the
+touched lines** before pushing:
+- **Mid-sentence parenthetical removed → orphaned comma/period.** `# ...the map (#122), before...` → `#, before...`. Fix: move the comma/period up to the end of the prior line.
+- **Line-leading `(#NN).` removed → comment marker + bare punctuation.** `## (#82/#84).` opening a continuation line → `##.`. Fix: end the previous line's sentence and drop the marker-orphan.
+- **Trailing clause/ref removed → dangling text.** `# ... see issue #61.` → `# ... see issue.` (referent gone). Fix: drop the now-meaningless phrase.
+- **Repeated word exposed.** `keyed off the uid (#50): keyed off get_instance_id()` → `...uid: keyed off...`. Fix: reword.
+- Audit greps: `grep -rnE "^\s*#+\s*[.,;:]"` (orphaned leading punctuation),
+  and scan for `see issue\.`, `, #\d+,`, double spaces, broken section-header dashes.
+- The blanket strip patterns that work cleanly: `s/ \(#[0-9]+\)//g` (inline),
+  `s/# #[0-9]+: /# /g` (prefix), `s/, #[0-9]+,/,/g` — but the line-leading and
+  sentence-internal cases need hand edits, not sed.
+
+## Merging main into a sibling PR can silently clobber an un-customized file
+When PR-A merges and you sync sibling PR-B (which touches the same files), a file
+B never customized takes main's (A's) version **with no merge conflict** — so it
+can end up with content describing A's change, not B's. Hit on sparta#152: the
+`demos/demo.json` reason silently became #143's diplomacy text. After such a
+merge, don't just resolve the marked conflicts — **diff the whole merge result vs
+the PR's intent** and check files that merged "cleanly" but belong to this PR
+(demo manifests, PR-specific metadata) still say the right thing. Also re-run the
+PR's own invariant (here: the ref-scrub) over files main re-touched, since A may
+have re-introduced exactly what B removed.
+
 ## Writing robust bash scripts (recurring review findings)
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
