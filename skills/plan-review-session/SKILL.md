@@ -58,13 +58,14 @@ Match the existing chapters — read one first before writing.
 - **Don't** start an included subfile with a heading; one source line per major
   phrase keeps diffs readable.
 
-## Wiring a new chapter in (three places)
+## Wiring a new chapter in
 
-1. `_quarto-book.yml` — add `- chapters/<name>.qmd` under the right part.
-2. `_quarto-website.yml` — add it to the `project: render:` list **and** to the
-   `website: navbar:` Chapters menu.
-3. Keep the chapter out of nowhere-else; a chapter not in the render list won't
-   build on the site.
+1. Add `- chapters/<name>.qmd` to the book's `_quarto.yml` under the right
+   part. (Some books split the config across separate book and website YAMLs —
+   if so, add the chapter to each `project: render:` list **and** to the
+   `website: navbar:` menu.)
+2. A chapter that is not in the render list won't build on the site — don't
+   leave it stranded.
 
 ## Pre-commit checks (mandatory)
 
