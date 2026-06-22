@@ -22,8 +22,8 @@ single just-merged PR rather than the whole session.)
 
 ## When this fires
 
-- "wrap up", "wrap up the session", "finish up", "let's close out", "are we
-  done?"
+- "wrap up", "wrap up the session", "finish up", "let's close out", "done",
+  "all done", "are we done?"
 - The end of a multi-PR / multi-issue session.
 
 ## Procedure
