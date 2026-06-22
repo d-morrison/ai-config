@@ -68,8 +68,9 @@
   `CLAUDE.md` specifically (the "GitHub access in remote / web sessions" table);
   other repos' `CLAUDE.md` (e.g. `ai-config`) do NOT carry it. When a skill or
   doc tells a reader to "use the GitHub MCP tools," name the tools by example
-  (`add_issue_comment`, `create_pull_request`, `search_pull_requests`) rather
-  than pointing at "the repo's `CLAUDE.md` mapping table" — that cross-reference
+  (`mcp__github__add_issue_comment`, `mcp__github__create_pull_request`,
+  `mcp__github__search_pull_requests`) rather than pointing at "the repo's
+  `CLAUDE.md` mapping table" — that cross-reference
   resolves only in gha and reads as a fabricated reference elsewhere. (Caught in
   ai-config#137 review: the gip skill referenced a table ai-config doesn't have.)
 
