@@ -21,7 +21,10 @@ each to a clean review verdict in series.
    gh pr list --state open --limit 100 \
      --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision
    ```
-   (or `glab mr list`). State the scope rules when you report, so the user can
+   On GitLab, use `glab api "projects/:id/merge_requests?state=opened&per_page=100"`
+   and look for `source_branch` (≡ `headRefName`) and `target_branch` (≡ `baseRefName`)
+   in the JSON — `glab mr list` alone does not expose these fields.
+   State the scope rules when you report, so the user can
    correct:
    - **Skip drafts** by default (`isDraft: true`) — they aren't ready for the
      clean-verdict bar. Include one only if the user explicitly asks.
