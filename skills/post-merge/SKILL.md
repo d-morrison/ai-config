@@ -1,6 +1,6 @@
 ---
 name: post-merge
-description: "Wrap up a just-merged PR/MR: verify the merge actually landed (never assume), tidy the local branch (switch to main, pull, delete the merged branch), confirm any deferred follow-up issues are tracked, then run UMS to capture what the PR's review lifecycle taught — mistakes corrected and guidance given along the way. Use right after a PR merges, or when asked to 'post-merge', 'wrap up the merged PR', or 'clean up after the merge'."
+description: "Wrap up a just-merged PR/MR: verify the merge actually landed (never assume), tidy the local branch (switch to main, pull, delete the merged branch), confirm any deferred follow-up issues are tracked, then run UMS to capture what the PR's review lifecycle taught — mistakes corrected and guidance given along the way. Use right after a PR merges, or when asked to 'post-merge', 'wrap up the merged PR', 'clean up after the merge', 'merge it', or 'merge this'."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -20,7 +20,7 @@ review lifecycle is still fresh in context.
 
 - A PR/MR you were working on just merged.
 - "post-merge", "wrap up the merged PR", "clean up after the merge", "the PR
-  merged — now what?"
+  merged — now what?", "merge it", "merge this"
 - Distinct from **`wrap-up`** (session-level, may span several PRs/issues) —
   `post-merge` is the single-PR version, run each time a PR lands.
 
