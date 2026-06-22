@@ -191,7 +191,7 @@
   `origin/<branch>`: sync to the bot's commit and don't redo fixes it already landed. Two
   Claude sessions on one branch is the parallel-session collision `claim-pr`/`session-lock`
   warn about. (ai-config#120: the bot fixed 3 of 4 findings while I worked the same branch.)
-- A reviewer's *suggested fix* (a `suggestion` block or proposed code) — human or bot — can itself be wrong —
+- A *suggested fix* (a `suggestion` block or proposed code) from any reviewer — human or bot — can itself be wrong —
   verify it before applying; don't paste it in blind. Check it handles the general case, not
   just the one flagged spot. If the correct fix differs, apply that and say so in the ARD reply
   so the reviewer sees why you diverged. (ai-config#94 round 2: a suggested regex `[>|][-+]?` would have
