@@ -67,6 +67,13 @@
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
+- **Self-wake to re-check CI in remote/web sessions.** There is no `send_later`
+  tool, and the `Monitor` tool can't reach the GitHub API (no `gh`; the only git
+  remote is a git-only proxy). Since webhooks don't deliver CI *success*, arm a
+  one-shot `Monitor` with `sleep <N>; echo recheck` as a self-check-in timer,
+  then re-poll `mcp__github__pull_request_read` (`get_check_runs`) when it fires;
+  re-arm until the build goes green. (Foreground Bash `sleep` is blocked — the
+  background `Monitor` is the workable timer.) Learned driving rme#929.
 - The `gh`->MCP substitution **mapping table** lives in `d-morrison/gha`'s
   `CLAUDE.md` specifically (the "GitHub access in remote / web sessions" table);
   other repos' `CLAUDE.md` (e.g. `ai-config`) do NOT carry it. When a skill or
@@ -252,3 +259,31 @@
 - System skills (e.g. `claude-api`) may be globally available but have no local
   `skills/<name>/` directory. An absent local dir means ❓ Unverifiable, not
   ❌ Fabricated — check the session's available-skills list before classifying.
+
+## Quarto HTML sites (build & layout gotchas)
+Hit while adding a mobile within-chapter TOC to `d-morrison/rme` (#929); apply to
+any Quarto website (rme, psw, qwt, …).
+- **Single-file `quarto render <file>.qmd` serves cached compiled theme CSS.**
+  Edits to `custom.scss` / theme SCSS may NOT appear in the output — Quarto reuses
+  the cached sass bundle. The tell: the
+  `_site/site_libs/bootstrap/bootstrap-*.min.css` content hash stays identical
+  across renders. Force a recompile by clearing the sass cache and the stale libs
+  first: `rm -rf ~/.cache/quarto/sass _site/site_libs`, then re-render. (A
+  "verified" CSS rule was actually stale until I cleared this.)
+- **The within-chapter "On this page" TOC is hidden on mobile with no built-in
+  replacement.** Quarto's bootstrap hides `#quarto-margin-sidebar` below the `md`
+  breakpoint (`@media (max-width: 767.98px)` in `_bootstrap-rules.scss`). There is
+  no `toc:` option to re-enable it; the `quarto-toc-toggle` "convert TOC to a
+  floating menu" in `quarto.js` is an overlap-avoidance feature for wide screens,
+  not a mobile feature (on a phone the margin sidebar is already `display:none`,
+  so it never fires).
+- **A cloned within-chapter TOC must NOT carry `role="doc-toc"`.** Quarto's mobile
+  CSS includes a bare `nav[role=doc-toc] { display: none }` (inside the `md` media
+  query), so any clone with that role stays hidden even when you mean to show it.
+  Use a plain `<nav aria-label="…">` instead.
+- **Navbar headroom = reveal-on-scroll-up.** Quarto attaches Headroom to
+  `#quarto-header`; on scroll it toggles `sidebar-unpinned` on the header AND on
+  every `.sidebar` / `.headroom-target` element (see `quarto-nav.js`). To make a
+  custom element hide-on-scroll-down / reappear-on-scroll-up in step with the
+  navbar, place it inside `#quarto-header` (it inherits the header's transform) or
+  give it `.headroom-target`. (Used to put a "Contents" TOC button in the navbar.)

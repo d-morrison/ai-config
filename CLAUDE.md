@@ -95,9 +95,13 @@ run **UMS** to capture what the PR's review lifecycle taught — recurring revie
 findings, corrections, and guidance given along the way. A merge is the natural
 checkpoint to bank lessons before the context is lost.
 
-"merge it" and "merge this" as bare directives (no slash) trigger the `post-merge` skill
-(which verifies the PR is merged before proceeding). If the phrase is clearly
-part of ordinary prose rather than a standalone directive, treat it as such.
+"merge it" / "merge this" / "merge the PR" as bare directives (no slash) trigger
+the `merge-it` skill: when the PR isn't merged yet, it merges the ready PR
+(squash by default) **then** chains straight into `post-merge` (tidy + UMS); when
+the PR is already merged it goes directly to `post-merge`. Either way the
+post-merge wrap-up — including the UMS follow-up PR — runs **automatically,
+without asking**. If the phrase is clearly part of ordinary prose rather than a
+standalone directive, treat it as such.
 
 ## What "fully clean" means
 
