@@ -95,7 +95,7 @@ description. The script will analyze complexity, check your current settings,
 recommend the right model, and optionally suggest a config update:
 
 ```
-/select-model I need to refactor a critical payment module with security implications
+/select-model --task "I need to refactor a critical payment module with security implications"
 ```
 
 The script outputs a recommendation and optionally suggests updating `.claude/settings.json`

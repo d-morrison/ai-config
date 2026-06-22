@@ -91,32 +91,32 @@ score_task_complexity() {
 
     # Complexity scoring based on keyword patterns
     if [[ "$task_desc" =~ [Aa]rchitecture|[Dd]esign|[Rr]efactor|[Cc]omplex|[Dd]ecompos ]]; then
-        ((score += 3))
+        score=$(( score + 3 ))
         keywords="$keywords complex-reasoning"
     fi
 
     if [[ "$task_desc" =~ [Ss]ecurity|[Vv]ulnerability|[Ss]ubtle|[Ee]dge.case ]]; then
-        ((score += 3))
+        score=$(( score + 3 ))
         keywords="$keywords security-analysis"
     fi
 
     if [[ "$task_desc" =~ [Rr]eview|[Cc]ode.review|[Qq]uality|[Pp]erformance ]]; then
-        ((score += 2))
+        score=$(( score + 2 ))
         keywords="$keywords code-review"
     fi
 
     if [[ "$task_desc" =~ [Mm]ulti-step|[Mm]ulti-file|[Cc]oordinate|[Ll]arge.scope ]]; then
-        ((score += 2))
+        score=$(( score + 2 ))
         keywords="$keywords multi-step"
     fi
 
     if [[ "$task_desc" =~ [Ss]imple|[Ss]traightforward|[Bb]asic|[Tt]rivial ]]; then
-        ((score -= 2))
+        score=$(( score - 2 ))
         keywords="$keywords simple"
     fi
 
     if [[ "$task_desc" =~ [Qq]uery|[Qq]uestion|[Aa]nswer ]]; then
-        ((score -= 1))
+        score=$(( score - 1 ))
         keywords="$keywords query"
     fi
 
@@ -187,10 +187,14 @@ normalize_model_key() {
 
 show_executable_mode() {
     local task_desc="$1"
-    local current_model=$(get_current_model)
-    local complexity=$(score_task_complexity "$task_desc")
-    local recommended_key=$(recommend_model_by_score "$complexity")
-    local recommended_display=$(get_model_display_name "$recommended_key")
+    local current_model
+    current_model=$(get_current_model)
+    local complexity
+    complexity=$(score_task_complexity "$task_desc")
+    local recommended_key
+    recommended_key=$(recommend_model_by_score "$complexity")
+    local recommended_display
+    recommended_display=$(get_model_display_name "$recommended_key")
 
     echo ""
     echo -e "${BLUE}## Model Recommendation${NC}"
@@ -234,6 +238,7 @@ show_executable_mode() {
 
     # Compare with current model
     if [[ -n "$current_model" ]]; then
+        local current_key
         current_key=$(normalize_model_key "$current_model")
         if [[ "$current_key" == "$recommended_key" ]]; then
             echo -e "${GREEN}✓ Current model matches recommendation.${NC}"

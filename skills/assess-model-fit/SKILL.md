@@ -44,8 +44,7 @@ or **executable mode** (analyze a task and auto-recommend).
      - Context is small (single file, short query)
    - **Escalate to higher model** if you checked yes on any red flag above
 
-4. **If escalation needed,** invoke `select-model` to determine the target:
-   → **`~/.claude/skills/select-model/SKILL.md`**
+4. **If escalation needed,** invoke `/select-model` to determine the target.
 
    Describe your task, and `select-model` will recommend Sonnet or Opus and suggest
    a config update if you want it.
@@ -57,7 +56,7 @@ The script will analyze the task, output an assessment, and if escalation is nee
 automatically call `select-model`:
 
 ```
-/assess-model-fit I need to refactor a large REST API module and add comprehensive unit tests
+/assess-model-fit --task "I need to refactor a large REST API module and add comprehensive unit tests"
 ```
 
 The script reads your current model, evaluates the task complexity, and either gives

@@ -63,32 +63,25 @@ EOF
 score_task_complexity() {
     local task_desc="$1"
     local score=0
-    local flags=()
 
-    # Red flag patterns
     if [[ "$task_desc" =~ [Cc]omplex|[Aa]rchitecture|[Dd]eep|[Rr]efactor ]]; then
-        ((score += 2))
-        flags+=("Complex reasoning detected")
+        score=$(( score + 2 ))
     fi
 
     if [[ "$task_desc" =~ [Rr]eview|[Bb]ug|[Ss]ecurity|[Pp]erformance ]]; then
-        ((score += 2))
-        flags+=("Code review/quality analysis detected")
+        score=$(( score + 2 ))
     fi
 
     if [[ "$task_desc" =~ [Mm]ulti|[Mm]any|[Ll]arge|[Ww]ide ]]; then
-        ((score += 1))
-        flags+=("Large scope detected")
+        score=$(( score + 1 ))
     fi
 
     if [[ "$task_desc" =~ [Dd]esign|[Pp]lan|[Aa]nalysis|[Rr]esearch ]]; then
-        ((score += 2))
-        flags+=("Exploratory/design work detected")
+        score=$(( score + 2 ))
     fi
 
     if [[ "$task_desc" =~ [Mm]ulti-step|[Dd]ecompos|[Ss]tep-by-step|[Cc]ompose ]]; then
-        ((score += 1))
-        flags+=("Multi-step reasoning detected")
+        score=$(( score + 1 ))
     fi
 
     echo "$score"
@@ -120,13 +113,15 @@ recommend_model() {
 
 show_executable_mode() {
     local task_desc="$1"
-    local current_model=$(get_current_model)
-    local complexity=$(score_task_complexity "$task_desc")
-    local recommended=$(recommend_model "$complexity" "$current_model")
+    local current_model
+    current_model=$(get_current_model)
+    local complexity
+    complexity=$(score_task_complexity "$task_desc")
+    local recommended
+    recommended=$(recommend_model "$complexity" "$current_model")
 
     # Normalize model names
     current_model=${current_model#claude-}
-    recommended="claude-${recommended}-"
 
     echo ""
     echo -e "${BLUE}## Model Fit Assessment${NC}"

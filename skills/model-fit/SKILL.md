@@ -15,6 +15,4 @@ allowed-tools:
 same capability: assess whether your current model is sufficient, or recommend
 escalation to a higher-level model.
 
-Read the canonical skill:
-
-→ **`~/.claude/skills/assess-model-fit/SKILL.md`**
+Use `/assess-model-fit` for the full skill documentation and capabilities.
