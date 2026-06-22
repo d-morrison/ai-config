@@ -86,15 +86,14 @@
 - To advance a submodule pointer when the submodule isn't checked out (common in
   a remote/web session, where the configured submodule URL may be unreachable
   from the sandbox), update the gitlink directly in the index:
-  `git update-index --cacheinfo 160000,<full-sha>,<path>` (e.g.
-  `git update-index --cacheinfo 160000,2d775be...,.ai-config`). Then commit and
-  push; clones and CI resolve the new SHA from the submodule's own remote.
+  `git update-index --cacheinfo 160000,<full-sha>,<path>`, then commit and push.
+  Clones and CI resolve the new SHA from the submodule's own remote.
 - The `<full-sha>` must already exist on the submodule's remote, so push or merge
   it there first or clones can't resolve the pin.
 - `git diff --cached --submodule=log` reports the change as `Submodule <path>
   <old>...<new> (commits not present)`. The "commits not present" note just means
   the submodule isn't checked out locally; it is not an error.
-- This is the manual form of what the `bump-ai-config.yml` and `gha`
+- This is the manual form of what lab-manual's `bump-ai-config.yml` and gha's
   `bump-submodule` workflows do automatically. Use it for a one-off bump (e.g.
   lab-manual#338 picked up an ai-config reprexes fix this way).
 
