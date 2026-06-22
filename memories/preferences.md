@@ -184,7 +184,9 @@
   in the same file before pushing. The goal is to minimize back-and-forth rounds.
 - During ARDI loops: only stop iterating (without consensus) if you're at a literal
   impasse — going in circles, redoing and undoing the same changes. Asymptotic new nits
-  each round is NOT an impasse; keep addressing them.
+  each round is NOT an impasse; keep addressing them. After 3–4 rounds of asymptotic
+  noise (new nits appearing each round with no sign of convergence), surface that to
+  the user and ask whether to keep going or accept the current state.
 - Keep the bot's `@`-mention trigger phrase OUT of PR/issue comment prose unless you actually
   intend to dispatch. The `issue_comment` trigger fires on the bare mention ANYWHERE in a
   comment — even in a sentence saying you're NOT triggering a review (e.g. an ARD summary noting
