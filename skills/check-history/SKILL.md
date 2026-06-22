@@ -37,7 +37,7 @@ checks (skipping them wastes a whole issue-pick):
 
   ```bash
   gh pr list --state open --json number,title,headRefName,body \
-    --jq '.[] | select(.body | test("#<N>\\b")) | "#\(.number) \(.title) [\(.headRefName)]"'
+    --jq '.[] | select(((.body // "") | test("#<N>\\b")) or (.title | test("#<N>\\b"))) | "#\(.number) \(.title) [\(.headRefName)]"'
   ```
 
 If an open PR already covers it, **drive that PR to clean** instead of
