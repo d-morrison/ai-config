@@ -27,26 +27,28 @@
 - Prevent: add `.gitattributes` with `*.sh text eol=lf`.
 
 ## Programmatic comment edits leave punctuation/grammar artifacts
-Recurring across the sparta scrub PRs (Lacaedemon/sparta#150, #152) — removing
-inline content from comments (issue refs like `(#138)`, parentheticals, clauses)
-via sed/scripted passes repeatedly broke the surrounding prose. The reviewer (and
-Copilot) flagged ~6 of these. After any scripted comment edit, **re-audit the
+Recurring across the sparta scrub PRs (Lacaedemon/sparta#150, Lacaedemon/sparta#152)
+— removing inline content from comments (issue refs like `(#138)`, parentheticals,
+clauses) via sed/scripted passes repeatedly broke the surrounding prose. The reviewer
+(and Copilot) flagged ~6 of these. After any scripted comment edit, **re-audit the
 touched lines** before pushing:
-- **Mid-sentence parenthetical removed → orphaned comma/period.** `# ...the map (#122), before...` → `#, before...`. Fix: move the comma/period up to the end of the prior line.
+- **Mid-sentence parenthetical removed → orphaned comma/period on the wrapped continuation line.** When the ref opened a continuation line — `# ...launched from the map` / `# (#122), before...` — stripping `(#122)` leaves `# , before...`. Fix: move the comma/period up to the end of the prior line (`# ...launched from the map,` / `# before...`).
 - **Line-leading `(#NN).` removed → comment marker + bare punctuation.** `## (#82/#84).` opening a continuation line → `##.`. Fix: end the previous line's sentence and drop the marker-orphan.
 - **Trailing clause/ref removed → dangling text.** `# ... see issue #61.` → `# ... see issue.` (referent gone). Fix: drop the now-meaningless phrase.
 - **Repeated word exposed.** `keyed off the uid (#50): keyed off get_instance_id()` → `...uid: keyed off...`. Fix: reword.
-- Audit greps: `grep -rnE "^\s*#+\s*[.,;:]"` (orphaned leading punctuation),
-  and scan for `see issue\.`, `, #\d+,`, double spaces, broken section-header dashes.
-- The blanket strip patterns that work cleanly: `s/ \(#[0-9]+\)//g` (inline),
-  `s/# #[0-9]+: /# /g` (prefix), `s/, #[0-9]+,/,/g` — but the line-leading and
-  sentence-internal cases need hand edits, not sed.
+- Audit greps (ERE — `grep -E`): `grep -rnE "^[[:space:]]*#+[[:space:]]*[.,;:]"` (orphaned leading punctuation),
+  and scan for `see issue\.`, `, #[0-9]+,`, double spaces, broken section-header dashes.
+- The blanket strip patterns that work cleanly (with `sed -E` / `sed -r` — they use
+  ERE `+` and groups): `s/ \(#[0-9]+\)//g` (inline), `s/# #[0-9]+: /# /g` (prefix),
+  `s/, #[0-9]+,/,/g` — but the line-leading and sentence-internal cases need hand
+  edits, not sed.
 
 ## Merging main into a sibling PR can silently clobber an un-customized file
 When PR-A merges and you sync sibling PR-B (which touches the same files), a file
-B never customized takes main's (A's) version **with no merge conflict** — so it
-can end up with content describing A's change, not B's. Hit on sparta#152: the
-`demos/demo.json` reason silently became #143's diplomacy text. After such a
+that B never customized takes main's (A's) version **with no merge conflict** — so
+it can end up with content describing A's change, not B's. Hit on Lacaedemon/sparta#152:
+the `demos/demo.json` reason silently became Lacaedemon/sparta#143's diplomacy text.
+After such a
 merge, don't just resolve the marked conflicts — **diff the whole merge result vs
 the PR's intent** and check files that merged "cleanly" but belong to this PR
 (demo manifests, PR-specific metadata) still say the right thing. Also re-run the
