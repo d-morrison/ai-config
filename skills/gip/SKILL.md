@@ -54,8 +54,8 @@ sends everything else back to the serial path.
 Detect the forge (GitHub `gh` / GitLab `glab`) from `git remote get-url origin`
 and note the default branch. Resolve `<owner>/<repo>` once so you can pass it to
 every subagent. In a remote/web session, `gh` may be absent — use the GitHub MCP
-tools instead (e.g. `add_issue_comment`, `create_pull_request`,
-`search_pull_requests`).
+tools instead (e.g. `mcp__github__add_issue_comment`,
+`mcp__github__create_pull_request`, `mcp__github__search_pull_requests`).
 
 ### 1. Enumerate and triage (orchestrator)
 
@@ -116,8 +116,8 @@ and the default branch for each issue:
 >
 > 1. **Claim it** so no one else double-works it: post a brief "Working on this
 >    --- paws off until I'm done." comment on the issue
->    (`gh issue comment <N> --body "..."`, or the MCP `add_issue_comment`
->    equivalent in a remote session).
+>    (`gh issue comment <N> --body "..."`, or the MCP
+>    `mcp__github__add_issue_comment` equivalent in a remote session).
 > 2. **Check history** — before writing code, scan merged/closed PRs that
 >    touched the same area so you don't undo past work or reintroduce a fixed
 >    bug (`gh pr list --state all --search "<keywords>"`). If a past PR already
