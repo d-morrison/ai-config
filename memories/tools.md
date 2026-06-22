@@ -145,11 +145,11 @@
   errored run has very few). The old-comment collapse step still runs and minimizes
   prior review comments even on a zero-findings run.
 - **Self-mod skip in `claude-code-review.yml` (added in gha#70, now in `v1`).** The
-  review workflow skips the review when the PR modifies `.claude/**` paths or the
+  workflow skips when the PR modifies `.claude/**` paths or the
   review workflow file itself (derived from `github.workflow_ref`). CI completes in
   ~48 s without posting a verdict comment. This prevents 401 errors from the
-  App-token exchange during workflow validation of a not-yet-merged workflow file.
-  Not a CI failure — check the job logs for the skip message.
+  App-token exchange during workflow validation of a not-yet-merged workflow file
+  (source: gha#70 PR body). Not a CI failure — check the job logs for the skip message.
 
 ## AskUserQuestion (Claude Code harness tool)
 - Each entry in `questions[]` **requires a `question` field** (the full question
