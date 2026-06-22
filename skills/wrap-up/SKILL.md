@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "End-of-session wrap-up: verify the true state of every PR/issue/branch/working tree (never assume), report a linked final summary that surfaces anything still open or dangling, then run a UMS review to persist what was learned. Use when asked to 'wrap up', 'wrap up the session', 'finish up', 'are we done?', or to close out a multi-PR/issue session."
+description: "End-of-session wrap-up: verify the true state of every PR/issue/branch/working tree (never assume), report a linked final summary that surfaces anything still open or dangling, then run a UMS review to persist what was learned. Use when asked to 'wrap up', 'wrap up the session', 'finish up', 'done', 'all done', 'are we done?', or to close out a multi-PR/issue session."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -22,8 +22,8 @@ single just-merged PR rather than the whole session.)
 
 ## When this fires
 
-- "wrap up", "wrap up the session", "finish up", "let's close out", "are we
-  done?"
+- "wrap up", "wrap up the session", "finish up", "let's close out", "done",
+  "all done", "are we done?"
 - The end of a multi-PR / multi-issue session.
 
 ## Procedure

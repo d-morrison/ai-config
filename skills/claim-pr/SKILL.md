@@ -83,6 +83,14 @@ gh issue comment <N> --body "Done with my local session — unclaiming."
 
 ## Notes
 
+- **Claim an issue you just filed and will implement now, too.** Filing an
+  issue then starting work on it yourself is still a write session. Post the
+  claim (or open and link the PR with `Closes #N`) *promptly* — a parallel
+  issues-sweep session can grab the freshly-filed issue and build a duplicate
+  before your PR shows up. (This exact collision produced a duplicate PR in one
+  session; the claim, or a fast linked PR, makes the sweep skip it. The
+  reciprocal check is `check-history` step 0 — look for an already-open PR
+  before implementing.)
 - If `@claude` agent runs are in flight on the branch, wait for them before
   pushing or polling — don't edit while the bot is mid-session.
 - This is the claim ritual referenced by `ardi` (step 1; aka `iterate`) and

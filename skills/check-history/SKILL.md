@@ -21,6 +21,27 @@ history to understand what decisions were made previously and why.
 
 ## Procedure
 
+0. **Check the issue for an already-open PR.** Before writing any code, look at
+   the issue itself for an open PR that already addresses it (one whose body
+   says `Closes #<N>`). A parallel session — or an issues-sweep run on another
+   machine — may already be on it; building anyway produces a duplicate PR.
+
+   **GitHub:**
+   ```bash
+   gh pr list --state open --limit 100 --json number,title,body \
+     --jq '.[] | select((.body // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "#\(.number) \(.title)"'
+   ```
+
+   **GitLab:**
+   ```bash
+   glab mr list --state opened --per-page=50 --output json 2>/dev/null \
+     | jq -r '.[] | select((.description // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "!\(.iid) \(.title)"'
+   ```
+
+   If an open PR already covers the issue, **review or extend it** instead of
+   opening a competing one. This catches *in-flight* work; the merged/closed
+   history below catches *settled* decisions.
+
 1. **List recent merged MRs** touching the same area:
 
    **GitHub:**
