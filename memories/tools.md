@@ -190,13 +190,19 @@
   (`git checkout <my-commit> -- CLAUDE.md`, commit), then before merging verify with
   `git diff origin/main -- CLAUDE.md` being **non-empty** (an empty diff means the
   payload was silently reverted to main), and merge promptly.
-- **Zero-findings dispatch review = no comment (expected).** `claude-code-review.yml`
-  in dispatch/agent mode only posts via the inline-comment tool. When the review finds
-  nothing to flag, it posts nothing — no top-level verdict comment appears on the PR.
-  This does NOT mean the review failed or didn't run; distinguish by checking the
-  job's turn count in the run logs (a live review run has many turns; a skipped or
-  errored run has very few). The old-comment collapse step still runs and minimizes
-  prior review comments even on a zero-findings run.
+- **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
+  `workflow_dispatch` runs wrote output to the step summary only —
+  `github.event.pull_request.number` is null for dispatch events, so the action's
+  internal post-step failed silently, and the old-comment collapse step then minimized
+  all prior review comments, leaving the PR thread silent. Fixed by a "Post review
+  comment for dispatched run" step that reads the last assistant text from the execution
+  file and posts it via `gh issue comment`. When the review finds no new issues, Claude
+  is prompted to link the most recent prior `claude[bot]` review comment and state it
+  still stands. Execution file extraction (for debugging):
+  ```
+  jq -r '[.[] | select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text] | last // ""' \
+    "${RUNNER_TEMP}/claude-execution-output.json"
+  ```
 - **Self-mod skip in `claude-code-review.yml` (added in gha#70, now in `v1`).** The
   workflow skips when the PR modifies `.claude/**` paths or the
   review workflow file itself (derived from `github.workflow_ref`). CI completes in
