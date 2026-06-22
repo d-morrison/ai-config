@@ -85,42 +85,34 @@ EOF
 score_task_complexity() {
     local task_desc="$1"
     local score=0
-    local keywords=""
 
     # Complexity scoring based on keyword patterns
     if [[ "$task_desc" =~ [Aa]rchitecture|[Dd]esign|[Rr]efactor|[Cc]omplex|[Dd]ecompos ]]; then
         score=$(( score + 3 ))
-        keywords="$keywords complex-reasoning"
     fi
 
     if [[ "$task_desc" =~ [Ss]ecurity|[Vv]ulnerability|[Ss]ubtle|[Ee]dge.case ]]; then
         score=$(( score + 3 ))
-        keywords="$keywords security-analysis"
     fi
 
     if [[ "$task_desc" =~ [Rr]eview|[Cc]ode.review|[Qq]uality|[Pp]erformance ]]; then
         score=$(( score + 2 ))
-        keywords="$keywords code-review"
     fi
 
     if [[ "$task_desc" =~ [Mm]ulti-step|[Mm]ulti-file|[Cc]oordinate|[Ll]arge.scope ]]; then
         score=$(( score + 2 ))
-        keywords="$keywords multi-step"
     fi
 
     if [[ "$task_desc" =~ [Ss]imple|[Ss]traightforward|[Bb]asic|[Tt]rivial ]]; then
         score=$(( score - 2 ))
-        keywords="$keywords simple"
     fi
 
     if [[ "$task_desc" =~ [Qq]uery|[Qq]uestion|[Aa]nswer ]]; then
         score=$(( score - 1 ))
-        keywords="$keywords query"
     fi
 
     if [[ "$task_desc" =~ [Dd]ocument|[Ww]rite.doc|[Cc]omment|[Rr]eadme ]]; then
         score=$(( score + 2 ))
-        keywords="$keywords documentation"
     fi
 
     # Ensure score stays in range [0, 10]
@@ -205,7 +197,7 @@ show_executable_mode() {
     echo -e "${BLUE}## Model Recommendation${NC}"
     echo ""
 
-    if [[ -n "$current_model" ]]; then
+    if [[ "$current_model" != "unknown" ]]; then
         echo "**Current model:** $(get_model_display_name "$current_model")"
     else
         echo "**Current model:** Not configured (will use Claude Code default)"
@@ -242,7 +234,7 @@ show_executable_mode() {
     echo ""
 
     # Compare with current model
-    if [[ -n "$current_model" ]]; then
+    if [[ -n "$current_model" ]] && [[ "$current_model" != "unknown" ]]; then
         local current_key
         current_key=$(normalize_model_key "$current_model")
         if [[ "$current_key" == "$recommended_key" ]]; then
@@ -251,9 +243,6 @@ show_executable_mode() {
             return 0
         else
             echo -e "${YELLOW}Current model differs from recommendation.${NC}"
-            echo ""
-            echo "Consider updating \`~/.claude/settings.json\` to use $recommended_display"
-            echo "for future sessions:"
             echo ""
         fi
     fi
