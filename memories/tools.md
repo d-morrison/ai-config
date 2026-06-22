@@ -55,6 +55,12 @@
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
   `get_check_runs`.
+- `mcp__github__pull_request_read` parameter names are **camelCase** — use
+  `pullNumber`, NOT `pull_number`. Snake_case fails silently or errors.
+- `mcp__github__pull_request_review_write` with `method: resolve_thread`
+  requires **only `threadId`** (node ID, e.g. `PRRT_kwDO...`); `owner`,
+  `repo`, and `pullNumber` are ignored for that method. Thread node IDs come
+  from `get_review_comments`.
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.

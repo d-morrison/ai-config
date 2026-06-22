@@ -87,21 +87,31 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    gh api graphql -f query='query {
 >      repository(owner:"<owner>", name:"<repo>") {
 >        pullRequest(number:<N>) {
->          reviewThreads(first:100) { nodes { isResolved } }
+>          reviewThreads(first:100) {
+>            totalCount
+>            nodes { isResolved }
+>          }
 >        }
 >      }
->    }' --jq '[.data.repository.pullRequest.reviewThreads.nodes[]
->              | select(.isResolved | not)] | length'
+>    }' --jq '.data.repository.pullRequest.reviewThreads as $rt |
+>      ($rt.nodes | map(select(.isResolved | not)) | length) as $open |
+>      if $rt.totalCount > ($rt.nodes | length)
+>      then "\($open)+ open (cap)"
+>      else if $open == 0 then "resolved" else "\($open) open" end
+>      end'
 >    ```
->    >0 means not fully clean even if the body says "approved".
+>    The command emits one of three normalized values: `resolved` (all threads
+>    resolved), `N open` (e.g. `3 open`) — that many unresolved threads, or
+>    `N+ open (cap)` — the 100-thread cap was hit, **cannot confirm clean** —
+>    treat as unresolved.
 > 4. **Behind main?** — fetch the head ref too (a fresh subagent has no local
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.
 >    >0 means main has moved ahead.
 >
 > Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `N open` with the
-> headline finding / `none found` / `in-flight`), threads (`resolved` / `N
-> open`), behind-main (`up to date` / `N commits`).
+> headline finding / `none found` / `in-flight`), threads (`resolved` / `N open`
+> / `N+ open (cap)`), behind-main (`up to date` / `N commits`).
 
 ### 3. Assemble (orchestrator)
 
@@ -150,8 +160,8 @@ A Markdown table, one row per open PR, with these columns:
 - **Review** — `clean`, `N open` (with the headline finding), `none found`
   (filter didn't match / no review yet), or `in-flight` if a review run is
   still going.
-- **Threads** — `resolved` (none open) or `N open` (unresolved inline review
-  threads).
+- **Threads** — `resolved` (none open), `N open` (unresolved inline review
+  threads), or `N+ open (cap)` (100-thread cap hit — cannot confirm clean).
 - **Behind main** — `up to date` or `N commits` (offer `sync-pr-branch`).
 
 Below the table, list each PR's open findings briefly (or "none"), and call out
