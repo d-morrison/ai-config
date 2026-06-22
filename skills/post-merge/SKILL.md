@@ -64,6 +64,25 @@ git worktree remove <path>        # refuses on a dirty tree — don't blindly --
 git branch -d <merged-branch>     # now succeeds
 ```
 
+**Running from within the worktree:** if post-merge fires while the shell is
+inside the worktree being tidied, `git worktree remove <path>` fails ("cannot
+remove the currently checked out worktree") and `git checkout main` is blocked
+(worktrees are locked to their branch). Use the repo root instead:
+
+```bash
+REPO="$(git rev-parse --git-common-dir)/.."             # main checkout root
+git -C "$REPO" worktree remove "$(git rev-parse --show-toplevel)"   # worktree root
+git -C "$REPO" branch -d <merged-branch>
+```
+
+**Diverged main checkout:** `git pull --ff-only` fails when the main checkout
+has local commits from a concurrent session that hasn't been pushed. Don't
+force-merge or reset their work — skip the pull and delete the branch only.
+The branch deletion is what matters; another session will pull main when it's
+ready. If `git branch -d` refuses because local `main` doesn't yet include
+the merge (diverged HEAD, remote branch already deleted), use `git branch -D` —
+step 1 already confirmed the PR is merged, so the force-delete is safe here.
+
 For a repo-wide sweep of *all* dead worktrees (not just this PR's), run
 `clean-worktrees` (`cw`).
 
@@ -128,6 +147,7 @@ PT on a machine set to any other zone).
 
 - ❌ Deleting the branch before confirming the merge actually landed.
 - ❌ Reaching for `git branch -D` (force) without checking why `-d` refused.
+- ❌ Force-pulling or resetting a diverged main checkout — the divergence may be another session's in-progress work. Skip the pull; don't clobber it.
 - ❌ Skipping UMS on a normal PR — the just-merged PR is exactly when the
   lessons are freshest.
 - ❌ Recursing UMS on a UMS PR — running UMS again when the just-merged PR was
