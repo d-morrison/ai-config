@@ -70,8 +70,8 @@ remove the currently checked out worktree") and `git checkout main` is blocked
 (worktrees are locked to their branch). Use the repo root instead:
 
 ```bash
-REPO="$(git rev-parse --git-common-dir)/.."   # main checkout root
-git -C "$REPO" worktree remove "$(pwd)"        # remove this worktree
+REPO="$(git rev-parse --git-common-dir)/.."             # main checkout root
+git -C "$REPO" worktree remove "$(git rev-parse --show-toplevel)"   # worktree root
 git -C "$REPO" branch -d <merged-branch>
 ```
 
