@@ -234,7 +234,7 @@ show_executable_mode() {
     echo ""
 
     # Compare with current model
-    if [[ -n "$current_model" ]] && [[ "$current_model" != "unknown" ]]; then
+    if [[ "$current_model" != "unknown" ]]; then
         local current_key
         current_key=$(normalize_model_key "$current_model")
         if [[ "$current_key" == "$recommended_key" ]]; then
