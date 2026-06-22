@@ -64,11 +64,15 @@ score_task_complexity() {
     local task_desc="$1"
     local score=0
 
-    if [[ "$task_desc" =~ [Cc]omplex|[Aa]rchitecture|[Rr]efactor|[Dd]esign ]]; then
+    if [[ "$task_desc" =~ [Cc]omplex|[Aa]rchitecture|[Rr]efactor|[Dd]esign|[Dd]ecompos ]]; then
         score=$(( score + 3 ))
     fi
 
-    if [[ "$task_desc" =~ [Rr]eview|[Bb]ug|[Ss]ecurity|[Pp]erformance ]]; then
+    if [[ "$task_desc" =~ [Ss]ecurity|[Vv]ulnerability|[Ss]ubtle|[Ee]dge.case ]]; then
+        score=$(( score + 3 ))
+    fi
+
+    if [[ "$task_desc" =~ [Rr]eview|[Bb]ug|[Pp]erformance ]]; then
         score=$(( score + 2 ))
     fi
 
@@ -76,12 +80,12 @@ score_task_complexity() {
         score=$(( score + 1 ))
     fi
 
-    if [[ "$task_desc" =~ [Mm]ulti-step|[Dd]ecompos|[Ss]tep-by-step|[Cc]ompose ]]; then
+    if [[ "$task_desc" =~ [Mm]ulti-step|[Ss]tep-by-step|[Cc]ompose ]]; then
         score=$(( score + 1 ))
     fi
 
     if [[ "$task_desc" =~ [Dd]ocument|[Ww]rite.doc|[Cc]omment|[Rr]eadme ]]; then
-        score=$(( score + 1 ))
+        score=$(( score + 2 ))
     fi
 
     # Clamp to [0, 10]
