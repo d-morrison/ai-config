@@ -87,8 +87,8 @@ rather than manufacturing edits.
 
 ## Notes
 
-- Wrap-up is read-only on PR/issue **state** (it reports) except for the UMS
-  writes (it persists). It does **not** merge PRs — merging stays the user's
-  call unless they ask.
+- Wrap-up reports PR/issue state and, where needed, resolves merge conflicts
+  in unclaimed conflicting PRs (step 1). It does **not** merge PRs — merging
+  stays the user's call unless they ask.
 - This is the session-level bookend to `record-learnings` (continuous) and
   `ums` (the learnings checkpoint, which this embeds as step 4).
