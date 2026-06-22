@@ -1,5 +1,26 @@
 # Debugging notes
 
+## Testing CSS/JS-dependent web features — use a REAL browser, not a DOM stub
+- A hand-rolled DOM shim (or jsdom-style unit test) can PASS while the feature is
+  visibly broken, because it doesn't apply the page's CSS or run the framework's
+  own scripts. On rme#929 a DOM-stub test of a mobile TOC passed, but in a real
+  browser the menu never opened: a framework CSS rule (`nav[role=doc-toc]{display:none}`)
+  hid the cloned node, and native `<details>` closed-hiding didn't apply either.
+  Neither failure is observable without real CSS.
+- Drive a real headless browser. **In the remote/web-session runner** (paths
+  below are that runner's — they differ on a local CLI setup; `which chromium` /
+  `npm root -g` to find yours), Playwright is installed globally; the chromium
+  binary is at `/opt/pw-browsers/chromium-*/chrome-linux/chrome` (the
+  `/usr/bin/chromium-browser` is a snap stub that won't launch — pass the real
+  path as `executablePath`, plus `args:['--no-sandbox']`). Import Playwright by
+  its absolute global path (`/opt/node22/lib/node_modules/playwright/index.js`),
+  which is a CommonJS default export: `import pkg from '…'; const {chromium}=pkg`.
+- Serve the built site over HTTP (`python3 -m http.server` in `_site`) and load
+  `http://localhost:<port>/…` — `file://` blocks the framework's `type=module`
+  scripts (e.g. Quarto's `quarto-nav.js` / `quarto.js`) via CORS, so headroom/nav
+  behavior won't run. Test viewport-specific behavior with `newPage({ viewport })`,
+  and assert computed styles / `offsetHeight` (not just DOM presence).
+
 ## ARDI/iterate: must poll for new review after pushing
 - After pushing fixes during an iterate loop, DON'T declare "clean" based on
   the previous review. A new push triggers a new auto-review.
