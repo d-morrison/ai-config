@@ -1,6 +1,6 @@
 ---
 name: select-model
-description: "Select the appropriate Claude model (Fable, Haiku, Sonnet, Opus) for a task. Analyzes task complexity and recommends the right model tier. Dual-mode: procedural decision tree or executable task analysis with config integration. Reads current settings and suggests updates."
+description: "Select the appropriate Claude model for a task. Use when asked 'which model should I use', 'what model is best for this', 'upgrade to', 'should I switch models', or 'what's the right tier'. Analyzes task complexity and recommends Fable/Haiku/Sonnet/Opus. Dual-mode: procedural decision tree or executable analysis with config guidance."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -98,8 +98,8 @@ recommend the right model, and optionally suggest a config update:
 /select-model --task "I need to refactor a critical payment module with security implications"
 ```
 
-The script outputs a recommendation and optionally suggests updating `.claude/settings.json`
-to use the recommended model for this session.
+The script outputs a recommendation and optionally suggests updating `~/.claude/settings.json`
+to use the recommended model for future sessions.
 
 ## How to use
 

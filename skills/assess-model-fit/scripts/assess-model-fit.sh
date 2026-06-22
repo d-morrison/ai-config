@@ -88,7 +88,6 @@ score_task_complexity() {
 }
 
 get_current_model() {
-    # Try to read from .claude/settings.json
     if [[ -f ~/.claude/settings.json ]]; then
         grep -o '"model"[[:space:]]*:[[:space:]]*"[^"]*"' ~/.claude/settings.json | \
             head -1 | cut -d'"' -f4 || echo "unknown"
@@ -108,6 +107,17 @@ recommend_model() {
     else
         echo "opus"
     fi
+}
+
+model_tier() {
+    local model="$1"
+    case "$model" in
+        fable|fable5|claude-fable-5) echo 0 ;;
+        haiku|claude-haiku*|claude-3-haiku*) echo 1 ;;
+        sonnet|claude-sonnet*|claude-3-sonnet*) echo 2 ;;
+        opus|claude-opus*|claude-3-opus*) echo 3 ;;
+        *) echo -1 ;; # unknown
+    esac
 }
 
 show_executable_mode() {
@@ -130,28 +140,37 @@ show_executable_mode() {
     echo "**Recommended model:** $recommended (estimated)"
     echo ""
 
+    local current_tier
+    current_tier=$(model_tier "$current_model")
+    local recommended_tier
+    recommended_tier=$(model_tier "$recommended")
+
     if [[ "$complexity" -lt 2 ]]; then
         echo -e "${GREEN}✓ Current model is adequate for this task.${NC}"
         echo ""
         echo "The task appears straightforward with minimal reasoning complexity."
         echo "Current model should handle it efficiently."
         echo ""
-        echo "**To confirm:** Run \`/select-model \"$task_desc\"\` for detailed analysis."
+        echo "**To confirm:** Run \`/select-model --task \"$task_desc\"\` for detailed analysis."
+        return 0
+    elif [[ "$recommended_tier" -le "$current_tier" ]]; then
+        echo -e "${GREEN}✓ Current model is adequate for this task.${NC}"
+        echo ""
+        echo "The recommended model ($recommended) is not higher than your current model."
+        echo "No escalation needed."
         return 0
     elif [[ "$complexity" -lt 4 ]]; then
-        echo -e "${YELLOW}⚠ Marginal fit — current model may be borderline.${NC}"
+        echo -e "${YELLOW}⚠ Current model may be borderline for this task.${NC}"
         echo ""
-        echo "The task has moderate complexity. Current model might work,"
-        echo "but success isn't guaranteed. A higher-level model is safer."
+        echo "The task has moderate complexity. A higher model ($recommended) is recommended."
         echo ""
         echo "**Escalating to model selection...**"
         echo ""
         return 1
     else
-        echo -e "${RED}✗ Current model is insufficient for this task.${NC}"
+        echo -e "${RED}✗ Current model is likely insufficient for this task.${NC}"
         echo ""
-        echo "The task requires significant reasoning, code review rigor, or complexity."
-        echo "Current model will struggle. Escalation recommended."
+        echo "The task requires significant reasoning. Escalation to $recommended recommended."
         echo ""
         echo "**Escalating to model selection...**"
         echo ""

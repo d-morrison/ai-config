@@ -120,6 +120,11 @@ score_task_complexity() {
         keywords="$keywords query"
     fi
 
+    if [[ "$task_desc" =~ [Dd]ocument|[Ww]rite.doc|[Cc]omment|[Rr]eadme ]]; then
+        score=$(( score + 1 ))
+        keywords="$keywords documentation"
+    fi
+
     # Ensure score stays in range [0, 10]
     if [[ $score -lt 0 ]]; then score=0; fi
     if [[ $score -gt 10 ]]; then score=10; fi
@@ -248,8 +253,8 @@ show_executable_mode() {
         else
             echo -e "${YELLOW}Current model differs from recommendation.${NC}"
             echo ""
-            echo "Would you like to update \`.claude/settings.json\` to use $recommended_display?"
-            echo "This will change the default model for this session."
+            echo "Consider updating \`~/.claude/settings.json\` to use $recommended_display"
+            echo "for future sessions:"
             echo ""
         fi
     fi
@@ -257,7 +262,7 @@ show_executable_mode() {
     # Show config update suggestion
     echo -e "${CYAN}## Config Update Suggestion${NC}"
     echo ""
-    echo "To use $recommended_display, update your \`.claude/settings.json\`:"
+    echo "To use $recommended_display for future sessions, update \`~/.claude/settings.json\`:"
     echo ""
     echo "Find the \`model\` key:"
     echo "  \`\`\`json"

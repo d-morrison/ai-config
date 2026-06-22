@@ -11,8 +11,7 @@ allowed-tools:
 
 # model-fit (alias for `assess-model-fit`)
 
-`model-fit` is a shorter alias for the `assess-model-fit` skill. Both trigger the
-same capability: assess whether your current model is sufficient, or recommend
-escalation to a higher-level model.
+`model-fit` and `assess-model-fit` are synonyms — same behavior regardless of which
+name you use. Read and follow the canonical skill:
 
-Use `/assess-model-fit` for the full skill documentation and capabilities.
+→ **`/assess-model-fit`**
