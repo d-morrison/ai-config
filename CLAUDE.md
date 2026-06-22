@@ -105,7 +105,7 @@ open item to me.
 The `ardi` / `iterate` skill family runs this loop. (See *What "fully clean"
 means* above; the mechanics for each step are in the sections around here.)
 
-## Watch and ARDI every PR you open — don't ask first
+## Watch and ARDI every PR you touch — don't ask first
 
 When you open (or are handed) a PR/MR in **any** repo, subscribe to its activity
 and run the ARDI loop to clean **automatically** — never ask "should I watch
