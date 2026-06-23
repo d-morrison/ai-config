@@ -292,6 +292,31 @@
   ~48 s without posting a verdict comment. This prevents 401 errors from the
   App-token exchange during workflow validation of a not-yet-merged workflow file
   (source: gha#70 PR body). Not a CI failure — check the job logs for the skip message.
+- **Spurious `is_error=true, subtype=success` review failure (intermittent upstream
+  bug).** The `claude-code-action` occasionally completes a review in a single turn and
+  exits with `is_error=true` + `subtype=success`. The "Fail the check" step in
+  `claude-code-review.yml` catches this and marks the `review / claude-review` job ❌.
+  The review comment may be missing or show only a placeholder ("I'll analyze this and
+  get back to you"). The session ran ~192 s; the prior clean review on the same diff
+  is still valid. Fix: push a trivial commit to trigger a fresh review. Not caused by
+  repo code — the upstream action exits with the wrong code. Observed on gha#92 run
+  #28034977099.
+- **Write accurate `workflow_dispatch` comments when adapting the upstream
+  `claude-code-review.yml` template.** The upstream template says "workflow_dispatch is
+  fired by claude.yml" — but that's only true when the repo's `claude.yml` actually
+  dispatches the review workflow. In repos where `claude.yml` runs `claude-code-action`
+  directly (e.g. qbt), that comment is wrong. When adapting the template, check whether
+  the local `claude.yml` dispatches `claude-code-review.yml`; if not, rewrite the
+  comment to say "workflow_dispatch is a manual re-review from the Actions UI" rather
+  than citing `claude.yml`. The `PR_NUMBER` env comment (was "when claude.yml triggered
+  us") should become "when a manual re-review is triggered." Fixed in rpt#153 and qbt#43.
+- **`grep -qxF` for literal fixed-string line matching in workflow files.** Flags: `-q`
+  = quiet, `-x` = full-line match, `-F` = treat pattern as a fixed string (not a
+  regex). Omitting `-F` makes `.` in file paths (e.g.
+  `.github/workflows/claude-code-review.yml`) act as a regex wildcard, so the selfmod
+  check would match any file with a similar path structure. Use `-qxF` whenever
+  comparing file paths literally. The `selfmod` step in `claude-code-review.yml` uses
+  `grep -qxF` for this reason.
 
 ## AskUserQuestion (Claude Code harness tool)
 - Each entry in `questions[]` **requires a `question` field** (the full question
@@ -399,3 +424,20 @@ common patterns.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
+- **Input-forwarding checklist when adding an input to a gha composite action.**
+  Adding a new `inputs:` entry to `<name>/action.yml` requires four coordinated updates:
+  1. Expose it in the wrapping reusable workflow (`.github/workflows/<name>.yml`) under
+     `on: workflow_call: inputs:`.
+  2. Forward it in the reusable workflow's `uses: d-morrison/gha/<name>@v1` step's
+     `with:` block.
+  3. Update `examples/<name>.yml` (the caller stub) if the input is consumer-visible.
+  4. Update the README table row for `<name>.yml` to list the new input under "Key inputs".
+  Missing any of these leaves the input wired only partway — consumers can't pass it
+  through the reusable workflow even though it exists in the composite. (Caught by
+  Copilot on gha#92: `fail-if-empty` was in the composite but not in README or examples;
+  a separate pre-existing gap — the `fail` input — was filed as gha#93.)
+- **Reusable workflow input descriptions say "workflow run", not "action."** A
+  `workflow_call` wrapper is not a composite action — `inputs:` descriptions should say
+  "Fail the workflow run …" not "Fail the action …". When copying an input description
+  from `action.yml` into the wrapping `workflow_call` file, update "action" → "workflow
+  run". (Fixed in gha#92: `fail-if-empty` description in `check-links.yml`.)
