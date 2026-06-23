@@ -321,7 +321,7 @@ any Quarto website (rme, psw, qwt, …).
 - **`quarto render` auto-modifies `.gitignore`.** On first render, Quarto appends
   `/.quarto/` and `**/*.quarto_ipynb` to `.gitignore`. If `.quarto/` is already
   present, `/.quarto/` is redundant (the unanchored form already covers the root).
-  Remove `/.quarto/` when it appears; keep `**/*.quarto_ipynb`.
+  Remove `/.quarto/` only when `.quarto/` is already present; keep `**/*.quarto_ipynb`.
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
