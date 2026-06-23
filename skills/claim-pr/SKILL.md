@@ -93,6 +93,16 @@ gh issue comment <N> --body "Done with my local session — unclaiming."
   before implementing.)
 - If `@claude` agent runs are in flight on the branch, wait for them before
   pushing or polling — don't edit while the bot is mid-session.
+- **Detecting an already-active parallel session** (so you don't collide):
+  before pushing a fix to a PR you're driving (especially in a long ARDI watch
+  loop), re-fetch and check whether the branch HEAD has advanced **past your
+  last commit**. New commit SHAs you didn't push + review workflows actively
+  re-running = another session (or the author) is driving that branch right
+  now. Back off: do **not** push. Surface the fix to the user and offer to
+  apply it, or hand it to the active session — and wait for an explicit "you
+  take over" before resuming pushes. (Seen repeatedly on rme #772 and #706,
+  where another session was substantially reworking the branch — even adding
+  new content — while a watch session held a one-line diff.)
 - This is the claim ritual referenced by `ardi` (step 1; aka `iterate`) and
   `ardia` (aka `iterate-all`); when those run, they cover the claim for you.
 - On GitLab, **always prefer resolving** the discussion over posting a second

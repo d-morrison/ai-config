@@ -182,6 +182,66 @@
   repo (it's pasted into the web UI), so a SessionStart hook is the only
   in-repo lever to auto-install a toolchain for *that repo's own* sessions.
 
+## R / Quarto (rme etc.) in Claude Code cloud / web sessions
+- The renv library is NOT provisioned at session start (`requireNamespace`
+  returns FALSE for lintr/spelling/rmarkdown). `renv::restore()` from the
+  lockfile's CRAN *source* repo is slow. Instead install only what a given
+  chapter needs, from BINARY repos:
+  - CRAN pkgs → P3M binaries:
+    `options(repos = c(P3M = "https://packagemanager.posit.co/cran/__linux__/noble/latest"))`
+    then `install.packages(...)` (installs into the active renv library; fast).
+  - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
+    has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
+    anywhere reachable, so it blocks full renders of any chapter that does
+    `rmb::hers` / `library(rmb)`.
+  - `igraph` needs system lib `libglpk.so.40` → `apt-get install -y libglpk40`
+    (you're root in these containers). Needed to run `data-raw/callout-graph.R`.
+  - The install routes through **pak** (renv's pak backend), which is ATOMIC:
+    if ONE requested pkg is unavailable (e.g. rmb), the WHOLE transaction rolls
+    back and nothing installs — drop the unavailable pkg and retry. (Holds for
+    `pak::pkg_install()`, and for `install.packages()` while renv's pak backend
+    is active; base `install.packages()` on its own is NOT atomic.)
+- The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
+  clone → `git submodule update --init latex-macros` before any render, else
+  `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
+- In a Quarto **project** (observed on rme), `{{< include >}}` paths for files
+  rendered via a root wrapper resolved from the PROJECT ROOT *in practice* —
+  even for *nested* includes inside subfiles (a `{{< include _root.qmd >}}`
+  inside `_subdir/nested.qmd`, rendered via a root wrapper, picked up `_root.qmd`
+  from the project root, not from `_subdir/`). This is contrary to the Quarto
+  docs' single-document rule ("relative to the file containing the include").
+  One observation can't rule out a confound, and behavior may differ across
+  Quarto versions or project configs — so test; don't assume *either* rule holds
+  without checking. To verify touched subfiles when the full
+  chapter needs an unavailable pkg (rmb): write a minimal wrapper `.qmd` AT THE
+  REPO ROOT that includes `latex-macros/macros.qmd` + the subfiles, loading data
+  manually
+  (`hers <- haven::read_dta(here::here("inst/extdata/hersdata.dta"))`). This
+  checks LaTeX/markdown/cross-refs for edits that don't touch R chunks without
+  provisioning the whole dep tree. Grep the rendered HTML for `?@` / `>??<` to
+  catch broken cross-refs.
+- Chapters that `{{< include r-config.qmd >}}` pull the full ~40-pkg set
+  (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
+  light (math-prereqs needs just plotly).
+
+## GitHub access from bash in remote/web sessions
+- The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
+  GitHub REST API reachable from a Bash/Monitor script. Use `mcp__github__*`
+  tools for any API need.
+- Consequence: you CANNOT poll PR review/CI state from a background Monitor.
+  Rely on `mcp__github__subscribe_pr_activity`, which delivers review comments
+  and CI *failures* — but NOT CI success, new pushes, or merge-conflict
+  transitions. A self-check-in scheduler may be absent: rme's instructions
+  reference `send_later` (from the `claude-code-remote` MCP server), and the
+  harness may expose its own (e.g. `ScheduleWakeup`) — but in this remote rme
+  session ToolSearch surfaced neither, so you can't arm the safety re-poll the
+  watch-guidance suggests. Say so rather than implying it's armed.
+- rme runs TWO review workflows per push: `claude-code-review.yml` (sticky
+  comment, gives the "ready to merge" verdict) and `claude.yml` agent post-step
+  (separate findings). They can DISAGREE — one says clean while the other finds
+  nits. Reconcile BOTH before calling a PR clean; the agent post-step tends to
+  drip 1–2 pre-existing cosmetic nits per round (asymptotic).
+
 ## @claude CI action (d-morrison/gha `claude.yml`)
 - The reusable `claude.yml@v1` agent workflow restores config files (`CLAUDE.md`,
   `.claude/**`) to `origin/main` during its run (`restoreConfigFromBase`), so a
