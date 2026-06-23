@@ -121,6 +121,17 @@
 - `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
 - Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` is consumed as the branch name (the required argument to `-C`), so `$BRANCH` is parsed as the start-point instead and the command fails without creating the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)
 
+## Git — `worktree add` does not cd into the new worktree
+- `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
+  shell in the **original** checkout. Subsequent bare git commands (`git checkout`,
+  `git merge`, etc.) run against the original checkout, not the new worktree.
+- Always follow `git worktree add <path> …` with `cd <path>` before any further
+  git work inside that worktree.
+- When creating a worktree to fix a **conflict caused by a squash-merge on main**,
+  `git fetch origin main <branch>` (both refs) **before** `git worktree add` so
+  the squash commit is present when you merge. Fetching only the PR branch leaves
+  origin/main stale and the merge won't pick up the commit that caused the conflict.
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
@@ -262,9 +273,11 @@
   `test -e <path>` and `curl … URL` → `curl … <url>` in purge-hallucinations.)
 
 ## ai-config memory file structure
-- Memory files (`memories/*.md`) have **no YAML frontmatter** — the file starts
-  directly with a `#` heading. `grep -r "^name:" memories/` always returns empty;
-  don't use frontmatter fields to locate or identify a memory file.
+- Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
+  `description`, `metadata`) — e.g. `memories/repo/sparta.md` — while older ones
+  start directly with a `#` heading. Don't assume either form: `grep -rn "^name:"
+  memories/` finds the frontmatter'd files, and a file without it is still valid.
+  Preserve whatever frontmatter a file already has rather than stripping it.
 - `[[link]]` cross-links in skills and memories resolve to **skill directories**
   (`skills/<target>/`), not to named entries in memory files. To verify a
   `[[target]]` link: `ls skills/<target>/`. If no skill dir exists, fall back to
