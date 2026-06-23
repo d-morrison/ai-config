@@ -15,5 +15,4 @@ __pycache__/
 _site/
 .quarto/
 
-/.quarto/
 **/*.quarto_ipynb

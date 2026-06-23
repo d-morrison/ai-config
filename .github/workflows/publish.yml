@@ -26,4 +26,3 @@ jobs:
         with:
           folder: _site
           clean-exclude: pr-preview/
-          force: false
