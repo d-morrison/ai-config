@@ -204,13 +204,15 @@
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
-- In a Quarto **project**, `{{< include >}}` paths resolve relative to the
-  PROJECT ROOT — including *nested* includes inside subfiles (verified: a
-  `{{< include _root.qmd >}}` inside `_subdir/nested.qmd`, rendered via a
-  root wrapper, resolves `_root.qmd` from the project root, not from `_subdir/`).
-  This differs from the Quarto docs' single-document rule ("relative to the file
-  containing the include"), which does NOT hold inside a project — so test, don't
-  trust the doc, for nested includes. So to verify touched subfiles when the full
+- In a Quarto **project** (observed on rme), `{{< include >}}` paths for files
+  rendered via a root wrapper resolved from the PROJECT ROOT *in practice* —
+  even for *nested* includes inside subfiles (a `{{< include _root.qmd >}}`
+  inside `_subdir/nested.qmd`, rendered via a root wrapper, picked up `_root.qmd`
+  from the project root, not from `_subdir/`). This is contrary to the Quarto
+  docs' single-document rule ("relative to the file containing the include").
+  One observation can't rule out a confound, and behavior may differ across
+  Quarto versions or project configs — so test; don't assume *either* rule holds
+  without checking. To verify touched subfiles when the full
   chapter needs an unavailable pkg (rmb): write a minimal wrapper `.qmd` AT THE
   REPO ROOT that includes `latex-macros/macros.qmd` + the subfiles, loading data
   manually
