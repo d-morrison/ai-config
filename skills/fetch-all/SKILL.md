@@ -39,7 +39,7 @@ To see what the sweep will cover before running it:
 
 ```bash
 ROOT="${ROOT:-$PWD}"     # or the directory the user named
-find "$ROOT" -maxdepth 2 -name .git -type d | sort
+find "$ROOT" -maxdepth 2 -name .git | sort   # no -type d: worktree/submodule .git is a file
 ```
 
 `-maxdepth 2` finds `<root>/<repo>/.git` — the immediate children. (If `ROOT`
@@ -58,7 +58,7 @@ consolidated report:
 
 ```bash
 ROOT="${ROOT:-$PWD}"     # the root from Step 1, or default to the current dir
-cd "$ROOT"
+cd "$ROOT" || { echo "ERROR: cannot cd to $ROOT"; exit 1; }
 for d in */; do
   repo="${d%/}"
   [ -e "$repo/.git" ] || continue   # -e, not -d: a worktree/submodule .git is a file
