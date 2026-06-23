@@ -94,7 +94,7 @@ gh issue comment <N> --body "Done with my local session — unclaiming."
 - If `@claude` agent runs are in flight on the branch, wait for them before
   pushing or polling — don't edit while the bot is mid-session.
 - **Detecting an already-active parallel session** (so you don't collide):
-  before pushing a fix to a PR you're driving (especially in a long watch/ARDI
+  before pushing a fix to a PR you're driving (especially in a long ARDI watch
   loop), re-fetch and check whether the branch HEAD has advanced **past your
   last commit**. New commit SHAs you didn't push + review workflows actively
   re-running = another session (or the author) is driving that branch right
