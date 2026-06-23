@@ -33,7 +33,7 @@ Pure praise or neutral observations with **no** requested change ("nice refactor
 For anything that requests a change, choose among the first three (Acknowledge is only for no-ask comments):
 
 1. **Address** — the default. Most findings are 1–5 line fixes; if it takes under ~2 min, just fix it.
-2. **Rebut** — only when you're confident the reviewer is mistaken. A rebuttal that isn't falsifiable ("I think it's fine") is not a rebuttal.
+2. **Rebut** — only when you're confident the reviewer is mistaken. A rebuttal that isn't falsifiable ("I think it's fine") is not a rebuttal. **Before applying *or* rebutting any factual claim about an API, deprecation, signature, or behavior, TEST it** — run the code both ways. Reviewers (including the `@claude` bot) state such claims confidently but are sometimes exactly backwards, and blindly "Addressing" a wrong one breaks the build. (Seen on rme #873: the bot insisted igraph `bfs(mode=)` was deprecated in favor of `neimode=`; the reverse is true — `neimode` is a hard `deprecate_stop` error, `mode` is current. Re-running the script revealed it instantly.)
 3. **Defer** — only when the fix genuinely expands scope. Never defer just because a fix is "minor" — minor fixes get Addressed.
 
 ## Procedure
