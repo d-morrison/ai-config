@@ -118,8 +118,7 @@
   (`git -C <wt> ls-files --others --exclude-standard -- 'skills/'`).
 
 ## Git — looking up a PR's branch name
-- `git branch -r` lists **all** remote branches — useless for targeting a specific PR
-  without already knowing the name. Don't suggest it as a fallback.
+- `git branch -r` lists **all** remote branches — useless for finding a specific PR's branch: it has no way to filter by PR number. Don't suggest it as a fallback.
 - Targeted lookup: `gh pr view <N> --json headRefName -q .headRefName` in CLI sessions;
   `mcp__github__pull_request_read` with `method: get` in remote/web sessions.
 - Flagged on ai-config#186: the first draft of the harness-override instruction included
