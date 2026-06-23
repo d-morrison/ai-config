@@ -196,16 +196,24 @@
     `rmb::hers` / `library(rmb)`.
   - `igraph` needs system lib `libglpk.so.40` → `apt-get install -y libglpk40`
     (you're root in these containers). Needed to run `data-raw/callout-graph.R`.
-  - `install.packages` (pak backend) is ATOMIC: if ONE requested pkg is
-    unavailable (e.g. rmb), the WHOLE transaction rolls back and nothing
-    installs — drop the unavailable pkg and retry.
+  - The install routes through **pak** (renv's pak backend), which is ATOMIC:
+    if ONE requested pkg is unavailable (e.g. rmb), the WHOLE transaction rolls
+    back and nothing installs — drop the unavailable pkg and retry. (Holds for
+    `pak::pkg_install()`, and for `install.packages()` while renv's pak backend
+    is active; base `install.packages()` on its own is NOT atomic.)
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
-- Quarto resolves `{{< include >}}` paths relative to the TOP-LEVEL rendering
-  file's directory. So to verify touched subfiles when the full chapter needs an
-  unavailable pkg (rmb): write a minimal wrapper `.qmd` AT THE REPO ROOT that
-  includes `latex-macros/macros.qmd` + the subfiles, loading data manually
+- In a Quarto **project**, `{{< include >}}` paths resolve relative to the
+  PROJECT ROOT — including *nested* includes inside subfiles (verified: a
+  `{{< include _root.qmd >}}` inside `_subdir/nested.qmd`, rendered via a
+  root wrapper, resolves `_root.qmd` from the project root, not from `_subdir/`).
+  This differs from the Quarto docs' single-document rule ("relative to the file
+  containing the include"), which does NOT hold inside a project — so test, don't
+  trust the doc, for nested includes. So to verify touched subfiles when the full
+  chapter needs an unavailable pkg (rmb): write a minimal wrapper `.qmd` AT THE
+  REPO ROOT that includes `latex-macros/macros.qmd` + the subfiles, loading data
+  manually
   (`hers <- haven::read_dta(here::here("inst/extdata/hersdata.dta"))`). This
   checks LaTeX/markdown/cross-refs for edits that don't touch R chunks without
   provisioning the whole dep tree. Grep the rendered HTML for `?@` / `>??<` to
@@ -221,9 +229,11 @@
 - Consequence: you CANNOT poll PR review/CI state from a background Monitor.
   Rely on `mcp__github__subscribe_pr_activity`, which delivers review comments
   and CI *failures* — but NOT CI success, new pushes, or merge-conflict
-  transitions. `send_later` (for a self check-in) may be absent in the session;
-  if so, you can't schedule the safety re-poll the watch-guidance suggests —
-  say so rather than implying it's armed.
+  transitions. A self-check-in scheduler may be absent: rme's instructions
+  reference `send_later` (from the `claude-code-remote` MCP server), and the
+  harness may expose its own (e.g. `ScheduleWakeup`) — but in this remote rme
+  session ToolSearch surfaced neither, so you can't arm the safety re-poll the
+  watch-guidance suggests. Say so rather than implying it's armed.
 - rme runs TWO review workflows per push: `claude-code-review.yml` (sticky
   comment, gives the "ready to merge" verdict) and `claude.yml` agent post-step
   (separate findings). They can DISAGREE — one says clean while the other finds
