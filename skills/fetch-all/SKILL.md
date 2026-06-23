@@ -57,10 +57,11 @@ to pipe Step 1 into it). Run it as a single block so the user gets one
 consolidated report:
 
 ```bash
+ROOT="${ROOT:-$PWD}"     # the root from Step 1, or default to the current dir
 cd "$ROOT"
 for d in */; do
   repo="${d%/}"
-  [ -d "$repo/.git" ] || continue
+  [ -e "$repo/.git" ] || continue   # -e, not -d: a worktree/submodule .git is a file
   if ! git -C "$repo" remote | grep -qx origin; then
     echo "SKIP $repo (no origin remote)"; continue
   fi
