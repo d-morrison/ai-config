@@ -1,0 +1,19 @@
+---
+name: "consolidate-skills"
+description: "Codex wrapper for the ai-config Claude skill `consolidate-skills`. Merge two or more genuinely-overlapping skills into a single canonical skill plus thin alias stubs, preserving every existing invocation name so nothing breaks. Audits the corpus for overlap, separates intentional alias families and adjacent-but-distinct skills (leave those alone) from genuine duplicates (consolidate those), proposes a plan for approval, then ships it via branch + PR. Use when asked to \"consolidate skills\", \"merge overlapping skills\", \"merge skills\", \"dedupe skills\", \"collapse duplicate skills\", or \"these two skills do the same thing\". Invoke explicitly with /consolidate-skills. Use when Codex is asked to use `consolidate-skills`, `/consolidate-skills`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# consolidate-skills (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/consolidate-skills/SKILL.md](../../skills/consolidate-skills/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/consolidate-skills/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/consolidate-skills`, resolve the symlink target for this wrapper directory first, then read `../../skills/consolidate-skills/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

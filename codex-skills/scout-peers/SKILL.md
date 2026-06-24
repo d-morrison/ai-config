@@ -1,0 +1,19 @@
+---
+name: "scout-peers"
+description: "Codex wrapper for the ai-config Claude skill `scout-peers`. Survey comparable public repos for the current project, judge whether any is *uniformly superior*, and borrow/adapt their best ideas \u2014 checking each source's license first and attributing anything reused. Use when asked \"are there repos like this\", \"scan similar/competing projects\", \"borrow ideas from peer repos\", \"competitive scan\", \"what can we learn from comparable projects\", or \"see how others solved this\". Invoke explicitly with /scout-peers. Use when Codex is asked to use `scout-peers`, `/scout-peers`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# scout-peers (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/scout-peers/SKILL.md](../../skills/scout-peers/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/scout-peers/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/scout-peers`, resolve the symlink target for this wrapper directory first, then read `../../skills/scout-peers/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

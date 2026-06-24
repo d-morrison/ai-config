@@ -1,0 +1,19 @@
+---
+name: "next"
+description: "Codex wrapper for the ai-config Claude skill `next`. Insert the instructions that follow `/next` immediately AFTER the currently in-progress task \u2014 ahead of anything queued behind it, but without preempting the task in flight. Use when the user appends `/next <instructions>` to jump a task to the front of the queue while letting current work finish. Invoke explicitly with /next. Use when Codex is asked to use `next`, `/next`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# next (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/next/SKILL.md](../../skills/next/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/next/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/next`, resolve the symlink target for this wrapper directory first, then read `../../skills/next/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

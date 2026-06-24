@@ -1,0 +1,19 @@
+---
+name: "tidy"
+description: "Codex wrapper for the ai-config Claude skill `tidy`. Audit the current codebase (or a specified scope) for opportunities to simplify, DRY, outsource to well-maintained external tools/packages, reduce maintenance burden, and improve clarity. Produces a prioritized list of concrete refactoring suggestions. Use when asked to \"tidy\", \"tidy up\", \"DRY this out\", or \"what can we outsource/remove\". Invoke explicitly with /tidy. Use when Codex is asked to use `tidy`, `/tidy`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# tidy (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/tidy/SKILL.md](../../skills/tidy/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/tidy/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/tidy`, resolve the symlink target for this wrapper directory first, then read `../../skills/tidy/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

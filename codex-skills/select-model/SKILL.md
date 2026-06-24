@@ -1,0 +1,19 @@
+---
+name: "select-model"
+description: "Codex wrapper for the ai-config Claude skill `select-model`. Select the appropriate Claude model for a task. Use when asked 'which model should I use', 'what model is best for this', 'upgrade to', 'should I switch models', or 'what's the right tier'. Analyzes task complexity and recommends Fable/Haiku/Sonnet/Opus. Dual-mode: procedural decision tree or executable analysis with config guidance. Use when Codex is asked to use `select-model`, `/select-model`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# select-model (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/select-model/SKILL.md](../../skills/select-model/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/select-model/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/select-model`, resolve the symlink target for this wrapper directory first, then read `../../skills/select-model/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

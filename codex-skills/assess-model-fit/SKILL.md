@@ -1,0 +1,19 @@
+---
+name: "assess-model-fit"
+description: "Codex wrapper for the ai-config Claude skill `assess-model-fit`. Assess whether the current model is sufficient for a task. Use when you suspect the current model lacks capability for task complexity, reasoning depth, or code review quality; when asked to 'assess model fit', 'is this model enough', 'should I upgrade', or 'do I need a better model'. Dual-mode: procedural checklist or executable task analysis with auto-chaining. Use when Codex is asked to use `assess-model-fit`, `/assess-model-fit`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# assess-model-fit (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/assess-model-fit/SKILL.md](../../skills/assess-model-fit/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/assess-model-fit/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/assess-model-fit`, resolve the symlink target for this wrapper directory first, then read `../../skills/assess-model-fit/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

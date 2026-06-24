@@ -1,0 +1,19 @@
+---
+name: "request-pr-review"
+description: "Codex wrapper for the ai-config Claude skill `request-pr-review`. Request d-morrison as reviewer after creating a GitHub PR. Run immediately after `gh pr create` succeeds, in the same response. Standing rule across all repos unless told otherwise. Use when Codex is asked to use `request-pr-review`, `/request-pr-review`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# request-pr-review (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/request-pr-review/SKILL.md](../../skills/request-pr-review/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/request-pr-review/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/request-pr-review`, resolve the symlink target for this wrapper directory first, then read `../../skills/request-pr-review/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

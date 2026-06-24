@@ -1,0 +1,19 @@
+---
+name: "cb"
+description: "Codex wrapper for the ai-config Claude skill `cb`. Alias for clean-branches. Audit branches \u2014 both local and remote \u2014 delete dead ones, rebase stale ones onto main, open MRs for orphaned work, and sweep up local stragglers. Use when asked to 'cb', 'clean branches', 'prune', or 'prune branches'. Use when Codex is asked to use `cb`, `/cb`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# cb (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/cb/SKILL.md](../../skills/cb/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/cb/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/cb`, resolve the symlink target for this wrapper directory first, then read `../../skills/cb/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

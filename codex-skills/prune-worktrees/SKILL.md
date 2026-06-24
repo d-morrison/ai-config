@@ -1,0 +1,19 @@
+---
+name: "prune-worktrees"
+description: "Codex wrapper for the ai-config Claude skill `prune-worktrees`. Alias for `clean-worktrees` (aka `cw`). Sweep dead git worktrees in the current repo \u2014 prune admin stubs for already-deleted dirs, then remove linked worktrees whose branch merged (or is gone) and whose tree is clean, never touching the main/current worktree, a dirty tree, or one with a live session. Use when asked to 'prune worktrees', 'prune-worktrees', 'clean worktrees', or 'clean dead worktrees'. Use when Codex is asked to use `prune-worktrees`, `/prune-worktrees`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# prune-worktrees (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/prune-worktrees/SKILL.md](../../skills/prune-worktrees/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/prune-worktrees/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/prune-worktrees`, resolve the symlink target for this wrapper directory first, then read `../../skills/prune-worktrees/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.
