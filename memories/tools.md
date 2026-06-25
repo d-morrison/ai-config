@@ -243,10 +243,13 @@
 
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
-  Action") and a **version-check**. Every PR — even docs-only — needs **both** a
+  Action") and a **version-check**. A user-visible PR needs **both** a
   `NEWS.md` entry under `# <pkg> (development version)` **and** a `DESCRIPTION`
   `Version:` dev-bump (e.g. `0.0.0.9053` → `.9054`), or CI fails. Add them up
   front rather than waiting for the red check. (Observed on ucdavis/bcs#223.)
+  For a **non-user-visible** PR (CI/workflow-only), skip both with the
+  `no changelog` + `no version increment` labels instead — see the label-bypass
+  note below.
 - The **Spellcheck** job (`spelling::spell_check_package()`) fails on any word
   not in `inst/WORDLIST`. For one-off non-dictionary words in NEWS/prose, prefer
   rewording (e.g. "uncaptioned" → "without captions") over polluting WORDLIST;
@@ -529,7 +532,12 @@ common patterns.
   The bare `<username>@users.noreply.github.com` is not privacy-safe and can match a real inbox.
   For `issue_comment` events, the actor's numeric ID is in `github.event.comment.user.id`:
   `committer-email: ${{ github.event.comment.user.id }}+${{ github.actor }}@users.noreply.github.com`.
-- **bcs `version-check` CI has no label bypass.** Unlike the changelog check (which checks
-  for a "no changelog" label), `version-check` does a pure version comparison and always
-  fails if the PR branch version ≤ main's version. For CI-only PRs (no R code changes),
-  bump `DESCRIPTION` version to unblock it.
+- **Both bcs PR gates have a label bypass for non-user-visible changes.** `version-check`
+  (`version-check.yaml`, derived from RMI-PACTA's R-semver-check) does a pure version
+  comparison and fails if the PR branch version ≤ main's, **but** it skips when the
+  `no version increment` label is present. The changelog check (`news.yaml` ->
+  gha `check-news.yml`) skips with the `no changelog` label. Both workflows trigger on
+  `labeled`/`unlabeled`, so adding the labels re-runs and clears them with no push. For a
+  CI-only / workflow-only PR (no user-visible R-package change), apply **both** labels
+  rather than bumping `DESCRIPTION` and editing `NEWS.md`. (Verified on ucdavis/bcs#236 —
+  corrects an earlier note that claimed `version-check` had no bypass.)
