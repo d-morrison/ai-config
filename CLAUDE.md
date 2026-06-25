@@ -160,8 +160,8 @@ of a quota** (the review job never runs, so no bot review lands), don't stall
 the ARDI loop waiting for it — **do the review yourself and post it** as a PR
 comment. Apply the same review standards the bot would (the SERG lab manual and
 d-morrison's modular/idiomatic priorities), then keep iterating to fully-clean
-on your own findings. A quota-skipped review is a missing reviewer, not a clean
-verdict.
+on your own findings. A quota-skipped review leaves the PR unreviewed; it is
+not an approval.
 
 ## Watch and ARDI every PR you touch — don't ask first
 
