@@ -658,6 +658,28 @@ common patterns.
   `some_of(lower), zero_or_more(one_of(lower, digit))`. As of #238 such
   alphanumeric codes are valid name components; before that they failed
   `lint-changed-files` with `object_name_linter`.
+- **Sync vignette captions with R-source axis labels after a label fix.**
+  A `plot_*()` function's y-axis label and its vignette figure caption often
+  carry the same phrase. Changing the axis label in the R source without
+  updating the caption leaves a stale inconsistency that the next review round
+  will catch. After fixing an axis label, grep the vignette:
+  `grep -r "old phrase" vignettes/` to find and update matching captions.
+  (bcs#253 round 3.)
+- **Check the column's scale before writing an axis label.**
+  A `prep_*()` column computed as `mean(...) * 100` is a 0–100 percentage;
+  the axis label must say `%`, not `"Probability of …"` (which implies 0–1).
+  Inspect the prep function's body or roxygen `@returns` to confirm the scale.
+  (bcs#253: `pct_annual` was 0–100, not 0–1 — label was wrong.)
+- **Use `geom_point() + geom_errorbar()` for data with a meaningful non-zero minimum.**
+  `geom_col()` draws bars from 0; for enrollment-age data (40–70+) this wastes
+  most of the chart area and makes ±SD intervals visually tiny. Use
+  `geom_point(size = 3) + geom_errorbar(...)` when 0 is not a meaningful
+  reference point. (bcs#253: `plot_results_baseline` switch from `geom_col`.)
+- **Use `helper-*.R` for shared testthat setup.**
+  testthat 3 auto-sources `tests/testthat/helper-*.R` before any tests run.
+  Put shared setup (e.g. `make_pt_data()`) in a `helper-*.R` rather than
+  repeating it across test files. One test file per source file is the bcs
+  convention — `test-plot_fn.R` for `R/plot_fn.R`. (bcs#253.)
 
 ## Office Open XML (.docx / .xlsx) — editing committed content
 - `.docx`/`.xlsx` are zip archives. To strip or edit content (e.g. remove a sensitive
