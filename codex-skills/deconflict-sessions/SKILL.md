@@ -1,0 +1,19 @@
+---
+name: "deconflict-sessions"
+description: "Codex wrapper for the ai-config Claude skill `deconflict-sessions`. Alias for `session-lock`. Deconflict multiple AI agent sessions working the same local repo checkout \u2014 a machine-local registry (under .git/) so parallel sessions see each other, avoid clobbering the same working tree/branch, isolate into a git worktree, and recover after a crash. Use when asked to 'deconflict sessions', 'deconflict multiple ai sessions', 'avoid stepping on another local session', or 'lock the worktree'. The LOCAL counterpart to claim-pr. Use when Codex is asked to use `deconflict-sessions`, `/deconflict-sessions`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# deconflict-sessions (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/deconflict-sessions/SKILL.md](../../skills/deconflict-sessions/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/deconflict-sessions/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/deconflict-sessions`, resolve the symlink target for this wrapper directory first, then read `../../skills/deconflict-sessions/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

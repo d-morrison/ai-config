@@ -1,0 +1,19 @@
+---
+name: "handoff"
+description: "Codex wrapper for the ai-config Claude skill `handoff`. Snapshot the current work state into a project memory so the next session can pick up cleanly \u2014 branch, HEAD, unpushed commits, dirty files, running jobs (SLURM/background/CI), backups, open decisions, and the exact pick-up command sequence. Post a paused-state note on the active PR/MR if there is one. Use when ending or pausing a session, when asked to 'handoff', 'leave myself notes', 'hand this off', or 'pause and save state' \u2014 and proactively whenever pausing while a long-running job is in flight. Use when Codex is asked to use `handoff`, `/handoff`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# handoff (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/handoff/SKILL.md](../../skills/handoff/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/handoff/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/handoff`, resolve the symlink target for this wrapper directory first, then read `../../skills/handoff/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.

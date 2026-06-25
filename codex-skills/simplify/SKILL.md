@@ -1,0 +1,19 @@
+---
+name: "simplify"
+description: "Codex wrapper for the ai-config Claude skill `simplify`. Simplify code where feasible without feature loss \u2014 prune dead code paths, remove unreachable branches, collapse unnecessary indirection, and simplify variable assignments that can never take their fallback values. Use after any refactor that changes invocation context, after removing a feature, or when reviewing code that has accumulated historical cruft. Use when Codex is asked to use `simplify`, `/simplify`, or the corresponding ai-config/Claude skill workflow."
+---
+
+# simplify (Codex wrapper)
+
+This is a generated Codex wrapper around the canonical ai-config Claude skill.
+
+Source: [skills/simplify/SKILL.md](../../skills/simplify/SKILL.md)
+
+Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
+
+The source lives at `skills/simplify/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/simplify`, resolve the symlink target for this wrapper directory first, then read `../../skills/simplify/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+
+- Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
+- Use the tools available in this Codex session for equivalent operations.
+- If the source mentions a Claude-only path such as `~/.claude/skills`, use this repository's `skills/` path while editing.
+- Keep procedural changes in the canonical source skill unless the user specifically asks to change this wrapper.
