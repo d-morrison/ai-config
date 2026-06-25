@@ -58,9 +58,12 @@
   and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it
   via red CI. For R packages this means a NEWS.md entry AND a DESCRIPTION dev-version bump
   (`usethis::use_version()`) even for a docs-only / vignette-only change — the changelog-check
-  and version-check jobs fail otherwise (opt-out labels like `no-changelog` / `no version
-  increment` exist, but the default is to do the bump). NEWS.md prose is spell-checked too,
-  so keep it to words already in `inst/WORDLIST` or add new terms there.
+  and version-check jobs fail otherwise (opt-out labels `no changelog` / `no version
+  increment` exist for non-user-visible PRs, but the default is to do the bump). NEWS.md prose is spell-checked too,
+  so keep it to words already in `inst/WORDLIST` or add new terms there. Also re-check the
+  version after merging `main` mid-PR: if a commit on `main` already bumped the version to
+  match the branch, the version-check CI will fail again — run `usethis::use_version("dev")`
+  once more so the branch stays ahead.
 - In the HACtions repo, use the `test.hac` project/group as a test bed (always).
 - After an iterate loop completes, ALWAYS create follow-up issues for every deferred/acknowledged
   item before reporting done. Never leave deferred items untracked.
@@ -90,6 +93,12 @@
   Do all of this automatically — including opening the follow-up branch and PR that records the
   lessons — without asking permission first; opening that follow-up PR is a standing yes.
 - Keep it simple. Don't over-explain or ask permission for straightforward fixes — just do them.
+- Don't re-ask a decision that's already settled and built. Once an answer is given and the
+  work is implemented to match it (and CI-green), don't reopen it with a fresh AskUserQuestion —
+  that invites a contradictory answer you then have to reconcile, and discounts work already
+  done. If you think the scope should change, say so explicitly with a recommendation instead
+  of silently re-asking. (Learned on gha#110: re-asked content structure + deploy after the
+  PR was built and green; the user had to reconcile the conflict with "keep what's built.")
 - When finishing work on an MR/PR (clean review, ready to merge, etc.), always provide a
   clickable link to the MR/PR in the chat message.
 - When discovering bugs in upstream/shared infrastructure (e.g., HACtions templates), always
@@ -301,6 +310,7 @@
   (reconcile with origin) — use all three together on shared PR work. Registry lives under
   `.git/ai-sessions/` (never committed). Script: `~/.claude/skills/session-lock/scripts/ai-session.sh`.
 
+- When writing a description or comment that will reference a follow-up tracking issue, create the issue first, then use the specific issue URL (e.g. `#229`). Never use the generic issues list URL as a placeholder — a reviewer will catch it and the fix costs an extra ARDI round. (Learned on ucdavis/bcs#226.)
 - "dew it" means "do it".
 - After implementing a feature or fix, ALWAYS commit and push immediately — don't wait
   for the user to ask "why haven't you pushed?" The implementation isn't done until the

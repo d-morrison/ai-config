@@ -243,10 +243,13 @@
 
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
-  Action") and a **version-check**. Every PR — even docs-only — needs **both** a
+  Action") and a **version-check**. A user-visible PR needs **both** a
   `NEWS.md` entry under `# <pkg> (development version)` **and** a `DESCRIPTION`
   `Version:` dev-bump (e.g. `0.0.0.9053` → `.9054`), or CI fails. Add them up
   front rather than waiting for the red check. (Observed on ucdavis/bcs#223.)
+  For a **non-user-visible** PR (CI/workflow-only), skip both with the
+  `no changelog` + `no version increment` labels instead — see the label-bypass
+  note below.
 - The **Spellcheck** job (`spelling::spell_check_package()`) fails on any word
   not in `inst/WORDLIST`. For one-off non-dictionary words in NEWS/prose, prefer
   rewording (e.g. "uncaptioned" → "without captions") over polluting WORDLIST;
@@ -341,18 +344,21 @@
 - **`is_error=true, subtype=success` in review execution output — two distinct causes:**
   - **Quota/auth exhaustion** (`total_cost_usd=0`, `num_turns=1`, `duration_ms` < 2000):
     the API rejected the request before Claude did any work. Fixed in gha#102 (`@v1`):
-    the guard step now exits 0 and posts a `[!WARNING]` PR comment instead of failing the
-    check. Fix: wait for quota reset (or auth fix), then re-trigger. No need to push a
-    commit — the check will pass once quota is back.
+    the guard step exits 0 and posts a `[!WARNING]` PR comment naming `CLAUDE_CODE_OAUTH_TOKEN`
+    as the account whose quota is exhausted. Further fixed in gha#104: a second `require-review`
+    gate job (whose `if:` is false when `quota_exhausted=true`) shows as the gray **skipped**
+    icon rather than a misleading green checkmark. Consumers should add `require-review` (e.g.
+    `review / require-review`) to their branch protection required-checks.
+    Fix: wait for quota reset (or auth fix), then re-trigger. No need to push a commit.
     ⚠️ **Verify the consumed guard actually warns — don't assume the fix is live.**
     Observed 2026-06 on sparta#207 (consuming `d-morrison/gha@v1`) AND in `dem-extra1/gha`'s
-    own `claude-code-review.yml`: the guard still `exit 1`s on `is_error=true` (RED check, no
-    `[!WARNING]` comment). So gha#102's exit-0 behavior was NOT in effect there — either it
-    didn't land on the consumed `@v1` or was reverted. Read the actual guard code rather than
-    trusting this note. Note OAuth/subscription auth (`CLAUDE_CODE_OAUTH_TOKEN`) shows
-    `total_cost_usd=0` regardless, because it isn't metered per-call — so cost=0 + 1 turn +
-    immediate `is_error` points to a **subscription usage-limit**, not only API credits;
-    confirm via the Anthropic Console usage for that account.
+    own `claude-code-review.yml`: the guard still `exit 1`d on `is_error=true` (RED check, no
+    `[!WARNING]` comment) — gha#102's exit-0 behavior was not yet on the consumed `@v1` pin
+    there. Read the actual guard code on the pin you consume rather than trusting this note.
+    Note OAuth/subscription auth (`CLAUDE_CODE_OAUTH_TOKEN`) shows `total_cost_usd=0`
+    regardless, because it isn't metered per-call — so cost=0 + 1 turn + immediate `is_error`
+    points to a **subscription usage-limit**, not only API credits; confirm via the Anthropic
+    Console usage for that account.
   - **Intermittent upstream bug** (`total_cost_usd > 0`, `duration_ms` ~192 s): the
     `claude-code-action` completes a real review but exits with `is_error=true` anyway.
     The guard step fails the check ❌. The prior clean review on the same diff is still
@@ -502,6 +508,14 @@ common patterns.
   "Fail the workflow run …" not "Fail the action …". When copying an input description
   from `action.yml` into the wrapping `workflow_call` file, update "action" → "workflow
   run". (Fixed in gha#92: `fail-if-empty` description in `check-links.yml`.)
+- **GitHub Actions job conclusions: no "skipped" from a running job.** A job that has
+  started can only conclude `success` or `failure` — never `skipped`. The only way to get
+  the gray skip icon on a check is a false `if:` on an *unstarted* job. Pattern for
+  infrastructure conditions (quota exhaustion, pre-flight failures): have the main job
+  succeed (exit 0) and set an output flag, then add a second gate job whose `if:` is
+  false when the flag is set. The gate job is what consumers watch in branch protection;
+  it shows skipped (gray) on infra conditions and success on clean reviews. See gha#104
+  for the `require-review` job implementation.
 - **`mcp__github__get_job_logs` usage.** Two calling modes — use the right one:
   - Single job: pass `job_id` (number) only. Do NOT pass `run_id` alongside.
   - All failed jobs in a run: pass `run_id` (number) + `failed_only: true` + `return_content: true`. Do NOT pass `job_id`.
@@ -538,7 +552,50 @@ common patterns.
   The bare `<username>@users.noreply.github.com` is not privacy-safe and can match a real inbox.
   For `issue_comment` events, the actor's numeric ID is in `github.event.comment.user.id`:
   `committer-email: ${{ github.event.comment.user.id }}+${{ github.actor }}@users.noreply.github.com`.
-- **bcs `version-check` CI has no label bypass.** Unlike the changelog check (which checks
-  for a "no changelog" label), `version-check` does a pure version comparison and always
-  fails if the PR branch version ≤ main's version. For CI-only PRs (no R code changes),
-  bump `DESCRIPTION` version to unblock it.
+- **Both bcs PR gates have a label bypass for non-user-visible changes.** `version-check`
+  (`version-check.yaml`, derived from RMI-PACTA's R-semver-check) does a pure version
+  comparison and fails if the PR branch version ≤ main's, **but** it skips when the
+  `no version increment` label is present. The changelog check (`news.yaml` ->
+  gha `check-news.yml`) skips with the `no changelog` label. Both workflows trigger on
+  `labeled`/`unlabeled`, so adding the labels re-runs and clears them with no push. For a
+  CI-only / workflow-only PR (no user-visible R-package change), apply **both** labels
+  rather than bumping `DESCRIPTION` and editing `NEWS.md`. (Verified on ucdavis/bcs#236 —
+  corrects an earlier note that claimed `version-check` had no bypass.)
+- **bcs `docs` build (altdoc) EXECUTES the rendered man-page examples.** altdoc
+  renders each `man/*.Rd` to a `man/*.qmd` and runs the example chunk, so
+  `@examplesIf FALSE` does NOT protect an example — the code still runs and a
+  data-dependent call fails the `docs` job (`object 'pt_a' not found`). For any
+  example that needs the protected/real cohort, use `\dontrun{}` (altdoc renders
+  it without evaluating), matching the existing convention (e.g.
+  `R/calc_ip_weights.R`). Runnable examples with self-contained synthetic data
+  are fine and do execute. (Hit on ucdavis/bcs#238.)
+- **bcs `test-coverage` (codecov) is NOT a required check.** A coverage drop
+  leaves the PR `mergeable_state: unstable` (not `blocked`) and does not block
+  the merge — `docs`, `version-check`, the R-CMD-check matrix, lint, and
+  spellcheck are the required ones. So a PR that adds integration code only
+  exercisable against protected data (which inherently lowers coverage) can
+  still merge once the required checks are green. (Verified merging #238.)
+- **During a long review, re-bump `DESCRIPTION` after every `main` merge.**
+  `version-check` compares the PR version to *current* main; if main advances
+  (another PR bumps `0.0.0.905x`) and you merge main in, the PR's version is no
+  longer strictly greater and version-check flips to failing even though it
+  passed before. Bump again (e.g. `9057` -> `9058`). (Hit on #238 after main
+  moved to 9057.)
+- **bcs object-name lint (`.lintr.R` custom `snake_case_ACROs1` rex regex)**
+  rejected study/protocol codes like `ab507bs` (a lowercase segment with letters
+  *after* digits) until the lowercase branch was widened to
+  `some_of(lower), zero_or_more(one_of(lower, digit))`. As of #238 such
+  alphanumeric codes are valid name components; before that they failed
+  `lint-changed-files` with `object_name_linter`.
+
+## Office Open XML (.docx / .xlsx) — editing committed content
+- `.docx`/`.xlsx` are zip archives. To strip or edit content (e.g. remove a sensitive
+  link from a committed Word doc): `unzip` the file, edit `word/document.xml` for body
+  text, and edit `word/_rels/document.xml.rels` for hyperlink **targets** — a clickable
+  URL's address lives in the `.rels` `Target`, not just the visible `<w:t>` text, so
+  delete both the `<w:hyperlink r:id="rIdN">...</w:hyperlink>` element and its matching
+  `<Relationship Id="rIdN" ... Target="...">` to remove link and address.
+- Re-zip from the extracted dir: `zip -r -X out.docx '[Content_Types].xml' _rels docProps word`
+  (plus `customXml` if present). Verify with `unzip -t out.docx` and re-extract + grep to
+  confirm the removed strings are gone before committing. (Done on ucdavis/bcs#237 to strip
+  an internal SharePoint URL and a server reference from a to-do doc.)
