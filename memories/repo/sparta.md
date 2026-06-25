@@ -7,6 +7,17 @@ metadata:
 
 # Sparta — working notes
 
+## Pending: migrate to gha quarto-publish `@v2` (branch deploy)
+
+Sparta is the registered `quarto-publish` consumer in gha's `REVDEPS.md`, and
+gha cut a **breaking v2** (gha#118): `quarto-publish` moved from the Pages
+`actions/deploy-pages` artifact to a `gh-pages` **branch** deploy. `@v1` was
+rolled back to the last compatible commit, so sparta is safe on `@v1` for now.
+To move to `@v2`: (1) Settings → Pages → Source = "Deploy from a branch",
+`gh-pages` / `(root)`; (2) change the `quarto-publish.yml` caller's job
+permissions from `pages: write` + `id-token: write` to `contents: write`;
+(3) bump the pin to `@v2`. Migration steps live in the gha CHANGELOG.
+
 ## Website docs scope in stacked PRs
 
 Sparta requires user-facing PRs to update the `website/` docs (the website-update

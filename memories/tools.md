@@ -461,16 +461,62 @@ any Quarto website (rme, psw, qwt, …).
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
 common patterns.
 
-- **`quarto-publish.yml@v1`** — sets up Quarto, renders, and deploys via the GitHub
-  Pages artifact approach (`actions/deploy-pages`). No `gh-pages` branch needed.
+- **`quarto-publish.yml`** — sets up Quarto, renders, and deploys the site.
   Caller stub is ~12 lines. See `examples/quarto-publish.yml` in the gha repo.
-  **One-time repo setup:** set GitHub Pages source to "GitHub Actions" before the
-  first deploy, or the deploy step fails with `HttpError: Not Found`. Do it via the
-  API: `gh api repos/<owner>/<repo>/pages --method POST -f build_type=workflow`
-  (use `PUT` if Pages already exists but is on branch mode).
+  **`@v1` vs `@v2` differ in HOW they deploy, and the two are mutually exclusive
+  at the repo-Pages-source level:**
+  - **`@v1`** deploys via the Pages **artifact** (`actions/upload-pages-artifact`
+    + `actions/deploy-pages`). Repo setup: Settings → Pages → Source = **"GitHub
+    Actions"**. No `gh-pages` branch served.
+  - **`@v2`** (gha#118) deploys to the **`gh-pages` branch** (`JamesIves/github-pages-deploy-action`,
+    `clean-exclude: pr-preview/`, plus a `.nojekyll`). Repo setup: Settings → Pages
+    → Source = **"Deploy from a branch", `gh-pages` / `(root)`**. Caller grants
+    `contents: write` (not `pages:write` + `id-token:write`), **even with
+    `deploy: false`** (see the reusable-workflow permission rule below).
+  - **WHY the switch:** the gha PR-preview family (`preview-deploy`,
+    `cleanup-pr-previews`) pushes previews to the `gh-pages` branch. A repo serves
+    Pages from **one** source, so Actions-artifact publish + branch-based previews
+    can't coexist — under Actions-source Pages, every `…/pr-preview/pr-N/` link
+    404s. `rossjrw/pr-preview-action` REQUIRES branch-based Pages. So a repo that
+    wants both a main site AND PR previews must use `@v2` + branch Pages.
+  - **Branch-served Quarto needs `.nojekyll`** at the gh-pages root, or Jekyll
+    strips Quarto's `_`-prefixed asset dirs. `quarto publish gh-pages` adds it
+    automatically; `JamesIves` does not, so `@v2` touches one in before deploy.
+  - **The repo's Pages *source* is a manual setting** — not changeable via the
+    MCP tools or (in scoped sessions) the API. Hand the flip to the user, and
+    order it safely: deploy to `gh-pages` FIRST (populates root; live site keeps
+    serving the old artifact), THEN flip the source, or the root 404s in between.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
+- **gha's major tag auto-slides on EVERY merge to main** (`slide-major-tag.yml`,
+  r-lib/actions style): it re-points the major derived from the latest `vX.Y.Z`
+  tag to HEAD. So a **breaking** change that merges to main **silently slides
+  `v1` onto the breaking commit** — `@v1` consumers get it on their next run.
+  Cutting a breaking release therefore needs TWO tag moves, run BEFORE the next
+  main merge (else the slide re-breaks v1): (1) force `v1` back to the last
+  non-breaking commit (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`),
+  and (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
+  semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
+  MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
+  Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
+- **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
+  `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
+  example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
+  When editing gha docs, keep `.qmd` ASCII (`-`/`;`, not `—`).
+- **403 caveat — scoped sessions can push ONLY the assigned branch; tag pushes
+  are denied.** In remote/web sessions the proxy rejects any ref that isn't the
+  harness-assigned branch with `HTTP 403` — including `refs/tags/*`. **`git push
+  --dry-run` gives a FALSE POSITIVE here** (it prints `* [new tag] …` because the
+  negotiation succeeds, but the real push 403s on the ref update). So you cannot
+  cut tags from such a session — hand the exact `git tag` + `git push` commands to
+  the user instead. Don't retry the 403 (policy denial, not transient).
+- **`mcp__github__actions_list` / `list_workflow_runs` returns HUGE objects**
+  (full repo metadata embedded per run, ~30-60KB even at `per_page: 1`), which
+  blows the tool-output cap and gets saved to a file. To read a run's
+  status/conclusion cheaply, prefer `actions_get` (`get_workflow_run`, single
+  object) or parse the saved file with `python3 -c "json.load(...)"`; don't keep
+  re-listing.
 - **Input-forwarding checklist when adding an input to a gha composite action.**
   Adding a new `inputs:` entry to `<name>/action.yml` requires four coordinated updates:
   1. Expose it in the wrapping reusable workflow (`.github/workflows/<name>.yml`) under
@@ -518,6 +564,18 @@ common patterns.
   `secrets: inherit` is only needed for named secrets (`secrets.MY_PAT`, etc.). Automated
   reviewers (claude-bot, Copilot) routinely flag this as a false positive — rebut it by
   confirming the callee has no `secrets:` inputs.
+- **A reusable workflow's job permissions are checked against the caller's grant at
+  graph-build time — `if:`-skipped jobs are NOT exempt.** A called workflow's job that
+  declares `permissions: contents: write` makes the WHOLE call fail with
+  `startup_failure` (instant, <1s, no jobs created) if the caller grants only
+  `contents: read` — even when that job has `if: inputs.deploy` evaluating false and
+  never runs. Consequence: you canNOT offer a "deploy: false ⇒ caller needs only read"
+  optimization in a reusable workflow whose deploy job statically requests write; the
+  caller must grant write regardless. Keep the read-only work in a separate
+  `contents: read` build job (it downscopes its own token), but the caller still grants
+  the union (write). Cost me two red CI rounds on gha#118. To debug a `startup_failure`
+  with `total_jobs: 0`: it's a graph/permission/parse error, not a runtime one — check
+  the called workflow's permission ceilings first.
 - **Detached HEAD on `pull_request` events.** `actions/checkout` without an explicit `ref`
   on a PR event checks out a synthetic merge commit in detached HEAD — `git push` then
   fails. Fix: pass `ref: ${{ github.head_ref }}` so the branch name is checked out, not the

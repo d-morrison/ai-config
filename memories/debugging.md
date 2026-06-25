@@ -20,6 +20,16 @@
   scripts (e.g. Quarto's `quarto-nav.js` / `quarto.js`) via CORS, so headroom/nav
   behavior won't run. Test viewport-specific behavior with `newPage({ viewport })`,
   and assert computed styles / `offsetHeight` (not just DOM presence).
+- **Quarto dark mode** (the `theme: {light: cosmo, dark: darkly}` pair in
+  `_quarto.yml` that adds a navbar toggle): to force/screenshot the dark theme,
+  set `localStorage["quarto-color-scheme"] = "alternate"` via `addInitScript`
+  BEFORE navigation, then load over HTTP (not `file://`). The toggle button calls
+  `window.quartoToggleColorScheme()`, but it only works once `quarto.js` has
+  loaded — which it can't under `file://` (CORS), so the toggle silently no-ops
+  and the page stays light. Verify the switch took with
+  `getComputedStyle(document.body).backgroundColor` (darkly → `rgb(34,34,34)`),
+  not by the toggle icon alone. The stored value is the literal string
+  `"alternate"` (dark) / `"default"` (light) — NOT `"dark"`/`"light"`.
 
 ## ARDI/iterate: must poll for new review after pushing
 - After pushing fixes during an iterate loop, DON'T declare "clean" based on
