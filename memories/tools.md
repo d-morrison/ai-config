@@ -341,9 +341,12 @@
 - **`is_error=true, subtype=success` in review execution output — two distinct causes:**
   - **Quota/auth exhaustion** (`total_cost_usd=0`, `num_turns=1`, `duration_ms` < 2000):
     the API rejected the request before Claude did any work. Fixed in gha#102 (`@v1`):
-    the guard step now exits 0 and posts a `[!WARNING]` PR comment instead of failing the
-    check. Fix: wait for quota reset (or auth fix), then re-trigger. No need to push a
-    commit — the check will pass once quota is back.
+    the guard step exits 0 and posts a `[!WARNING]` PR comment naming `CLAUDE_CODE_OAUTH_TOKEN`
+    as the account whose quota is exhausted. Further fixed in gha#104: a second `require-review`
+    gate job (whose `if:` is false when `quota_exhausted=true`) shows as the gray **skipped**
+    icon rather than a misleading green checkmark. Consumers should add `require-review` (e.g.
+    `review / require-review`) to their branch protection required-checks.
+    Fix: wait for quota reset (or auth fix), then re-trigger. No need to push a commit.
   - **Intermittent upstream bug** (`total_cost_usd > 0`, `duration_ms` ~192 s): the
     `claude-code-action` completes a real review but exits with `is_error=true` anyway.
     The guard step fails the check ❌. The prior clean review on the same diff is still
@@ -482,6 +485,14 @@ common patterns.
   "Fail the workflow run …" not "Fail the action …". When copying an input description
   from `action.yml` into the wrapping `workflow_call` file, update "action" → "workflow
   run". (Fixed in gha#92: `fail-if-empty` description in `check-links.yml`.)
+- **GitHub Actions job conclusions: no "skipped" from a running job.** A job that has
+  started can only conclude `success` or `failure` — never `skipped`. The only way to get
+  the gray skip icon on a check is a false `if:` on an *unstarted* job. Pattern for
+  infrastructure conditions (quota exhaustion, pre-flight failures): have the main job
+  succeed (exit 0) and set an output flag, then add a second gate job whose `if:` is
+  false when the flag is set. The gate job is what consumers watch in branch protection;
+  it shows skipped (gray) on infra conditions and success on clean reviews. See gha#104
+  for the `require-review` job implementation.
 - **`mcp__github__get_job_logs` usage.** Two calling modes — use the right one:
   - Single job: pass `job_id` (number) only. Do NOT pass `run_id` alongside.
   - All failed jobs in a run: pass `run_id` (number) + `failed_only: true` + `return_content: true`. Do NOT pass `job_id`.
