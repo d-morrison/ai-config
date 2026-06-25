@@ -47,6 +47,14 @@
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
   devtools::test(), devtools::check(), pkgdown::build_site() (per repo copilot-instructions).
+- Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md →
+  the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING)
+  and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it
+  via red CI. For R packages this means a NEWS.md entry AND a DESCRIPTION dev-version bump
+  (`usethis::use_version()`) even for a docs-only / vignette-only change — the changelog-check
+  and version-check jobs fail otherwise (opt-out labels like `no-changelog` / `no version
+  increment` exist, but the default is to do the bump). NEWS.md prose is spell-checked too,
+  so keep it to words already in `inst/WORDLIST` or add new terms there.
 - In the HACtions repo, use the `test.hac` project/group as a test bed (always).
 - After an iterate loop completes, ALWAYS create follow-up issues for every deferred/acknowledged
   item before reporting done. Never leave deferred items untracked.
