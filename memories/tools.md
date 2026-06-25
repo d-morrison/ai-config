@@ -464,3 +464,39 @@ common patterns.
   - Single job: pass `job_id` (number) only. Do NOT pass `run_id` alongside.
   - All failed jobs in a run: pass `run_id` (number) + `failed_only: true` + `return_content: true`. Do NOT pass `job_id`.
   The tool's error message ("job_id is required when failed_only is false") is misleading when you pass `failed_only: true` with `run_id`; the issue is actually conflicting parameters.
+- **`update-snapshots.yml@v1`** — regenerates testthat snapshots, commits, and pushes.
+  Supports `workflow_dispatch`, `/update-snapshots` PR comment (`pr-mode: true`), and
+  auto-update before R-CMD-check (`ref: github.head_ref`). Pass system deps via
+  `apt-packages`. Added in gha#103; bcs#226 is the reference caller.
+
+## GitHub Actions workflow authoring gotchas
+
+- **Local composite refs (`./`) in reusable workflows resolve relative to the HOST repo.**
+  A `workflow_call` reusable workflow living in gha cannot call `./path/to/composite` from
+  a CALLER's repo — `./` always resolves to gha itself. Workaround: pass the data the
+  composite would have consumed as a plain input (e.g. an `apt-packages` string). Learned
+  while extracting `update-snapshots` (gha#103): bcs's `install-system-deps` composite
+  couldn't be called; the package list was passed as a string input instead.
+- **`secrets: inherit` is NOT needed when the reusable workflow only uses `github.token`.**
+  `github.token` auto-injects the caller's token via `permissions:` — not via `secrets:`.
+  `secrets: inherit` is only needed for named secrets (`secrets.MY_PAT`, etc.). Automated
+  reviewers (claude-bot, Copilot) routinely flag this as a false positive — rebut it by
+  confirming the callee has no `secrets:` inputs.
+- **Detached HEAD on `pull_request` events.** `actions/checkout` without an explicit `ref`
+  on a PR event checks out a synthetic merge commit in detached HEAD — `git push` then
+  fails. Fix: pass `ref: ${{ github.head_ref }}` so the branch name is checked out, not the
+  merge commit SHA. Required for any reusable workflow that needs to `git push` from a PR
+  caller.
+- **`always()` + optional upstream job needs an explicit result guard.** The pattern
+  `if: ${{ always() && !cancelled() && needs.X.result == 'success' }}` keeps the job
+  running when X is *skipped* (non-PR events), but also lets it run when X *fails* —
+  causing noise from a job that depended on work that didn't land. Full guard:
+  `(needs.X.result == 'success' || needs.X.result == 'skipped')`. (Fixed in bcs#226.)
+- **Canonical GitHub privacy-safe noreply email is `<numeric-id>+<username>@users.noreply.github.com`.**
+  The bare `<username>@users.noreply.github.com` is not privacy-safe and can match a real inbox.
+  For `issue_comment` events, the actor's numeric ID is in `github.event.comment.user.id`:
+  `committer-email: ${{ github.event.comment.user.id }}+${{ github.actor }}@users.noreply.github.com`.
+- **bcs `version-check` CI has no label bypass.** Unlike the changelog check (which checks
+  for a "no changelog" label), `version-check` does a pure version comparison and always
+  fails if the PR branch version ≤ main's version. For CI-only PRs (no R code changes),
+  bump `DESCRIPTION` version to unblock it.
