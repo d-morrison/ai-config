@@ -137,11 +137,13 @@
   ucdavis/bcs#246: `nelson_aalen` → `cumhaz_baseline` fixed the variable and the file
   header but missed the section header — caught two ARDI rounds later.)
 - In test code, express date intervals with lubridate rather than hardcoded day counts.
-  Use `lubridate::years(N)`, `lubridate::as.duration()`, or construct the interval from
-  actual dates — this eliminates the need to hand-calculate day counts. Only fall back to
-  a raw count when the function under test requires one; verify it via `365.25 × N`, not
-  by counting leap years manually (e.g., "3 leap years in 2000–2003" is wrong — only 2000
-  qualifies), and confirm with `lubridate::time_length(days_exact, "years") == N`.
+  Use `lubridate::years(N)` + date arithmetic for calendar-year intervals from a known
+  start date, or `lubridate::dyears(N)` when an exact numeric duration (`N × 365.25 × 86400`
+  seconds) is what the function under test expects — `years()` returns a Period, `dyears()`
+  returns a Duration; pick the one that matches the semantics. Only fall back to a raw day
+  count when the function requires one; verify it via `365.25 × N`, not by counting leap
+  years manually (e.g., "3 leap years in 2000–2003" is wrong — only 2000 qualifies), and
+  confirm with `lubridate::time_length(days_exact, "years") == N`.
   (Learned on ucdavis/bcs#249: using lubridate directly avoids the error class entirely.)
 - When writing documentation in a stacked PR (or any branch), only document features whose
   code is actually present on the CURRENT branch's ancestry — `grep` for the symbol/constant
