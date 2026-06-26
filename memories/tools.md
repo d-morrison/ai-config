@@ -72,6 +72,30 @@
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
   NOT `issueNumber`. This is the opposite of `pull_request_read`. Reload the
   tool schema when unsure rather than guessing.
+- **Issue *writes* 404 while *reads* succeed → the issue was transferred to
+  another repo, not a permissions gap.** If `mcp__github__add_issue_comment` /
+  `issue_write` to `owner/repo#<N>` fail (`404 Not Found`, or `Could not resolve
+  to an Issue with the number of <N>`) but `issue_read` (`get`) on the *same*
+  number succeeds and PR-comment writes work, suspect a **GitHub issue
+  transfer**. A transfer redirects the old number for *reads* — `issue_read`
+  silently follows the redirect and returns the issue at its NEW home, so check
+  the returned `html_url`/`number` (they show a different repo/number). Writes to
+  the old `owner/repo/issues/<N>` 404 because the issue no longer lives there.
+  Fix: re-read to get the new repo + number, then comment/close *there*. Don't
+  misdiagnose it as a missing `Issues:write` token scope. (Caught closing
+  `gha#75`, transferred to `rme#941`.)
+- **In a fresh web/remote container, local `origin/*` refs can be stale or
+  phantom — verify true remote state via MCP, not local refs.** The clone's
+  `remotes/origin/main` may lag the real default branch by already-merged
+  commits, and the harness-assigned `claude/<id>` branch can appear under
+  `git branch -a` as `remotes/origin/claude/<id>` while not existing on the real
+  remote (`get_file_contents` with `ref: refs/heads/claude/<id>` returns 404).
+  `git fetch origin` (all refs) can also exceed the 2-min Bash limit on large
+  repos with submodules (rme). To read the real default-branch HEAD cheaply,
+  `get_file_contents` any file with no `ref` (= default branch) — the returned
+  resource path embeds the live commit SHA. Fetch the single branch you need
+  (`git fetch origin main`) and branch off that, so you don't build on a
+  stale/polluted base.
 - `mcp__github__pull_request_review_write` with `method: resolve_thread`
   requires **only `threadId`** (node ID, e.g. `PRRT_kwDO...`); `owner`,
   `repo`, and `pullNumber` are ignored for that method. Thread node IDs come
@@ -79,13 +103,19 @@
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
-- **Self-wake to re-check CI in remote/web sessions.** There is no `send_later`
-  tool, and the `Monitor` tool can't reach the GitHub API (no `gh`; the only git
-  remote is a git-only proxy). Since webhooks don't deliver CI *success*, arm a
-  one-shot `Monitor` with `sleep <N>; echo recheck` as a self-check-in timer,
-  then re-poll `mcp__github__pull_request_read` (`get_check_runs`) when it fires;
-  re-arm until the build goes green. (Foreground Bash `sleep` is blocked — the
-  background `Monitor` is the workable timer.) Learned driving rme#929.
+- **Self-wake to re-check CI in remote/web sessions.** Webhooks don't deliver CI
+  *success*, new pushes, or merge transitions, so re-check on a timer. Prefer
+  `CronCreate` (a harness scheduling tool, not an MCP tool): schedule a one-shot
+  (`recurring: false`) or recurring (`recurring: true`) job whose prompt re-polls
+  `mcp__github__pull_request_read` (`get_check_runs`) and acts on the result; it
+  fires at wall-clock time without holding a background process. (Used to watch
+  both PRs' merge transitions while migrating rme's preview workflows to the gha
+  reusable family.) Fallback when `CronCreate` isn't available: arm a one-shot
+  `Monitor` with `sleep <N>; echo recheck` and re-poll when it fires — the
+  `Monitor` can't reach the GitHub API itself (no `gh`; the only git remote is a
+  git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
+  blocked, which is why the background `Monitor` is the workable one. There is no
+  `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
 - The `gh`->MCP substitution **mapping table** lives in `d-morrison/gha`'s
   `CLAUDE.md` specifically (the "GitHub access in remote / web sessions" table);
   other repos' `CLAUDE.md` (e.g. `ai-config`) do NOT carry it. When a skill or
