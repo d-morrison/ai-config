@@ -320,7 +320,8 @@
   Two consequences: (1) your in-flight local push is rejected ("fetch first" / RPC
   `HTTP 403` from the git backend — a non-fast-forward, **not** a policy denial); (2)
   the bot may resolve a `DESCRIPTION` version conflict to `== main`, which then fails
-  `version-check`. Recovery: `git fetch origin <branch>`, `git reset --hard
+  `version-check`. Recovery: stash any uncommitted work first (`git stash` — `reset
+  --hard` discards it), then `git fetch origin <branch>`, `git reset --hard
   origin/<branch>` onto the bot's merge (don't force-push a competing parallel merge of
   your own — build on the bot's), then re-bump the version above main and push.
   (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
