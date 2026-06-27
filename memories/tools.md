@@ -261,6 +261,21 @@
     back and nothing installs — drop the unavailable pkg and retry. (Holds for
     `pak::pkg_install()`, and for `install.packages()` while renv's pak backend
     is active; base `install.packages()` on its own is NOT atomic.)
+- **renv activation failure when a GitHub remote is blocked**: if `DESCRIPTION`
+  lists a GitHub `Remotes:` entry the proxy can't reach (e.g. bcs's
+  `d-morrison/altdoc@recursive-qmd-search`), renv activation (via `.Rprofile`)
+  aborts on startup — every subsequent `R` call errors before loading any package.
+  Bypass: `R --no-save --no-restore --no-site-file --no-init-file` skips
+  `.Rprofile` entirely. Install needed packages from P3M into the user library
+  and proceed. (Observed on ucdavis/bcs cloud sessions.)
+- **`snapr` is not on CRAN or P3M**: install from the GitHub tarball.
+  `curl -L https://codeload.github.com/d-morrison/snapr/tar.gz/refs/heads/main -o /tmp/snapr.tar.gz`
+  then in R, install `readr` first (a direct `snapr` `Imports:` dependency):
+  `install.packages("readr")`, then
+  `install.packages("/tmp/snapr.tar.gz", repos=NULL, type="source")`.
+  `snapr::expect_snapshot_data()` silently skips snapshot generation/comparison when
+  `NOT_CRAN` is unset (respects the standard CRAN-skip convention):
+  `NOT_CRAN=true Rscript -e 'devtools::test()'`.
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
