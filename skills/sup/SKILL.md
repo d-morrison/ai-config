@@ -248,8 +248,9 @@ Provide:
   Some repos' Codes of Conduct make unattended AI-agent submissions
   account-bannable on first offense.
 - ❌ Filing **before reading the repo's `CODE_OF_CONDUCT.md` / `CONTRIBUTING.md`
-  / templates** — and filing a feature request as an **issue** when the project
-  routes feature requests to a **Discussions** board.
+  / templates** — you can't file correctly without knowing the rules.
+- ❌ Filing a **feature request as an issue** when the project routes feature
+  requests to a **Discussions** board.
 - ❌ Posting a **free-form body when the repo provides an issue/PR template** —
   use the template and fill in every required field.
 - ❌ Filing a vague issue ("something is broken") — always include a reprex
