@@ -270,10 +270,12 @@
   and proceed. (Observed on ucdavis/bcs cloud sessions.)
 - **`snapr` is not on CRAN or P3M**: install from the GitHub tarball.
   `curl -L https://codeload.github.com/d-morrison/snapr/tar.gz/refs/heads/main -o /tmp/snapr.tar.gz`
-  then `install.packages("/tmp/snapr.tar.gz", repos=NULL, type="source")`.
-  Install `readr` first — it is a `snapr` dependency. `snapr::expect_snapshot_data()`
-  calls `testthat::skip_on_cran()` internally, so snapshot generation/comparison is
-  silently skipped without `NOT_CRAN=true` in the environment:
+  then in R, install `readr` first (a direct `snapr` `Imports:` dependency):
+  `install.packages("readr")`, then
+  `install.packages("/tmp/snapr.tar.gz", repos=NULL, type="source")`.
+  `snapr::expect_snapshot_data()` silently skips snapshot generation/comparison when
+  `NOT_CRAN` is unset (respects the standard CRAN-skip convention, via
+  `testthat::expect_snapshot_file()` which snapr delegates to):
   `NOT_CRAN=true Rscript -e 'devtools::test()'`.
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
