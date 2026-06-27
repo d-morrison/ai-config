@@ -286,17 +286,19 @@
     `403` to CONNECT (curl: `CONNECT tunnel failed, response 403`; Chromium:
     `ERR_TUNNEL_CONNECTION_FAILED`), so you can't load the preview to eyeball the
     math. Verify locally instead: `npm i mathjax` (npmjs is allowed through the
-    proxy), then `require('mathjax').init({...}).then(MJ => MJ.tex2mml(defs + expr))`
-    and check the output. With the `noundefined` package an undefined macro shows
-    as `<mtext mathcolor="red">\cmd</mtext>` (NOT an `<merror>`), so grep for
-    `mathcolor="red"`.
+    proxy), then init MathJax **with the `[tex]/noundefined` extension loaded**
+    (`init({tex:{packages:{'[+]':['noundefined']}}}).then(MJ => MJ.tex2mml(defs + expr))`)
+    and check the output. With `noundefined` an undefined macro shows as
+    `<mtext mathcolor="red">\cmd</mtext>` (NOT an `<merror>` or a thrown
+    exception), so grep for `mathcolor="red"`.
   - **MathJax ignores `\providecommand`** — only `\newcommand` / `\def` /
     `\renewcommand` define a macro. So `\providecommand{\X}{...}` is a *silent
     no-op* whenever `\X` shadows a LaTeX built-in (`\v` caron, `\b` bar, `\u`,
     `\c`, …): the built-in meaning survives and renders broken (rme's
-    `\hat{\v{\mu}}` showed a red `\v`). Use `\vec` / `\vecf` (the macros
-    `\renewcommand` `\vec`), and fix upstream by switching `\providecommand` →
-    `\def`/`\renewcommand` for built-in names.
+    `\hat{\v{\mu}}` showed a red `\v`). Use `\vec` / `\vecf` (rme defines these
+    with `\renewcommand{\vec}{...}`, which properly overrides the built-in), and
+    fix upstream by switching `\providecommand` → `\def`/`\renewcommand` for
+    built-in names.
 - In Quarto, a cross-referenceable figure/table **div** (`::: {#fig-...}` / `::: {#tbl-...}`)
   uses its **last paragraph** as the caption — the caption text must come AFTER the
   image / code chunk / table, not before it. A caption placed first renders as ordinary
