@@ -15,5 +15,5 @@ df |> group_by(group_col) |> summarise(mean_x = mean(x)) |> ungroup()
 Reference: <https://dplyr.tidyverse.org/reference/dplyr_by.html>
 
 Flag persistent `group_by()` calls during code review when `.by` would work —
-i.e. when the grouping is consumed by exactly one downstream verb and there is
-no intentional reason to keep the grouping alive across further operations.
+that is, when the grouping feeds exactly one downstream verb and no subsequent
+operation needs it to persist.
