@@ -257,7 +257,7 @@
   review-trigger mention") or split the tokens (e.g. `@ claude`, with a space). (Learned the hard
   way on ai-config#41; ardi/iterate/ard
   carry the warning.)
-- Don't ping EXTERNAL people or repos from our OWN repo's PR/commit/comment text. An
+- Don't ping EXTERNAL people or repos from our OWN repo's PR/issue/commit/comment text. An
   `@username` for a non-team person (e.g. an upstream maintainer) sends them a GitHub
   notification, and the `owner/repo#number` shorthand for an external issue posts a
   cross-reference backlink onto THEIR issue. Both reach into a repo we shouldn't be
@@ -265,7 +265,7 @@
   issues by a full URL link — never `@name` or `owner/repo#num` — reserving those forms
   for our own team and repos. (ai-config#246: the PR body `@`-mentioned `mcanouil` and the
   commit used `quarto-dev/quarto-cli#NNNNN`, both pinging the very upstream repo the PR was
-  about not disturbing.)
+  meant not to disturb.)
 - While I'm iterating a PR, the `@claude` bot (triggered by an `@claude` comment — including
   one I or the user posts mid-loop) runs its OWN ARD and pushes fix commits to the
   SAME PR branch. Before every edit/push during a PR loop, `git fetch` and reconcile
