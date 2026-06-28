@@ -73,7 +73,8 @@ For standing instructions that should always be in context:
 3. **Check existing notes** — read the target file first to avoid duplicates
    and maintain organization
 4. **Write concisely** — bullet points, not prose. Include the *why* not just
-   the *what*
+   the *what*. If you created a *new* file under `/memories/`, also add a row
+   for it to `memories/MEMORY.md` (the index)
 5. **If it's a skill** — create it in `~/.claude/skills/` (symlink to the
    cloned repo; discover the repo path with
    `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`)
