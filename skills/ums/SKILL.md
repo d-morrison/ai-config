@@ -136,3 +136,9 @@ record-as-you-go, or when the user wants to ensure nothing was missed.
 - ❌ Updating only preferences when a skill also needs the fix
 - ❌ `git add -A` — it sweeps unrelated in-flight edits (the user's work, other
   draft skills) into your commit/PR. Stage the specific files you touched.
+- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
+  Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
+  `CLAUDE.md`, `.github/instructions/`) via a PR, or in
+  `~/.claude/projects/<path>/memory/` (local project memory, no commit) if the
+  repo has no agent-doc infrastructure. See the checklist item above and
+  `memories/preferences.md` for the full rule.
