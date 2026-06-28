@@ -54,7 +54,9 @@ Say so and route it there; don't store a note that will never fire.
      `~/.claude/CLAUDE.md` (it's loaded every session)
    - **General reference fact** — a cross-project fact that only matters when
      relevant ("gh opens a pager — pipe to cat") → a topical file in
-     `/memories/` (e.g. `tools.md`, `debugging.md`)
+     `/memories/` (e.g. `tools.md`, `debugging.md`). When you add a *new* file
+     here (not just a bullet to an existing one), register it in
+     `memories/MEMORY.md` as an index entry.
    - **Conversation-only** → `/memories/session/`
    - When ambiguous between project and general, judge by relevance; default
      to general.
