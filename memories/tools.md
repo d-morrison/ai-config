@@ -285,7 +285,6 @@
   `snapr::expect_snapshot_data()` silently skips snapshot generation/comparison when
   `NOT_CRAN` is unset (respects the standard CRAN-skip convention):
   `NOT_CRAN=true Rscript -e 'devtools::test()'`.
->>>>>>> origin/main
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
