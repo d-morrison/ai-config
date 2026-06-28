@@ -32,6 +32,9 @@ For facts that apply across all projects:
 - General preferences
 - Cross-project conventions
 
+When you add a *new* file under `/memories/` (not just a bullet to an existing
+one), register it in `memories/MEMORY.md` as an index entry.
+
 ### Repository memory (`~/.claude/projects/<project-path>/memory/`)
 For facts specific to ONE repo (build quirks, project conventions, CI behavior):
 write directly to that repo's Claude project memory directory. The project path

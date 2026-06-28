@@ -12,5 +12,5 @@ index in that directory.
 | File | Title | Covers |
 |------|-------|--------|
 | [`preferences.md`](preferences.md) | User preferences (cross-workspace) | Standing working rules: never-assume/always-verify, record learnings as you go, cite sources for tool-behavior claims, issue-first, and the ARDI / fully-clean definitions. |
-| [`tools.md`](tools.md) | Local tools & CLIs | Tool and CLI behavior: `gh` pager and shared rate limits, REST-vs-GraphQL fallbacks, the `@claude` review bot's author name and re-trigger steps, sub-issue linking, and R / Quarto quirks in cloud / web sessions. |
-| [`debugging.md`](debugging.md) | Debugging notes | Debugging practices: test CSS/JS web features in a real headless browser (not a DOM stub), the VS Code editor-vs-disk desync trap, and ARDI review-polling behavior. |
+| [`tools.md`](tools.md) | Local tools & CLIs | Tool and CLI behavior: `gh` / `glab` and the GitHub MCP tools, the `@claude` review / CI workflows, git tags / submodules / worktrees, R / Quarto / Julia in cloud sessions, R-package CI gates, GitHub Actions workflow authoring, and editing committed Office Open XML files. |
+| [`debugging.md`](debugging.md) | Debugging notes | Debugging practices: real-browser CSS/JS testing (not DOM stubs), VS Code editor-vs-disk desync, ARDI review-polling, portable bash scripting (sed, EOF, robustness), R test/lint CI-only gotchas and snapshot regeneration, and recovery from merge-clobbered or force-pushed PR branches. |
