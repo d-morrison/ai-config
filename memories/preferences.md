@@ -158,8 +158,8 @@
   editing the game/library code thinks to update a memory in another repo) and isn't
   discoverable by human contributors. Keep the durable *lesson/gotcha* in memory and point
   at the in-repo docs for the tables. (Learned splitting a sparta scenario cheat-sheet: the
-  lesson "team 0 is stationary by default" stayed in `memories/repo/sparta.md`; the
-  speed/UID/order-target tables moved to sparta's `demos/README.md` + `REPLAY.md` —
+  lesson "team 0 is stationary by default" now lives in sparta's `CLAUDE.md`; the
+  speed/UID/order-target tables live in sparta's `demos/README.md` + `REPLAY.md` —
   ai-config#1 / lacaedemon/sparta#207.)
 - Avoid nested function calls and nested function definitions where feasible — prefer
   named intermediate variables (or a pipe, e.g. `|>` / `%>%` in R) over `f(g(h(x)))`, and
@@ -257,6 +257,15 @@
   review-trigger mention") or split the tokens (e.g. `@ claude`, with a space). (Learned the hard
   way on ai-config#41; ardi/iterate/ard
   carry the warning.)
+- Don't ping EXTERNAL people or repos from our OWN repo's PR/issue/commit/comment text. An
+  `@username` for a non-team person (e.g. an upstream maintainer) sends them a GitHub
+  notification, and the `owner/repo#number` shorthand for an external issue posts a
+  cross-reference backlink onto THEIR issue. Both reach into a repo we shouldn't be
+  touching. Refer to external people by plain name ("a Quarto collaborator") and external
+  issues by a full URL link — never `@name` or `owner/repo#num` — reserving those forms
+  for our own team and repos. (ai-config#246: the PR body `@`-mentioned `mcanouil` and the
+  commit used `quarto-dev/quarto-cli#NNNNN`, both pinging the very upstream repo the PR was
+  meant not to disturb.)
 - While I'm iterating a PR, the `@claude` bot (triggered by an `@claude` comment — including
   one I or the user posts mid-loop) runs its OWN ARD and pushes fix commits to the
   SAME PR branch. Before every edit/push during a PR loop, `git fetch` and reconcile
@@ -409,7 +418,7 @@
   agent docs (`CLAUDE.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`) via a
   PR, so the whole team and every `@claude` session working there sees it — not just my private
   ai-config memory. The `memories/repo/` pattern is retired (don't add to it; `memories/repo/bcs.md`
-  was relocated into ucdavis/bcs on ai-config#226, and `sparta.md` is tracked for the same move).
+  was relocated into ucdavis/bcs on ai-config#226, and `sparta.md` was relocated into Lacaedemon/sparta on ai-config#248).
   ai-config still owns genuinely cross-repo lore (`memories/debugging.md`, `tools.md`) and my own
   preferences/workflows — only the single-repo notes move out. (Learned on ai-config#226.)
 

@@ -5,6 +5,7 @@
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
+- **Linking a GitHub sub-issue needs an integer DB id, not the number.** `POST /repos/<o>/<r>/issues/<parent>/sub_issues` takes `sub_issue_id` = the child's **database id** (`gh api repos/<o>/<r>/issues/<child> --jq .id`), *not* its issue number. Pass it with `-F` (typed, integer), never `-f` (string) — `-f sub_issue_id=…` fails with `422 Invalid property /sub_issue_id: "…" is not of type integer`. Full call: `gh api repos/<o>/<r>/issues/<parent>/sub_issues -F sub_issue_id=<child_db_id>`. Verify with `gh api .../issues/<parent>/sub_issues --jq '.[] | "#\(.number) \(.title)"'`.
 
 ## Re-triggering the @claude PR *review* (d-morrison Quarto / R-pkg repos, e.g. `psw`)
 - Filenames below are those in the **content/package repos** (verified in
@@ -179,6 +180,18 @@
   the squash commit is present when you merge. Fetching only the PR branch leaves
   origin/main stale and the merge won't pick up the commit that caused the conflict.
 
+## Git — removing a worktree that contains a submodule
+- `git worktree remove <path>` **fails** on a worktree that has an initialized
+  submodule: `fatal: working trees containing submodules cannot be moved or
+  removed`. Many repos with a vendored `.ai-config` submodule hit this after a
+  feature branch merges.
+- Fix: `git worktree remove --force <path>` removes it cleanly. (Plain `--force`
+  is enough; the submodule warning is the only blocker.) If the dir somehow
+  lingers, `rm -rf <path> && git worktree prune` finishes the cleanup.
+- The branch can't be deleted while the worktree still references it
+  (`error: cannot delete branch '…' used by worktree at '…'`), so remove the
+  worktree **first**, then `git branch -D <branch>`.
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
@@ -257,6 +270,22 @@
     with the autoloader off:
     `RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript -e 'lintr::lint("path/to/file.qmd")'`.
     (Used to lint the changed files for rme #873 when lintr wasn't in the renv lib.)
+- **renv activation failure when a GitHub remote is blocked**: if `DESCRIPTION`
+  lists a GitHub `Remotes:` entry the proxy can't reach (e.g. bcs's
+  `d-morrison/altdoc@recursive-qmd-search`), renv activation (via `.Rprofile`)
+  aborts on startup — every subsequent `R` call errors before loading any package.
+  Bypass: `R --no-save --no-restore --no-site-file --no-init-file` skips
+  `.Rprofile` entirely. Install needed packages from P3M into the user library
+  and proceed. (Observed on ucdavis/bcs cloud sessions.)
+- **`snapr` is not on CRAN or P3M**: install from the GitHub tarball.
+  `curl -L https://codeload.github.com/d-morrison/snapr/tar.gz/refs/heads/main -o /tmp/snapr.tar.gz`
+  then in R, install `readr` first (a direct `snapr` `Imports:` dependency):
+  `install.packages("readr")`, then
+  `install.packages("/tmp/snapr.tar.gz", repos=NULL, type="source")`.
+  `snapr::expect_snapshot_data()` silently skips snapshot generation/comparison when
+  `NOT_CRAN` is unset (respects the standard CRAN-skip convention):
+  `NOT_CRAN=true Rscript -e 'devtools::test()'`.
+>>>>>>> origin/main
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
@@ -534,7 +563,7 @@
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
-  `description`, `metadata`) — e.g. `memories/repo/sparta.md` — while older ones
+  `description`, `metadata`) — while older ones
   start directly with a `#` heading. Don't assume either form: `grep -rn "^name:"
   memories/` finds the frontmatter'd files, and a file without it is still valid.
   Preserve whatever frontmatter a file already has rather than stripping it.
@@ -752,6 +781,21 @@ common patterns.
   it without evaluating), matching the existing convention (e.g.
   `R/calc_ip_weights.R`). Runnable examples with self-contained synthetic data
   are fine and do execute. (Hit on ucdavis/bcs#238.)
+- **`NEWS.md` section headers need a blank line before them.** A bullet that ends
+  immediately before a `## Next-section` heading (no blank line) can cause
+  `utils::news()` to misparse adjacent sections. Always leave one blank line
+  between the last bullet of a section and the next `##` heading. (bcs#275:
+  `## Internal` bullet → `## Tests` with no blank line; bot caught it.)
+- **`merge_group:` trigger — guard PR-context workflows at the job level.**
+  When adding `merge_group:` to a workflow's `on:` block so the GitHub merge
+  queue fires CI checks, any job that uses `github.event.pull_request.*`
+  context needs `if: github.event_name == 'pull_request'` at the job level —
+  otherwise the job errors on merge-group commits where that context is absent.
+  A job with a false `if:` counts as skipped (passing) for branch-protection
+  purposes. Also update matrix-selection shell conditions that branch on
+  `pull_request` to cover `merge_group` too (use release-only matrix for both).
+  Affected jobs in bcs: `version-check`, `news`, `lint-changed-files`, and the
+  `R-CMD-check` matrix selector. (bcs#275.)
 - **bcs `test-coverage` (codecov) is NOT a required check.** A coverage drop
   leaves the PR `mergeable_state: unstable` (not `blocked`) and does not block
   the merge — `docs`, `version-check`, the R-CMD-check matrix, lint, and
