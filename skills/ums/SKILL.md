@@ -105,7 +105,7 @@ reflect, and persist.
 - [ ] Did I discover a tool quirk? → `/memories/tools.md`
 - [ ] Did I learn a debugging pattern? → `/memories/debugging.md`
 - [ ] Did I discover a repo convention for a repo **we own** that has checked-in
-  agent docs? → put it IN that repo (its `CLAUDE.md` / `.github/instructions/*.md`),
+  agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, or `.github/instructions/*.md`),
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
   without agent-doc infrastructure, fall back to that repo's local Claude project
@@ -139,6 +139,6 @@ record-as-you-go, or when the user wants to ensure nothing was missed.
 - ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
   `CLAUDE.md`, `.github/instructions/`) via a PR, or in
-  `~/.claude/projects/<path>/memory/` (local project memory, no commit) if the
+  `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the
   repo has no agent-doc infrastructure. See the checklist item above and
   `memories/preferences.md` for the full rule.
