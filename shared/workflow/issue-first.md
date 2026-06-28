@@ -13,7 +13,7 @@ When the issue is a **bug report**, include a minimal reproducible example
 (a reprex --- <https://reprex.tidyverse.org/>) whenever you can. A reprex is
 what a maintainer needs to confirm and fix the bug, and it's what they'll ask
 for anyway, so providing it up front saves a round trip. The `reprexes` skill
-helps reduce a failure to a minimal, self-contained example.
+helps reduce the problem to a minimal, self-contained example.
 
 When filing an issue that contains a list of independent subissues, file each
 subissue as a child issue linked under the parent (GitHub sub-issues feature:
