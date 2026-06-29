@@ -418,6 +418,11 @@
   grep sibling skills that perform the same action and add the step there too. Sibling skills
   that diverge on a shared sub-procedure each cost a review round to surface and fix. (Learned
   on ai-config#172: memorize omitted the MEMORY.md index step that record-learnings already had.)
+  Put the step in each skill's **numbered action steps** that an agent actually executes, not only
+  in a routing or "where to write" header --- a step buried in a description gets skipped by an
+  agent following the numbered flow, and the reviewer flags the gap. (Reinforced on
+  ai-config#254: the MEMORY.md registration step first landed in routing sections and took
+  several review rounds to move into memorize's step 3 and record-learnings' step 4.)
 - When writing multi-step workflow instructions, order the steps to match the actual execution
   sequence. A reviewer flagged on ai-config#186 that "Use the existing PR branch" was placed
   before "Claim a GitHub PR/issue" in CLAUDE.md, even though you must claim the PR before you
