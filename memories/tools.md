@@ -284,6 +284,17 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   - CRAN pkgs → P3M binaries:
     `options(repos = c(P3M = "https://packagemanager.posit.co/cran/__linux__/noble/latest"))`
     then `install.packages(...)` (installs into the active renv library; fast).
+  - To restore the WHOLE lockfile (when you don't know which pkgs a render
+    pulls in), point renv itself at P3M binaries instead of hand-picking:
+    `Sys.setenv(RENV_CONFIG_PPM_ENABLED = "TRUE")` (or
+    `options(renv.config.ppm.enabled = TRUE)`) + P3M `repos`, then
+    `renv::restore(prompt = FALSE)`. Observed on rme: ~264 pkgs in ~5 min
+    (mostly cache-linked binaries; a few like glmmTMB still build from source).
+    A plain source-repo `renv::restore()` times out — enabling P3M is what
+    makes the full restore feasible. knitr/rmarkdown must be present for
+    `quarto render` to even start the knitr engine (`--no-execute` does NOT
+    skip the engine check), so a full restore is the surest path when an edit
+    needs a real render.
   - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
     has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
     anywhere reachable, so it blocks full renders of any chapter that does
