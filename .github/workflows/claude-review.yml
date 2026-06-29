@@ -23,3 +23,8 @@ jobs:
     secrets: inherit
     with:
       pr-number: ${{ inputs.pr_number }}
+      prompt-addendum: |
+        Do not flag cosmetic line-wrapping in raw source files as a finding.
+        Line length in Markdown, R, YAML, and similar prose-heavy files is a
+        formatting convention, not a correctness concern. Skip nits about lines
+        being too long or not wrapped at a specific column width.
