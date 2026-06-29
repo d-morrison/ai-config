@@ -868,11 +868,13 @@ common patterns.
   convention — `test-plot_fn.R` for `R/plot_fn.R`. (bcs#253.)
 
 ## markdownlint / markdownlint-cli2
-- **MD060/table-column-style is a real rule, added in markdownlint v0.40.0** (bundled in
-  `markdownlint-cli2@0.22.1`). The `@claude` reviewer's rule list is outdated — it claims
-  rules "top out at MD058", but `MD060/table-column-style` is a distinct real rule.
-  Under default config it fires 332 times on the ai-config corpus (every table with
-  compact pipe style). Reproduction (move aside `.markdownlint-cli2.jsonc` first):
+- **MD060/table-column-style is a real rule, present in `markdownlint-cli2@0.22.1`**
+  (added in a recent markdownlint version; the `@claude` reviewer's rule list is
+  outdated — it claims rules "top out at MD058", but `MD060/table-column-style` is a
+  distinct real rule).
+  Under default config it fires ~330 times on the ai-config corpus (2026-06 snapshot;
+  count grows as files are added; every table with compact pipe style).
+  Reproduction (move aside `.markdownlint-cli2.jsonc` first):
   `npx markdownlint-cli2@0.22.1 "**/*.md" "!codex-skills/**"`. The disable in
   `.markdownlint-cli2.jsonc` is load-bearing; do not remove it on the reviewer's say-so
   — rebut with the reproduction command. (Hit on ai-config#267.)
