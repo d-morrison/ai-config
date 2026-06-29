@@ -11,8 +11,8 @@ git log --oneline ..origin/main | head    # any commits? main is ahead --- merge
 git merge origin/main
 ```
 
-If the push is rejected because `main` has moved (non-fast-forward or
-`with origin/main; fetch first`), fetch and merge before retrying --- don't
+If the push is rejected because `main` has moved (`! [rejected]` with
+`(fetch first)` or `(non-fast-forward)`), fetch and merge before retrying --- don't
 force-push.
 
 Always do this before triggering a fresh review too, so the reviewer evaluates
