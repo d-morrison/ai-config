@@ -215,6 +215,15 @@ Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
   (`future::plan("sequential")` / set workers to 1), then copy the result into
   the parallel snapshot path — verify seq==par output on `main` first so the
   copy is sound.
+- **`require-review` failure caused by dispatch winning the concurrency race.**
+  `cancel-in-progress: true` on a concurrency group means a newly-dispatched
+  review cancels the still-running push-triggered review. The push-triggered
+  run's `require-review` gate then shows as failed (cancelled parent = failed
+  dependent), while the dispatched run's `require-review` is green. The PR
+  shows `mergeable_state: unstable` from the cancelled run but is still
+  mergeable — the dispatched review's clean verdict is what counts. Don't
+  re-trigger to fix it; confirm the dispatched run posted a clean verdict and
+  proceed to merge. (gha#133.)
 - **`tests/testthat.R` runs with `stop_on_warning = TRUE`**, so any warning
   during a test FAILS CI even with 0 test failures (shows as `WARN N`). When you
   hit it, don't guess the source — **capture the actual messages**
