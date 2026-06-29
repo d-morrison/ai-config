@@ -19,8 +19,11 @@ Pattern: any loop that accumulates lines before processing should break (or trac
 
 Hit on d-morrison/ai-config#265: the semantic-line-breaks script lacked fence
 tracking in the bullet continuation loop and the blockquote collection loop.
-Both took three rounds of review to fully fix (single-line fence caught in round 1,
-multi-line body in blockquotes caught in round 2, empty-sentences edge case in round 3).
+Both took two rounds of review to fully fix (single-line fence caught in round 1,
+multi-line body in blockquotes caught in round 2).
+A separate edge case also surfaced in round 3: `_flush_bq_prose` silently dropped
+lines when `split_sentences` returned `[]` (empty blockquote text) and multiple
+lines had accumulated — unrelated to fence state, but found in the same cycle.
 
 ## Testing CSS/JS-dependent web features — use a REAL browser, not a DOM stub
 - A hand-rolled DOM shim (or jsdom-style unit test) can PASS while the feature is
