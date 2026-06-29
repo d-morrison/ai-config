@@ -148,8 +148,9 @@
 - When removing decorative comment banners (e.g. `# ---...---` / `#  Name  #` blocks),
   scan for **every** occurrence in the file — both file-scope banners and inner
   function-body banners. Removing only the outer ones leaves the inner ones, and a
-  reviewer catches the inconsistency as a separate finding. Run `grep -n "#.*#" file`
-  (or equivalent) to surface all padded comment lines before committing. (Learned on
+  reviewer catches the inconsistency as a separate finding. Run
+  `grep -n "^[[:space:]]*#[[:space:]]*[-=*_#]" file` to surface padded/decorated
+  banner lines before committing. (Learned on
   d-morrison/ai-config#274: outer banners stripped in round 1, inner ones missed until
   round 2.)
 - Do not commit scratch test files that are not wired into CI. A file like `test_fix.py`
