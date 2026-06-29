@@ -350,6 +350,15 @@
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
   GitHub REST API reachable from a Bash/Monitor script. Use `mcp__github__*`
   tools for any API need.
+- **The proxy allows branch creation/push but BLOCKS branch deletion.** Pushing a
+  *new* branch (even one other than the harness-assigned `claude/...`) works, but a
+  delete push — `git push origin --delete <b>` or `git push origin :<b>` — is rejected.
+  Observed verbatim: "send-pack: unexpected disconnect" / "remote end hung up", then a
+  misleading "Everything up-to-date" (the proxy returns that no-op message instead of a
+  normal `failed to push some refs` error), but the command still exits non-zero. So a
+  throwaway branch (e.g. a push-capability probe) can't be cleaned up from the session;
+  delete it via the GitHub UI/API, or just leave it if it's identical to `main` and has
+  no PR. (Seen on ai-config, 2026-06-28.)
 - Consequence: you CANNOT poll PR review/CI state from a background Monitor.
   Rely on `mcp__github__subscribe_pr_activity`, which delivers review comments
   and CI *failures* — but NOT CI success, new pushes, or merge-conflict
@@ -400,6 +409,16 @@
   your own — build on the bot's), then re-bump the version above main and push.
   (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
   failing version-check until I bumped to `.9063` on top.)
+- **The `@claude` agent can run a parallel session that posts a phantom commit SHA.**
+  While you ARDI a PR (pushing fixes + posting reply comments), the activity can trigger
+  the `claude.yml` agent to spin up its own run that attempts the *same* fixes, fails to
+  push (it collides with your pushes), then posts review comments crediting a commit SHA
+  that **never reached the remote** (e.g. it posts "Addressed in `a841fc7`", but that SHA
+  was never pushed and isn't on the remote). The fixes are really there via *your* pushed commit; the cited SHA
+  is a phantom. Don't chase it: verify the real branch head with `git ls-remote origin
+  <branch>` (or `git rev-parse HEAD` vs `origin/<branch>`), and if the cited SHA fails
+  `git cat-file -t <sha>` it never existed. Post a one-line clarification on the PR so the
+  phantom doesn't confuse later readers, and keep going. (Hit on ai-config#254.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's

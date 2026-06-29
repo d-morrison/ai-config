@@ -21,3 +21,5 @@ jobs:
         run: python3 scripts/check-links.py
       - name: Check vendored drift
         run: python3 scripts/check-vendored-drift.py
+      - name: Check markdown style
+        run: npx --yes markdownlint-cli2@0.22.1   # node is preinstalled on ubuntu runners; config in .markdownlint-cli2.jsonc
