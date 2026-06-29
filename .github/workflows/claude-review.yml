@@ -49,6 +49,14 @@ jobs:
     with:
       pr-number: ${{ inputs.pr_number }}
       prompt-addendum: |
+        ## Review scope
+
+        Do not flag cosmetic raw-source line-wrapping in Markdown prose files
+        (`.md`, `.qmd`). A noun phrase or sentence split across a hard wrap
+        looks odd in raw source but renders identically — it is not a genuine
+        prose problem. Keep flagging real prose issues: ambiguity, grammar that
+        changes meaning, factual errors, or missing words.
+
         ## Prior review context
 
         The comments below are the last few reviews you (claude[bot]) posted on this PR.
