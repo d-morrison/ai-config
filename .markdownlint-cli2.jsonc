@@ -1,0 +1,46 @@
+// markdownlint-cli2 config for ai-config (issue #264, parent #260).
+//
+// Deliberately lenient to start: the existing skill/memory corpus violates
+// many style rules en masse (e.g. MD013 line-length 900+ times), so enabling
+// the defaults would flood CI without improving anything. We disable every
+// rule the current tree violates, giving a GREEN baseline with zero content
+// churn, and keep the rest active so NEW files can't regress them.
+//
+// Tighten incrementally (re-enable a rule after a one-time fix pass) -- tracked
+// under #260. The big prose reformat to semantic line breaks is #263.
+{
+  "config": {
+    "default": true,
+
+    // Long lines are intentional in this corpus; we do not enforce a width.
+    "MD013": false,
+
+    // Disabled until a future cleanup pass re-enables them (currently violated
+    // across many existing files; see #260):
+    "MD060": false, // table-column-style
+    "MD031": false, // blanks-around-fences
+    "MD032": false, // blanks-around-lists
+    "MD022": false, // blanks-around-headings
+    "MD040": false, // fenced-code-language
+    "MD041": false, // first-line-heading
+    "MD033": false, // no-inline-html
+    "MD034": false, // no-bare-urls
+    "MD029": false, // ol-prefix
+    "MD036": false, // no-emphasis-as-heading
+    "MD026": false, // no-trailing-punctuation (headings)
+    "MD004": false, // ul-style
+    "MD028": false, // no-blanks-blockquote
+    "MD038": false, // no-space-in-code
+    "MD012": false  // no-multiple-blanks
+  },
+
+  // Lint source markdown only; skip generated output and dependencies.
+  "globs": ["**/*.md"],
+  "ignores": [
+    "codex-skills/**",   // generated from skills/ by sync-codex-skill-wrappers.py
+    "**/node_modules/**",
+    "docs/**",           // built site output
+    "_site/**",
+    ".quarto/**"
+  ]
+}
