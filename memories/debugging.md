@@ -1,5 +1,30 @@
 # Debugging notes
 
+## Markdown line-by-line processors: every inner loop needs its own fence tracker
+
+When writing a script that reformats Markdown line by line, the outer loop usually
+tracks `in_code_block` to pass fence bodies verbatim. But inner collection loops
+(bullet continuation, blockquote accumulation) often collect lines first and process
+later — they need their **own** fence-state tracker, or fenced code blocks inside
+bullets/blockquotes get stripped, joined, and reflowed as prose.
+
+Pattern: any loop that accumulates lines before processing should break (or track
+`in_inner_code`) when it hits a ```` ``` ```` line.
+
+**Test matrix before shipping a Markdown reformatter:**
+- Top-level fenced code block (the baseline)
+- Fenced code block inside a numbered step / bullet item
+- Fenced code block inside a blockquote (`> ``` … > ``` `)
+- Multi-line code block body (not just single-line) in each of the above
+
+Hit on d-morrison/ai-config#265: the semantic-line-breaks script lacked fence
+tracking in the bullet continuation loop and the blockquote collection loop.
+Both took two rounds of review to fully fix (single-line fence caught in round 1,
+multi-line body in blockquotes caught in round 2).
+A separate edge case also surfaced in round 3: `_flush_bq_prose` silently dropped
+lines when `split_sentences` returned `[]` (empty blockquote text) and multiple
+lines had accumulated — unrelated to fence state, but found in the same cycle.
+
 ## Testing CSS/JS-dependent web features — use a REAL browser, not a DOM stub
 - A hand-rolled DOM shim (or jsdom-style unit test) can PASS while the feature is
   visibly broken, because it doesn't apply the page's CSS or run the framework's
