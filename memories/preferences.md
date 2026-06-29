@@ -418,7 +418,7 @@
   grep sibling skills that perform the same action and add the step there too. Sibling skills
   that diverge on a shared sub-procedure each cost a review round to surface and fix. (Learned
   on ai-config#172: memorize omitted the MEMORY.md index step that record-learnings already had.)
-  Put the step in each skill's **numbered action steps** an agent actually executes, not only
+  Put the step in each skill's **numbered action steps** that an agent actually executes, not only
   in a routing or "where to write" header --- a step buried in a description gets skipped by an
   agent following the numbered flow, and the reviewer flags the gap. (Reinforced on
   ai-config#254: the MEMORY.md registration step first landed in routing sections and took
