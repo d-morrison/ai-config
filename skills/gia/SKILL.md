@@ -37,6 +37,12 @@ close issues that the open PRs address).
 Detect the forge (GitHub `gh` / GitLab `glab`) from `git remote get-url
 origin`. Note the default branch (`main` / `master`).
 
+**Confirm which repo first when several are in reach.** GIA (like `ardia` and
+`gii`) clears *one* repo's queue, but a session may start in a directory holding
+several repos (e.g. a web session scoped to multiple repos). If the working dir
+isn't itself a single repo, or more than one repo is in scope, ask which repo's
+queue to clear before surveying --- don't assume the first one found.
+
 ### Phase 1 — ARDIA (existing open PRs/MRs)
 
 Run the full [`ardia`](../ardia/SKILL.md) procedure: list every open PR/MR and
