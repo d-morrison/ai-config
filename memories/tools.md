@@ -79,7 +79,7 @@
   Use `get_check_runs` for the authoritative CI state — it returns the real
   job conclusions (`success`, `failure`, `skipped`). `get_status` aggregates
   across check suites and can lag or show a stale "pending" when all runs have
-  actually completed. Don't rely on `get_status` alone to declare CI green.
+  actually completed. Always use `get_check_runs` to check CI state; `get_status` is unreliable.
   (Hit during the ai-config #275 GII session — `get_status` showed
   `total_count: 0` / `pending` while `get_check_runs` correctly showed all 5
   checks `success`.)
@@ -153,9 +153,9 @@ When starting a GII loop, do a cleanup pass before diving into ARDI:
    on each PR before closing.
 3. **Identify the canonical PR** for each in-flight issue. Superseded drafts
    should be closed with a note pointing to the canonical one.
-4. **Collapse stacked changes** — if two open PRs both touch the same file,
-   merge one branch into the other before starting ARDI, so the reviewer
-   evaluates the combined diff rather than two separate PRs.
+4. **Collapse stacked changes** — if two open PRs address the same issue or
+   have a causal dependency (one builds on the other), merge one branch into
+   the other before starting ARDI, so the reviewer evaluates the combined diff.
 
 Skipping this sweep leads to confusion: multiple PRs for the same issue,
 closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
