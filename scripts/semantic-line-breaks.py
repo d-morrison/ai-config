@@ -90,6 +90,26 @@ def _is_new_block(line: str) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+#  Blockquote prose flusher                                                    #
+# --------------------------------------------------------------------------- #
+
+def _flush_bq_prose(bq_lines: list[str], output: list[str]) -> None:
+    """Sentence-split accumulated blockquote prose lines and append to output."""
+    if not bq_lines:
+        return
+    prefix_m = re.match(r'^(\s*>\s*)', bq_lines[0])
+    bq_prefix = prefix_m.group(1) if prefix_m else '> '
+    bq_text = ' '.join(re.sub(r'^\s*>\s*', '', bl).strip() for bl in bq_lines)
+    bq_text = re.sub(r'\s+', ' ', bq_text).strip()
+    sentences = split_sentences(bq_text)
+    if len(sentences) <= 1 and len(bq_lines) == 1:
+        output.extend(bq_lines)
+    else:
+        for s in sentences:
+            output.append(bq_prefix + s)
+
+
+# --------------------------------------------------------------------------- #
 #  File processor                                                               #
 # --------------------------------------------------------------------------- #
 
@@ -157,41 +177,29 @@ def process_file(path: Path) -> bool:
         #  Blockquotes — process line by line                                #
         # ------------------------------------------------------------------ #
         if _BQ_RE.match(line):
-            # Collect consecutive blockquote lines (may wrap across lines).
-            # Stop when we hit a fenced code block inside the blockquote so
-            # we don't strip fence markers and mangle their content.
-            bq_lines = []
+            # Process the blockquote line-by-line, tracking fence state so
+            # code blocks nested inside blockquotes are emitted verbatim.
             j = i
+            bq_prose: list[str] = []   # accumulated prose lines to sentence-split
+            in_bq_code = False
+
             while j < len(lines) and _BQ_RE.match(lines[j]):
-                if _FENCE_RE.match(lines[j].lstrip('> ')):
-                    break
-                bq_lines.append(lines[j])
+                bq_line = lines[j]
+                inner = re.sub(r'^\s*>\s?', '', bq_line)
+                if _FENCE_RE.match(inner):
+                    # Flush any buffered prose before toggling code state.
+                    _flush_bq_prose(bq_prose, output)
+                    bq_prose = []
+                    in_bq_code = not in_bq_code
+                    output.append(bq_line)
+                elif in_bq_code:
+                    output.append(bq_line)
+                else:
+                    bq_prose.append(bq_line)
                 j += 1
 
-            if not bq_lines:
-                # Hit a fence immediately; emit this line verbatim and move on.
-                output.append(line)
-                i += 1
-                continue
-
-            # Try to join wrapped lines in the blockquote and re-split.
-            # Detect the prefix ("> " or ">  " etc.).
-            prefix_m = re.match(r'^(\s*>\s*)', bq_lines[0])
-            bq_prefix = prefix_m.group(1) if prefix_m else '> '
-
-            bq_text = ' '.join(
-                re.sub(r'^\s*>\s*', '', bl).strip() for bl in bq_lines
-            )
-            bq_text = re.sub(r'\s+', ' ', bq_text).strip()
-
-            bq_sentences = split_sentences(bq_text)
-            if len(bq_sentences) <= 1 and len(bq_lines) == 1:
-                # No change possible; emit as-is.
-                output.extend(bq_lines)
-            else:
-                for s in bq_sentences:
-                    output.append(bq_prefix + s)
-
+            # Flush any trailing prose.
+            _flush_bq_prose(bq_prose, output)
             i = j
             continue
 
