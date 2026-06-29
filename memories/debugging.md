@@ -221,9 +221,10 @@ Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
   run's `require-review` gate then shows as failed (cancelled parent = failed
   dependent), while the dispatched run's `require-review` is green. The PR
   shows `mergeable_state: unstable` from the cancelled run but is still
-  mergeable — the dispatched review's clean verdict is what counts. Don't
-  re-trigger to fix it; confirm the dispatched run posted a clean verdict and
-  proceed to merge. (gha#133.)
+  mergeable — GitHub uses the most recent check run per name and commit SHA, so
+  the dispatched run's passing `require-review` replaces the cancelled push
+  run's check in branch protection. Confirm the dispatched run posted a clean
+  verdict and proceed to merge; don't re-trigger. (gha#133.)
 - **`tests/testthat.R` runs with `stop_on_warning = TRUE`**, so any warning
   during a test FAILS CI even with 0 test failures (shows as `WARN N`). When you
   hit it, don't guess the source — **capture the actual messages**

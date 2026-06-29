@@ -752,10 +752,10 @@ deduplication, two API endpoints carry different content:
 
 - **`/repos/{owner}/{repo}/issues/{n}/comments`** — top-level PR comments
   (summary/tracking verdicts). Filter to review comments with
-  `select(.user.login == "claude[bot]" and (.body | test("### (Code Review|Verdict)")))`.
+  `select(.user.login == "claude[bot]" and (.body | test("### Code Review")))`.
   This pattern discriminates review summaries from `@claude` task-handler responses
   (which also post as `claude[bot]` but use "Claude finished…" / "Claude Code is
-  working…" headers, not the "### Code Review:" / "### Verdict" heading).
+  working…" headers, not the "### Code Review" heading the review workflow uses).
 - **`/repos/{owner}/{repo}/pulls/{n}/comments`** — inline review findings posted
   via the review API. These are already `claude[bot]`-only (the `@claude` task
   handler posts to `/issues/`, not `/pulls/`), so no content filter is needed.
@@ -776,11 +776,13 @@ DELIMITER="eof_$(openssl rand -hex 8)"
 } >> "$GITHUB_OUTPUT"
 ```
 
-**`needs.X.result != 'cancelled'` vs `!= 'failure'`** — when the dependency job
+**`needs.X.result != 'cancelled'` vs `== 'success'`** — when the dependency job
 is non-critical (acceptable to proceed without its output), use
 `!= 'cancelled'` in the dependent job's `if:` so genuine failures fall through
-rather than blocking. Use `!= 'failure'` only when the dependency is truly
-required. (gha#133: `gather-context` failure should not block `claude-review`.)
+rather than blocking. When the dependency is truly required, use `== 'success'`
+(not `!= 'failure'` — that still runs when the dep was cancelled, which usually
+means its output was never produced). (gha#133: `gather-context` failure should
+not block `claude-review`.)
 
 ## GitHub Actions workflow authoring gotchas
 
