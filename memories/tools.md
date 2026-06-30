@@ -451,7 +451,7 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   your own — build on the bot's), then re-bump the version above main and push.
   (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
   failing version-check until I bumped to `.9063` on top.)
-- **Cherry-pick recovery when the bot and your session both merge main.** If the `@claude` agent pushes a merge-main commit to the PR branch while you have uncommitted fixes, your push will be rejected ("fetch first"). Don't open a competing parallel merge — cherry-pick instead: (1) note the SHA of your local fix commit(s), (2) `git reset --hard origin/<branch>` to build on the bot's merge, (3) `git cherry-pick <sha>`, (4) push. This lands your fix cleanly on top without creating a divergent history.
+- **Cherry-pick recovery when the bot and your session both merge main.** If the `@claude` agent pushes a merge-main commit to the PR branch while you have unpushed commits, your push will be rejected ("fetch first"). Don't open a competing parallel merge — cherry-pick instead: (1) note the SHA of your local fix commit(s), (2) `git reset --hard origin/<branch>` to build on the bot's merge, (3) `git cherry-pick <sha>`, (4) push. This lands your fix cleanly on top without creating a divergent history.
 - **The `@claude` agent can run a parallel session that posts a phantom commit SHA.**
   While you ARDI a PR (pushing fixes + posting reply comments), the activity can trigger
   the `claude.yml` agent to spin up its own run that attempts the *same* fixes, fails to
