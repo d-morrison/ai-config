@@ -161,8 +161,7 @@ def process_file(path: Path) -> bool:
                 fence_char_count = 0
                 fence_open_char = None
             # else: a shorter fence, or one using a different character,
-            # inside a code block — fall through to the in_code_block
-            # pass-through below
+            # inside a code block — emit it verbatim as content.
             else:
                 output.append(line)
                 i += 1
