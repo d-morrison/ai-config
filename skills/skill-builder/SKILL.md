@@ -175,9 +175,10 @@ cd "$(git -C ~/.claude/skills/skill-builder rev-parse --show-toplevel)"   # ai-c
 git fetch origin main && git checkout -b add-<name>-skill origin/main
 # write skills/<name>/SKILL.md (+ alias dir, + preferences/CLAUDE.md if it's a rule)
 python3 scripts/sync-codex-skill-wrappers.py   # regenerate codex-skills/ wrappers — REQUIRED for every new/renamed skill
-# The `validate` CI job runs these three — run all three locally before pushing:
+# The `validate` CI job runs these four — run all four locally before pushing:
 python3 scripts/validate-skills.py             # frontmatter + wrapper-sync + manifest checks
 python3 scripts/check-links.py                 # relative markdown links resolve
+python3 scripts/check-vendored-drift.py        # shared-fragment vendored-content drift check
 npx --yes markdownlint-cli2@0.22.1             # markdown style (config in .markdownlint-cli2.jsonc)
 git add skills/<name>/SKILL.md codex-skills/<name> \
         skills/<alias>/SKILL.md codex-skills/<alias> \
@@ -198,11 +199,12 @@ log reads `Codex skill wrappers are out of sync:`). After writing the skill (and
 any alias dir), run
 `python3 scripts/sync-codex-skill-wrappers.py`, then `git add` the new
 `codex-skills/<name>/` (and `codex-skills/<alias>/`) alongside the source.
-The `validate` CI job runs three checks — `scripts/validate-skills.py`
+The `validate` CI job runs four checks — `scripts/validate-skills.py`
 (frontmatter + wrapper sync + manifests), `scripts/check-links.py` (relative
-markdown links), and `markdownlint-cli2` (markdown style). Run all three before
-pushing to catch a stale wrapper, broken link, or lint violation without a
-red-CI round-trip. Markdownlint lints every `SKILL.md`; the corpus disabled the
+markdown links), `scripts/check-vendored-drift.py` (shared-fragment drift), and
+`markdownlint-cli2` (markdown style). Run all four before pushing to catch a
+stale wrapper, broken link, drift, or lint violation without a red-CI
+round-trip. Markdownlint lints every `SKILL.md`; the corpus disabled the
 rules its legacy files already violate (see `.markdownlint-cli2.jsonc`), so a
 new skill still has to pass the rest — e.g. unique headings (MD024) and blank
 lines around tables (MD058).
