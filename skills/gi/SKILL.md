@@ -94,8 +94,9 @@ gh pr list --state open --json number,title,headRefName | cat
 # Authoritative — the issue's cross-referenced open PRs via the REST timeline API.
 # (gh issue view --json has no timelineItems field; in the timeline, source.type is
 #  always "issue", so a PR is one whose source.issue.pull_request is non-null. The
-#  state filter keeps only open PRs — merged/closed siblings aren't active competitors.)
-gh api repos/<owner>/<repo>/issues/<N>/timeline \
+#  state filter keeps only open PRs — merged/closed siblings aren't active competitors.
+#  --paginate walks every page so a cross-reference past the first 30 events isn't missed.)
+gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline \
   --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"' | cat
 ```
 
