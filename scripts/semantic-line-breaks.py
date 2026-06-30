@@ -5,9 +5,10 @@ Reformat Markdown prose to use semantic line breaks.
 Semantic line breaks = each sentence or independent clause on its own
 source line. Never break a phrase mid-way at a column boundary.
 
-Preserves: YAML frontmatter, fenced code blocks, tables, headings,
-horizontal rules. Reformats: prose paragraphs, bullet continuation text,
-and blockquote prose.
+Preserves: YAML frontmatter, fenced code blocks (including nested fences),
+tables, headings, horizontal rules, HTML comments, @-import directives, and
+list items inside blockquotes.
+Reformats: prose paragraphs, bullet continuation text, and blockquote prose.
 """
 import re
 import sys
@@ -67,9 +68,11 @@ _BULLET_RE = re.compile(r'^(\s*)([-*+]|\d+\.)\s+(.*)', re.DOTALL)
 _HEADING_RE = re.compile(r'^\s*#{1,6}[\s#]')
 _TABLE_RE = re.compile(r'^\s*\|')
 _HR_RE = re.compile(r'^\s*[-*_]{3,}\s*$')
-_FENCE_RE = re.compile(r'^\s*```')
+_FENCE_RE = re.compile(r'^\s*(`{3,}|~{3,})')
 _BQ_RE = re.compile(r'^\s*>')
 _BLANK_RE = re.compile(r'^\s*$')
+_HTML_COMMENT_RE = re.compile(r'^\s*<!--')
+_AT_DIRECTIVE_RE = re.compile(r'^\s*@\S')
 
 
 def _is_new_block(line: str) -> bool:
@@ -81,7 +84,9 @@ def _is_new_block(line: str) -> bool:
         _TABLE_RE.match(line) or
         _HR_RE.match(line) or
         _BQ_RE.match(line) or
-        _BULLET_RE.match(line)
+        _BULLET_RE.match(line) or
+        _HTML_COMMENT_RE.match(line) or
+        _AT_DIRECTIVE_RE.match(line)
     )
 
 
@@ -116,6 +121,7 @@ def process_file(path: Path) -> bool:
     in_frontmatter = False
     frontmatter_done = False
     in_code_block = False
+    fence_char_count = 0
     i = 0
 
     while i < len(lines):
@@ -137,9 +143,23 @@ def process_file(path: Path) -> bool:
             i += 1
             continue
 
-        # Fenced code blocks
-        if _FENCE_RE.match(stripped):
-            in_code_block = not in_code_block
+        # Fenced code blocks — track opening fence length so inner fences
+        # with fewer characters are treated as content, not closers.
+        fence_m = _FENCE_RE.match(stripped)
+        if fence_m:
+            fence_len = len(fence_m.group(1))
+            if not in_code_block:
+                in_code_block = True
+                fence_char_count = fence_len
+            elif fence_len >= fence_char_count:
+                in_code_block = False
+                fence_char_count = 0
+            # else: shorter fence inside a code block — fall through to
+            # the in_code_block pass-through below
+            else:
+                output.append(line)
+                i += 1
+                continue
             output.append(line)
             i += 1
             continue
@@ -149,11 +169,14 @@ def process_file(path: Path) -> bool:
             i += 1
             continue
 
-        # Pass-through: blank, heading, table row, horizontal rule
+        # Pass-through: blank, heading, table row, horizontal rule,
+        # HTML comments, and @-import directives.
         if (not stripped or
                 _HEADING_RE.match(line) or
                 _TABLE_RE.match(line) or
-                _HR_RE.match(stripped)):
+                _HR_RE.match(stripped) or
+                _HTML_COMMENT_RE.match(line) or
+                _AT_DIRECTIVE_RE.match(line)):
             output.append(line)
             i += 1
             continue
@@ -176,6 +199,12 @@ def process_file(path: Path) -> bool:
                     in_bq_code = not in_bq_code
                     output.append(bq_line)
                 elif in_bq_code:
+                    output.append(bq_line)
+                elif _BULLET_RE.match(inner) or _BLANK_RE.match(inner):
+                    # List items and blank separator lines inside blockquotes:
+                    # flush any preceding prose and pass through verbatim.
+                    _flush_bq_prose(bq_prose, output)
+                    bq_prose = []
                     output.append(bq_line)
                 else:
                     bq_prose.append(bq_line)
