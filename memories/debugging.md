@@ -137,6 +137,19 @@ reverted fixes. Defenses:
   force-pushes — that's the claim-pr/parallel-session collision, and one driver
   should own it.
 
+## Test implicit path coverage when a change affects more branches than described
+When a code block is placed in a shared path (e.g. the non-append `else:` branch
+of an order dispatcher), it implicitly covers every non-append command type —
+plain moves, reform moves, form-up drags, etc. — even if the PR's focus was one
+specific case. The reviewer will flag missing test coverage for the implicit paths.
+
+Pattern: after placing a change in a shared branch, enumerate the full set of
+command types that reach it, and add at least one test per type beyond the primary
+case. Name each test to make the path explicit (e.g. `test_form_up_pre_faces_march_direction`).
+
+Hit on Lacaedemon/sparta#352: the pre-facing block ran for form-up drags too,
+but no test covered that path until the reviewer flagged it.
+
 ## Appending to skill/memory files: grep for duplicate sections first
 Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —
