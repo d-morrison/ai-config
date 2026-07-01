@@ -978,6 +978,14 @@ not block `claude-review`.)
   status,conclusion`), not the (still-empty) push-event check list. If a workflow has
   no `workflow_dispatch` trigger, that one specific check stays stuck — note it and ask
   the user rather than silently treating the PR as green without it.
+- **`workflow_call` input `default:` must be a static literal — it cannot reference
+  `${{ ... }}` expressions.** A reusable workflow's `inputs.<name>.default` is parsed
+  before any context is available, so an input can't default straight to
+  `${{ github.event_name == 'pull_request' && ... }}` (or any other expression) to
+  mirror an existing composite/job heuristic. Use a sentinel default instead (e.g.
+  `'auto'`) and resolve the real expression where the input is consumed (a `with:`/`env:`
+  value or a step), treating `'auto'` as "apply the heuristic" while `'true'`/`'false'`
+  are explicit overrides. (gha#148: `test-coverage.yml`'s `fail-ci-if-error` input.)
 
 ## markdownlint / markdownlint-cli2
 - **MD060/table-column-style is a real rule, present in `markdownlint-cli2@0.22.1`**
