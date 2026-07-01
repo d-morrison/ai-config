@@ -311,7 +311,7 @@ only what was named drags the PR through round after round of the same finding
 
 **URL-inflation exception:** a line that runs long *only* because of an embedded
 `[{pkg}](long-url)` link — where the visible prose before the link is well
-under about 40 characters — is accepted as-is. Don't force an awkward mid-clause
+under 40 characters — is accepted as-is. Don't force an awkward mid-clause
 break just to shorten the raw line; the bots themselves classify these as
 borderline / not-required.
 
