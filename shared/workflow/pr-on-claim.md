@@ -18,7 +18,7 @@ This is the strong form of the "open and link the PR promptly" note in
 ```bash
 git fetch origin main -q
 git checkout -b <type>/<slug> origin/main
-git commit --allow-empty -m "start: <issue title> (#<N>)"
+git commit --allow-empty -m "start: <issue title> (closes #<N>)"
 git push -u origin HEAD
 gh pr create --draft --title "<title>" --body "Closes #<N>
 

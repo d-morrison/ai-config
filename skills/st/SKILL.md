@@ -59,8 +59,8 @@ glab issue list --search "<keywords>" --per-page=20 2>&1 | cat
 
 - **Open match** → an issue already exists, so this is just `gi` on that
   number: invoke the `gi` skill from its claim step onward (claim → check
-  history → branch → implement → PR → ARDI). Skip the rest of `st` — you don't
-  need to file anything.
+  history → branch → open draft PR → implement → mark ready → ARDI). Skip the
+  rest of `st` — you don't need to file anything.
 - **Closed match** → surface it ("looks like #N already covered this and was
   closed") and confirm with the user before re-doing the work.
 
