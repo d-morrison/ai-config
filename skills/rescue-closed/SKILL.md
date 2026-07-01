@@ -124,7 +124,7 @@ git switch --track origin/<headRefName>   # explicit remote; on older Git:
 git merge origin/main                     # resync onto current main; resolve, run checks
 ```
 
-**PR — branch drifted far behind `main`:** when the branch is months stale,
+**PR — branch still exists, but drifted far behind `main`:** when the branch is months stale,
 merging `origin/main` is a huge, mostly-irrelevant conflict (a regenerated
 lockfile, hundreds of files) and the real change is small — don't fight the
 merge. Rebuild just the intended diff as one clean commit on current `main` and
@@ -134,15 +134,15 @@ commits, "test" commits):
 
 ```bash
 gh pr reopen <N>
-git fetch origin main
+git fetch origin
 git checkout -B rescue-<N> origin/main
 # re-apply only the intended change by hand (not the old branch's byproducts), commit
 git push --force-with-lease origin rescue-<N>:<headRefName>
 ```
 
-For a reopened PR GitHub still calls `DIRTY`, this is usually what "sync/conflict
-resolution before merge" means: only the intent is worth salvaging, not a
-five-month-old lockfile snapshot. Also re-bump the version if the stale branch's
+After reopening, GitHub will likely flag the PR as having merge conflicts
+(`mergeableState: dirty`). That state reflects the stale branch, not the real
+change — the clean rebuild resolves it. Also re-bump the version if the stale branch's
 bump now trails `main`. (If the session can only push to its own branch — see
 CLAUDE.md's "Use the existing PR branch" exception — fall back to a new
 superseding PR instead of the force-push.)
