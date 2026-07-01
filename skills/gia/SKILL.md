@@ -24,6 +24,13 @@ PRs-first, then issues: clearing the existing review backlog first means new
 issue work lands on top of an already-clean queue (and may even unblock or
 close issues that the open PRs address).
 
+**The sweep runs to the end of the queue without pausing for merges.** Merging
+is human-gated — you don't self-merge — but that gates only the merge, not the
+run. A PR reaching clean-but-unmerged is not a stopping point in either phase;
+move to the next item, and when that item isn't naturally independent of a
+completed-but-unmerged PR, **stack** it on that PR's branch instead of waiting
+for a merge. See [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md).
+
 ## When this fires
 
 - "gia", "ardia+gii", "adria+gii", "gii+ardia", "gii+adria"
@@ -107,7 +114,10 @@ stacks on it.
   bare "clean up the PRs"), stop after Phase 1 and check in before starting
   Phase 2.
 - Honor GII's 5-issue checkpoint in Phase 2 (ask before continuing).
-- Stop if a PR or issue is blocked and surface it rather than spinning.
+- If a PR or issue is blocked or ambiguous, **bypass** it — surface it and move
+  on to the next item rather than halting the sweep. Stop only when every
+  remaining item depends on that blocked one, so no independent work is left
+  (see [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md)).
 - If Phase 1's reviewer keeps emitting new nits each round on the same PR
   (asymptotic noise after 3–4 rounds), surface it and ask whether to continue.
 
