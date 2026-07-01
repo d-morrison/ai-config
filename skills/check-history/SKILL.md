@@ -40,9 +40,24 @@ checks (skipping them wastes a whole issue-pick):
     --jq '.[] | select(((.body // "") | test("#<N>\\b")) or (.title | test("#<N>\\b"))) | "#\(.number) \(.title) [\(.headRefName)]"'
   ```
 
+- **On a long-lived or foundational issue, the issue text AND any design-doc
+  status header can lag the code by several PRs.** A mature feature (a phased
+  effort, a "#1 pillar", anything with a `docs/*-design.md` note) may be partly or
+  mostly implemented even when the issue reads as unstarted and the doc header says
+  "phase N not done" — the work landed across sibling PRs that never edited this
+  issue or that header. Before scoping *new* code, verify the **actual
+  implementation state against the code**: read the routing/dispatch site and the
+  test files for the feature, not just the issue body. (Seen on sparta: issue #164 /
+  #240 read as "phase 4b not done", but engaged melee was already soldier-
+  authoritative and #240's reach model already tested — nearly built already-done
+  work. The right move was to audit, correct the stale issue/doc status, and pick
+  the genuine next slice.)
+
 If an open PR already covers it, **drive that PR to clean** instead of
 re-implementing (ask before pushing to a branch you didn't create). If `main`
 already satisfies the issue, stand it down and report — don't open a no-op PR.
+When the issue is only *partly* done, don't rebuild the done part: audit it,
+correct the stale issue/doc status, and scope only the genuine remaining slice.
 
 ## Procedure
 
