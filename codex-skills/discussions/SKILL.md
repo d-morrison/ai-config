@@ -1,17 +1,17 @@
 ---
-name: "grab-issues-in-parallel"
-description: "Codex wrapper for the ai-config Claude skill `grab-issues-in-parallel`. Alias for `gip` (Grab Issues in Parallel). Grab several provably-independent open issues and work them concurrently \u2014 one worktree-isolated subagent per issue, each implementing its issue, opening a PR, and ARDI-ing it to clean. Use when asked to 'grab issues in parallel', 'work several issues at once', 'parallelize the backlog', or 'do these issues concurrently'. Use when Codex is asked to use `grab-issues-in-parallel`, `/grab-issues-in-parallel`, or the corresponding ai-config/Claude skill workflow."
+name: "discussions"
+description: "Codex wrapper for the ai-config Claude skill `discussions`. Read and respond to GitHub Discussions forum topics \u2014 list a repo's discussions, read a topic and its comments, draft and post a reply, and mark an answer on Q&A discussions. Discussions are GraphQL-only (no `gh discussion` subcommand, no GitHub MCP tool), so this skill runs `gh api graphql`. Use when asked to 'read the discussions', 'respond to this discussion', 'answer the discussion topic', 'reply to the forum', 'triage the discussion board', or 'check GitHub Discussions'. Use when Codex is asked to use `discussions`, `/discussions`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# grab-issues-in-parallel (Codex wrapper)
+# discussions (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/grab-issues-in-parallel/SKILL.md](../../skills/grab-issues-in-parallel/SKILL.md)
+Source: [skills/discussions/SKILL.md](../../skills/discussions/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/grab-issues-in-parallel/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/grab-issues-in-parallel`, resolve the symlink target for this wrapper directory first, then read `../../skills/grab-issues-in-parallel/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/discussions/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/discussions`, resolve the symlink target for this wrapper directory first, then read `../../skills/discussions/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
