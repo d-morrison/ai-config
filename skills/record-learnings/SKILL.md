@@ -76,7 +76,7 @@ For standing instructions that should always be in context:
    the *what*. If you created a *new* file under `/memories/`, also add a row
    for it to `memories/MEMORY.md` (the index)
 5. **If it's a skill** — hand off to `spot-skill-opportunities` to judge
-   whether the pattern is genuinely recurring (not a one-off) and to
+   whether the pattern is genuinely recurring (not a one-off), then to
    `skill-builder` to scaffold it in `~/.claude/skills/` (symlink to the
    cloned repo; discover the repo path with
    `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`)

@@ -5,8 +5,6 @@ user-invocable: true
 allowed-tools:
   - Bash
   - Read
-  - Edit
-  - Write
 ---
 
 # spot-skill-opportunities — notice when work is skill-shaped
@@ -51,7 +49,8 @@ work, not only at a session or PR-end checkpoint.
    preference, *propose* creating the skill; don't scaffold one unasked
    mid-task (that would derail the task at hand). The exception: when
    you're already inside an explicit skill-authoring context (mid-`ums`,
-   mid-`skill-builder`), proceed straight to building.
+   mid-`skill-builder`), hand off directly to `skill-builder` without waiting
+   for user confirmation.
 5. **Hand off to `skill-builder`.** Once the user agrees (or the context
    already sanctioned it), let `skill-builder` do the extend-first check
    and scaffolding — don't duplicate its step 0 here.
