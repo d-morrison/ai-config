@@ -70,9 +70,12 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
    place rather than stacking a second copy.
 
 2. **Get the current content of the target file(s)** so you append in the right
-   place and match the file's voice. Read it through whichever path you'll
-   deliver on (see step 4) — the local checkout, or `mcp__github__get_file_contents`
-   (`owner: d-morrison`, `repo: ai-config`).
+   place and match the file's voice — and decide your delivery path now, since
+   reading and writing both follow it. In a **web/remote session, or with no
+   usable local `ai-config` checkout**, use the GitHub file API (**Path A**,
+   step 4): read with `mcp__github__get_file_contents` (`owner: d-morrison`,
+   `repo: ai-config`). With a **clean local checkout you can branch in**, use a
+   local worktree (**Path B**, step 4): read the file there.
 
 3. **Write** a concise bullet (one line preferred), matching the file's voice;
    include the *why* if it isn't obvious. Never edit files in the repo you're
@@ -119,7 +122,7 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
    wt="$(mktemp -d)"
    git -C "$acfg" worktree add "$wt" -b memory/<slug> origin/main
    # edit "$wt"/CLAUDE.md or "$wt"/memories/<file>.md, then:
-   git -C "$wt" add CLAUDE.md              # or memories/<file>.md [memories/MEMORY.md]
+   git -C "$wt" add CLAUDE.md              # or: memories/<file>.md  (+ memories/MEMORY.md when adding a new memories file)
    git -C "$wt" commit -m "memory: <one-line summary>"
    git -C "$wt" push -u origin memory/<slug>
    ```
