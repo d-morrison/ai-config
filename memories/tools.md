@@ -528,15 +528,6 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
     own `claude-code-review.yml`: the guard still `exit 1`d on `is_error=true` (RED check, no
     `[!WARNING]` comment) — gha#102's exit-0 behavior was not yet on the consumed `@v1` pin
     there. Read the actual guard code on the pin you consume rather than trusting this note.
-- **A review job with `conclusion: success` but NO posted comment is NOT
-  automatically "unreviewed."** It is either (a) a quota/auth skip (see above:
-  `total_cost_usd=0`, `num_turns=1`) or (b) a genuinely **clean review that found
-  nothing to flag**. Tell them apart from the job log: a clean review shows a
-  full agent run (`"subtype":"success"`, `"is_error":false`, high `num_turns`,
-  `total_cost_usd` > 0) followed by `No buffered inline comments` in the
-  post-comments step — the bot reviewed and posted nothing because it had nothing
-  to say. Don't treat that as a missing review or re-trigger it. (macros#71:
-  `claude-review` ran 21 turns at $0.88 and buffered 0 comments = clean.)
     Note OAuth/subscription auth (`CLAUDE_CODE_OAUTH_TOKEN`) shows `total_cost_usd=0`
     regardless, because it isn't metered per-call — so cost=0 + 1 turn + immediate `is_error`
     points to a **subscription usage-limit**, not only API credits; confirm via the Anthropic
@@ -546,6 +537,15 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
     The guard step fails the check ❌. The prior clean review on the same diff is still
     valid. Fix: push a trivial commit to trigger a fresh review. Observed on gha#92 run
     #28034977099.
+- **A review job with `conclusion: success` but NO posted comment is NOT
+  automatically "unreviewed."** It is either (a) a quota/auth skip (see above:
+  `total_cost_usd=0`, `num_turns=1`) or (b) a genuinely **clean review that found
+  nothing to flag**. Tell them apart from the job log: a clean review shows a
+  full agent run (`"subtype":"success"`, `"is_error":false`, high `num_turns`,
+  `total_cost_usd` > 0) followed by `No buffered inline comments` in the
+  post-comments step — the bot reviewed and posted nothing because it had nothing
+  to say. Don't treat that as a missing review or re-trigger it. (macros#71:
+  `claude-review` ran 21 turns at $0.88 and buffered 0 comments = clean.)
 - **Reading the hidden error behind a failed `claude-code-review`.** The action prints
   `Running Claude Code via SDK (full output hidden for security)…` and suppresses the real
   API error. The reusable `claude-code-review.yml` now accepts a **`show-full-output`** input
