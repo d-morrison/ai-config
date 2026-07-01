@@ -44,6 +44,13 @@ each to a clean review verdict in series.
    If a circular stack is found (impossible in practice but check anyway),
    surface it to the user and skip those PRs.
 
+   **Tie-break with infrastructure-first.** Among PRs with no stacking
+   relationship, when otherwise equally pressing, process internal
+   infrastructure PRs (shared tooling, CI workflows, reusable actions,
+   templates) slightly ahead of feature PRs — see
+   [`pr-prioritization`](../../shared/workflow/pr-prioritization.md). This
+   never overrides the stacking order above.
+
    Report the in-scope list (with bare PR URLs) **before** you start, so the
    user can veto any before the loop pushes commits.
 
@@ -57,6 +64,12 @@ each to a clean review verdict in series.
    review findings), complete ARDI on the base first to drive it to clean and
    merge it, then start the derived PR. Never run ARDI on a derived PR while its
    base is still open and unclean — you'd be reviewing against a moving target.
+
+   A PR reaching **clean-but-unmerged** is that PR's terminal state, **not** a
+   reason to pause the sweep: merging is human-gated (you don't self-merge), but
+   that gates only the merge — move straight to the next PR rather than waiting
+   for a human to merge first. See
+   [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md).
 
    Drive each to a terminal state:
    - **Clean** — zero flagged items under any heading; post the unclaim

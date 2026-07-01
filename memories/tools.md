@@ -6,7 +6,7 @@
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
 - **`gh pr view --json` does not accept `merged` as a field.** Use `state` (returns `"MERGED"`) and `mergedAt` (ISO timestamp, null if not merged) to check merge status. Example: `gh pr view <N> --json state,mergedAt`.
-- **`gh pr edit` exits 1 on repos with Projects Classic — use `gh api` to update PR body.** `gh pr edit <N> --body "..."` returns exit code 1 with a GraphQL deprecation warning (`Projects (classic) is being deprecated…`) even when the edit actually succeeds. Don't rely on its exit code to confirm success — verify with `gh api repos/<o>/<r>/pulls/<N> --jq .body`. Preferred alternative that always exits 0: `gh api repos/<o>/<r>/pulls/<N> -X PATCH -f body="..."`.
+- **`gh pr edit` exits 1 on repos with Projects Classic — use `gh api` to update PR body.** `gh pr edit <N> --body "..."` / `--body-file <f>` returns exit code 1 with a GraphQL deprecation warning (`Projects (classic) is being deprecated…`). Sometimes the edit lands anyway; **sometimes it does not apply at all** (seen on sparta 2026-06-30: three `gh pr edit --body-file` attempts left the body unchanged with the `SHA_PLACEHOLDER` still in place). Either way, don't trust it — verify with `gh api repos/<o>/<r>/pulls/<N> --jq .body`, and just use the REST PATCH directly, which always exits 0 and applies: `gh api -X PATCH repos/<o>/<r>/pulls/<N> -f body="..."`. For a multi-line body, read it from a file with `-F body=@<path>` (capital `-F` to pull the field value from the file) rather than cramming it into `-f body="..."`.
 - **PR description image embeds: use `raw.githubusercontent.com`, not `github.com/.../raw/...`.** Embedding a committed file in a PR body with `![](https://github.com/<owner>/<repo>/raw/<sha>/<path>)` may not render — the reviewer will flag it. The correct raw-content domain is `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>`. Reference the full commit SHA so the image keeps rendering after the branch is deleted on merge.
 - **Download a user-pasted PR screenshot with `curl -L`.** When a user pastes an image into a GitHub PR comment, the file lives at `https://github.com/user-attachments/assets/<uuid>` and is publicly downloadable: `curl -L -o <dest>.png "https://github.com/user-attachments/assets/<uuid>"`. Retrieve the URL from the comment body via `gh api repos/<o>/<r>/issues/comments/<comment_id> --jq .body`.
 - **Linking a GitHub sub-issue needs an integer DB id, not the number.** `POST /repos/<o>/<r>/issues/<parent>/sub_issues` takes `sub_issue_id` = the child's **database id** (`gh api repos/<o>/<r>/issues/<child> --jq .id`), *not* its issue number. Pass it with `-F` (typed, integer), never `-f` (string) — `-f sub_issue_id=…` fails with `422 Invalid property /sub_issue_id: "…" is not of type integer`. Full call: `gh api repos/<o>/<r>/issues/<parent>/sub_issues -F sub_issue_id=<child_db_id>`. Verify with `gh api .../issues/<parent>/sub_issues --jq '.[] | "#\(.number) \(.title)"'`.
@@ -973,6 +973,31 @@ not block `claude-review`.)
   Put shared setup (e.g. `make_pt_data()`) in a `helper-*.R` rather than
   repeating it across test files. One test file per source file is the bcs
   convention — `test-plot_fn.R` for `R/plot_fn.R`. (bcs#253.)
+- **A push can trigger ZERO check-runs on a `pull_request`-triggered workflow — not a
+  quota skip, not an error, just total silence.** Symptom: `gh pr checks <N>` shows
+  stale/old results or "no checks reported"; `gh api repos/<o>/<r>/commits/<sha>/check-runs`
+  (the new commit's SHA) returns an **empty** `check_runs` array — confirms literally
+  nothing was dispatched for that push, distinct from a job that ran and failed/skipped.
+  `gh run list --branch <branch>` likewise shows no new run after the push timestamp.
+  This hit on an otherwise-healthy repo (sparta) mid-ARDI: a normal `git push` to an
+  open PR's branch produced no CI activity for 15+ minutes. Recovery — manually dispatch
+  every required workflow rather than waiting longer or re-pushing (a re-push doesn't
+  reliably fix it either): for any `workflow_dispatch`-enabled workflow keyed off the
+  branch, `gh workflow run <file>.yml --ref <branch>`; for a PR-number-keyed review
+  workflow (e.g. `claude-code-review.yml` with a `pr_number` input — see the
+  `workflow_dispatch` re-trigger pattern above), `gh workflow run <file>.yml -f
+  pr_number=<N>`. Poll the dispatched run's own ID (`gh run view <id> --json
+  status,conclusion`), not the (still-empty) push-event check list. If a workflow has
+  no `workflow_dispatch` trigger, that one specific check stays stuck — note it and ask
+  the user rather than silently treating the PR as green without it.
+- **`workflow_call` input `default:` must be a static literal — it cannot reference
+  `${{ ... }}` expressions.** A reusable workflow's `inputs.<name>.default` is parsed
+  before any context is available, so an input can't default straight to
+  `${{ github.event_name == 'pull_request' && ... }}` (or any other expression) to
+  mirror an existing composite/job heuristic. Use a sentinel default instead (e.g.
+  `'auto'`) and resolve the real expression where the input is consumed (a `with:`/`env:`
+  value or a step), treating `'auto'` as "apply the heuristic" while `'true'`/`'false'`
+  are explicit overrides. (gha#148: `test-coverage.yml`'s `fail-ci-if-error` input.)
 
 ## markdownlint / markdownlint-cli2
 - **MD060/table-column-style is a real rule, present in `markdownlint-cli2@0.22.1`**
