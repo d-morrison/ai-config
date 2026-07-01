@@ -286,6 +286,11 @@ and collaboration conventions.
 <!-- Shared with the lab manual; edit shared/coding/per-operation-grouping.md, not here. -->
 @shared/coding/per-operation-grouping.md
 
+## Coding: avoid hard-coding data with an external source of truth
+
+<!-- Shared with the lab manual; edit shared/coding/avoid-hardcoding-external-data.md, not here. -->
+@shared/coding/avoid-hardcoding-external-data.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
