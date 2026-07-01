@@ -80,15 +80,21 @@ List, don't bury:
 ### 4. Run a UMS review
 
 Run the full `ums` procedure (invoke the `ums` skill by name): scan the session
-for mistakes-corrected, new user preferences, tool quirks, and skill gaps;
-update the relevant memory files and skill definitions; commit via a **branch +
-PR** (not direct to `main`). If nothing durable emerged, say so explicitly
-rather than manufacturing edits.
+for mistakes-corrected, new user preferences, tool quirks, and skill gaps —
+including whether `spot-skill-opportunities` flagged a recurring pattern
+during the session that's still unbuilt; update the relevant memory files and
+skill definitions; commit via a **branch + PR** (not direct to `main`). If
+nothing durable emerged, say so explicitly rather than manufacturing edits.
+
+## Relationship to other skills
+
+- **`record-learnings`** (continuous) and **`ums`** (the learnings checkpoint,
+  which this embeds as step 4) — `wrap-up` is their session-level bookend.
+- **`spot-skill-opportunities`** — step 4's UMS pass checks whether it flagged
+  a recurring pattern during the session that's still unbuilt.
 
 ## Notes
 
 - Wrap-up reports PR/issue state and, where needed, resolves merge conflicts
   in unclaimed conflicting PRs (step 1). It does **not** merge PRs — merging
   stays the user's call unless they ask.
-- This is the session-level bookend to `record-learnings` (continuous) and
-  `ums` (the learnings checkpoint, which this embeds as step 4).
