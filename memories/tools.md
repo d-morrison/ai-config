@@ -456,6 +456,90 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
   light (math-prereqs needs just plotly).
 
+## renv.lock — adding a package that's only referenced via another package's Suggests
+
+Using a function that requires an **optional** dependency of an already-locked
+package (e.g. `lintr::cyclocomp_linter()`, which needs the `cyclocomp` package —
+listed only inside `lintr`'s own embedded `Suggests` metadata in `renv.lock`,
+never as its own top-level `Packages` entry) breaks CI silently: `renv::status()`
+looks clean beforehand, but `renv::restore()` never installs it, and the first
+run that actually calls the function errors at runtime (for `cyclocomp_linter()`:
+"disabled due to lack of the cyclocomp package"). Before relying on a new
+function that pulls in an optional dep like this, check with
+`jsonlite::fromJSON("renv.lock")$Packages` (or grep the lockfile) that the
+package has its own top-level entry — its name appearing SOMEWHERE in the file
+(inside another package's `Suggests` list) is not sufficient.
+
+**Fixing it: do NOT run `renv::snapshot()` (even scoped via `packages = c(...)`)
+in an environment that can't fully restore the lockfile's existing package set.**
+`renv::snapshot(packages = "cyclocomp")` in a sandboxed/offline container pruned
+~4000 unrelated lines from a real `renv.lock` (every package not physically
+installed in the local renv library got dropped) and mangled Unicode author
+names into octal-escaped bytes in surviving entries — collateral damage far
+outside the intended one-package addition. `renv::install()` /
+`install.packages()` under an active renv project has the same blast radius:
+it tries to resolve the WHOLE project's `Remotes:` field (e.g. a GitHub pin
+like `rstudio/bookdown`), which fails outright if GitHub API access is
+blocked, even though the failure has nothing to do with the CRAN package
+being installed.
+
+The safe fix is a **surgical hand-edit of the lockfile JSON**: install the
+missing package locally just to read its DESCRIPTION metadata (e.g.
+`install.packages("cyclocomp", lib = <renv project lib>)`,
+`packageDescription("cyclocomp")`), then copy the exact field style of a
+neighboring `Packages` entry (`Package`, `Version`, `Source: "Repository"`,
+`Title`, `Authors@R`, `Description`, `License`, `URL`, `BugReports`,
+`Imports`/`Suggests` as arrays, `NeedsCompilation`, `Author`, `Maintainer`,
+`Repository: "CRAN"`) and insert it alphabetically with the Edit tool. Verify
+with `jsonlite::fromJSON("renv.lock")` that it still parses and
+`git diff --stat renv.lock` shows only the intended additive lines — a diff in
+the thousands means the wrong approach was used; `git checkout -- renv.lock`
+and redo it by hand. (UCD-SERG/lab-manual#381: `lint-project` failed on
+`cyclocomp_linter is disabled due to lack of the cyclocomp package`; the
+snapshot approach was tried first and reverted before the hand-edit.)
+
+## lintr — no built-in function-length (line-count) linter; custom-linter pattern
+
+`{lintr}` has no built-in linter that flags functions by raw line count — it's
+a long-standing unimplemented upstream feature request
+([r-lib/lintr#361](https://github.com/r-lib/lintr/issues/361)). The closest
+built-in is `lintr::cyclocomp_linter()`, which flags branching/decision
+complexity (via `{cyclocomp}`), not line count — a reasonable proxy but not
+the same metric. When a repo wants an actual `<N`-lines heuristic enforced,
+write a custom linter.
+
+Working pattern (verified against lintr 3.3.0):
+
+```r
+function_length_linter <- function(length_limit = 150L) {
+  xpath <- "//FUNCTION/parent::expr | //OP-LAMBDA/parent::expr"
+
+  lintr::Linter(linter_level = "expression", function(source_expression) {
+    if (!lintr::is_lint_level(source_expression, "expression")) {
+      return(list())
+    }
+    xml <- source_expression$xml_parsed_content
+    fun_defs <- xml2::xml_find_all(xml, xpath)
+    n_lines <- as.integer(xml2::xml_attr(fun_defs, "line2")) -
+      as.integer(xml2::xml_attr(fun_defs, "line1")) + 1L
+    lintr::xml_nodes_to_lints(
+      fun_defs[n_lines > length_limit],
+      source_expression = source_expression,
+      lint_message = sprintf("Function spans more than %d lines.", length_limit),
+      type = "warning"
+    )
+  })
+}
+```
+
+The XPath `//FUNCTION/parent::expr | //OP-LAMBDA/parent::expr` catches both
+`function(...)` and `\(...)` lambda syntax; `line1`/`line2` are XML attributes
+from `xmlparsedata` on the matched node, so line span is `line2 - line1 + 1`.
+`linter_level = "expression"` + the `is_lint_level()` guard is `lintr`'s own
+documented pattern (see `vignette("creating_linters", package = "lintr")`).
+Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
+`lms::function_length_linter()` in UCD-SERG/lab-manual#381.)
+
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
   Action") and a **version-check**. A user-visible PR needs **both** a
