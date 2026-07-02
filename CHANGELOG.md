@@ -12,6 +12,12 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`check-info-quality` skill (alias `ciq`)** (#349). New detector skill:
+  three checks for information-quality problems neither `purge-hallucinations`
+  nor `find-ai-tells` catches --- out-of-date claims (check A), irrelevant
+  content (check B), and misleading/out-of-context claims including
+  citation-claim mismatches (check C). Cross-linked with `purge-hallucinations`,
+  `find-ai-tells`, `fact-check-prose`, and `shared/writing/citations.md`.
 - **`sync-with-main` / `address-every-comment` policy refinements.** Re-check
   `main` again right before the final push (conflict resolution can take long
   enough for `main` to advance a second time); when a review nit is a pattern
