@@ -33,3 +33,15 @@ problem, or not the user's to authorize (see `upstream-issues`' contribution-
 policy gate). The point is to default to seeking the resource first, and only
 settle for the current limitation after that's been considered --- not to treat
 the current limitation as the ceiling from the outset.
+
+## Applies to our own metacognitive tooling, too
+
+The same bias governs the skills, memories, and self-improvement loops in these
+repos (`ai-config`'s `skills/`, `memories/`, and the UMS/ARDIA/gip orchestration
+machinery). Don't treat the current skill set or memory corpus as fixed either:
+when a recurring task has no skill covering it, a memory entry is stale or
+contradicted, or a review loop keeps missing the same class of finding, that's
+a signal to add a skill, edit a fragment, or extend the loop --- the same way a
+missing tool is a signal to go get the tool. `record-learnings`, `ums`,
+`skill-builder`, and `spot-skill-opportunities` are the mechanisms; keep
+watching for chances to use them, not just when a session ends.
