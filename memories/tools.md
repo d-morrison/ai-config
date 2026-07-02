@@ -88,21 +88,24 @@
   prompt-injection/exfiltration question for a workflow shared across
   potentially-private consumer repos. That tradeoff (a domain-scoped
   `WebFetch(domain:...)` allowlist to let the reviewer live-fact-check
-  external sources, matching this repo's own CLAUDE.md guideline #4) is left
+  external sources, matching `gha`'s own `CLAUDE.md` "Fact-check prose
+  against domain knowledge and external sources" review guideline) is left
   as an open decision in gha#189, not decided unilaterally.
-- **Diagnosing which tool call was denied requires `show-full-output: true`
-  on a re-run — the job log alone won't show it.** `claude-code-action` logs
-  only the `system/init` and final `result` messages by default ("Running
-  Claude Code via SDK (full output hidden for security)"); every turn in
-  between — including which specific tool call got denied — is invisible in
-  the Actions log unless the workflow explicitly passes
-  `show_full_output: true` through to the action (in `gha`,
-  `claude-code-review.yml`'s `show-full-output` input). `permission_denials_count`
-  in the final result confirms *that* something was denied, not *what*.
+- **Diagnosing which tool call was denied requires the reusable workflow's
+  `show-full-output` input turned on for a re-run — the job log alone won't
+  show it.** Same underlying hidden-output behavior as the
+  `show-full-output`/`show_full_output` note below (see there for the
+  input-vs-passthrough-parameter naming); worth restating here because it's
+  the reason `permission_denials_count` in the final result confirms *that*
+  something was denied but never *what* — the turn-by-turn tool-call detail
+  is exactly what stays hidden without it.
 - **Claude Code's tool-permission syntax scopes `WebFetch` by domain:**
-  `WebFetch(domain:host)` (e.g. `WebFetch(domain:docs.anthropic.com)`),
-  with wildcards like `WebFetch(domain:*.github.com)` (subdomains only, not
-  the bare domain) or `WebFetch(domain:example.*)` (TLD variants). Same
+  `WebFetch(domain:host)` (e.g. `WebFetch(domain:docs.anthropic.com)`), with
+  wildcards like `WebFetch(domain:*.github.com)` (matches a subdomain at any
+  depth, not the bare domain) or `WebFetch(domain:example.*)` (matches
+  `example.org`, i.e. a wildcard segment can't cross a `.` — `example.*`
+  does not match `example.evil.com`). Confirmed against the official docs:
+  <https://code.claude.com/docs/en/permissions> (WebFetch section). Same
   bracketed-scope pattern as `Bash(git commit:*)`. Useful for granting
   narrow, exfiltration-bounded fetch access instead of unrestricted
   `WebFetch` or none at all.
