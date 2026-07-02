@@ -109,7 +109,11 @@
   `actions: write` the re-run API needs. So a flaky CI failure can't be re-kicked
   via MCP — **push a commit to re-trigger the whole workflow** (the normal path
   during an iterate loop anyway), or ask the user to click Re-run. (Hit
-  re-running a flaky `link-checker` timeout on a lab-manual PR.)
+  re-running a flaky `link-checker` timeout on a lab-manual PR.) Prefer folding
+  the retry into a real, already-pending fix (e.g. a reviewer's requested
+  wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
+  no throwaway commit in history. Only use an empty commit when no real fix is
+  pending. (ai-config#403.)
 - `mcp__github__pull_request_read` `method:` enum: `get` · `get_diff` (PR
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
@@ -1138,6 +1142,31 @@ common patterns.
   - Single job: pass `job_id` (number) + `return_content: true`. Do NOT pass `run_id` alongside. Without `return_content: true` the tool returns only a `logs_url` download link and `"Job logs are available for download"` — no actual log text.
   - All failed jobs in a run: pass `run_id` (number) + `failed_only: true` + `return_content: true`. Do NOT pass `job_id`.
   The tool's error message ("job_id is required when failed_only is false") is misleading when you pass `failed_only: true` with `run_id`; the issue is actually conflicting parameters.
+- **A small `tail_lines` on `get_job_logs` can silently miss the real failure** when
+  the log contains a few enormous single-line entries (e.g. a base64-encoded
+  spinner GIF/PNG being curled and embedded in a PR comment) — the tool's "line"
+  budget gets consumed by those giant lines before reaching earlier real steps, so
+  `tail_lines: 60`/`120`/`300` can return only post-failure cleanup/reviewer-restore
+  steps with no trace of the actual error. Escalate `tail_lines` (e.g. to 2000) and,
+  once the result exceeds the token cap and gets saved to a file, grep/slice that
+  file with `python3` (byte-offset search, not line-based) rather than trusting a
+  small default tail. Cross-check with `mcp__github__actions_get`
+  (`method: "get_workflow_job"` — confirmed in the live schema alongside
+  `get_workflow_run`) for the per-step `conclusion` breakdown to know which step
+  actually failed and roughly where in the log to look. (ai-config#403.)
+- **`claude-review` failing with "Skipping action due to workflow validation…
+  must have identical content to the default branch" is NOT always the
+  documented self-mod-skip or stale-`@v1`-tag drift.** Before assuming either,
+  verify: diff the PR branch's own workflow files against current `origin/main`
+  (`git diff origin/<branch> origin/main -- .github/workflows/`) — if that's
+  empty, the branch has zero drift and neither known cause applies. The actual
+  failure can be a one-off transient GitHub API error unrelated to workflow
+  content at all, e.g. a `502` "Unicorn" error page from
+  `GET /repos/.../collaborators/<actor>/permission` during the action's
+  actor-permission check — visible only by reading the full job log (see the
+  `tail_lines` note above), not from the top-level check-run message. Re-running
+  (push a commit, since `actions:write` is usually unavailable — see above)
+  clears a transient 502 with no code change needed. (ai-config#403.)
 - **`update-snapshots.yml@v1`** — regenerates testthat snapshots, commits, and pushes.
   Supports `workflow_dispatch`, `/update-snapshots` PR comment (`pr-mode: true`), and
   auto-update before R-CMD-check (`ref: github.head_ref`). Pass system deps via
