@@ -11,6 +11,7 @@
 - **PR description image embeds: use `raw.githubusercontent.com`, not `github.com/.../raw/...`.** Embedding a committed file in a PR body with `![](https://github.com/<owner>/<repo>/raw/<sha>/<path>)` may not render — the reviewer will flag it. The correct raw-content domain is `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>`. Reference the full commit SHA so the image keeps rendering after the branch is deleted on merge.
 - **Download a user-pasted PR screenshot with `curl -L`.** When a user pastes an image into a GitHub PR comment, the file lives at `https://github.com/user-attachments/assets/<uuid>` and is publicly downloadable: `curl -L -o <dest>.png "https://github.com/user-attachments/assets/<uuid>"`. Retrieve the URL from the comment body via `gh api repos/<o>/<r>/issues/comments/<comment_id> --jq .body`.
 - **Linking a GitHub sub-issue needs an integer DB id, not the number.** `POST /repos/<o>/<r>/issues/<parent>/sub_issues` takes `sub_issue_id` = the child's **database id** (`gh api repos/<o>/<r>/issues/<child> --jq .id`), *not* its issue number. Pass it with `-F` (typed, integer), never `-f` (string) — `-f sub_issue_id=…` fails with `422 Invalid property /sub_issue_id: "…" is not of type integer`. Full call: `gh api repos/<o>/<r>/issues/<parent>/sub_issues -F sub_issue_id=<child_db_id>`. Verify with `gh api .../issues/<parent>/sub_issues --jq '.[] | "#\(.number) \(.title)"'`.
+- **Backticks in a double-quoted `-m` / `--body` string get command-substituted by the shell.** In the Bash tool, `` git commit -m "... `origin` ..." `` or `` gh pr comment --body "use `foo`" `` makes the shell run `` `origin` ``/`` `foo` `` as a command and splice the (usually empty/erroring) output into the message — silently mangling it (seen on sparta 2026-06-30: a commit body's `` `origin` `` and `` `killer` `` vanished, with `origin: command not found` in stderr). For any message/body containing backticks, use a single-quoted **heredoc** (`` -m "$(cat <<'EOF' … EOF)" `` — the quoted `'EOF'` disables all expansion) or a `--body-file`, never a bare double-quoted string. (Same root cause as the dispatched-review quoting bug below.)
 - **Finding the PR(s) linked to an issue from the CLI: use the REST timeline endpoint, not `gh issue view --json`.** `gh issue view --json` has no `timelineItems` field (that exists only on `gh pr view --json`), so `gh issue view <N> --json timelineItems` errors — and a `2>/dev/null` swallows the error so the check silently returns nothing and *looks* like it passed. Query the timeline instead, with three gotchas: (1) in a `cross-referenced` event, `source.type` is always `"issue"`, so a PR is one whose `source.issue.pull_request` is non-null (`source.type == "pull_request"` never matches); (2) `--paginate` is required, or `gh api` returns only the first 30 events and silently misses a later cross-reference; (3) filter `source.issue.state` if you only want open PRs. Full call: `gh api --paginate repos/<o>/<r>/issues/<N>/timeline --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"'`. (Learned over three review rounds on #287.)
 
 ## Re-triggering the @claude PR *review* (d-morrison Quarto / R-pkg repos, e.g. `psw`)
@@ -1164,3 +1165,29 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   (plus `customXml` if present). Verify with `unzip -t out.docx` and re-extract + grep to
   confirm the removed strings are gone before committing. (Done on ucdavis/bcs#237 to strip
   an internal SharePoint URL and a server reference from a to-do doc.)
+
+## claude-code-action: tag mode vs agent mode and git write tools
+
+- **Tag mode (`track_progress: true`) hardcodes git write tools into `ALLOWED_TOOLS`
+  regardless of `--disallowedTools`.** The action's TypeScript sets the `ALLOWED_TOOLS`
+  env var at runtime, injecting `Bash(git add:*)`, `Bash(git commit:*)`,
+  `Bash(git rm:*)`, and `git-push.sh`. The `--disallowedTools` CLI flag cannot
+  override an env var set by the same process. Evidence: `d-morrison/gha` PR #134,
+  where a supposedly read-only `claude-code-review` run pushed commit `02af72b` to
+  UCD-SERG/serodynamics PR #175. Upstream fix tracked in
+  `anthropics/claude-code-action#1415` (draft PR #1433).
+- **Agent mode (`track_progress: false`) builds `ALLOWED_TOOLS` solely from
+  `claude_args` — no git write tools are injected.** This is the safe default for
+  a read-only reviewer. Trade-off: no live tracking comment, no inline-comment tool
+  (the inline-comment tool is only initialized in tag mode per `claude-code-action#635`);
+  reviews post as top-level PR comments instead.
+- **`inputs.dot-notation` vs `inputs['bracket-notation']` in GitHub Actions `if:`.**
+  Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
+  notation looks non-idiomatic next to the dot notation used everywhere else in the
+  same workflow. Caught in gha#134 review.
+
+## Changelog section ordering in d-morrison/gha
+
+- **The established order in `CHANGELOG.md` is: Added → Changed → Fixed → Security.**
+  Match this when adding new `## [Unreleased]` entries or when resolving merge
+  conflicts in the changelog. Caught in gha#134 review (Fixed appeared before Changed).

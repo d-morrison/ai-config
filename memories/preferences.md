@@ -5,6 +5,11 @@
   on one, confirm it with a tool call — don't rely on what was true earlier in the
   session or what "should" be the case. State drifts between turns. "It should be X" /
   "I left it as X" / "presumably X" are red flags; replace with a fresh check.
+  Concretely: before querying CI or review for a PR, check its state first
+  (`gh pr view <N> --json state`). A PR can merge between a "status?" call and a
+  follow-up in the same session — running `gh pr checks` on a merged PR returns
+  stale data and delays noticing the merge. If state is MERGED, trigger post-merge
+  instead of reporting CI details. (Learned on ucdavis/bcs#266.)
 - NEVER fabricate anything, under any circumstances — always PRODUCE IT FOR REAL.
   Demos/recordings must be captured from the actual system through the real code path
   (not hand-authored data dressed up as a recording); results/metrics must come from
@@ -14,6 +19,19 @@
   something and present it as captured or real. (Learned the hard way on sparta#247: a demo's
   "mouse recording" was hand-written JSON; the fix was a cursor-injection seam so a real
   recorder drives the actual game.)
+- When "restoring" or reconstructing a full file's content (e.g. re-typing a file you
+  fetched earlier in the conversation, or rebuilding it from memory after catching a
+  truncation bug), don't trust your own transcription — diff the pushed result against
+  the actual source (`git diff <base> <head> -- <path>` — two-dot, not three-dot,
+  so it diffs against the branch tip rather than the merge-base — or re-fetch and
+  compare) before
+  claiming it's a faithful restoration. A plausible-sounding but invented bullet/section can
+  slip in even when you intend to copy real content verbatim, and it reads exactly like a
+  genuine hallucination to a reviewer (same failure mode as fabricating a demo — just a
+  different repo). (Learned on gha#155: while fixing a CHANGELOG truncation bug, the
+  "restored" content itself included an invented changelog entry — a `test-coverage`
+  Python-support bullet describing an input/step that never existed in the repo — caught
+  only by a follow-up review diffing against `origin/main`.)
 - ALWAYS record what I learn in memory/AI-instruction notes as I work (standing request).
 - When recording a factual claim about tool/workflow behavior (an implementation detail
   or a causal explanation derived from a specific source), cite the source inline —
@@ -288,6 +306,16 @@
   most easily drops a qualifier and becomes misleading. (Learned on PR #43: the terse
   pipe-examples bullet dropped the "in R" qualifier that `CLAUDE.md` had, which a reviewer
   flagged as implying `|>` / `%>%` exist in Python/JS.)
+- Before adding a bullet that redefines or narrows an existing term (fully clean, claim-pr,
+  ARDI, etc.), grep the repo for that term's OTHER canonical definitions — not just the
+  twin preferences.md/CLAUDE.md copy above, but any `shared/*.md` fragment, skill doc, or
+  other memory file that states the same rule. If the new rule is a genuine refinement,
+  update the canonical doc itself in the same PR, not just a satellite copy; note in the
+  PR description that the canonical file is touched and why. (Learned on sparta 2026-07-01,
+  PR #318: a new `dont-merge-failing-workflows` bullet expanded "fully clean" CI to mean
+  every workflow green, including non-gating checks — but silently contradicted the
+  canonical `shared/workflow/fully-clean.md` [`@`-included into `CLAUDE.md`], which still
+  said "every required check." The `@claude` bot review caught the drift in round 1.)
 - After adding or updating skills OR memory files in the ai-config repo, always commit
   and push everything to origin (on the current branch if a PR is already open, or
   create a new branch + PR if the change is out of scope). Never leave ANY changes in
