@@ -333,6 +333,25 @@
   An agent's `git worktree list` search can match loosely and land in the conductor's workspace by mistake, switching it to an unrelated branch (or leaving it in a detached-HEAD state), discovered only when the conductor's own next `git status`/`git log` call returns something unrecognizable.
   Fix is a plain `git checkout <conductor's-own-branch>` once caught (verify `git status --short` is clean first), but the real fix is naming the conductor's own worktree path explicitly as off-limits in every "find or create a worktree" brief. (Learned on sparta, 2026-07-02: a wave-3 agent tasked with finding the worktree for `feat/lod-phase3-tier-transitions-558` "likely at `gia2-558`" instead checked it out directly inside the conductor's own worktree.)
 
+## Use the shared math-macros submodule for manuscript math
+
+Write math in lab Quarto/LaTeX manuscripts with the shared
+[`d-morrison/macros`](https://github.com/d-morrison/macros) submodule (vendored
+at `inst/analyses/macros`, included via `{{< include .../macros/macros.qmd >}}`),
+not ad-hoc raw LaTeX — it gives every document the same polished, condensed
+notation from one versioned source. Keep the submodule up to date, and add new
+macros to it (via a PR to `d-morrison/macros`) whenever a needed concept has no
+macro, rather than defining one-off commands inline. The `use-math-macros`
+(alias `macroize`) skill is the executable procedure.
+
+Two gotchas: `git submodule update --remote` bumps the tracked gitlink, which
+dirties `git diff HEAD` — do it in a worktree, never a checkout running
+provenance-stamped SLURM jobs. And custom macro command-names leak into
+`spelling::spell_check_package()` for `.qmd` files under `vignettes/` (the
+spelling filter strips common LaTeX like `\text`/`\frac` but not custom macros),
+so add every macro name used, plus genuine terms, to `inst/WORDLIST`; files
+under `inst/analyses/` are not spell-checked.
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
