@@ -12,6 +12,12 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`fact-check-prose` policy refinement: tool/library behavior claims.**
+  When prose describes deterministic, cheaply-reproducible tool or library
+  behavior (a git merge driver, a shell built-in, a regex engine), verify it
+  with a live repro rather than relying on memory or half-remembered docs.
+  Prompted by a git union-merge "de-duplicates identical lines" claim in
+  #366 that turned out false — confirmed with a constructed conflict test.
 - **Session-freshness standing rule** (`CLAUDE.md`, #368). New section "Keep
   ai-config and repo checkouts fresh": in every session, at start and
   periodically during long ones, (a) put the local ai-config checkout back on
