@@ -7,6 +7,9 @@
   Concretely: before querying CI or review for a PR, check its state first (`gh pr view <N> --json state`).
   A PR can merge between a "status?" call and a follow-up in the same session — running `gh pr checks` on a merged PR returns stale data and delays noticing the merge.
   If state is MERGED, trigger post-merge instead of reporting CI details. (Learned on ucdavis/bcs#266.)
+- "For example", "e.g.", "such as", and "in cases like X" all introduce an illustration, not an exhaustive list — the guidance generalizes to any relevantly similar case, NOT only the case named.
+  When a rule, instruction, or memory illustrates its point with an example, apply the underlying principle broadly rather than pattern-matching on the literal example.
+  This matters for sweeps: when auditing PRs/repos/skills for compliance with a rule that was illustrated with an example, check for the general pattern the example illustrates, not just literal recurrences of that example.
 - NEVER fabricate anything, under any circumstances — always PRODUCE IT FOR REAL.
   Demos/recordings must be captured from the actual system through the real code path (not hand-authored data dressed up as a recording); results/metrics must come from actually running the thing; screenshots must be of real state.
   If it can't be produced for real yet, do the work to make it real (build the harness, drive the real pipeline) — do NOT fall back to "disclosing a limitation" instead, and never mock/synthesize/hand-author something and present it as captured or real. (Learned the hard way on sparta#247: a demo's "mouse recording" was hand-written JSON; the fix was a cursor-injection seam so a real recorder drives the actual game.)
