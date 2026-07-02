@@ -5,6 +5,7 @@ project:
     - "index.qmd"
     - "setup.qmd"
     - "skills.qmd"
+    - "agents.qmd"
     - "workflow.qmd"
     - "skills/*/SKILL.md"
 
@@ -28,6 +29,8 @@ website:
         href: setup.qmd
       - text: "Skills"
         href: skills.qmd
+      - text: "Agents"
+        href: agents.qmd
       - text: "Workflow"
         href: workflow.qmd
     right:
