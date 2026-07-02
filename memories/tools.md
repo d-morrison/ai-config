@@ -1135,9 +1135,9 @@ common patterns.
   once the result exceeds the token cap and gets saved to a file, grep/slice that
   file with `python3` (byte-offset search, not line-based) rather than trusting a
   small default tail. Cross-check with `mcp__github__actions_get`
-  (`get_workflow_job` — verify method name against live schema; confirmed methods
-  include `get_workflow_run`) for the per-step `conclusion` breakdown to know
-  which step actually failed and roughly where in the log to look. (ai-config#403.)
+  (`method: "get_workflow_job"` — confirmed in the live schema alongside
+  `get_workflow_run`) for the per-step `conclusion` breakdown to know which step
+  actually failed and roughly where in the log to look. (ai-config#403.)
 - **`claude-review` failing with "Skipping action due to workflow validation…
   must have identical content to the default branch" is NOT always the
   documented self-mod-skip or stale-`@v1`-tag drift.** Before assuming either,
