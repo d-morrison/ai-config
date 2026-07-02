@@ -7,7 +7,7 @@
   Concretely: before querying CI or review for a PR, check its state first (`gh pr view <N> --json state`).
   A PR can merge between a "status?" call and a follow-up in the same session — running `gh pr checks` on a merged PR returns stale data and delays noticing the merge.
   If state is MERGED, trigger post-merge instead of reporting CI details. (Learned on ucdavis/bcs#266.)
-- "For example", "e.g.", and "such as" mean "in cases like this one" — the guidance generalizes to any relevantly similar case — NOT "only in this exact case."
+- "For example", "e.g.", "such as", and "in cases like X" all mean "in cases like this one" — the guidance generalizes to any relevantly similar case — NOT "only in this exact case."
   When a rule, instruction, or memory illustrates its point with an example, apply the underlying principle broadly rather than pattern-matching on the literal example.
   This matters for sweeps: when auditing PRs/repos/skills for compliance with a rule that was illustrated with an example, check for the general pattern the example illustrates, not just literal recurrences of that example.
 - NEVER fabricate anything, under any circumstances — always PRODUCE IT FOR REAL.
