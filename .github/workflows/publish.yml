@@ -12,7 +12,8 @@ concurrency:
 jobs:
   publish:
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: d-morrison/gha/.github/workflows/quarto-publish.yml@v1
+      # Push the rendered site to gh-pages. Required even though this job only
+      # renders: the reusable workflow's deploy job declares contents: write,
+      # and a caller must grant a job's permissions even when that job runs.
+      contents: write
+    uses: d-morrison/gha/.github/workflows/quarto-publish.yml@v2
