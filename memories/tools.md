@@ -213,6 +213,30 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 - `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
 - Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` is consumed as the branch name (the required argument to `-C`), so `$BRANCH` is parsed as the start-point instead and the command fails without creating the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)
 
+## Git — `gh pr merge --delete-branch` can orphan a stacked PR instead of retargeting it
+- GitHub's docs promise automatic retargeting: "If you delete a head branch
+  after its pull request has been merged, GitHub checks for any open pull
+  requests in the same repository that specify the deleted branch as their
+  base branch. GitHub automatically updates any such pull requests, changing
+  their base branch to the merged pull request's base branch."
+- In practice (Lacaedemon/sparta, 2026-07-01), `gh pr merge <N> --squash
+  --delete-branch` did NOT retarget a stacked PR onto the new base — it
+  auto-**closed** the stacked PR instead. Root cause unconfirmed (possibly a
+  timing/API-path difference between `gh`'s post-merge branch deletion and the
+  web UI's "Delete branch" button the docs describe) — but the failure mode is
+  reproducible enough to plan around regardless of cause.
+- **Before running `gh pr merge <N> --delete-branch`**, check whether another
+  open PR uses that branch as its base: `gh pr list --base <branch-name>`. If
+  one does, omit `--delete-branch` (merge without it, or delete manually
+  afterward once you've confirmed the stacked PR retargeted cleanly).
+- **Recovery when it happens anyway:** the *head* branch of the closed PR
+  usually still exists (only the deleted *base* branch is gone) —
+  `gh pr reopen` fails once the base is gone, so instead open a **new** PR
+  from that same head branch targeting `main` (or whatever the new
+  grandparent base is), note in the body that it supersedes the closed PR
+  number with identical commits, and comment on the closed PR linking the
+  replacement.
+
 ## Git — `worktree add` does not cd into the new worktree
 - `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
   shell in the **original** checkout. Subsequent bare git commands (`git checkout`,
