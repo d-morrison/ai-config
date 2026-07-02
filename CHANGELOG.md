@@ -16,9 +16,9 @@ behavior change to an existing one), not every mechanical edit.
   issue, the issue text and any design-doc status header can lag the code by
   several PRs, so a mature feature may be partly or mostly implemented even
   when the issue reads as unstarted. Verify the actual implementation state
-  against the code (routing/dispatch site, tests) before scoping new work,
+  against the code (key source files, tests) before scoping new work,
   and scope only the genuine remaining slice when the issue is partly done.
-  Caught on sparta #164/#240 (nearly rebuilt already-done work).
+  Caught on sparta #164/#240 (nearly rebuilt already-completed work).
 - **Squash-merge branch-reuse gotcha documented in `CLAUDE.md`** (#361).
   Reusing a harness-assigned branch name for follow-up work after its own PR
   squash-merged breaks git ancestry, so pushing more commits on top shows the
