@@ -964,13 +964,10 @@ any Quarto website (rme, psw, qwt, …).
   So a CI step that just runs `quarto render` **likely already exercises** the
   PDF/other-format renders a `CONTRIBUTING.md` separately documents as
   `quarto render <doc>.qmd --to pdf` — don't assume a bare project render is
-  HTML-only without checking. (Originally logged the opposite claim here after
-  macros#74's Copilot review questioned an unverified "deferred to CI" line in
-  a PR description; a same-session `claude[bot]` review then correctly flagged
-  the "first-listed format" mechanism as unverified, which prompted rerunning
-  the render from a genuinely clean state — it contradicted both the original
-  claim and the reviewer's proposed replacement.) The durable lesson survives:
-  don't write "CI covers this" in a PR description from assumption — but
+  HTML-only without checking. (Corrected in ai-config#408 after re-verifying
+  from a clean state; the empirical result contradicted both an earlier claim
+  logged here and a reviewer's proposed replacement.) The durable lesson
+  survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
 
