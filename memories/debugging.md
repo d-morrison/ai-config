@@ -308,8 +308,9 @@ Before treating the hook's feedback as an actionable problem: check
 local-verification artifact, not a real signing gap — no amend/re-sign needed.
 Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
 commit that's missing the `gpgsig` block entirely, or whose author/committer
-email is genuinely wrong (seen ai-config#314: two SSH-signed
-`noreply@anthropic.com` commits flagged "N" back-to-back, both already correct).
+email is genuinely wrong. (ai-config#314 was the opposite: two SSH-signed
+`noreply@anthropic.com` commits flagged "N" back-to-back, but both were already
+correct — a false positive, not a real signing gap.)
 
 ## Reproduce heavy-tool project bugs minimally
 The Quarto
