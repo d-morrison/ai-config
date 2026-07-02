@@ -50,6 +50,22 @@
   - **Close + reopen the PR** → fires the `reopened` event, which re-runs the
     review. Works reliably, but clutters the timeline with close/reopen events;
     prefer workflow_dispatch unless dispatch isn't available.
+- **A successful `workflow_dispatch` review does not clear the PR's required
+  `pull_request`-triggered check.** The dispatched run's check-runs attach to
+  the **dispatch ref's SHA** (typically `main`, the default branch used to
+  invoke it), not the PR's actual head SHA — even though the run reviews and
+  comments on the right PR (it takes `pr_number` as an input and reads that
+  PR's diff). So after a stub/failed `pull_request`-triggered review (see
+  `mcp__github__actions_run_trigger` 403 below), posting `@claude review` or
+  `/review` gets you a fresh, real verdict in the PR thread, but
+  `review / claude-review` and any gate job on the PR's head SHA (checked via
+  `get_check_runs`, not `get_status` — see below) stay red. Since reruns 403 in
+  these sessions, the only way to get a fresh **gating** run is to push a new
+  commit (an empty `git commit --allow-empty` is fine) so a real `pull_request`
+  `synchronize` event fires against the actual head SHA. (Hit twice in one
+  session on gha#176: two consecutive genuine — not raced — stub reviews on the
+  pinned dogfooding checker, each requiring an empty retrigger commit after the
+  dispatched `/review` came back clean.)
 
 ## gh — stale remote URL causes cryptic `gh pr create` failure
 - `gh pr create` fails with `Head sha can't be blank, Base sha can't be blank, No commits between <owner>:main and <other-owner>:<branch>` when `origin` points to an **old repo URL** (e.g. after a GitHub repo transfer/rename).
@@ -682,13 +698,21 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 - **The `@claude` agent can push a `main`-merge commit to your PR branch — not just
   comment.** Triggered by PR activity, the `claude.yml` agent may merge `origin/main`
   into the branch and push it (e.g. `claude[bot]` "Merge branch 'main' into <branch>").
-  Two consequences: (1) your in-flight local push is rejected ("fetch first" / RPC
-  `HTTP 403` from the git backend — a non-fast-forward, **not** a policy denial); (2)
-  the bot may resolve a `DESCRIPTION` version conflict to `== main`, which then fails
-  `version-check`. Recovery: stash any uncommitted work first (`git stash` — `reset
-  --hard` discards it), then `git fetch origin <branch>`, `git reset --hard
-  origin/<branch>` onto the bot's merge (don't force-push a competing parallel merge of
-  your own — build on the bot's), then re-bump the version above main and push.
+  **The same collision happens with a human's push, too** — e.g. the repo owner
+  clicking GitHub's "Update branch" button while you're mid-session on the same PR
+  produces an identical merge-main commit (authored by the human, committed by
+  `GitHub`) and the identical rejection; the recovery is the same regardless of who
+  pushed it. Two consequences: (1) your in-flight local push is rejected ("fetch
+  first" / RPC `HTTP 403` from the git backend — a non-fast-forward, **not** a
+  policy denial); (2) **bot-push only** — the `@claude` agent may resolve a
+  `DESCRIPTION` version conflict to `== main` when it merges, which then fails
+  `version-check`; a human's "Update branch" click doesn't do this — GitHub blocks
+  the merge on conflict instead of silently resolving it, so re-check versions only
+  applies after a bot merge. Recovery (either case): stash any uncommitted work
+  first (`git stash` — `reset --hard` discards it), then `git fetch origin <branch>`,
+  `git reset --hard origin/<branch>` onto the remote's merge commit (build on it —
+  don't force-push a competing parallel merge of your own), then re-bump the version
+  above main if needed and push.
   (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
   failing version-check until I bumped to `.9063` on top.)
 - **Cherry-pick recovery when the bot and your session both merge main.** If the `@claude` agent pushes a merge-main commit to the PR branch while you have unpushed commits, your push will be rejected ("fetch first"). Don't open a competing parallel merge — cherry-pick instead: (1) note the SHA of your local fix commit(s), (2) `git reset --hard origin/<branch>` to build on the bot's merge, (3) `git cherry-pick <sha>`, (4) push. This lands your fix cleanly on top without creating a divergent history.
