@@ -12,6 +12,21 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **Session-freshness standing rule** (`CLAUDE.md`, #368). New section "Keep
+  ai-config and repo checkouts fresh": in every session, at start and
+  periodically during long ones, (a) put the local ai-config checkout back on
+  `main` (not a leftover work branch) and `git pull --ff-only`; (b) refresh
+  the `~/.claude` consumer copies afterward --- the pull alone suffices only
+  where the children are real symlinks; on Windows, Git Bash `ln -s` falls
+  back to real copies, so changed files must be copy-synced, after
+  reconciling any un-upstreamed local edits; (c) fast-forward the `main`
+  checkout of whatever repo the session is working on.
+- **Windows TZ caveat upstreamed into the timestamp rule** (`CLAUDE.md`,
+  #368). On Windows Git Bash, `TZ=America/Los_Angeles date` silently falls
+  back to GMT; check the `%Z` suffix and use PowerShell's
+  `ConvertTimeBySystemTimeZoneId` when it isn't PDT/PST. Reconciled from an
+  edit made directly in `~/.claude/CLAUDE.md` that had never reached the
+  repo.
 - **`skill-builder` / `sync-with-main`: hallucination and merge-overlap
   lessons from #349.** `skill-builder` now calls out grep-verifying any
   `CLAUDE.md`/`shared/` citation or claimed "existing scale" before writing
