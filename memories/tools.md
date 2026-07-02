@@ -476,12 +476,15 @@ in an environment that can't fully restore the lockfile's existing package set.*
 ~4000 unrelated lines from a real `renv.lock` (every package not physically
 installed in the local renv library got dropped) and mangled Unicode author
 names into octal-escaped bytes in surviving entries — collateral damage far
-outside the intended one-package addition. `renv::install()` /
-`install.packages()` under an active renv project has the same blast radius:
-it tries to resolve the WHOLE project's `Remotes:` field (e.g. a GitHub pin
-like `rstudio/bookdown`), which fails outright if GitHub API access is
-blocked, even though the failure has nothing to do with the CRAN package
-being installed.
+outside the intended one-package addition. `renv::install()` has the same
+blast radius: it tries to resolve the WHOLE project's `Remotes:` field (e.g. a
+GitHub pin like `rstudio/bookdown`), which fails outright if GitHub API access
+is blocked, even though the failure has nothing to do with the CRAN package
+being installed. **`install.packages()` hits the identical failure while renv
+is active**, because renv's autoloader shims `install.packages()` to route
+through `renv::install()` internally (confirmed by the traceback: a plain
+`install.packages("cyclocomp")` call showed `renv::install("cyclocomp")` as
+a parent frame) — so avoid both, not just the namespaced call.
 
 The safe fix is a **surgical hand-edit of the lockfile JSON**: install the
 missing package locally just to read its DESCRIPTION metadata (e.g.
