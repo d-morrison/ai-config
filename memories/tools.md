@@ -95,6 +95,19 @@
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
   NOT `issueNumber`. This is the opposite of `pull_request_read`. Reload the
   tool schema when unsure rather than guessing.
+- **`mcp__github__create_or_update_file`'s `content` param is raw plain text,
+  not base64** — despite the GitHub REST API's own `PUT /repos/.../contents/`
+  endpoint taking base64, this MCP tool does the encoding for you. Passing an
+  already-encoded (or garbled-looking) string writes that literal string as the
+  file body — it does not decode it first, and the call still reports success,
+  so there's no error to catch the mistake. **Verify the write**: the response's
+  `content.size` should roughly match the source text's byte length; a
+  suspiciously small `size` (e.g. 113 bytes for a file that should be ~2700)
+  means the wrong content shipped. Fix immediately with a follow-up
+  `create_or_update_file` call using the new `sha` from the bad commit — don't
+  leave a broken file on the branch waiting for the next review round to catch
+  it. (Hit on lab-manual#376: an editing slip sent a truncated placeholder
+  instead of the real fragment text; caught by checking the returned `size`.)
 - **Issue *writes* 404 while *reads* succeed → the issue was transferred to
   another repo, not a permissions gap.** If `mcp__github__add_issue_comment` /
   `issue_write` to `owner/repo#<N>` fail (`404 Not Found`, or `Could not resolve
