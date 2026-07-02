@@ -358,6 +358,14 @@ against any target text.
 <!-- Shared with the lab manual; edit shared/writing/citations.md, not here. -->
 @shared/writing/citations.md
 
+## Fact-check prose and internal reasoning in review
+
+<!-- Shared with the lab manual; edit shared/writing/fact-check-prose.md, not here. -->
+@shared/writing/fact-check-prose.md
+
+The `code-review` skill and the `ard`/`ardi` loop apply this whenever a diff
+touches prose, not just code.
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
