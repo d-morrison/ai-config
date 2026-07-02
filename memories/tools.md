@@ -74,14 +74,38 @@
   signature vanished.) Not the
   quota-exhaustion case (`total_cost_usd==0 && num_turns==1`) and not a raced
   cancellation (`conclusion: cancelled`) — the SDK call itself ran several
-  turns and cost real money, but a denied tool call mid-run (plausibly a
-  `WebFetch`/`curl` the review agent's own fact-check instructions prompted it
-  to attempt, outside `claude-review.yml`'s `allowedTools`) apparently
-  derailed it before it wrote a verdict. Reproduced 3× identically on the same
-  PR/diff (gha#180) across both push-triggered and dispatched reruns — not
-  random flakiness once it starts recurring on a given diff. Tracked with the
-  full diagnostic in gha#185 (separate from the already-fixed stub-*detection*
-  issue, gha#173/#176); check there before re-diagnosing from scratch.
+  turns and cost real money, but a denied tool call mid-run derailed it before
+  it wrote a verdict. Reproduced 3× identically on the same PR/diff (gha#180)
+  across both push-triggered and dispatched reruns — not random flakiness once
+  it starts recurring on a given diff. **Root-caused and fixed in gha#185/#187:**
+  agent mode's default `allowedTools` has no `WebFetch`/`WebSearch`, but the
+  review prompt's own fact-checking instructions can still lead the agent to
+  attempt one, and on denial it sometimes stopped instead of finishing. The
+  fix is prompt-only — tell the reviewer up front that network-fetch tools
+  aren't available (so it doesn't try) and that a denied tool call is never a
+  reason to stop early — rather than widening `allowedTools`, since granting
+  broad `WebFetch` to a review-only job with secrets access raises its own
+  prompt-injection/exfiltration question for a workflow shared across
+  potentially-private consumer repos. That tradeoff (a domain-scoped
+  `WebFetch(domain:...)` allowlist to let the reviewer live-fact-check
+  external sources, matching this repo's own CLAUDE.md guideline #4) is left
+  as an open decision in gha#189, not decided unilaterally.
+- **Diagnosing which tool call was denied requires `show-full-output: true`
+  on a re-run — the job log alone won't show it.** `claude-code-action` logs
+  only the `system/init` and final `result` messages by default ("Running
+  Claude Code via SDK (full output hidden for security)"); every turn in
+  between — including which specific tool call got denied — is invisible in
+  the Actions log unless the workflow explicitly passes
+  `show_full_output: true` through to the action (in `gha`,
+  `claude-code-review.yml`'s `show-full-output` input). `permission_denials_count`
+  in the final result confirms *that* something was denied, not *what*.
+- **Claude Code's tool-permission syntax scopes `WebFetch` by domain:**
+  `WebFetch(domain:host)` (e.g. `WebFetch(domain:docs.anthropic.com)`),
+  with wildcards like `WebFetch(domain:*.github.com)` (subdomains only, not
+  the bare domain) or `WebFetch(domain:example.*)` (TLD variants). Same
+  bracketed-scope pattern as `Bash(git commit:*)`. Useful for granting
+  narrow, exfiltration-bounded fetch access instead of unrestricted
+  `WebFetch` or none at all.
 
 ## gh — stale remote URL causes cryptic `gh pr create` failure
 - `gh pr create` fails with `Head sha can't be blank, Base sha can't be blank, No commits between <owner>:main and <other-owner>:<branch>` when `origin` points to an **old repo URL** (e.g. after a GitHub repo transfer/rename).
