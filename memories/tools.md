@@ -420,6 +420,19 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   Bypass: `R --no-save --no-restore --no-site-file --no-init-file` skips
   `.Rprofile` entirely. Install needed packages from P3M into the user library
   and proceed. (Observed on ucdavis/bcs cloud sessions.)
+- **A stale `00LOCK-*` directory silently blocks every subsequent
+  `install.packages()` call**, left behind when an earlier install was
+  interrupted (killed mid-run, or two `install.packages()` calls racing —
+  e.g. a foregrounded retry while an earlier `nohup`'d background install was
+  still holding the lock). Under `quiet = TRUE` the only symptom is
+  `installation of package 'X' had non-zero exit status` for every package in
+  the call, with no hint why — rerun once without `quiet` to see the real
+  `ERROR: failed to lock directory '.../site-library' for modifying` line.
+  Fix: `rm -rf /usr/local/lib/R/site-library/00LOCK-*`, then retry; packages
+  installed before the interruption are still there; only the retry was
+  blocked. (ucdavis/ettbc#32: cost real time before diagnosing, since most of
+  a large dependency tree had actually installed fine and only the lock
+  blocked the last few packages.)
 - **To check whether a CRAN package is archived, query the PPM JSON API, not
   WebFetch against the CRAN HTML page — and check `is_archived`, NOT
   `tran_archive`.**
