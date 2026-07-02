@@ -50,6 +50,12 @@ When the word is genuinely just part of a sentence (ambiguous), fall back to the
 When listing PRs in a table (or anywhere they could be clickable), make each PR number a markdown link to the PR URL — `[#237](https://github.com/<owner>/<repo>/pull/237)`.
 The plain text form forces the user to copy/paste; the linked form lets them open the PR in one click.
 
+## Make inline questions easy to spot
+
+When asking the user a question inline in chat prose — not through the `AskUserQuestion` tool — set it apart instead of burying it mid-paragraph: put it on its own line, in bold.
+A question buried in a wall of text is easy to skim past; a bolded line on its own reads at a glance.
+This also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
+
 ## Title Claude sessions with the PR/issue number
 
 Name each Claude Code session (the title shown in the web/app session sidebar) `#NNN brief description` — the number of the PR or issue the session is working, then a short description.
