@@ -406,6 +406,15 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   HTML render is blocked. Let CI do the authoritative HTML render. (macros#71:
   DT/knitr uninstallable, but a base-R interpretation-completeness check + a
   lualatex PDF render of the new macros validated the change before push.)
+  **Before accepting "uninstallable," try `install.packages()` straight from a
+  source CRAN mirror** (`options(repos = c(CRAN = "https://cloud.r-project.org"));
+  install.packages(c("knitr", "rmarkdown", "DT"))`, no P3M) — it builds sass/DT
+  etc. from source and can succeed in a few minutes even when P3M's binary
+  fallback failed, unlocking the full local HTML render instead of falling back
+  to the base-R/PDF-only mitigations above. (macros#74: same class of container,
+  but a plain-CRAN source install of knitr/rmarkdown/DT succeeded, letting all
+  three of `CONTRIBUTING.md`'s documented renders — both PDF demos and the full
+  HTML site — run locally before push.)
 - **R in these containers defaults to the `C` locale**, so
   `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
   chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
@@ -940,6 +949,19 @@ any Quarto website (rme, psw, qwt, …).
   the real path. To compute the repo-relative path: strip `os.getenv("QUARTO_PROJECT_DIR")`
   from the front (`abs_input:sub(#project_root + 2)`). (Learned while writing `_repo-links.lua`
   for d-morrison/qmt.)
+- **A CI step that runs plain `quarto render` (no `--to`) does NOT necessarily
+  cover every format a document's front matter lists.** A project-wide `quarto
+  render` renders each doc to only its *first-listed* front-matter format (or the
+  project default) — a doc whose front matter lists `html`, `pdf`, `revealjs`,
+  `docx` still only gets `html` out of that step. Before writing "deferred to
+  CI" / "CI covers this" in a PR description, read the CI workflow YAML's actual
+  render invocation rather than assuming a same-named step exercises the same
+  render commands `CONTRIBUTING.md` documents. Caught by a Copilot review
+  (macros#74): CI's "Quarto Preview" workflow only ran default `quarto render`,
+  never the two PDF-specific commands `CONTRIBUTING.md` requires
+  (`quarto render <demo>.qmd --to pdf`) — running them locally (see the
+  cloud-session R/Quarto section above for the knitr/rmarkdown/DT install) was
+  the only way to actually satisfy that check.
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
