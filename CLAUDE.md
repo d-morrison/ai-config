@@ -50,6 +50,14 @@ When the word is genuinely just part of a sentence (ambiguous), fall back to the
 When listing PRs in a table (or anywhere they could be clickable), make each PR number a markdown link to the PR URL — `[#237](https://github.com/<owner>/<repo>/pull/237)`.
 The plain text form forces the user to copy/paste; the linked form lets them open the PR in one click.
 
+## Make inline questions easy to spot
+
+When asking the user a question inline in chat prose — not through the `AskUserQuestion` tool — put it in its own paragraph (blank line before and after), in bold.
+Don't bury it mid-paragraph.
+A bare newline isn't enough — Markdown collapses it back into the surrounding paragraph, so the blank lines are what actually create the break.
+Readers skim past a question buried mid-paragraph; bold formatting in its own paragraph is harder to miss.
+This also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
+
 ## Title Claude sessions with the PR/issue number
 
 Name each Claude Code session (the title shown in the web/app session sidebar) `#NNN brief description` — the number of the PR or issue the session is working, then a short description.
