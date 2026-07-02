@@ -6,7 +6,7 @@
   session or what "should" be the case. State drifts between turns. "It should be X" /
   "I left it as X" / "presumably X" are red flags; replace with a fresh check.
   Concretely: before querying CI or review for a PR, check its state first
-  (`gh pr view N --json state`). A PR can merge between a "status?" call and a
+  (`gh pr view <N> --json state`). A PR can merge between a "status?" call and a
   follow-up in the same session — running `gh pr checks` on a merged PR returns
   stale data and delays noticing the merge. If state is MERGED, trigger post-merge
   instead of reporting CI details. (Learned on ucdavis/bcs#266.)
