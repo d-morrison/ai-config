@@ -715,6 +715,17 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   ~48 s without posting a verdict comment. This prevents 401 errors from the
   App-token exchange during workflow validation of a not-yet-merged workflow file
   (source: gha#70 PR body). Not a CI failure — check the job logs for the skip message.
+  **The self-mod skip is NOT the same signal as the quota-skip (gha#104) — the
+  `require-review` gate job does not catch it.** `require-review`'s `if:` only
+  goes gray when `claude-review`'s result is literally `skipped` or
+  `quota_exhausted=true`; a self-mod skip leaves individual *steps* conditioned
+  off (`steps.selfmod.outputs.self_mod != 'true'`) but the `claude-review` JOB
+  itself still reports `success`, so `require-review` passes trivially and the
+  PR shows all-green with no review having actually run. Don't read "CI green,
+  no `@claude` comment" as "review ran clean" on a PR that touches
+  `claude-code-review.yml` — check the `claude-review` job log for the
+  `self_mod=true` notice, and do a manual review in its place (same playbook as
+  the quota-skip case below). (d-morrison/altdoc#14.)
 - **`grep -qxF` for literal fixed-string line matching in workflow files.** Flags: `-q`
   = quiet, `-x` = full-line match, `-F` = treat pattern as a fixed string (not a
   regex). Omitting `-F` makes `.` in file paths (e.g.
@@ -973,6 +984,23 @@ common patterns.
   semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
   MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
   Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
+- **Despite the auto-slide above, `@v1` can still trail `main` in practice —
+  verify against the TAGGED file, not `main` or `examples/`.** Observed:
+  `main`'s `claude.yml` / `claude-code-review.yml` both declare an
+  `ANTHROPIC_API_KEY` secret in their `workflow_call: secrets:` block, and
+  `examples/claude.yml` / `examples/claude-code-review.yml` (also on `main`)
+  show passing it — but the `@v1` tag's copy of both reusable workflows only
+  declares `CLAUDE_CODE_OAUTH_TOKEN`, `SUBMODULES_TOKEN`, and (for `claude.yml`)
+  `WORKFLOW_TOKEN`. A caller that copies the example verbatim and pins `@v1`
+  gets a `startup_failure`: `Invalid secret, ANTHROPIC_API_KEY is not defined
+  in the referenced workflow.` Before trusting an `examples/` template (or
+  `main`'s workflow file) for a `secrets:`/`with:` block passed to an `@v1`
+  call, fetch the actual `@v1`-tagged file
+  (`mcp__github__get_file_contents` with `ref: refs/tags/v1`, or
+  `git show v1:.github/workflows/<file>`) and diff its `workflow_call:`
+  section against what you're about to pass. Filed as gha#179; worked around
+  in `d-morrison/altdoc`#14 by omitting `ANTHROPIC_API_KEY` until `@v1` catches
+  up.
 - **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
   `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
   example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
