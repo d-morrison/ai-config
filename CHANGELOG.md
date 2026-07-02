@@ -22,6 +22,37 @@ behavior change to an existing one), not every mechanical edit.
   duplicate landed on `main` while the branch was in flight, not just a
   line collision --- worth re-running `skill-builder`'s Step 0 judgment at
   merge time, not only at branch start.
+- **`check-history` skill.** New bullet: on a long-lived or foundational
+  issue, the issue text and any design-doc status header can lag the code by
+  several PRs, so a mature feature may be partly or mostly implemented even
+  when the issue reads as unstarted. Verify the actual implementation state
+  against the code (key source files, tests) before scoping new work,
+  and scope only the genuine remaining slice when the issue is partly done.
+  Caught on sparta #164/#240 (nearly rebuilt already-completed work).
+- **`skill-builder` now requires re-deriving `skills.qmd`'s skill count from
+  the actual `skills/` directory** instead of a manual +1, and flags the gap
+  as an anti-pattern alongside the existing tool-mappings.yml registration
+  check. New standing preference: invoke `skill-builder` itself when creating
+  a skill rather than hand-authoring `SKILL.md` (#360, lessons from #347).
+- **`skill-builder` / `sync-with-main` policy refinements** (#371). New
+  authoring conventions from PR #359's review lifecycle: every procedural
+  step needs a runnable command, not just prose, especially a
+  destructive/history-rewriting step that already requires explicit user
+  approval; a cross-skill claim ("skill X detects Y via Z") must be verified
+  against that skill's actual mechanics before writing it. Also: a CI failure
+  on a fresh empty-commit draft PR is a signal to check `main`'s position
+  before debugging the failure itself --- a stale local checkout can surface
+  failures that are really just "main moved."
+- **`memories/tools.md`: watch for the bot's `Claude finished` marker** (#367).
+  A watcher polling for the @claude bot's verdict must match the completion
+  marker (`**Claude finished`), not the absence of an in-progress placeholder
+  --- placeholder wording varies between runs, so exclusion filters fire early.
+- **Squash-merge branch-reuse gotcha documented in `CLAUDE.md`** (#361).
+  Reusing a harness-assigned branch name for follow-up work after its own PR
+  squash-merged breaks git ancestry, so pushing more commits on top shows the
+  entire prior PR's diff again. Records the check-before-push
+  (`git merge-base --is-ancestor`) and rebuild-with-cherry-pick fix.
+
 - **`mwc` skill (aliases `merge-when-confident`, `maw`, `merge-at-will`).**
   New session-scoped exception to the standing "merge is human-gated" rule:
   when the user explicitly grants it, I may squash-merge any PR I'm driving
