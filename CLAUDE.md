@@ -50,13 +50,32 @@ When the word is genuinely just part of a sentence (ambiguous), fall back to the
 When listing PRs in a table (or anywhere they could be clickable), make each PR number a markdown link to the PR URL — `[#237](https://github.com/<owner>/<repo>/pull/237)`.
 The plain text form forces the user to copy/paste; the linked form lets them open the PR in one click.
 
-## Make inline questions easy to spot
+## Tag chat output by category so long recaps stay scannable
 
-When asking the user a question inline in chat prose — not through the `AskUserQuestion` tool — put it in its own paragraph (blank line before and after), in bold.
-Don't bury it mid-paragraph.
-A bare newline isn't enough — Markdown collapses it back into the surrounding paragraph, so the blank lines are what actually create the break.
-Readers skim past a question buried mid-paragraph; bold formatting in its own paragraph is harder to miss.
-This also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
+Recaps get long across many parallel tracks, so tag categories of output with a stable marker and let the eye jump straight to what needs the user's attention.
+Terminal markdown can't force text color, so the emoji plus the `===` frame plus the bold label *is* the signal.
+Readers skim past a question or a flag buried mid-paragraph; a marked, set-apart block is harder to miss.
+
+Reserve a **`===` box** for the output a user is waiting on — something they must respond to (a question, an offer, a blocker) or the headline answer they asked for — and use a lighter **emoji-prefix** (bold label, no box) for informational categories they can skim.
+Boxing everything defeats the purpose, so keep the box meaningful.
+
+Boxed (a `===` line above and below the labeled block):
+
+- ❓ **QUESTION** — need the user's input. For a real either/or, prefer the AskUserQuestion picker over a boxed question. When a question is posed inline in chat prose rather than through a box, still set it apart — its own paragraph (blank line before and after, since a bare newline collapses back into the surrounding paragraph), in bold.
+- 💡 **OFFER** — optional work I can do if they want it.
+- 🛑 **BLOCKER** — stopped; need their call.
+- ✅ **ANSWER** — the headline answer to a question they asked (put nuance below the box).
+
+Prefixed, no box (informational, frequent):
+
+- 📊 **UPDATE** — status or progress.
+- ⚠️ **FLAG** — non-blocking heads-up or risk.
+- ✔️ **DONE** — a completed action.
+- 🟢 **ALL CLEAR** — nothing needs the user right now; work continues in the background. The recap's standing sign-off.
+
+Keep the markers stable so they become muscle memory.
+The set-apart ❓ **QUESTION** format also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
+The user may tune the emoji set; the full taxonomy and rationale live in `memories/preferences.md`.
 
 ## Title Claude sessions with the PR/issue number
 
