@@ -136,3 +136,13 @@ the rendered output rather than trusting the prose's own description (see
    (`--disallowedTools` for git writes, or an allowlist without them).
 3. Add a repo-specific addendum to the prompt (Quarto/R checks, etc.) if the
    project warrants it — see qwt's review workflow for an example.
+
+## Relationship to other skills
+
+- **`claude-agent-workflow`** — the companion skill for the agent workflow
+  that edits files in response to `@claude` mentions; see the top of this
+  file.
+- **`config-ai`** — the broader router: when a request is "change how the
+  `@claude` bot behaves when invoked," not "add something consumers' CI can
+  call," `config-ai` hands off to this skill (or `claude-agent-workflow`)
+  rather than `skill-builder`/`agent-builder`.
