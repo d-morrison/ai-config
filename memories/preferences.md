@@ -336,6 +336,29 @@
   An agent's `git worktree list` search can match loosely and land in the conductor's workspace by mistake, switching it to an unrelated branch (or leaving it in a detached-HEAD state), discovered only when the conductor's own next `git status`/`git log` call returns something unrecognizable.
   Fix is a plain `git checkout <conductor's-own-branch>` once caught (verify `git status --short` is clean first), but the real fix is naming the conductor's own worktree path explicitly as off-limits in every "find or create a worktree" brief. (Learned on sparta, 2026-07-02: a wave-3 agent tasked with finding the worktree for `feat/lod-phase3-tier-transitions-558` "likely at `gia2-558`" instead checked it out directly inside the conductor's own worktree.)
 
+## Output-highlighting taxonomy
+
+Tag categories of chat output with a stable marker so long recaps stay scannable.
+Recaps get long across many parallel tracks; the eye should find questions, offers, and flags instantly.
+Terminal markdown can't force text color, so the emoji plus the `===` frame plus the bold label *is* the signal — there's no other channel for it.
+
+The core distinction: **box only what needs the user's input or a decision; leave informational categories unboxed.**
+If everything is boxed, the box stops meaning "look here," so keep it reserved.
+
+- **Boxed** — a `===` line directly above and below the labeled block:
+  - ❓ **QUESTION** — need the user's input. For a genuine either/or, prefer the AskUserQuestion picker over a boxed question.
+  - 💡 **OFFER** — optional work I can do if they want it.
+  - 🛑 **BLOCKER** — stopped; need their call.
+  - ✅ **ANSWER** — the headline answer to a question they asked; put nuance below the box.
+- **Prefixed, no box** — informational and frequent, so a bold label with the emoji is enough:
+  - 📊 **UPDATE** — status or progress.
+  - ⚠️ **FLAG** — a non-blocking heads-up or risk.
+  - ✔️ **DONE** — a completed action.
+
+Keep the markers stable so they become muscle memory.
+The user may tune the emoji set over time; the categories and the box-versus-prefix split are the durable part.
+This is the fuller companion to the CLAUDE.md "Tag chat output by category" section — keep the two in sync if either changes.
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.

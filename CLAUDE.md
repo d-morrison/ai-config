@@ -50,6 +50,29 @@ When the word is genuinely just part of a sentence (ambiguous), fall back to the
 When listing PRs in a table (or anywhere they could be clickable), make each PR number a markdown link to the PR URL — `[#237](https://github.com/<owner>/<repo>/pull/237)`.
 The plain text form forces the user to copy/paste; the linked form lets them open the PR in one click.
 
+## Tag chat output by category so long recaps stay scannable
+
+Recaps get long across many parallel tracks, so tag categories of output with a stable marker and let the eye jump straight to what needs a decision.
+Terminal markdown can't force text color, so the emoji plus the `===` frame plus the bold label *is* the signal.
+
+Reserve a **`===` box** for things that need the user's input or a decision, and use a lighter **emoji-prefix** (bold label, no box) for informational categories — boxing everything defeats the purpose, so keep the box meaningful.
+
+Boxed (a `===` line above and below the labeled block):
+
+- ❓ **QUESTION** — need the user's input. For a real either/or, prefer the AskUserQuestion picker over a boxed question.
+- 💡 **OFFER** — optional work I can do if they want it.
+- 🛑 **BLOCKER** — stopped; need their call.
+- ✅ **ANSWER** — the headline answer to a question they asked (put nuance below the box).
+
+Prefixed, no box (informational, frequent):
+
+- 📊 **UPDATE** — status or progress.
+- ⚠️ **FLAG** — non-blocking heads-up or risk.
+- ✔️ **DONE** — a completed action.
+
+Keep the markers stable so they become muscle memory.
+The user may tune the emoji set; the full taxonomy and rationale live in `memories/preferences.md`.
+
 ## Title Claude sessions with the PR/issue number
 
 Name each Claude Code session (the title shown in the web/app session sidebar) `#NNN brief description` — the number of the PR or issue the session is working, then a short description.
