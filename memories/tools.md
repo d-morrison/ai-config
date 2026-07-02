@@ -428,7 +428,10 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   `installation of package 'X' had non-zero exit status` for every package in
   the call, with no hint why — rerun once without `quiet` to see the real
   `ERROR: failed to lock directory '.../site-library' for modifying` line.
-  Fix: `rm -rf /usr/local/lib/R/site-library/00LOCK-*`, then retry; packages
+  Fix: `rm -rf` the lock directory shown in that error output — typically
+  `/usr/local/lib/R/site-library/00LOCK-*` in these containers, but confirm
+  the path from the error rather than assuming it (an renv project or a
+  user-library session uses a different one) — then retry; packages
   installed before the interruption are still there; only the retry was
   blocked. (ucdavis/ettbc#32: cost real time before diagnosing, since most of
   a large dependency tree had actually installed fine and only the lock
