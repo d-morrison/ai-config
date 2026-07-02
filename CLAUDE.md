@@ -16,6 +16,31 @@ conversation, **first** run the `ums` (Update Memories and Skills) procedure
 to capture any accumulated learnings before context is lost. Then proceed
 with the clear.
 
+## Keep ai-config and repo checkouts fresh
+
+In every session — at session start, and again periodically during long
+sessions — refresh the local state that goes stale as PRs merge elsewhere:
+
+1. **The ai-config checkout.** Check that the local ai-config clone is on
+   `main` — not a leftover work branch from an earlier session — and run
+   `git pull --ff-only`. Only switch back to `main` when the working tree is
+   clean; leave a dirty tree or another session's in-flight work alone and
+   flag it instead.
+2. **The `~/.claude` consumer copies.** On symlink-capable systems the
+   children of `~/.claude` (`skills/`, `shared/`, `commands/`, `memories/`)
+   are symlinks into the checkout, so the pull alone refreshes them; rerun
+   `bootstrap.sh` only when the repo gained a new top-level dir. On Windows,
+   Git Bash `ln -s` silently falls back to **real copies**, so a pull does
+   NOT propagate there — copy-sync every file whose repo version changed
+   into `~/.claude`. Before overwriting, check for edits made directly in
+   `~/.claude` (an mtime after the last sync, or a diff that adds prose the
+   repo lacks) and upstream the genuine ones into the repo first; never
+   clobber an un-upstreamed local edit.
+3. **The working repo's main checkout.** Fast-forward the `main` checkout of
+   whatever repo the session is working on (`git fetch origin`, then
+   `git pull --ff-only` when `main` is checked out) — it goes stale as the
+   session's own PRs and other sessions' PRs merge.
+
 ## Timestamp recaps in local time
 
 When printing a status recap or summary, include a timestamp in the user's
@@ -23,6 +48,13 @@ local time zone (Pacific Time, `America/Los_Angeles` — get it from
 `TZ=America/Los_Angeles date "+%Y-%m-%d %H:%M %Z"`; the explicit `TZ` enforces
 PT on a machine set to any other zone). This makes "as of when" unambiguous when
 the user reads the recap later.
+
+**Check the `%Z` in the output.** On Windows Git Bash the `TZ` override
+silently falls back to GMT (any IANA zone name does), so the command above
+prints GMT, not PT. If the suffix isn't PDT/PST, fall back to plain `date`
+when the machine's system zone is already Pacific, or use PowerShell:
+`[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow,
+'Pacific Standard Time')`.
 
 ## Bare queue-command keywords
 
