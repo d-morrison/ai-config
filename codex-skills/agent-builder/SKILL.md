@@ -1,17 +1,17 @@
 ---
-name: "spot-skill-opportunities"
-description: "Codex wrapper for the ai-config Claude skill `spot-skill-opportunities`. Proactively notice, in the moment and not just at a session-end checkpoint, when a repeatable multi-step workflow, decision framework, tool-integration pattern, or dedicated fan-out worker persona is emerging during ANY task \u2014 then surface it as a candidate skill (or agent) and hand off to skill-builder or agent-builder, rather than quietly repeating the same hand-rolled steps next time. This is the recognition step; skill-builder and agent-builder are the construction steps. Use continuously, whenever you catch yourself repeating a multi-step dance done earlier in this session or a prior one, improvising a workaround for something that will recur, or the user says 'again', 'like last time', 'we did this before', or 'always do X'. Also fires as a standing checklist item inside record-learnings, ums, wrap-up, and post-merge. Use when Codex is asked to use `spot-skill-opportunities`, `/spot-skill-opportunities`, or the corresponding ai-config/Claude skill workflow."
+name: "agent-builder"
+description: "Codex wrapper for the ai-config Claude skill `agent-builder`. Build a new read-only fan-out subagent under `.claude/agents/<name>.md` for a skill that needs one \u2014 FIRST check whether an existing agent (dependency-auditor, hallucination-detector, community-demand-scout) should be reused or extended instead, and only then scaffold a new agent definition with a tight `tools:` list, a role-scoped system prompt, and an explicit read-only/no-mutate boundary, paired with exactly one skill that spawns it. Use when asked to 'build an agent', 'create a subagent', 'make a new agent', 'add an agent', 'agent-builder', or when a heavy skill's fan-out step needs a dedicated worker persona instead of an inline Agent() prompt. Use when Codex is asked to use `agent-builder`, `/agent-builder`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# spot-skill-opportunities (Codex wrapper)
+# agent-builder (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/spot-skill-opportunities/SKILL.md](../../skills/spot-skill-opportunities/SKILL.md)
+Source: [skills/agent-builder/SKILL.md](../../skills/agent-builder/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/spot-skill-opportunities/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/spot-skill-opportunities`, resolve the symlink target for this wrapper directory first, then read `../../skills/spot-skill-opportunities/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/agent-builder/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/agent-builder`, resolve the symlink target for this wrapper directory first, then read `../../skills/agent-builder/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
