@@ -1165,3 +1165,29 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   (plus `customXml` if present). Verify with `unzip -t out.docx` and re-extract + grep to
   confirm the removed strings are gone before committing. (Done on ucdavis/bcs#237 to strip
   an internal SharePoint URL and a server reference from a to-do doc.)
+
+## claude-code-action: tag mode vs agent mode and git write tools
+
+- **Tag mode (`track_progress: true`) hardcodes git write tools into `ALLOWED_TOOLS`
+  regardless of `--disallowedTools`.** The action's TypeScript sets the `ALLOWED_TOOLS`
+  env var at runtime, injecting `Bash(git add:*)`, `Bash(git commit:*)`,
+  `Bash(git rm:*)`, and `git-push.sh`. The `--disallowedTools` CLI flag cannot
+  override an env var set by the same process. Evidence: `d-morrison/gha` PR #134,
+  where a supposedly read-only `claude-code-review` run pushed commit `02af72b` to
+  UCD-SERG/serodynamics PR #175. Upstream fix tracked in
+  `anthropics/claude-code-action#1415` (draft PR #1433).
+- **Agent mode (`track_progress: false`) builds `ALLOWED_TOOLS` solely from
+  `claude_args` — no git write tools are injected.** This is the safe default for
+  a read-only reviewer. Trade-off: no live tracking comment, no inline-comment tool
+  (the inline-comment tool is only initialized in tag mode per `claude-code-action#635`);
+  reviews post as top-level PR comments instead.
+- **`inputs.dot-notation` vs `inputs['bracket-notation']` in GitHub Actions `if:`.**
+  Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
+  notation looks non-idiomatic next to the dot notation used everywhere else in the
+  same workflow. Caught in gha#134 review.
+
+## Changelog section ordering in d-morrison/gha
+
+- **The established order in `CHANGELOG.md` is: Added → Changed → Fixed → Security.**
+  Match this when adding new `## [Unreleased]` entries or when resolving merge
+  conflicts in the changelog. Caught in gha#134 review (Fixed appeared before Changed).
