@@ -342,7 +342,8 @@ Tag categories of chat output with a stable marker so long recaps stay scannable
 Recaps get long across many parallel tracks; the eye should find questions, offers, and flags instantly.
 Terminal markdown can't force text color, so the emoji plus the `===` frame plus the bold label *is* the signal — there's no other channel for it.
 
-The core distinction: **box only what needs the user's input or a decision; leave informational categories unboxed.**
+The core distinction: **box the output a user is waiting on — a response they must give, or the headline answer they asked for — and leave ongoing informational categories unboxed.**
+The four boxed categories all demand the user's attention: three ask for a response (a question, an offer, a blocker) and one delivers the answer they were waiting on.
 If everything is boxed, the box stops meaning "look here," so keep it reserved.
 
 - **Boxed** — a `===` line directly above and below the labeled block:
@@ -357,7 +358,7 @@ If everything is boxed, the box stops meaning "look here," so keep it reserved.
 
 Keep the markers stable so they become muscle memory.
 The user may tune the emoji set over time; the categories and the box-versus-prefix split are the durable part.
-This is the fuller companion to the CLAUDE.md "Tag chat output by category" section — keep the two in sync if either changes.
+This is the fuller companion to the CLAUDE.md section on tagging chat output by category — keep the two in sync if either changes.
 
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.

@@ -52,10 +52,11 @@ The plain text form forces the user to copy/paste; the linked form lets them ope
 
 ## Tag chat output by category so long recaps stay scannable
 
-Recaps get long across many parallel tracks, so tag categories of output with a stable marker and let the eye jump straight to what needs a decision.
+Recaps get long across many parallel tracks, so tag categories of output with a stable marker and let the eye jump straight to what needs the user's attention.
 Terminal markdown can't force text color, so the emoji plus the `===` frame plus the bold label *is* the signal.
 
-Reserve a **`===` box** for things that need the user's input or a decision, and use a lighter **emoji-prefix** (bold label, no box) for informational categories — boxing everything defeats the purpose, so keep the box meaningful.
+Reserve a **`===` box** for the output a user is waiting on — something they must respond to (a question, an offer, a blocker) or the headline answer they asked for — and use a lighter **emoji-prefix** (bold label, no box) for informational categories they can skim.
+Boxing everything defeats the purpose, so keep the box meaningful.
 
 Boxed (a `===` line above and below the labeled block):
 
