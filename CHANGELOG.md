@@ -12,6 +12,12 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`sync-with-main` / `address-every-comment` policy refinements.** Re-check
+  `main` again right before the final push (conflict resolution can take long
+  enough for `main` to advance a second time); when a review nit is a pattern
+  broken in one spot, fix every recurrence in the same file in one pass
+  instead of letting the reviewer flag each occurrence separately. Lessons
+  from PR #353's review lifecycle.
 - **Growth-mindset shared policy** (`shared/workflow/growth-mindset.md`, #353).
   New standing rule: treat a current limitation (missing tool, manual
   workaround, insufficient model) as a starting point to resolve — via
