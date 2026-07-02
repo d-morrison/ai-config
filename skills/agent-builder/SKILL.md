@@ -195,6 +195,10 @@ Then, as explicit steps:
   scans only `skills/` and doesn't check `.claude/agents/`. Until it's extended
   to cover agent files, manually verify that a skill naming a custom agent is
   named back in that agent's `description`.
+- **`config-ai`** — the broader router this skill is one destination for: when
+  a request names a capability but not a mechanism, `config-ai` decides
+  whether it's a subagent (→ here), a skill, a memory, a hook, or a `gha`
+  capability, then hands off accordingly.
 
 ## Anti-patterns
 

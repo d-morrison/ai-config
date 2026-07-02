@@ -160,3 +160,8 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
   edits skills.
 - **`update-config`** — where an "every-time action" belongs (a hook), since a
   memory can't execute.
+- **`config-ai`** — the broader router across skills/agents/memory/hooks/`gha`
+  capabilities; its Step 3 fallback ladder (issue on target repo, then issue
+  on the current repo for transfer) covers the case one rung past this
+  skill's Path A/B — when the session has no API/branch access to `ai-config`
+  at all, not just a different working repo.

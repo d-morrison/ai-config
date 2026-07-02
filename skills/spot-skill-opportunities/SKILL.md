@@ -87,6 +87,10 @@ a **dedicated, read-only fan-out worker** a heavy skill's per-item step needs
   skills that already shipped and turned out to overlap; this skill tries to
   prevent that overlap from being created in the first place by checking for
   an existing owner before proposing a new skill.
+- **`config-ai`** — the explicit, user-invoked counterpart: this skill
+  proactively notices a skill/agent opportunity mid-task; `config-ai` is what
+  fires when the user directly states a capability and doesn't yet know (or
+  care) whether it's a skill, agent, memory, hook, or `gha` capability.
 
 ## Anti-patterns
 

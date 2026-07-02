@@ -37,6 +37,10 @@ X", "whenever I edit Y do Z"), memory can't execute it — that needs a **hook**
 in `settings.json` / `settings.local.json` (use the `update-config` skill).
 Say so and route it there; don't store a note that will never fire.
 
+Unsure whether a request is really a memory versus a skill, subagent, hook, or
+`gha` capability? `config-ai` (`ca`/`cai`) is the broader router across all of
+those forms — this skill is what it hands off to once memory is the answer.
+
 ## Procedure
 
 1. **Parse** the fact/preference from the user's message.
