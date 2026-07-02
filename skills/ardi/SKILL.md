@@ -17,22 +17,26 @@ finding → push → post summary → re-request review → repeat until clean.
 ## Procedure
 
 1. **Identify and claim the PR/MR.** Use the current branch's open MR, or
-   the one the user specified. Post a brief claim comment so a parallel
-   `@claude` CI run or another person doesn't start a colliding session:
+   the one the user specified. Post a brief claim comment (`COMMENT_PR`) so a
+   parallel `@claude` CI run or another person doesn't start a colliding
+   session:
    `gh pr comment <N> --body "Driving this PR to clean — back off until done."`
-   Skip if your most recent comment already says so.
+   Skip if your most recent comment already says so. (`COMMENT_PR` and the
+   other bracketed tokens below are abstract operation tokens — resolve to
+   your model's tool via [`tool-mappings.md`](../../tool-mappings.md).)
 
 2. **Read the latest review.** Pull the most recent reviewer comment — the
    `@claude` bot's, or a human's. Don't trust earlier cached verdicts — actively
    poll until a review appears that references the commit you just pushed, then
    read **that** one.
-   `gh pr checks` / `glab ci list` going green is about **CI state**, not the
-   review verdict — always parse the latest review *body* for findings.
+   `gh pr checks` (`PR_CHECKS`) / `glab ci list` going green is about **CI
+   state**, not the review verdict — always parse the latest review *body*
+   for findings.
 
    - **GitHub:**
      ```bash
      gh pr view <N> --json comments \
-       --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'
+       --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
      ```
      The reviewer's bot login varies by setup — `gh pr view` reports it as
      `claude`, the REST API as `claude[bot]`, and some setups post as
@@ -80,10 +84,10 @@ finding → push → post summary → re-request review → repeat until clean.
 
    **Resolve inline threads as you go — including outdated ones.** After
    pushing fixes for a round, resolve the corresponding inline review threads
-   immediately via `mcp__github__pull_request_review_write` with
+   immediately (`RESOLVE_REVIEW_THREAD`) via `mcp__github__pull_request_review_write` with
    `method: resolve_thread` and the `threadId` (returned by
-   `mcp__github__pull_request_read` with `method: get_review_comments`). Don't
-   wait until fully-clean to do thread
+   `READ_PR_REVIEW_COMMENTS` — `mcp__github__pull_request_read` with
+   `method: get_review_comments`). Don't wait until fully-clean to do thread
    housekeeping. For threads marked *outdated* in GitHub (the underlying code
    changed), confirm the fix is in the current tree, then resolve. Threads
    whose fixes are already in the tree but were never resolved still block the
@@ -93,7 +97,7 @@ finding → push → post summary → re-request review → repeat until clean.
    all findings were Rebutted/Deferred with no push), scan other open PRs in
    the same repo for merge conflicts:
    ```bash
-   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments
+   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS
    ```
    For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (see
    `resolve-conflicts`, "Verify before you act" — `UNKNOWN` can mean GitHub
@@ -157,7 +161,7 @@ finding → push → post summary → re-request review → repeat until clean.
    can become conflicting at any time (someone merges to `main` while the review
    runs). Poll every few minutes with `/loop` or a manual re-check:
    ```bash
-   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments \
+   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS \
      --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'
    ```
    Verify each candidate with `git merge-tree --write-tree origin/main
@@ -222,7 +226,7 @@ thread) and your reply to it. (Thread mechanics live in the `ard` skill, step
 
 ## On clean
 
-Post an unclaim comment (`gh pr comment <N> --body "Done — PR is free."`) to
+Post an unclaim comment (`COMMENT_PR` — `gh pr comment <N> --body "Done — PR is free."`) to
 unblock any parallel sessions that backed off in step 1.
 
 Always provide a clickable link to the MR/PR in the final message.

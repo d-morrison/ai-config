@@ -53,6 +53,14 @@ operations:
     description: Read a pull request's CI check / status results.
     cli: gh pr checks <N>
     github_mcp: mcp__github__pull_request_read (method=get_check_runs)
+  - id: READ_PR_COMMENTS
+    description: Read a pull request's top-level (conversation) comments.
+    cli: gh pr view <N> --comments
+    github_mcp: mcp__github__pull_request_read (method=get_comments)
+  - id: READ_PR_REVIEW_COMMENTS
+    description: Read a pull request's inline review-thread comments (also returns thread ids).
+    cli: gh api repos/<owner>/<repo>/pulls/<N>/comments
+    github_mcp: mcp__github__pull_request_read (method=get_review_comments)
   - id: CREATE_PR
     description: Open a new pull request.
     cli: gh pr create

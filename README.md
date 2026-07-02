@@ -53,6 +53,15 @@ generic CLI fallback). The sync script above embeds this table into every Codex
 wrapper and renders the full reference at [`tool-mappings.md`](tool-mappings.md).
 Edit the `.yml`, then rerun the script — CI fails if either output is stale.
 
+A handful of the highest-traffic skills (`ard`, `ardi`, `claim-pr`,
+`pr-status`) go a step further and name the operation token inline next to the
+concrete command (e.g. `` gh pr comment <N> ... # COMMENT_PR ``), so a
+non-Claude wrapper can resolve by token instead of pattern-matching the `gh`
+command. This is a pilot (ai-config#195) — the rest of the corpus still names
+only concrete commands. `scripts/validate-skills.py` lints every such token
+against the registry, so a typo'd token fails CI instead of silently not
+resolving for other models.
+
 ## Claude Code on the web
 
 In cloud (web) sessions you can't run `bootstrap.sh` by hand, and the

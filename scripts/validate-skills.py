@@ -96,6 +96,66 @@ def check_skills() -> None:
     print(f"  checked {count} skills")
 
 
+TOKEN_PATTERN = re.compile(r"`([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`")
+
+# Backtick-wrapped ALL_CAPS_WITH_UNDERSCORE tokens already in skill prose for
+# reasons unrelated to the tool-mappings.yml abstract-operation-token pilot
+# (ai-config#195) — env vars, git refs, API constants. Not every such token is
+# meant to resolve via the registry, so they're exempted rather than flagged.
+NON_OPERATION_TOKENS = {
+    "ALLOWED_TOOLS",
+    "ANTHROPIC_API_KEY",
+    "CHERRY_PICK_HEAD",
+    "CLAUDE_CODE_OAUTH_TOKEN",
+    "ENTITY_NUMBER",
+    "ERR_TUNNEL_CONNECTION_FAILED",
+    "GITHUB_OUTPUT",
+    "GITHUB_TOKEN",
+    "GITLAB_TOKEN",
+    "NOT_CRAN",
+    "NOT_PLANNED",
+    "PROJECT_ID",
+    "PR_NUMBER",
+    "REBASE_HEAD",
+    "REVERT_HEAD",
+    "R_LIBS_USER",
+    "SHA_PLACEHOLDER",
+    "SUBMODULES_TOKEN",
+    "WORKFLOW_TOKEN",
+}
+
+
+def load_operation_ids() -> set[str]:
+    mappings_file = ROOT / "tool-mappings.yml"
+    if not mappings_file.is_file():
+        return set()
+    data = yaml.safe_load(mappings_file.read_text(encoding="utf-8"))
+    return {op["id"] for op in data.get("operations", [])}
+
+
+def check_operation_tokens() -> None:
+    # Every backtick-wrapped ALL_CAPS operation-shaped token in a skill body
+    # must be a real tool-mappings.yml operation id (or a known non-operation
+    # constant) -- catches typos in the abstract-operation-token pilot from
+    # ai-config#195 before they silently fail to resolve for non-Claude models.
+    operation_ids = load_operation_ids()
+    skills_dir = ROOT / "skills"
+    if not skills_dir.is_dir() or not operation_ids:
+        return
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        rel = skill_md.relative_to(ROOT)
+        for match in TOKEN_PATTERN.finditer(skill_md.read_text(encoding="utf-8")):
+            token = match.group(1)
+            if token in operation_ids or token in NON_OPERATION_TOKENS:
+                continue
+            errors.append(
+                f"{rel}: `{token}` looks like an operation token but isn't in "
+                "tool-mappings.yml or the NON_OPERATION_TOKENS allowlist in "
+                "scripts/validate-skills.py"
+            )
+    print(f"  checked operation tokens ({len(operation_ids)} known operations)")
+
+
 def check_codex_wrappers() -> None:
     wrappers_dir = ROOT / "codex-skills"
     if not wrappers_dir.is_dir():
@@ -159,6 +219,7 @@ def check_json(rel: str, required: list[str]) -> None:
 def main() -> None:
     print("Validating skills…")
     check_skills()
+    check_operation_tokens()
     print("Validating Codex wrappers…")
     check_codex_wrappers()
     print("Validating manifests…")
