@@ -151,6 +151,9 @@ gh api graphql -f query='mutation {
   resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'
 ```
 
+In a remote/web session without `gh`, use `mcp__github__resolve_review_thread`
+instead (see `tool-mappings.md`).
+
 **GitLab** — reply to the discussion, then resolve it:
 
 ```bash
