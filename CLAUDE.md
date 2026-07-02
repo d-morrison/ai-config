@@ -338,6 +338,11 @@ The detector counterpart to the plain-prose guide above.
 The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand
 against any target text.
 
+## Writing style: cite sources thoroughly
+
+<!-- Shared with the lab manual; edit shared/writing/citations.md, not here. -->
+@shared/writing/citations.md
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
