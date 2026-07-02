@@ -52,8 +52,7 @@ git submodule update --remote inst/analyses/macros
 
 ### 2. Wire the include once, at the top of the manuscript
 
-Include the macro definitions before any math renders (they are `\providecommand`
-/`\def`, so they don't clobber existing LaTeX):
+Include the macro definitions before any math renders:
 
 ```bash
 # working example — inst/analyses/paper.qmd:
@@ -66,11 +65,25 @@ grep -rn 'include .*macros/macros.qmd' <manuscript-dir>   # check if already wir
 Place it near the top of the **top-level** `.qmd` (the one that assembles the
 `{{< include >}}`d children), before the first section with math.
 
+The definitions do not blindly override existing LaTeX, and the two definition
+forms behave differently: `\def` **always** redefines a name, but MathJax
+**skips `\providecommand` for a name that is already defined** — including a
+LaTeX built-in like `\v` (caron), `\b`, `\u`, or `\c`. So a `\providecommand`
+whose name shadows a built-in silently no-ops: the built-in meaning survives and
+the render breaks with no error. The library therefore uses `\def` /
+`\renewcommand` (not `\providecommand`) for built-in-shadowing names — e.g.
+`\renewcommand{\v}{...}`, `\renewcommand{\vec}{...}`. See the "MathJax ignores
+`\providecommand`" note in `memories/preferences.md`.
+
 ### 3. Read the macro inventory before rewriting
 
+`macros.qmd` may define macros with any of `\def`, `\providecommand`,
+`\newcommand`, or `\renewcommand` (the built-in-shadowing names like `\v`, `\vec`
+use `\renewcommand`), so match all four forms:
+
 ```bash
-grep -cE '^\\(def|providecommand)' inst/analyses/macros/macros.qmd   # ~600+ macros
-grep -nE '\\(def|providecommand)\{?\\(Ep|Prf|paren|sb|cb|expit|logit|Var|hp|S|h)\b' \
+grep -cE '^\\(def|providecommand|newcommand|renewcommand)' inst/analyses/macros/macros.qmd   # ~600+ macros
+grep -nE '\\(def|providecommand|newcommand|renewcommand)\{?\\(Ep|Prf|paren|sb|cb|expit|logit|Var|hp|S|h)\b' \
   inst/analyses/macros/macros.qmd
 ```
 
@@ -88,6 +101,11 @@ the rewritten .qmd, then a list of the custom macro names used.
 EOF
 ```
 
+(Flags per `codex exec --help` — the `exec` subcommand, `-s`/`--sandbox
+read-only`, `--skip-git-repo-check`, and `-o`/`--output-last-message` all exist;
+verify against your installed codex-cli version, since flag names can shift
+between releases.)
+
 **Never invent a macro name** — an undefined command silently breaks the
 Quarto/MathJax render. Verify every backslash-command resolves:
 
@@ -95,7 +113,7 @@ Quarto/MathJax render. Verify every backslash-command resolves:
 # every custom command in the rewrite must be defined in macros.qmd or be standard LaTeX
 comm -23 \
   <(grep -oE '\\[A-Za-z]+' <target>.qmd | sort -u) \
-  <(grep -oE '\\(def|providecommand)\{?\\[A-Za-z]+' inst/analyses/macros/macros.qmd \
+  <(grep -oE '\\(def|providecommand|newcommand|renewcommand)\{?\\[A-Za-z]+' inst/analyses/macros/macros.qmd \
       | grep -oE '\\[A-Za-z]+$' | sort -u)
 # review the remainder: each must be standard LaTeX (\frac, \text, \sim, \hat, …)
 ```
@@ -163,5 +181,9 @@ Commit the rewritten `.qmd`, the `include` line, the submodule pointer, and the
   math — spellcheck fails on the leaked command-names.
 - ❌ Defining a one-off `\newcommand` inline instead of adding it to the shared
   submodule.
+- ❌ Defining a built-in-shadowing macro (`\v`, `\b`, `\u`, `\c`, accents, …)
+  with `\providecommand` — MathJax skips it because the built-in is already
+  defined, so the built-in survives and the render breaks silently. Use `\def` /
+  `\renewcommand` for those names (see step 2 and `memories/preferences.md`).
 - ❌ Changing a formula's meaning while "condensing" — preserve the math exactly;
   only re-express it.
