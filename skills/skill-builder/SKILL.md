@@ -301,6 +301,10 @@ Then, as their own explicit steps (don't leave them buried in a comment):
 - **`link-skills`** — this skill cross-links the one skill it authors;
   `link-skills` is the corpus-wide audit that catches cross-reference gaps a
   single authoring pass missed.
+- **`config-ai`** — the broader router this skill is one destination for: when
+  a request names a capability but not a mechanism, `config-ai` decides
+  whether it's a skill (→ here), a subagent, a memory, a hook, or a `gha`
+  capability, then hands off accordingly.
 
 ## Anti-patterns
 
