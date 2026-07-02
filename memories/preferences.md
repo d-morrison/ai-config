@@ -19,6 +19,19 @@
   something and present it as captured or real. (Learned the hard way on sparta#247: a demo's
   "mouse recording" was hand-written JSON; the fix was a cursor-injection seam so a real
   recorder drives the actual game.)
+- When "restoring" or reconstructing a full file's content (e.g. re-typing a file you
+  fetched earlier in the conversation, or rebuilding it from memory after catching a
+  truncation bug), don't trust your own transcription — diff the pushed result against
+  the actual source (`git diff <base> <head> -- <path>` — two-dot, not three-dot,
+  so it diffs against the branch tip rather than the merge-base — or re-fetch and
+  compare) before
+  claiming it's a faithful restoration. A plausible-sounding but invented bullet/section can
+  slip in even when you intend to copy real content verbatim, and it reads exactly like a
+  genuine hallucination to a reviewer (same failure mode as fabricating a demo — just a
+  different repo). (Learned on gha#155: while fixing a CHANGELOG truncation bug, the
+  "restored" content itself included an invented changelog entry — a `test-coverage`
+  Python-support bullet describing an input/step that never existed in the repo — caught
+  only by a follow-up review diffing against `origin/main`.)
 - ALWAYS record what I learn in memory/AI-instruction notes as I work (standing request).
 - When recording a factual claim about tool/workflow behavior (an implementation detail
   or a causal explanation derived from a specific source), cite the source inline —
@@ -142,14 +155,10 @@
 - Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md →
   the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING)
   and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it
-  via red CI. For R packages this means a NEWS.md entry AND a DESCRIPTION dev-version bump
-  (`usethis::use_version()`) even for a docs-only / vignette-only change — the changelog-check
-  and version-check jobs fail otherwise (opt-out labels `no changelog` / `no version
-  increment` exist for non-user-visible PRs, but the default is to do the bump). NEWS.md prose is spell-checked too,
-  so keep it to words already in `inst/WORDLIST` or add new terms there. Also re-check the
-  version after merging `main` mid-PR: if a commit on `main` already bumped the version to
-  match the branch, the version-check CI will fail again — run `usethis::use_version("dev")`
-  once more so the branch stays ahead.
+  via red CI. For R packages this means a NEWS.md entry AND a `usethis::use_version()`
+  DESCRIPTION dev-version bump, even for a docs-only / vignette-only change — see
+  `tools.md`'s "R-package PR CI gates" section for the full changelog-check /
+  version-check / spellcheck / opt-out-label details.
 - In the HACtions repo, use the `test.hac` project/group as a test bed (always).
 - After an iterate loop completes, ALWAYS create follow-up issues for every deferred/acknowledged
   item before reporting done. Never leave deferred items untracked.
@@ -297,6 +306,16 @@
   most easily drops a qualifier and becomes misleading. (Learned on PR #43: the terse
   pipe-examples bullet dropped the "in R" qualifier that `CLAUDE.md` had, which a reviewer
   flagged as implying `|>` / `%>%` exist in Python/JS.)
+- Before adding a bullet that redefines or narrows an existing term (fully clean, claim-pr,
+  ARDI, etc.), grep the repo for that term's OTHER canonical definitions — not just the
+  twin preferences.md/CLAUDE.md copy above, but any `shared/*.md` fragment, skill doc, or
+  other memory file that states the same rule. If the new rule is a genuine refinement,
+  update the canonical doc itself in the same PR, not just a satellite copy; note in the
+  PR description that the canonical file is touched and why. (Learned on sparta 2026-07-01,
+  PR #318: a new `dont-merge-failing-workflows` bullet expanded "fully clean" CI to mean
+  every workflow green, including non-gating checks — but silently contradicted the
+  canonical `shared/workflow/fully-clean.md` [`@`-included into `CLAUDE.md`], which still
+  said "every required check." The `@claude` bot review caught the drift in round 1.)
 - After adding or updating skills OR memory files in the ai-config repo, always commit
   and push everything to origin (on the current branch if a PR is already open, or
   create a new branch + PR if the change is out of scope). Never leave ANY changes in
@@ -615,10 +634,16 @@
   freehand-implementing the scaffold-and-ship flow. Skill-builder encodes steps
   that are easy to skip when done ad hoc: the extend-first check, running the
   four local validation scripts (`validate-skills.py`, `check-links.py`,
-  `check-vendored-drift.py`, `markdownlint-cli2`) before pushing, and explicitly
-  requesting `d-morrison` as reviewer. (Learned on ai-config#338 — the
-  `prompt-me`/`pm` skill was built and shipped without invoking `skill-builder`,
-  so none of those steps ran; CI happened to catch what the scripts would have.)
+  `check-vendored-drift.py`, `markdownlint-cli2`) before pushing, registering
+  any cited MCP tool in `tool-mappings.yml`, updating `skills.qmd`'s count from
+  the actual `skills/` directory count (not a manual +1), cross-linking related
+  skills, and explicitly requesting `d-morrison` as reviewer. (Learned on
+  ai-config#338 — the `prompt-me`/`pm` skill was built and shipped without
+  invoking `skill-builder`, so none of those steps ran; CI happened to catch
+  what the scripts would have. Reinforced on ai-config#347 — `resolve-pr-threads`
+  was hand-authored and needed a review round to catch a `tool-mappings.yml`
+  gap `skill-builder` already documented from a near-identical miss in
+  `push-memory` #311.)
 - Claim a PR before pushing iterative commits to it, even when you opened the
   PR yourself in the same session — this repo's `@claude` review workflow can
   fire and interleave with an in-flight push. Post the "paws off" comment from

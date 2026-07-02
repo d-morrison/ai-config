@@ -11,6 +11,7 @@
 - **PR description image embeds: use `raw.githubusercontent.com`, not `github.com/.../raw/...`.** Embedding a committed file in a PR body with `![](https://github.com/<owner>/<repo>/raw/<sha>/<path>)` may not render — the reviewer will flag it. The correct raw-content domain is `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>`. Reference the full commit SHA so the image keeps rendering after the branch is deleted on merge.
 - **Download a user-pasted PR screenshot with `curl -L`.** When a user pastes an image into a GitHub PR comment, the file lives at `https://github.com/user-attachments/assets/<uuid>` and is publicly downloadable: `curl -L -o <dest>.png "https://github.com/user-attachments/assets/<uuid>"`. Retrieve the URL from the comment body via `gh api repos/<o>/<r>/issues/comments/<comment_id> --jq .body`.
 - **Linking a GitHub sub-issue needs an integer DB id, not the number.** `POST /repos/<o>/<r>/issues/<parent>/sub_issues` takes `sub_issue_id` = the child's **database id** (`gh api repos/<o>/<r>/issues/<child> --jq .id`), *not* its issue number. Pass it with `-F` (typed, integer), never `-f` (string) — `-f sub_issue_id=…` fails with `422 Invalid property /sub_issue_id: "…" is not of type integer`. Full call: `gh api repos/<o>/<r>/issues/<parent>/sub_issues -F sub_issue_id=<child_db_id>`. Verify with `gh api .../issues/<parent>/sub_issues --jq '.[] | "#\(.number) \(.title)"'`.
+- **Backticks in a double-quoted `-m` / `--body` string get command-substituted by the shell.** In the Bash tool, `` git commit -m "... `origin` ..." `` or `` gh pr comment --body "use `foo`" `` makes the shell run `` `origin` ``/`` `foo` `` as a command and splice the (usually empty/erroring) output into the message — silently mangling it (seen on sparta 2026-06-30: a commit body's `` `origin` `` and `` `killer` `` vanished, with `origin: command not found` in stderr). For any message/body containing backticks, use a single-quoted **heredoc** (`` -m "$(cat <<'EOF' … EOF)" `` — the quoted `'EOF'` disables all expansion) or a `--body-file`, never a bare double-quoted string. (Same root cause as the dispatched-review quoting bug below.)
 - **Finding the PR(s) linked to an issue from the CLI: use the REST timeline endpoint, not `gh issue view --json`.** `gh issue view --json` has no `timelineItems` field (that exists only on `gh pr view --json`), so `gh issue view <N> --json timelineItems` errors — and a `2>/dev/null` swallows the error so the check silently returns nothing and *looks* like it passed. Query the timeline instead, with three gotchas: (1) in a `cross-referenced` event, `source.type` is always `"issue"`, so a PR is one whose `source.issue.pull_request` is non-null (`source.type == "pull_request"` never matches); (2) `--paginate` is required, or `gh api` returns only the first 30 events and silently misses a later cross-reference; (3) filter `source.issue.state` if you only want open PRs. Full call: `gh api --paginate repos/<o>/<r>/issues/<N>/timeline --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"'`. (Learned over three review rounds on #287.)
 
 ## Re-triggering the @claude PR *review* (d-morrison Quarto / R-pkg repos, e.g. `psw`)
@@ -122,6 +123,16 @@
   requires **only `threadId`** (node ID, e.g. `PRRT_kwDO...`); `owner`,
   `repo`, and `pullNumber` are ignored for that method. Thread node IDs come
   from `get_review_comments`.
+- **`mergeable_state` glossary — `unstable` is NOT a merge conflict.** GitHub's
+  `pull_request_read` `get` returns `mergeable_state` alongside `mergeable`;
+  the common values: `clean` (mergeable, all checks passing), `unstable`
+  (mergeable, but some check is pending/failing — not blocking), `dirty` (real
+  merge conflicts — this is the one that needs `git merge origin/main` +
+  conflict resolution), `blocked` (a required check hasn't passed),
+  `behind` (branch protection requires an update first). Only `dirty` means
+  conflicts; `unstable` just means "wait for CI" and needs no merge action.
+  (ai-config#373: `mergeable_state: unstable` right after a push was CI still
+  running, not a conflict signal.)
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
@@ -212,6 +223,30 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 ## Git branch create/reset (`git switch -C`)
 - `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
 - Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` is consumed as the branch name (the required argument to `-C`), so `$BRANCH` is parsed as the start-point instead and the command fails without creating the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)
+
+## Git — `gh pr merge --delete-branch` can orphan a stacked PR instead of retargeting it
+- GitHub's docs promise automatic retargeting: "If you delete a head branch
+  after its pull request has been merged, GitHub checks for any open pull
+  requests in the same repository that specify the deleted branch as their
+  base branch. GitHub automatically updates any such pull requests, changing
+  their base branch to the merged pull request's base branch."
+- In practice (Lacaedemon/sparta, 2026-07-01), `gh pr merge <N> --squash
+  --delete-branch` did NOT retarget a stacked PR onto the new base — it
+  auto-**closed** the stacked PR instead. Root cause unconfirmed (possibly a
+  timing/API-path difference between `gh`'s post-merge branch deletion and the
+  web UI's "Delete branch" button the docs describe) — but the failure mode is
+  reproducible enough to plan around regardless of cause.
+- **Before running `gh pr merge <N> --delete-branch`**, check whether another
+  open PR uses that branch as its base: `gh pr list --base <branch-name>`. If
+  one does, omit `--delete-branch` (merge without it, or delete manually
+  afterward once you've confirmed the stacked PR retargeted cleanly).
+- **Recovery when it happens anyway:** the *head* branch of the closed PR
+  usually still exists (only the deleted *base* branch is gone) —
+  `gh pr reopen` fails once the base is gone, so instead open a **new** PR
+  from that same head branch targeting `main` (or whatever the new
+  grandparent base is), note in the body that it supersedes the closed PR
+  number with identical commits, and comment on the closed PR linking the
+  replacement.
 
 ## Git — `worktree add` does not cd into the new worktree
 - `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
@@ -347,6 +382,24 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
     with the autoloader off:
     `RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript -e 'lintr::lint("path/to/file.qmd")'`.
     (Used to lint the changed files for rme #873 when lintr wasn't in the renv lib.)
+- **When the container's R is a brand-new release P3M hasn't built binaries for
+  yet** (e.g. R 4.6.1 in mid-2026), `install.packages()` from P3M silently falls
+  back to **source**, and heavy pkgs (DT → sass, etc.) fail or time out — so a
+  full HTML `quarto render` (needs knitr/DT/rmarkdown) isn't feasible locally.
+  Two mitigations: (1) replicate just the **build-breaking check in base R**
+  (e.g. a Quarto page's `stop()`-on-missing-data guard) — base R needs no
+  install; (2) `quarto install tinytex` **does** work, so validate the LaTeX/PDF
+  paths locally with lualatex (`quarto render <f>.qmd --to pdf`) even when the
+  HTML render is blocked. Let CI do the authoritative HTML render. (macros#71:
+  DT/knitr uninstallable, but a base-R interpretation-completeness check + a
+  lualatex PDF render of the new macros validated the change before push.)
+- **R in these containers defaults to the `C` locale**, so
+  `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
+  chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
+  only an `invalid input found on input connection` warning — you get a few rows,
+  not all, and a completeness check then reports bogus "missing" rows. Run R with
+  `LANG=C.UTF-8 LC_ALL=C.UTF-8 Rscript …` to read UTF-8 data files correctly.
+  (CI runners are UTF-8, so this bites only locally.)
 - **renv activation failure when a GitHub remote is blocked**: if `DESCRIPTION`
   lists a GitHub `Remotes:` entry the proxy can't reach (e.g. bcs's
   `d-morrison/altdoc@recursive-qmd-search`), renv activation (via `.Rprofile`)
@@ -576,6 +629,15 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
     The guard step fails the check ❌. The prior clean review on the same diff is still
     valid. Fix: push a trivial commit to trigger a fresh review. Observed on gha#92 run
     #28034977099.
+- **A review job with `conclusion: success` but NO posted comment is NOT
+  automatically "unreviewed."** It is either (a) a quota/auth skip (see above:
+  `total_cost_usd=0`, `num_turns=1`) or (b) a genuinely **clean review that found
+  nothing to flag**. Tell them apart from the job log: a clean review shows a
+  full agent run (`"subtype":"success"`, `"is_error":false`, high `num_turns`,
+  `total_cost_usd` > 0) followed by `No buffered inline comments` in the
+  post-comments step — the bot reviewed and posted nothing because it had nothing
+  to say. Don't treat that as a missing review or re-trigger it. (macros#71:
+  `claude-review` ran 21 turns at $0.88 and buffered 0 comments = clean.)
 - **Reading the hidden error behind a failed `claude-code-review`.** The action prints
   `Running Claude Code via SDK (full output hidden for security)…` and suppresses the real
   API error. The reusable `claude-code-review.yml` now accepts a **`show-full-output`** input
@@ -878,6 +940,8 @@ deduplication, two API endpoints carry different content:
   This pattern discriminates review summaries from `@claude` task-handler responses
   (which also post as `claude[bot]` but use "Claude finished…" / "Claude Code is
   working…" headers, not the "### Code Review" heading the review workflow uses).
+  The ai-config `claude-review.yml` (#275) omits this content filter — it was
+  accepted, but task-handler responses can appear in the `prior-reviews` context.
 - **`/repos/{owner}/{repo}/pulls/{n}/comments`** — inline review findings posted
   via the review API. These are already `claude[bot]`-only (the `@claude` task
   handler posts to `/issues/`, not `/pulls/`), so no content filter is needed.
@@ -900,15 +964,6 @@ DELIMITER="eof_$(openssl rand -hex 8)"
 The ai-config `claude-review.yml` (merged in #275) uses a static
 `__REVIEWS_EOF__` delimiter instead — accepted by design but is a known
 divergence from this best practice.
-
-**Content filter for issue-comments endpoint.** When fetching
-`/issues/{n}/comments` for prior reviews, the filter
-`select(.user.login == "claude[bot]")` picks up BOTH review summaries AND
-`@claude` task-handler responses ("Claude finished…" / "Claude Code is
-working…"). Add `and (.body | test("### Code Review"))` to discriminate review
-summaries from task-handler posts. The ai-config `claude-review.yml` (#275)
-omits this content filter — it was accepted, but task-handler responses can
-appear in the `prior-reviews` context.
 
 **`needs.X.result != 'cancelled'` vs `== 'success'`** — when the dependency job
 is non-critical (acceptable to proceed without its output), use
