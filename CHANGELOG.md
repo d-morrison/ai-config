@@ -27,6 +27,18 @@ behavior change to an existing one), not every mechanical edit.
   `ConvertTimeBySystemTimeZoneId` when it isn't PDT/PST. Reconciled from an
   edit made directly in `~/.claude/CLAUDE.md` that had never reached the
   repo.
+- **`check-history` skill.** New bullet: on a long-lived or foundational
+  issue, the issue text and any design-doc status header can lag the code by
+  several PRs, so a mature feature may be partly or mostly implemented even
+  when the issue reads as unstarted. Verify the actual implementation state
+  against the code (key source files, tests) before scoping new work,
+  and scope only the genuine remaining slice when the issue is partly done.
+  Caught on sparta #164/#240 (nearly rebuilt already-completed work).
+- **`skill-builder` now requires re-deriving `skills.qmd`'s skill count from
+  the actual `skills/` directory** instead of a manual +1, and flags the gap
+  as an anti-pattern alongside the existing tool-mappings.yml registration
+  check. New standing preference: invoke `skill-builder` itself when creating
+  a skill rather than hand-authoring `SKILL.md` (#360, lessons from #347).
 - **`skill-builder` / `sync-with-main` policy refinements** (#371). New
   authoring conventions from PR #359's review lifecycle: every procedural
   step needs a runnable command, not just prose, especially a
