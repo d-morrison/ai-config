@@ -12,6 +12,12 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`wrap-up` skill: closing-signal guidance.** Step 4 now spells out how the
+  final reply should end: an explicit "this session is at a good stopping
+  point" (or similar) when nothing is waiting on the user, or --- when
+  something is open (an ambiguous item, a deadlock, a choice only the user
+  can make) --- the open question(s) last, so they're the thing the user
+  reads first on return, not buried mid-recap.
 - **`fact-check-prose` skill (alias `fcp`) and `prose-fact-checker` agent**
   (#344). New standing policy (`shared/writing/fact-check-prose.md`): when
   reviewing prose, check factual claims against domain knowledge and external
