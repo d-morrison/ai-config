@@ -406,6 +406,19 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   HTML render is blocked. Let CI do the authoritative HTML render. (macros#71:
   DT/knitr uninstallable, but a base-R interpretation-completeness check + a
   lualatex PDF render of the new macros validated the change before push.)
+  **Before accepting "uninstallable," try `install.packages()` straight from a
+  source CRAN mirror** (`options(repos = c(CRAN = "https://cloud.r-project.org"));
+  install.packages(c("knitr", "rmarkdown", "DT"))`, no P3M) — it builds sass/DT
+  etc. from source and can succeed in a few minutes even when P3M's binary
+  fallback fails, unlocking the full local HTML render instead of falling back
+  to the base-R/PDF-only mitigations above. Why CRAN-direct can succeed where
+  P3M's source fallback doesn't isn't confirmed — both ultimately build the same
+  source tarball, so the difference is more likely P3M's build sandbox (timeout
+  or resource limits) than a real incompatibility; note the actual mechanism
+  here if a future session pins it down. (macros#74: same class of container,
+  but a plain-CRAN source install of knitr/rmarkdown/DT succeeded, letting all
+  three of `CONTRIBUTING.md`'s documented renders — both PDF demos and the full
+  HTML site — run locally before push.)
 - **R in these containers defaults to the `C` locale**, so
   `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
   chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
@@ -940,6 +953,26 @@ any Quarto website (rme, psw, qwt, …).
   the real path. To compute the repo-relative path: strip `os.getenv("QUARTO_PROJECT_DIR")`
   from the front (`abs_input:sub(#project_root + 2)`). (Learned while writing `_repo-links.lua`
   for d-morrison/qmt.)
+- **A plain project-wide `quarto render` (no `--to`) DOES render every format a
+  document's own front matter lists** — even formats the project's `_quarto.yml`
+  doesn't configure. Verified from a clean state (`rm -rf _site .quarto` first,
+  no priming single-file renders) on `d-morrison/macros`: `_quarto.yml` there
+  configures only `format: html:`, yet a bare `quarto render` still produced
+  `.pdf`, `.docx`, and reveal.js `.html` output for every doc whose own front
+  matter lists those formats — the project config sets the *default* for docs
+  with no local `format:` override, it doesn't cap docs that declare their own.
+  So a CI step that just runs `quarto render` **likely already exercises** the
+  PDF/other-format renders a `CONTRIBUTING.md` separately documents as
+  `quarto render <doc>.qmd --to pdf` — don't assume a bare project render is
+  HTML-only without checking. (Originally logged the opposite claim here after
+  macros#74's Copilot review questioned an unverified "deferred to CI" line in
+  a PR description; a same-session `claude[bot]` review then correctly flagged
+  the "first-listed format" mechanism as unverified, which prompted rerunning
+  the render from a genuinely clean state — it contradicted both the original
+  claim and the reviewer's proposed replacement.) The durable lesson survives:
+  don't write "CI covers this" in a PR description from assumption — but
+  verify what CI *actually* does before asserting either that it does or
+  doesn't cover a given check.
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
