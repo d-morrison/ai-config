@@ -66,6 +66,18 @@
   session on gha#176: two consecutive genuine — not raced — stub reviews on the
   pinned dogfooding checker, each requiring an empty retrigger commit after the
   dispatched `/review` came back clean.)
+- **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
+  but `permission_denials_count: 1` and no `Verdict` line.** Not the
+  quota-exhaustion case (`total_cost_usd==0 && num_turns==1`) and not a raced
+  cancellation (`conclusion: cancelled`) — the SDK call itself ran several
+  turns and cost real money, but a denied tool call mid-run (plausibly a
+  `WebFetch`/`curl` the review agent's own fact-check instructions prompted it
+  to attempt, outside `claude-review.yml`'s `allowedTools`) apparently
+  derailed it before it wrote a verdict. Reproduced 3× identically on the same
+  PR/diff (gha#180) across both push-triggered and dispatched reruns — not
+  random flakiness once it starts recurring on a given diff. Tracked with the
+  full diagnostic in gha#185 (separate from the already-fixed stub-*detection*
+  issue, gha#173/#176); check there before re-diagnosing from scratch.
 
 ## gh — stale remote URL causes cryptic `gh pr create` failure
 - `gh pr create` fails with `Head sha can't be blank, Base sha can't be blank, No commits between <owner>:main and <other-owner>:<branch>` when `origin` points to an **old repo URL** (e.g. after a GitHub repo transfer/rename).
