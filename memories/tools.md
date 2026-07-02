@@ -67,7 +67,11 @@
   pinned dogfooding checker, each requiring an empty retrigger commit after the
   dispatched `/review` came back clean.)
 - **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
-  but `permission_denials_count: 1` and no `Verdict` line.** Not the
+  but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
+  is a field in the Claude Code SDK's runtime execution-output JSON, not
+  anything in this repo's own files — if a future SDK version renames it,
+  look for an equivalent counter in that JSON rather than assuming the
+  signature vanished.) Not the
   quota-exhaustion case (`total_cost_usd==0 && num_turns==1`) and not a raced
   cancellation (`conclusion: cancelled`) — the SDK call itself ran several
   turns and cost real money, but a denied tool call mid-run (plausibly a
