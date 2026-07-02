@@ -158,6 +158,13 @@ once-per-run setup in the orchestrator — enumerate the work items there, and p
 down the per-item data the orchestrator already holds so each subagent doesn't
 re-fetch it. `pr-status-all` is the worked example.
 
+If the same worker persona would be spawned by more than one call site, or the
+fan-out step needs a harness-enforced tool boundary an inline prompt can't
+guarantee (e.g. a detection pass that must never be able to write), promote it
+to a **persistent** `.claude/agents/<name>.md` subagent instead of an inline
+prompt — hand off to `agent-builder` for that. `dependency-auditor`,
+`hallucination-detector`, and `community-demand-scout` are the worked examples.
+
 ## If the skill encodes a standing rule
 
 When the skill codifies general guidance or a preference (not just a one-off
@@ -251,6 +258,10 @@ Then, as their own explicit steps (don't leave them buried in a comment):
   them into one canonical skill plus alias stubs.
 - **`heal-skill`** — the repair counterpart: this skill authors a skill,
   `heal-skill` fixes one that misfired after it shipped.
+- **`agent-builder`** — the subagent-file counterpart: this skill authors
+  user-invocable workflows in `skills/`; `agent-builder` authors the
+  persistent, read-only fan-out worker personas a heavy skill's subagent step
+  can promote to `.claude/agents/<name>.md`.
 - **`link-skills`** — this skill cross-links the one skill it authors;
   `link-skills` is the corpus-wide audit that catches cross-reference gaps a
   single authoring pass missed.

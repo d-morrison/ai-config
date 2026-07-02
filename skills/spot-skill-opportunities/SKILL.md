@@ -1,6 +1,6 @@
 ---
 name: spot-skill-opportunities
-description: "Proactively notice, in the moment and not just at a session-end checkpoint, when a repeatable multi-step workflow, decision framework, or tool-integration pattern is emerging during ANY task — then surface it as a candidate skill and hand off to skill-builder, rather than quietly repeating the same hand-rolled steps next time. This is the recognition step; skill-builder is the construction step. Use continuously, whenever you catch yourself repeating a multi-step dance done earlier in this session or a prior one, improvising a workaround for something that will recur, or the user says 'again', 'like last time', 'we did this before', or 'always do X'. Also fires as a standing checklist item inside record-learnings, ums, wrap-up, and post-merge."
+description: "Proactively notice, in the moment and not just at a session-end checkpoint, when a repeatable multi-step workflow, decision framework, tool-integration pattern, or dedicated fan-out worker persona is emerging during ANY task — then surface it as a candidate skill (or agent) and hand off to skill-builder or agent-builder, rather than quietly repeating the same hand-rolled steps next time. This is the recognition step; skill-builder and agent-builder are the construction steps. Use continuously, whenever you catch yourself repeating a multi-step dance done earlier in this session or a prior one, improvising a workaround for something that will recur, or the user says 'again', 'like last time', 'we did this before', or 'always do X'. Also fires as a standing checklist item inside record-learnings, ums, wrap-up, and post-merge."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -14,6 +14,11 @@ skills" (`memories/preferences.md`). `skill-builder` is the construction
 half — it scaffolds a skill once one is needed. This skill is what decides
 *that* one is needed, and it fires continuously, in the middle of ordinary
 work, not only at a session or PR-end checkpoint.
+
+The same recognition applies one level down: if the emerging pattern is really
+a **dedicated, read-only fan-out worker** a heavy skill's per-item step needs
+(not a new user-invocable workflow), hand off to `agent-builder` instead of
+`skill-builder`.
 
 ## When this fires
 
@@ -46,20 +51,25 @@ work, not only at a session or PR-end checkpoint.
    If something already owns this concern, suggest extending it instead of a
    new skill.
 4. **Surface the suggestion — don't build silently.** Per the standing
-   preference, *propose* creating the skill; don't scaffold one unasked
-   mid-task (that would derail the task at hand). The exception: when
-   you're already inside an explicit skill-authoring context (mid-`ums`,
-   mid-`skill-builder`), hand off directly to `skill-builder` without waiting
-   for user confirmation.
-5. **Hand off to `skill-builder`.** Once the user agrees (or the context
-   already sanctioned it), let `skill-builder` do the extend-first check
-   and scaffolding — don't duplicate its step 0 here.
+   preference, *propose* creating the skill (or agent); don't scaffold one
+   unasked mid-task (that would derail the task at hand). The exception: when
+   you're already inside an explicit authoring context (mid-`ums`,
+   mid-`skill-builder`, mid-`agent-builder`), hand off directly without
+   waiting for user confirmation.
+5. **Hand off to the right builder.** A new user-invocable workflow goes to
+   `skill-builder`; a dedicated read-only fan-out worker persona for an
+   existing heavy skill goes to `agent-builder`. Once the user agrees (or the
+   context already sanctioned it), let that skill do its own extend-first
+   check and scaffolding — don't duplicate its step 0 here.
 
 ## Relationship to other skills
 
 - **`skill-builder`** — the construction step this hands off to. This skill
   never scaffolds a `SKILL.md` itself; it only recognizes the need and routes
   there.
+- **`agent-builder`** — the construction step for the fan-out-worker case:
+  when the recurring pattern is a dedicated read-only subagent for a heavy
+  skill's per-item step, rather than a new user-invocable workflow.
 - **`record-learnings`** — passive and continuous like this skill, but covers
   the broader category of learnings (facts, tool quirks, preferences). Its
   "if it's a skill, create it" step is this skill's specific case.
