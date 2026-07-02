@@ -99,7 +99,7 @@ candidate.
   section's stated purpose (a chapter on coding style digressing into
   deployment infrastructure).
 - **Scope creep** — a PR/issue introducing changes unrelated to its
-  stated goal (see `CLAUDE.md`'s "keep PRs scoped").
+  stated goal.
 - **True-but-unrelated fact** — a statistic or citation that's accurate
   but doesn't bear on the claim it's attached to (padding, not support).
 
@@ -145,8 +145,9 @@ falls under:
 | C: misleading | "reduces errors by half" | README.md:5 | source reports 50% only for the largest of 3 cohorts tested | blocking | qualify the claim or cite the overall figure |
 ```
 
-Severity follows the same scale reviewers already use in this corpus
-(blocking / nit / optional) — see `shared/workflow/address-every-comment.md`.
+Severity mirrors the reviewer labels already in use in this corpus
+("nit", "minor", "non-blocker", "optional") — see
+`shared/workflow/address-every-comment.md` for the treatment of each.
 Then, same discipline as `find-ai-tells` and `purge-hallucinations`:
 **propose the fix, apply only on confirmation** — never bulk-edit
 silently. A misleading-citation finding in particular needs a human call
