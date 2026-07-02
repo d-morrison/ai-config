@@ -197,6 +197,10 @@ When you open (or are handed) a PR/MR in **any** repo, subscribe to its activity
 That answer is a standing yes across all PRs and all repos.
 Subscribe with the `subscribe_pr_activity` tool (provided by the GitHub MCP server in remote/web sessions) or babysit locally, drive every review round to fully-clean, and re-arm a periodic check-in since webhooks don't deliver CI-success or merge-conflict transitions.
 
+This webhook-driven loop never formally invokes the `ardi` skill, so read `skills/ardi/SKILL.md` step 6 for the re-request-review mechanics before pushing a fix: after a push, the push itself already triggers the review — don't also post "@claude review again" in the same round.
+On workflows with `concurrency: cancel-in-progress`, the two triggers race and cancel each other, leaving the latest commit's review canceled and `require-review` red for no code reason.
+Only post the mention when a round pushed no code (all Rebut/Defer). (Hit on ai-config#406: posting the mention right after a push canceled the review and cost three extra polling rounds to recover.)
+
 Surface to me only when an item is ambiguous, architecturally significant, or deadlocked (the escalation rule above still applies), or when the PR is clean.
 Stop watching only when the PR merges or closes, or I tell you to back off.
 
