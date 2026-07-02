@@ -285,13 +285,14 @@ website render that collides.
 When you fix such a post-merge-only failure, don't stop at the fix — add a
 **cheap static check that runs on `pull_request`** so the bug class can't regress
 unnoticed. It needn't reproduce the whole heavy job; a few seconds of parsing
-that asserts the invariant is enough. rme#970 added `check-render-headers`, a
+that asserts the invariant is enough. d-morrison/rme#970 added `check-render-headers`, a
 ~120-line Python + PyYAML script that asserts "no two of a render-list page's
 formats resolve to the same output file," runs in ~8s, and would have caught the
 original bug at PR time. Prevention (fix the scaffolder/template that emits the
 bad input) and enforcement (the PR guard) are complementary — ship both.
 
-**Reproduce heavy-tool project bugs minimally.** The Quarto
+## Reproduce heavy-tool project bugs minimally
+The Quarto
 `safeMoveSync`/`renderProject` `rename '<stem>.html' -> No such file` collision
 reproduced in an R-free, LaTeX-free two-file website project (`format: {html,
 revealjs}`, one page missing the revealjs `output-file` rename so revealjs and
