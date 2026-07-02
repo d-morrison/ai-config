@@ -52,9 +52,10 @@ The plain text form forces the user to copy/paste; the linked form lets them ope
 
 ## Make inline questions easy to spot
 
-When asking the user a question inline in chat prose — not through the `AskUserQuestion` tool — set it apart instead of burying it mid-paragraph: put it in its own paragraph (a blank line before and after), in bold.
+When asking the user a question inline in chat prose — not through the `AskUserQuestion` tool — put it in its own paragraph (blank line before and after), in bold.
+Don't bury it mid-paragraph.
 A bare newline isn't enough — Markdown collapses it back into the surrounding paragraph, so the blank lines are what actually create the break.
-A question buried in a wall of text is easy to skim past; a bolded paragraph on its own reads at a glance.
+Readers skim past a question buried mid-paragraph; bold formatting in its own paragraph is harder to miss.
 This also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
 
 ## Title Claude sessions with the PR/issue number

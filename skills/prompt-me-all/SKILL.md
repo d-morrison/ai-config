@@ -30,10 +30,10 @@ most pressing one (or a requested top N).
 Scan back through the current conversation (not prior sessions) for anything
 that reads as a question directed at the user:
 
-- A bolded question in its own paragraph — the formatting `CLAUDE.md`'s "Make
-  inline questions easy to spot" rule asks for when a question is posed
-  inline rather than through `AskUserQuestion`. Treat this as the strongest
-  signal; it was deliberately marked as a question.
+- A bolded question in its own paragraph — the format required by the
+  `CLAUDE.md` "Make inline questions easy to spot" rule, used when a
+  question is posed inline rather than through `AskUserQuestion`. Treat this
+  as the strongest signal; it was deliberately marked as a question.
 - Direct questions in your own prior messages (ending in `?`, or phrased as
   a request for a decision, confirmation, or missing information).
 - Any pending `AskUserQuestion` call that was skipped, dismissed, or never
