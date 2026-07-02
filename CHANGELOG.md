@@ -12,6 +12,11 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`skill-builder` now requires re-deriving `skills.qmd`'s skill count from
+  the actual `skills/` directory** instead of a manual +1, and flags the gap
+  as an anti-pattern alongside the existing tool-mappings.yml registration
+  check. New standing preference: invoke `skill-builder` itself when creating
+  a skill rather than hand-authoring `SKILL.md` (#360, lessons from #347).
 - **`skill-builder` / `sync-with-main` policy refinements** (#371). New
   authoring conventions from PR #359's review lifecycle: every procedural
   step needs a runnable command, not just prose, especially a
