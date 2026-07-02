@@ -35,7 +35,7 @@ this skill surfaces it again instead of leaving it stranded.
 Scan back through the current conversation (not prior sessions) for anything
 that reads as a question directed at the user:
 
-- A bolded question on its own line — the formatting `CLAUDE.md`'s "Make
+- A bolded question in its own paragraph — the formatting `CLAUDE.md`'s "Make
   inline questions easy to spot" rule asks for when a question is posed
   inline rather than through `AskUserQuestion`. Treat this as the strongest
   signal; it was deliberately marked as a question.
