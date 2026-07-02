@@ -50,6 +50,22 @@
   - **Close + reopen the PR** → fires the `reopened` event, which re-runs the
     review. Works reliably, but clutters the timeline with close/reopen events;
     prefer workflow_dispatch unless dispatch isn't available.
+- **A successful `workflow_dispatch` review does not clear the PR's required
+  `pull_request`-triggered check.** The dispatched run's check-runs attach to
+  the **dispatch ref's SHA** (typically `main`, the default branch used to
+  invoke it), not the PR's actual head SHA — even though the run reviews and
+  comments on the right PR (it takes `pr_number` as an input and reads that
+  PR's diff). So after a stub/failed `pull_request`-triggered review (see
+  `mcp__github__actions_run_trigger` 403 below), posting `@claude review` or
+  `/review` gets you a fresh, real verdict in the PR thread, but
+  `review / claude-review` and any gate job on the PR's head SHA (checked via
+  `get_check_runs`, not `get_status` — see below) stay red. Since reruns 403 in
+  these sessions, the only way to get a fresh **gating** run is to push a new
+  commit (an empty `git commit --allow-empty` is fine) so a real `pull_request`
+  `synchronize` event fires against the actual head SHA. (Hit twice in one
+  session on gha#176: two consecutive genuine — not raced — stub reviews on the
+  pinned dogfooding checker, each requiring an empty retrigger commit after the
+  dispatched `/review` came back clean.)
 
 ## gh — stale remote URL causes cryptic `gh pr create` failure
 - `gh pr create` fails with `Head sha can't be blank, Base sha can't be blank, No commits between <owner>:main and <other-owner>:<branch>` when `origin` points to an **old repo URL** (e.g. after a GitHub repo transfer/rename).

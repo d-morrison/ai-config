@@ -72,6 +72,26 @@ tree, and the `require-changelog` job on a newly-added `CHANGELOG.md`
 requirement from PR #354 --- both were `main` having advanced past a
 checkout that predated the session, not a defect in the new skill.)
 
+**A real conflict inside a file whose logic is also copied elsewhere (an
+extracted script, a doc example) needs the copy re-synced too, not just the
+conflicted file resolved.** When a PR extracts inline logic (e.g. a workflow
+step's shell block) into a standalone script for testability, and `main`
+independently changes that same inline logic while the PR is open, resolving
+the merge conflict in the workflow file is not enough — the extracted script
+must be updated to match `main`'s new logic exactly, or the PR silently
+reverts `main`'s fix the moment it merges. Diff the extracted copy against
+`main`'s current inline version line-for-line (strip indentation, `diff`) to
+confirm an exact match, not just "looks about right." If the PR carries tests
+against the extracted copy (fixtures, unit tests), add regression coverage for
+whatever `main`'s change fixed — the merge is the natural moment to catch a
+gap the original PR's tests didn't anticipate, and to prove the new fixtures
+actually catch the regression (temporarily revert the fix, confirm the test
+fails, then restore). (gha#176: `main` landed #173's lenient verdict-matching
+fix to `claude-code-review.yml`'s inline fail-check logic while a PR extracting
+that same logic to `scripts/check-review-execution.sh` was still open; the
+conflict resolution updated the script to match verbatim and added two new
+fixtures for #173's specific fix, verified to fail against the pre-fix logic.)
+
 **A textual conflict in a skill file can be the symptom of a conceptual
 duplicate, not just competing edits to the same line.** When merging `main`
 into a branch that's authoring a new skill, if the conflict lands in a
