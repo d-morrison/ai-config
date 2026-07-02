@@ -20,6 +20,9 @@ In every session — at session start, and again periodically during long sessio
 
 1. **The ai-config checkout.** Check that the local ai-config clone is on `main` — not a leftover work branch from an earlier session — and run `git pull --ff-only`.
    Only switch back to `main` when the working tree is clean; leave a dirty tree or another session's in-flight work alone and flag it instead.
+   **If `pull --ff-only` fails with "diverged" rather than a dirty-tree error**, don't assume unpushed work is at risk — a fresh container can seed local `main` from a stale/orphaned snapshot (e.g. a pre-history-rewrite state) whose commits never landed on `origin/main` at all.
+   Confirm the working tree is clean (`git status --short`) and spot-check a couple of the "unique" local commit messages against `git log origin/main` — if they don't appear there either (not even under a different hash), the divergent commits are orphaned, not real work, and it's safe to realign: `git checkout -B main origin/main`.
+   Still flag it rather than force if the tree is dirty or the messages *do* look like genuine unpushed work.
 2. **The `~/.claude` consumer copies.** On symlink-capable systems the children of `~/.claude` (`skills/`, `shared/`, `commands/`, `memories/`) are symlinks into the checkout, so the pull alone refreshes them; rerun `bootstrap.sh` only when the repo gained a new top-level dir.
    On Windows, Git Bash `ln -s` silently falls back to **real copies**, so a pull does NOT propagate there — copy-sync every file whose repo version changed into `~/.claude`.
    Before overwriting, check for edits made directly in `~/.claude` (a diff that adds prose the repo lacks) and upstream the genuine ones into the repo first; never clobber an un-upstreamed local edit.
