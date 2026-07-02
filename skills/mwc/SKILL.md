@@ -16,7 +16,7 @@ allowed-tools:
 Merging is normally human-gated (see `ardi.md`, `merge-it`): a PR gets driven
 to fully-clean and reported ready, then I wait for an explicit "merge it" per
 PR. `mwc` is a standing exception the user grants **once per session**: for
-the rest of THIS session, I may squash-merge any PR I'm driving once it
+the rest of **this** session, I may squash-merge any PR I'm driving once it
 reaches **fully clean** (`fully-clean.md`) and I'm confident in it — no
 separate "merge it" needed for each one.
 
