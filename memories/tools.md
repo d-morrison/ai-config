@@ -669,8 +669,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 - **The `@claude` agent can push a `main`-merge commit to your PR branch — not just
   comment.** Triggered by PR activity, the `claude.yml` agent may merge `origin/main`
   into the branch and push it (e.g. `claude[bot]` "Merge branch 'main' into <branch>").
-  Two consequences: (1) your in-flight local push is rejected ("fetch first" / RPC
-  `HTTP 403` from the git backend — a non-fast-forward, **not** a policy denial); (2)
+  **The same collision happens with a human's push, too** — e.g. the repo owner
+  clicking GitHub's "Update branch" button while you're mid-session on the same PR
+  produces an identical merge-main commit (authored by the human, committed by
+  `GitHub`) and the identical rejection; the recovery is the same regardless of who
+  pushed it. Two consequences: (1) your in-flight local push is rejected ("fetch
+  first" / RPC `HTTP 403` from the git backend — a non-fast-forward, **not** a
+  policy denial); (2)
   the bot may resolve a `DESCRIPTION` version conflict to `== main`, which then fails
   `version-check`. Recovery: stash any uncommitted work first (`git stash` — `reset
   --hard` discards it), then `git fetch origin <branch>`, `git reset --hard
