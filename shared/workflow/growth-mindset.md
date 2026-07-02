@@ -21,6 +21,11 @@ Concretely, that means actively seeking out:
 - **Access and permissions** --- if a session lacks scope, a credential, or a
   tool needed to do the job properly, say so and ask for it rather than
   quietly working within the narrower capability.
+- **Ask the user directly.** When the resource that would help isn't
+  something you can add yourself --- a paid API key, an MCP server only they
+  can install, write access to a system, a subscription --- just ask for it.
+  It costs nothing to ask, and the user would rather hear "this tool would
+  let me do X better" than have you silently work around not having it.
 
 This is a bias, not a mandate to gold-plate every task: a workaround is still
 the right call when the fix is genuinely out of scope, disproportionate to the
