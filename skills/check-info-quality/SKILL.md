@@ -179,6 +179,13 @@ already set for their skills.
   breakage.
 - **`shared/writing/citations.md`** — the standing rule this skill's
   check C enforces: citations must actually back the claim.
+- **`fact-check-prose` (`fcp`)** — the truth-side sibling: `fact-check-prose`
+  verdicts a claim **Accurate / Inaccurate** (including re-deriving math and
+  cross-checking rendered output); this skill's check C catches a claim that
+  passes that verdict — it's **true** — yet still misleads through missing
+  context, cherry-picking, or a citation that only weakly supports it. Checks
+  A and B (staleness, relevance) have no `fact-check-prose` counterpart at
+  all. Run both on a substantive prose review; neither subsumes the other.
 - **`address-every-comment` / `ardi`** — findings from this skill route
   through the same Address/Rebut/Defer discipline as any other review
   finding.

@@ -152,6 +152,9 @@ paragraphs; reads strongly AI. Recommend a rewrite pass,"* vs. *"One stray
 - **`check-info-quality` / `ciq`** — another sibling scanner: this skill checks
   *how* text is written; `ciq` checks *what* it claims (stale, irrelevant, or
   misleading/out-of-context content). Run both over the same target.
+- **`fact-check-prose`** — the accuracy-side sibling: this skill flags prose
+  that *reads* as machine-generated; `fact-check-prose` checks whether prose
+  claims and reasoning are actually *true*. Run both on a review pass.
 
 ## Anti-patterns
 

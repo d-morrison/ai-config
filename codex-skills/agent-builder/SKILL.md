@@ -1,6 +1,6 @@
 ---
 name: "agent-builder"
-description: "Codex wrapper for the ai-config Claude skill `agent-builder`. Build a new read-only fan-out subagent under `.claude/agents/<name>.md` for a skill that needs one \u2014 FIRST check whether an existing agent (dependency-auditor, hallucination-detector, community-demand-scout) should be reused or extended instead, and only then scaffold a new agent definition with a tight `tools:` list, a role-scoped system prompt, and an explicit read-only/no-mutate boundary, paired with exactly one skill that spawns it. Use when asked to 'build an agent', 'create a subagent', 'make a new agent', 'add an agent', 'agent-builder', or when a heavy skill's fan-out step needs a dedicated worker persona instead of an inline Agent() prompt. Use when Codex is asked to use `agent-builder`, `/agent-builder`, or the corresponding ai-config/Claude skill workflow."
+description: "Codex wrapper for the ai-config Claude skill `agent-builder`. Build a new read-only fan-out subagent under `.claude/agents/<name>.md` for a skill that needs one \u2014 FIRST check whether an existing agent (dependency-auditor, hallucination-detector, community-demand-scout) should be reused or extended instead, or an open PR is already building one to redirect to, and only then scaffold a new agent definition with a tight `tools:` list, a role-scoped system prompt, and an explicit read-only/no-mutate boundary, paired with exactly one skill that spawns it. Use when asked to 'build an agent', 'create a subagent', 'make a new agent', 'add an agent', 'agent-builder', or when a heavy skill's fan-out step needs a dedicated worker persona instead of an inline Agent() prompt. Use when Codex is asked to use `agent-builder`, `/agent-builder`, or the corresponding ai-config/Claude skill workflow."
 ---
 
 # agent-builder (Codex wrapper)
@@ -28,6 +28,7 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | --- | --- | --- | --- |
 | `VIEW_PR` | Read a pull request's details and metadata. | `gh pr view <N>` | `mcp__github__pull_request_read (method=get)` |
 | `LIST_PRS` | List pull requests. | `gh pr list` | `mcp__github__list_pull_requests` |
+| `SEARCH_PRS` | Search pull requests by keyword / query string. | `gh pr list --search "<query>"` | `mcp__github__search_pull_requests` |
 | `DIFF_PR` | Read a pull request's diff. | `gh pr diff <N>` | `mcp__github__pull_request_read (method=get_diff)` |
 | `PR_CHECKS` | Read a pull request's CI check / status results. | `gh pr checks <N>` | `mcp__github__pull_request_read (method=get_check_runs)` |
 | `CREATE_PR` | Open a new pull request. | `gh pr create` | `mcp__github__create_pull_request` |
@@ -35,6 +36,7 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `MERGE_PR` | Merge a pull request. | `gh pr merge <N>` | `mcp__github__merge_pull_request` |
 | `COMMENT_PR` | Post a top-level comment on a pull request. | `gh pr comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `REPLY_REVIEW_COMMENT` | Reply to an inline pull-request review comment. | `gh api (reply to review comment)` | `mcp__github__add_reply_to_pull_request_comment` |
+| `RESOLVE_REVIEW_THREAD` | Mark an inline pull-request review thread as resolved. | `gh api graphql (resolveReviewThread)` | `mcp__github__resolve_review_thread` |
 | `WATCH_PR` | Subscribe to / unsubscribe from a pull request's activity. | (no CLI equivalent) | `mcp__github__subscribe_pr_activity / mcp__github__unsubscribe_pr_activity` |
 | `VIEW_ISSUE` | Read an issue's details. | `gh issue view <N>` | `mcp__github__issue_read` |
 | `LIST_ISSUES` | List issues. | `gh issue list` | `mcp__github__list_issues` |
