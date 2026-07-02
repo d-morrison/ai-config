@@ -45,6 +45,20 @@ For anything that requests a change, choose among the first three (Acknowledge i
 > the actual committed diff (`git show <commit> -- <file>`) rather than trusting
 > the finding's framing. (Seen on ai-config PR #52.)
 
+> **"Blocking: missing X" findings that cite a CI job or policy — check the job
+> still exists on `main` first.** A review can flag a CI failure (e.g. "the
+> Require Changelog Entry job is failing, add a CHANGELOG.md entry") as
+> blocking, but the requirement itself can be removed from `main` in the time
+> between when the review ran and when you address it — a different PR deletes
+> the CI job and/or the file it checks. This isn't the branch-behind-main case
+> above (nothing was deleted from *this* PR); the requirement stopped existing
+> project-wide. Before Addressing, check whether the cited job/file is still on
+> `main` (`git log --oneline -- <path>`, or check the workflow file exists).
+> If it's gone, Rebut with the removal commit(s) as evidence rather than
+> resurrecting a dead requirement. (Seen on ai-config PR #376: a "blocking"
+> CHANGELOG.md finding referenced `require-changelog.yml`, which had been
+> deleted from `main` in #385/#387 by the time the fix round ran.)
+
 ## Procedure
 
 ### 1. Gather every finding
