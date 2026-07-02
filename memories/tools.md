@@ -410,8 +410,12 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   source CRAN mirror** (`options(repos = c(CRAN = "https://cloud.r-project.org"));
   install.packages(c("knitr", "rmarkdown", "DT"))`, no P3M) — it builds sass/DT
   etc. from source and can succeed in a few minutes even when P3M's binary
-  fallback failed, unlocking the full local HTML render instead of falling back
-  to the base-R/PDF-only mitigations above. (macros#74: same class of container,
+  fallback fails, unlocking the full local HTML render instead of falling back
+  to the base-R/PDF-only mitigations above. Why CRAN-direct can succeed where
+  P3M's source fallback doesn't isn't confirmed — both ultimately build the same
+  source tarball, so the difference is more likely P3M's build sandbox (timeout
+  or resource limits) than a real incompatibility; note the actual mechanism
+  here if a future session pins it down. (macros#74: same class of container,
   but a plain-CRAN source install of knitr/rmarkdown/DT succeeded, letting all
   three of `CONTRIBUTING.md`'s documented renders — both PDF demos and the full
   HTML site — run locally before push.)
@@ -949,19 +953,26 @@ any Quarto website (rme, psw, qwt, …).
   the real path. To compute the repo-relative path: strip `os.getenv("QUARTO_PROJECT_DIR")`
   from the front (`abs_input:sub(#project_root + 2)`). (Learned while writing `_repo-links.lua`
   for d-morrison/qmt.)
-- **A CI step that runs plain `quarto render` (no `--to`) does NOT necessarily
-  cover every format a document's front matter lists.** A project-wide `quarto
-  render` renders each doc to only its *first-listed* front-matter format (or the
-  project default) — a doc whose front matter lists `html`, `pdf`, `revealjs`,
-  `docx` still only gets `html` out of that step. Before writing "deferred to
-  CI" / "CI covers this" in a PR description, read the CI workflow YAML's actual
-  render invocation rather than assuming a same-named step exercises the same
-  render commands `CONTRIBUTING.md` documents. Caught by a Copilot review
-  (macros#74): CI's "Quarto Preview" workflow only ran default `quarto render`,
-  never the two PDF-specific commands `CONTRIBUTING.md` requires
-  (`quarto render <demo>.qmd --to pdf`) — running them locally (see the
-  cloud-session R/Quarto section above for the knitr/rmarkdown/DT install) was
-  the only way to actually satisfy that check.
+- **A plain project-wide `quarto render` (no `--to`) DOES render every format a
+  document's own front matter lists** — even formats the project's `_quarto.yml`
+  doesn't configure. Verified from a clean state (`rm -rf _site .quarto` first,
+  no priming single-file renders) on `d-morrison/macros`: `_quarto.yml` there
+  configures only `format: html:`, yet a bare `quarto render` still produced
+  `.pdf`, `.docx`, and reveal.js `.html` output for every doc whose own front
+  matter lists those formats — the project config sets the *default* for docs
+  with no local `format:` override, it doesn't cap docs that declare their own.
+  So a CI step that just runs `quarto render` **likely already exercises** the
+  PDF/other-format renders a `CONTRIBUTING.md` separately documents as
+  `quarto render <doc>.qmd --to pdf` — don't assume a bare project render is
+  HTML-only without checking. (Originally logged the opposite claim here after
+  macros#74's Copilot review questioned an unverified "deferred to CI" line in
+  a PR description; a same-session `claude[bot]` review then correctly flagged
+  the "first-listed format" mechanism as unverified, which prompted rerunning
+  the render from a genuinely clean state — it contradicted both the original
+  claim and the reviewer's proposed replacement.) The durable lesson survives:
+  don't write "CI covers this" in a PR description from assumption — but
+  verify what CI *actually* does before asserting either that it does or
+  doesn't cover a given check.
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
