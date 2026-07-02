@@ -291,6 +291,27 @@ formats resolve to the same output file," runs in ~8s, and would have caught the
 original bug at PR time. Prevention (fix the scaffolder/template that emits the
 bad input) and enforcement (the PR guard) are complementary — ship both.
 
+## stop-hook-git-check's "N" flag can be a false positive for SSH-signed commits
+The `~/.claude/stop-hook-git-check.sh` Stop hook flags a commit "N" (Unverified)
+whenever local `git log --show-signature` can't verify it — but locally that
+check needs `gpg.ssh.allowedSignersFile` configured, which this environment
+usually doesn't set up. A commit made with `commit.gpgsign=true` /
+`gpg.format=ssh` and the right `user.signingkey` is still genuinely signed even
+when the local verify fails; `git cat-file -p <sha>` shows a real
+`-----BEGIN SSH SIGNATURE-----` block with the correct author/committer email.
+GitHub verifies independently (it publishes the corresponding public signing
+key), so the commit still shows Verified there.
+
+Before treating the hook's feedback as an actionable problem: check
+`git cat-file -p <sha> | head -8` for the `gpgsig` block and confirm
+`author`/`committer` say `noreply@anthropic.com`. If both hold, the "N" is a
+local-verification artifact, not a real signing gap — no amend/re-sign needed.
+Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
+commit that's missing the `gpgsig` block entirely, or whose author/committer
+email is genuinely wrong. (ai-config#314 was the opposite: two SSH-signed
+`noreply@anthropic.com` commits flagged "N" back-to-back, but both were already
+correct — a false positive, not a real signing gap.)
+
 ## Reproduce heavy-tool project bugs minimally
 The Quarto
 `safeMoveSync`/`renderProject` `rename '<stem>.html' -> No such file` collision
