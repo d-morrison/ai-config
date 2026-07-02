@@ -675,12 +675,15 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   `GitHub`) and the identical rejection; the recovery is the same regardless of who
   pushed it. Two consequences: (1) your in-flight local push is rejected ("fetch
   first" / RPC `HTTP 403` from the git backend — a non-fast-forward, **not** a
-  policy denial); (2)
-  the bot may resolve a `DESCRIPTION` version conflict to `== main`, which then fails
-  `version-check`. Recovery: stash any uncommitted work first (`git stash` — `reset
-  --hard` discards it), then `git fetch origin <branch>`, `git reset --hard
-  origin/<branch>` onto the bot's merge (don't force-push a competing parallel merge of
-  your own — build on the bot's), then re-bump the version above main and push.
+  policy denial); (2) **bot-push only** — the `@claude` agent may resolve a
+  `DESCRIPTION` version conflict to `== main` when it merges, which then fails
+  `version-check`; a human's "Update branch" click doesn't do this — GitHub blocks
+  the merge on conflict instead of silently resolving it, so re-check versions only
+  applies after a bot merge. Recovery (either case): stash any uncommitted work
+  first (`git stash` — `reset --hard` discards it), then `git fetch origin <branch>`,
+  `git reset --hard origin/<branch>` onto the remote's merge commit (build on it —
+  don't force-push a competing parallel merge of your own), then re-bump the version
+  above main if needed and push.
   (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
   failing version-check until I bumped to `.9063` on top.)
 - **Cherry-pick recovery when the bot and your session both merge main.** If the `@claude` agent pushes a merge-main commit to the PR branch while you have unpushed commits, your push will be rejected ("fetch first"). Don't open a competing parallel merge — cherry-pick instead: (1) note the SHA of your local fix commit(s), (2) `git reset --hard origin/<branch>` to build on the bot's merge, (3) `git cherry-pick <sha>`, (4) push. This lands your fix cleanly on top without creating a divergent history.
