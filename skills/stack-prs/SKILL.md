@@ -65,9 +65,9 @@ gh pr create --base <base-branch> --title "<title>" --body "Stacked on #<base-N>
 
 In a remote/web session without `gh`, use `mcp__github__create_pull_request`
 with `base: "<base-branch>"`. Note the dependency explicitly in the body
-(`Stacked on #<base-N>`) so anyone scanning the PR list — including `ardia`'s
-stacked-PR detection — sees the relationship without cross-referencing
-branches.
+(`Stacked on #<base-N>`) so anyone scanning the PR list sees the relationship
+at a glance (`ardia`'s own stacking detection uses `baseRefName`, not the body
+text — see below).
 
 If the dependent work is being opened up front per
 [`pr-on-claim`](../../shared/workflow/pr-on-claim.md), open it as a draft from
@@ -112,10 +112,20 @@ missed something), re-check before proceeding. Update the PR body to drop the
 
 ### 5. If the base PR is abandoned or closed unmerged
 
-Re-target the dependent branch onto `main` directly and rebase/merge to drop
-the base PR's unmerged commits from the dependent branch's history — don't
-leave a PR silently based on a branch that will never land. Surface this to
-the user before rewriting history on a published branch.
+Re-target the dependent branch onto `main` directly and drop the base PR's
+unmerged commits from the dependent branch's history — don't leave a PR
+silently based on a branch that will never land:
+
+```bash
+git fetch origin main
+git rebase --onto origin/main "origin/<base-branch>" <dependent-branch>
+gh pr edit <dependent-N> --base main
+```
+
+This rewrites the dependent branch's history — **get explicit approval from
+the user before running it**, and before force-pushing the result
+(`git push --force-with-lease origin <dependent-branch>`), since it discards
+the abandoned base PR's commits from a published branch.
 
 ## Relationship to other skills
 
@@ -135,8 +145,10 @@ the user before rewriting history on a published branch.
 - **`pr-on-claim`** — step 2's draft-PR-up-front pattern, adapted to target
   the base branch instead of `main`.
 - **`gii`** / **`gia`** — stack issues' PRs on a prior unmerged issue's branch
-  as part of their serial loop (issue #123); this skill is the reusable
-  primitive they could each call instead of reimplementing the mechanics.
+  as part of their serial loop
+  ([#123](https://github.com/d-morrison/ai-config/issues/123)); this skill is
+  the reusable primitive they could each call instead of reimplementing the
+  mechanics.
 
 ## Anti-patterns
 

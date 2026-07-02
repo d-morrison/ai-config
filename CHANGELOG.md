@@ -18,6 +18,20 @@ behavior change to an existing one), not every mechanical edit.
   `main` once the base merges. The general-purpose, directly-invocable
   counterpart to the stacking logic that `ardia`, `gii`/`gia`, and
   `stack-dont-pause` each already do as a side effect of their own loops.
+- **`wrap-up` skill: closing-signal guidance.** Step 4 now spells out how the
+  final reply should end: an explicit "this session is at a good stopping
+  point" (or similar) when nothing is waiting on the user, or --- when
+  something is open (an ambiguous item, a deadlock, a choice only the user
+  can make) --- the open question(s) last and clearly visible, rather than
+  burying them earlier in a long recap, so the last thing the user reads is
+  the open question, not a trailing summary.
+- **Growth-mindset shared policy** (`shared/workflow/growth-mindset.md`, #353).
+  New standing rule: treat a current limitation (missing tool, manual
+  workaround, insufficient model) as a starting point to resolve — via
+  packages, upstream fixes, better tooling, asking the user directly, or
+  extending the skill/memory corpus itself — rather than a fixed ceiling to
+  route around indefinitely. Growth is disciplined, not unchecked: prune and
+  consolidate as readily as adding.
 - **`fact-check-prose` skill (alias `fcp`) and `prose-fact-checker` agent**
   (#344). New standing policy (`shared/writing/fact-check-prose.md`): when
   reviewing prose, check factual claims against domain knowledge and external
