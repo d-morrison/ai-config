@@ -12,6 +12,15 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`skill-builder` / `sync-with-main` policy refinements** (#371). New
+  authoring conventions from PR #359's review lifecycle: every procedural
+  step needs a runnable command, not just prose, especially a
+  destructive/history-rewriting step that already requires explicit user
+  approval; a cross-skill claim ("skill X detects Y via Z") must be verified
+  against that skill's actual mechanics before writing it. Also: a CI failure
+  on a fresh empty-commit draft PR is a signal to check `main`'s position
+  before debugging the failure itself --- a stale local checkout can surface
+  failures that are really just "main moved."
 - **`memories/tools.md`: watch for the bot's `Claude finished` marker** (#367).
   A watcher polling for the @claude bot's verdict must match the completion
   marker (`**Claude finished`), not the absence of an in-progress placeholder
