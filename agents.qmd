@@ -6,7 +6,7 @@ Agents are custom **subagents** that Claude Code can delegate a task to via its 
 
 ## Why read-only fan-out workers
 
-Several skills fan a task out across many independent targets — one competitor community per research pass, one dependency pin per audit, one claim per fact-check — and want each target checked in parallel without risking a stray worker writing a file, filing an issue, or running a destructive command. Every agent in this repo omits `Edit` and `Write` from its `tools` list, so that restriction is **harness-enforced**: even a confused or compromised agent invocation cannot mutate the repo. Each agent returns a report; only the calling session, which keeps full tool access, applies fixes or writes anything, on the user's go-ahead.
+Several skills fan a task out across many independent targets — one competitor community per research pass, one dependency pin per audit, one claim per fact-check — and want each target checked in parallel without risking a stray worker writing a file, filing an issue, or running a destructive command. Every agent in this repo omits `Edit` and `Write` from its `tools` list, so it can never call those tools to change a file — that restriction is **harness-enforced**. Three of the four agents also keep `Bash`, which *can* run write-capable shell commands (`git push`, `rm`, a redirect); for those, staying read-only is instruction-level discipline, not a harness guarantee (see the note below the table). Each agent returns a report; only the calling session, which keeps full tool access, applies fixes or writes anything, on the user's go-ahead.
 
 ## Agents in this repo
 
@@ -17,7 +17,7 @@ Several skills fan a task out across many independent targets — one competitor
 | [`hallucination-detector`](https://github.com/d-morrison/ai-config/blob/main/.claude/agents/hallucination-detector.md) | `Bash`, `Read`, `Grep`, `Glob`, `WebFetch` | [`purge-hallucinations`](skills/purge-hallucinations/SKILL.md) (`ph`) | Verifies concrete, checkable references — files, functions, action refs, URLs, citations, config keys — against ground truth and sorts each into Resolves / Fabricated / Unverifiable |
 | [`prose-fact-checker`](https://github.com/d-morrison/ai-config/blob/main/.claude/agents/prose-fact-checker.md) | `Bash`, `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch` | [`fact-check-prose`](skills/fact-check-prose/SKILL.md) (`fcp`) | Checks one factual claim, reasoning step, or computed value/figure against domain knowledge, an external source, or a rendered artifact, and returns a verdict naming the exact source it checked |
 
-`dependency-auditor` and `hallucination-detector` keep `Bash` for read-only checks (`grep`, `gh api`, `git submodule status`, `test -e`) — avoiding a write-capable shell command (`renv::update()` without `check = TRUE`, `pre-commit autoupdate`) is instruction-level discipline for those two, not a harness-enforced restriction the way the missing `Edit`/`Write` is.
+`dependency-auditor`, `hallucination-detector`, and `prose-fact-checker` all keep `Bash` for read-only checks (`grep`, `gh api`, `git submodule status`, `test -e`) — avoiding a write-capable shell command (`renv::update()` without `check = TRUE`, `pre-commit autoupdate`) is instruction-level discipline for those three, not a harness-enforced restriction the way the missing `Edit`/`Write` is.
 
 ## How they're invoked
 
