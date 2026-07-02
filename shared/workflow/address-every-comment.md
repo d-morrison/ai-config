@@ -26,7 +26,7 @@ the current state.
 **When a finding is a pattern (a formatting/style rule broken in one spot),
 apply it everywhere it recurs in the same file, not just the flagged line.**
 A reviewer that flags one inconsistent list-item format is telling you about
-the rule, not just that one item --- fix every item in the same list that
+the rule, not just that one item --- fix every occurrence in the same file that
 breaks it in the same pass, rather than waiting for the reviewer to flag each
 occurrence in a separate round. Re-scan the whole changed file for the same
 pattern before pushing the fix.
