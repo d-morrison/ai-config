@@ -133,8 +133,9 @@ original PR pointing to the replacement, and close the original once the new PR
 merges. Don't retry the 403 --- it's a policy denial, not a transient error.
 
 **Check whether the branch's own PR merged before adding more commits to it.**
-If a PR on this branch merged via **squash** (GitHub's default), the branch's
-old commits are no longer ancestors of `main`'s new tip — `git merge-base
+If a PR on this branch merged via **squash** (common in repos that enforce
+it), the branch's old commits are no longer ancestors of `main`'s new tip —
+`git merge-base
 --is-ancestor <old-commit> origin/main` returns false. Committing follow-up
 work on top of that stale branch and pushing looks fine locally, but the
 resulting PR's diff shows the *entire prior PR's changes again* against
