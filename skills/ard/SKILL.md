@@ -53,7 +53,7 @@ For anything that requests a change, choose among the first three (Acknowledge i
 > the CI job and/or the file it checks. This isn't the branch-behind-main case
 > above (nothing was deleted from *this* PR); the requirement stopped existing
 > project-wide. Before Addressing, check whether the cited job/file is still on
-> `main` (`git log --oneline -- <path>`, or check the workflow file exists).
+> `main` (`git log --oneline -- <path>`, or `git show origin/main:<path>`).
 > If it's gone, Rebut with the removal commit(s) as evidence rather than
 > resurrecting a dead requirement. (Seen on ai-config PR #376: a "blocking"
 > CHANGELOG.md finding referenced `require-changelog.yml`, which had been
