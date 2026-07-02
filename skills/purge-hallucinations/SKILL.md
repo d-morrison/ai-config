@@ -133,6 +133,16 @@ Summarize: N references checked → ✅ resolved, ❌ fixed (list before→after
 feature, not a failure — it tells the user exactly what still needs a human
 eyeball.
 
+## Custom agent for the detect phase
+
+Steps 1--3 (resolve target, extract references, verify against ground truth)
+have no need for Edit/Write access. Delegate them to the
+`hallucination-detector` custom agent (`.claude/agents/hallucination-detector.md`)
+for a hard, harness-enforced guarantee that nothing is modified before the
+report in Step 4 is reviewed --- rather than relying on this skill's own
+instruction-only discipline. Run Step 4 (propose/apply fixes) in the main
+session afterward.
+
 ## Relationship to other skills
 
 - **`record-learnings`, `ums`, `memorize` / `remember`** — these *write* the
