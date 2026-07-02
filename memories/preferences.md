@@ -361,6 +361,25 @@ Keep the markers stable so they become muscle memory.
 The user may tune the emoji set over time; the categories and the box-versus-prefix split are the durable part.
 This is the fuller companion to the CLAUDE.md section on tagging chat output by category — keep the two in sync if either changes.
 
+## Use the shared math-macros submodule for manuscript math
+
+Write math in lab Quarto/LaTeX manuscripts with the shared
+[`d-morrison/macros`](https://github.com/d-morrison/macros) submodule (vendored
+at `inst/analyses/macros`, included via `{{< include .../macros/macros.qmd >}}`),
+not ad-hoc raw LaTeX — it gives every document the same polished, condensed
+notation from one versioned source. Keep the submodule up to date, and add new
+macros to it (via a PR to `d-morrison/macros`) whenever a needed concept has no
+macro, rather than defining one-off commands inline. The `use-math-macros`
+(alias `macroize`) skill is the executable procedure.
+
+Two gotchas: `git submodule update --remote` bumps the tracked gitlink, which
+dirties `git diff HEAD` — do it in a worktree, never a checkout running
+provenance-stamped SLURM jobs. And custom macro command-names leak into
+`spelling::spell_check_package()` for `.qmd` files under `vignettes/` (the
+spelling filter strips common LaTeX like `\text`/`\frac` but not custom macros),
+so add every macro name used, plus genuine terms, to `inst/WORDLIST`; files
+under `inst/analyses/` are not spell-checked.
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
