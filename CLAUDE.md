@@ -70,6 +70,7 @@ Prefixed, no box (informational, frequent):
 - 📊 **UPDATE** — status or progress.
 - ⚠️ **FLAG** — non-blocking heads-up or risk.
 - ✔️ **DONE** — a completed action.
+- 🟢 **ALL CLEAR** — nothing needs the user right now; work continues in the background. The recap's standing sign-off.
 
 Keep the markers stable so they become muscle memory.
 The user may tune the emoji set; the full taxonomy and rationale live in `memories/preferences.md`.

@@ -355,6 +355,7 @@ If everything is boxed, the box stops meaning "look here," so keep it reserved.
   - 📊 **UPDATE** — status or progress.
   - ⚠️ **FLAG** — a non-blocking heads-up or risk.
   - ✔️ **DONE** — a completed action.
+  - 🟢 **ALL CLEAR** — nothing needs the user right now; work continues in the background. The recap's standing sign-off — the frequent "nothing needs you" message.
 
 Keep the markers stable so they become muscle memory.
 The user may tune the emoji set over time; the categories and the box-versus-prefix split are the durable part.
