@@ -126,6 +126,10 @@ Expand each Rebut below the table. Deferred rows must carry a real issue link.
 
 ### 4b. Reply to every inline review thread — and resolve where appropriate
 
+(The standalone [`resolve-pr-threads`](../resolve-pr-threads/SKILL.md) skill
+runs just the resolve half of this step on its own — useful for sweeping
+already-settled threads without a full ARD pass.)
+
 The one summary comment is **not** enough on its own. A reviewer who left
 inline comments wants a response **on each thread**, not just a table posted
 elsewhere. For every inline comment, post a short reply on its own thread with
