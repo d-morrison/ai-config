@@ -203,6 +203,14 @@ The `sync-pr-branch` / `merge-main` skill runs this.)
 A tie-breaker for `ardia`'s PR-ordering step and `gi`'s (and `gii`/`gip`'s) issue-priority table when candidates are otherwise close in priority.
 The fragment also sets the default direction for the age factor: among several open PRs, take the **older** one first unless you have more specific instructions.
 
+## Use subagents when helpful
+
+When available, use subagents for helpful sidecar work: independent investigation, verification, or disjoint implementation slices. Keep immediate blocking critical-path edits local so progress does not wait unnecessarily.
+
+## Non-destructive repo and memory actions
+
+The user gives general permission to proceed with non-destructive actions such as setting up PRs, reading GitHub repository data through the API, running non-destructive Perl one-liners, and editing shared `CLAUDE.md` memory. This includes pushing branches and opening PRs against the ai-config repo. Default to action without confirmation for reasonable non-destructive steps; ask only for destructive, ambiguous high-impact, or genuinely blocking choices. Destructive operations still require explicit instruction.
+
 ## Auto-orchestration: always look for Workflow opportunities
 
 The heavy, parallelizable skills (`ardia`, `ardiaei`, `gia`, `gip`, `grade-work`, `opposition-research`, `find-overlap`) decide on their own whether a task warrants multi-agent orchestration via the `Workflow` tool --- so I don't have to type `ultracode` every time.
