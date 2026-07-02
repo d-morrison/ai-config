@@ -1,12 +1,13 @@
 ---
 name: prompt-me
 description: >
-  Restate every open question still waiting on user input — anything asked
-  earlier in the conversation that hasn't been answered yet — as a single,
-  clearly numbered list, instead of leaving it scattered across the
-  transcript. Use when asked to 'prompt me', 'pm', 'what are you waiting on
-  me for', 'what do you need from me', 'remind me what you asked', or
-  '/prompt-me'.
+  Surface the single most pressing open question still waiting on user
+  input — or, with a numeric argument, that many of the most pressing ones
+  — instead of leaving it buried under unrelated work in the transcript.
+  Use when asked to 'prompt me', 'pm', 'prompt me 3', 'pm 3', 'what are you
+  waiting on me for', 'what do you need from me', 'remind me what you
+  asked', or '/prompt-me [N]'. For every open question at once, use
+  `prompt-me-all` / `pma` instead.
 user-invocable: true
 allowed-tools: []
 ---
@@ -14,16 +15,20 @@ allowed-tools: []
 # prompt-me
 
 Sweep the conversation for questions that were posed to the user but never
-answered, and restate them together in one place. Long sessions bury a
-question asked several turns back under unrelated work; this skill surfaces
-it again instead of leaving it stranded.
+answered, rank them by how much they're blocking, and surface the most
+pressing one — or a requested number of the most pressing ones. Long
+sessions bury a question asked several turns back under unrelated work;
+this skill surfaces it again instead of leaving it stranded.
 
 ## When this fires
 
 - Explicit invocation: `/prompt-me`, `/pm`, "prompt me", "pm".
+- With a count: `/prompt-me 3`, `pm 3`, "prompt me the top 2".
 - The user asks a variant like "what are you waiting on me for?", "what do
   you need from me?", "did you ask me something?", or "remind me what you
   asked".
+- For **every** open question with no cap, that's a different skill:
+  `prompt-me-all` / `pma` — see below.
 
 ## Step 1 — Find candidate questions
 
@@ -44,24 +49,37 @@ Exclude:
 - Rhetorical questions or ones you answered yourself in the same message.
 - Questions from a different task the user explicitly dropped or superseded.
 
-## Step 2 — Restate them as a single list
+## Step 2 — Rank by how pressing each one is
 
-List in reverse chronological order (most recent first), but group by topic
-when several questions share the same task. For each item, give enough
-context to answer cold — don't just repeat the bare question if the
-surrounding detail (options, why it matters, what's blocked on it) got lost
-upstream.
+Order the surviving questions from most to least pressing:
+
+1. **Blocking** questions first — ones that stop the next step of active work
+   until answered outrank purely informational asks.
+2. Within the same tier, **more recent** beats older — a question asked
+   moments ago is more likely to still be live than one from many turns back.
+
+## Step 3 — Select and present
+
+- **No argument**: surface only the single most pressing question.
+- **Numeric argument `N`**: surface the top `N`, most-pressing-first.
+- If the count requested exceeds the number of open questions, just present
+  what exists — don't pad the list or manufacture filler.
+
+For each item, give enough context to answer cold — don't just repeat the
+bare question if the surrounding detail (options, why it matters, what's
+blocked on it) got lost upstream.
 
 ```
 Still waiting on you for:
 1. <question>, restated with the context that pins it down
-2. <question>, ditto
 ```
+
+(Add more numbered items only when a count `> 1` was requested.)
 
 If nothing is actually pending, say so plainly ("nothing open right now")
 rather than manufacturing a question to fill the list.
 
-## Step 3 — Don't re-decide anything
+## Step 4 — Don't re-decide anything
 
 This skill only restates; it never guesses an answer or picks a default to
 unblock itself. If a question turns out to be stale (events since have made

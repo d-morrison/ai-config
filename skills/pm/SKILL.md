@@ -1,9 +1,10 @@
 ---
 name: pm
 description: >
-  Alias for `prompt-me`. Restate every open question still waiting on user
-  input as a single, clearly numbered list. Use when asked to 'pm',
-  'prompt me', 'what are you waiting on me for', or '/pm'.
+  Alias for `prompt-me`. Surface the single most pressing open question
+  waiting on user input, or the top N with a numeric argument. Use when
+  asked to 'pm', 'pm 3', 'prompt me', 'what are you waiting on me for', or
+  '/pm [N]'. For every open question, use `pma` instead.
 user-invocable: true
 allowed-tools: []
 ---

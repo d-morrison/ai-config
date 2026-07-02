@@ -1,17 +1,17 @@
 ---
-name: "pm"
-description: "Codex wrapper for the ai-config Claude skill `pm`. Alias for `prompt-me`. Surface the single most pressing open question waiting on user input, or the top N with a numeric argument. Use when asked to 'pm', 'pm 3', 'prompt me', 'what are you waiting on me for', or '/pm [N]'. For every open question, use `pma` instead. Use when Codex is asked to use `pm`, `/pm`, or the corresponding ai-config/Claude skill workflow."
+name: "prompt-me-all"
+description: "Codex wrapper for the ai-config Claude skill `prompt-me-all`. Restate every open question still waiting on user input \u2014 anything asked earlier in the conversation that hasn't been answered yet \u2014 as a single, clearly numbered list, instead of leaving it scattered across the transcript. Use when asked to 'prompt me all', 'promptmeall', 'pma', or '/prompt-me-all'. For just the single most pressing question (or a requested top N), use `prompt-me` / `pm` instead. Use when Codex is asked to use `prompt-me-all`, `/prompt-me-all`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# pm (Codex wrapper)
+# prompt-me-all (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/pm/SKILL.md](../../skills/pm/SKILL.md)
+Source: [skills/prompt-me-all/SKILL.md](../../skills/prompt-me-all/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/pm/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/pm`, resolve the symlink target for this wrapper directory first, then read `../../skills/pm/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/prompt-me-all/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/prompt-me-all`, resolve the symlink target for this wrapper directory first, then read `../../skills/prompt-me-all/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.

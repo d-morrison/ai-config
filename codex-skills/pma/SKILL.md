@@ -1,17 +1,17 @@
 ---
-name: "pm"
-description: "Codex wrapper for the ai-config Claude skill `pm`. Alias for `prompt-me`. Surface the single most pressing open question waiting on user input, or the top N with a numeric argument. Use when asked to 'pm', 'pm 3', 'prompt me', 'what are you waiting on me for', or '/pm [N]'. For every open question, use `pma` instead. Use when Codex is asked to use `pm`, `/pm`, or the corresponding ai-config/Claude skill workflow."
+name: "pma"
+description: "Codex wrapper for the ai-config Claude skill `pma`. Alias for `prompt-me-all`. Restate every open question still waiting on user input as a single, clearly numbered list, with no cap. Use when asked to 'pma', 'promptmeall', 'prompt me all', or '/pma'. For just the single most pressing question (or a top N), use `pm` instead. Use when Codex is asked to use `pma`, `/pma`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# pm (Codex wrapper)
+# pma (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/pm/SKILL.md](../../skills/pm/SKILL.md)
+Source: [skills/pma/SKILL.md](../../skills/pma/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/pm/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/pm`, resolve the symlink target for this wrapper directory first, then read `../../skills/pm/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/pma/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/pma`, resolve the symlink target for this wrapper directory first, then read `../../skills/pma/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
