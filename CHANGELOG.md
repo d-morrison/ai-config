@@ -12,6 +12,13 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **Harness-branch-403 rebuild recipe** (`CLAUDE.md`, "Use the existing PR
+  branch, not the harness-specified branch"). The exception clause now gives
+  the exact git recipe for rebuilding a PR as a single clean commit when the
+  session can't push to the PR's own branch: diff the old branch against
+  `main` for the changed files and apply that as one commit, rather than
+  cherry-picking the incremental fix commit (which conflicts, since `main`
+  doesn't yet have the base PR's changes). Learned rebuilding #372 as #380.
 - **Session-freshness standing rule** (`CLAUDE.md`, #368). New section "Keep
   ai-config and repo checkouts fresh": in every session, at start and
   periodically during long ones, (a) put the local ai-config checkout back on
