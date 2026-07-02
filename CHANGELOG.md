@@ -12,6 +12,12 @@ behavior change to an existing one), not every mechanical edit.
 
 ## Unreleased
 
+- **`stack-prs` skill** (#358). Branch new work off an existing, unmerged
+  PR's tip instead of `main`, open the dependent PR with `base` set to that
+  PR's branch, keep it in sync as the base branch moves, and re-target it to
+  `main` once the base merges. The general-purpose, directly-invocable
+  counterpart to the stacking logic that `ardia`, `gii`/`gia`, and
+  `stack-dont-pause` each already do as a side effect of their own loops.
 - **`check-info-quality` skill (alias `ciq`)** (#349). New detector skill:
   three checks for information-quality problems neither `purge-hallucinations`
   nor `find-ai-tells` catches --- out-of-date claims (check A), irrelevant
