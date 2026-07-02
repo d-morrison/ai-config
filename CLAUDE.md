@@ -110,7 +110,7 @@ When that happens you cannot follow step 3.
 Fall back to: push the fix to the assigned branch, open a **new** PR off `main` that supersedes the original (say "Supersedes #N" in the body and rebuild as a single clean commit so no sensitive history leaks through), comment on the original PR pointing to the replacement, and close the original once the new PR merges.
 Don't retry the 403 --- it's a policy denial, not a transient error.
 
-**Rebuilding the single clean commit: diff against `main`, don't cherry-pick from the unreachable branch.** `main` usually doesn't yet contain the original PR's changes, so cherry-picking just your incremental fix commit conflicts --- it was written against the PR branch's state, not `main`'s.
+**Rebuilding the single clean commit: diff against `main`, don't cherry-pick from the write-protected branch.** `main` usually doesn't yet contain the original PR's changes, so cherry-picking just your incremental fix commit conflicts --- it was written against the PR branch's state, not `main`'s.
 Instead, diff the whole file set and apply it fresh:
 ```bash
 git diff origin/main <old-branch> -- <changed-files> > /tmp/rebuild.diff
