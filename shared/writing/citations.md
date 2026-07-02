@@ -23,3 +23,15 @@ to is still a defect --- the `check-info-quality` (`ciq`) skill's
 misleading/out-of-context check catches that case; run it on content with
 citations alongside `purge-hallucinations` (which only checks the citation
 *exists*).
+
+**Match the claim's strength to what was actually verified.** Fetching a
+file's *current* content only supports a present-tense claim ("X currently
+does Y") --- it does not support a comparative or temporal claim ("X predates
+Y's migration", "X was written before Z") unless commit history or dates were
+also checked. Reaching for a stronger word ("predates", "originally",
+"since") than the evidence supports is the same overclaiming failure as a
+fabricated citation, just milder --- caught by `@claude` review on gha#180: a
+raw-fetch confirming one repo's config still inlines its own rules (unlike
+another repo's current shared-package-based one) was accurate, but the added
+claim that the first "predates" the second's migration wasn't established by
+that fetch alone.
