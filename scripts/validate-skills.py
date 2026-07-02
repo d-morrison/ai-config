@@ -130,7 +130,7 @@ def load_operation_ids() -> set[str]:
     if not mappings_file.is_file():
         return set()
     data = yaml.safe_load(mappings_file.read_text(encoding="utf-8"))
-    return {op["id"] for op in data.get("operations", [])}
+    return {op["id"] for op in (data or {}).get("operations", [])}
 
 
 def check_operation_tokens() -> None:
@@ -140,7 +140,10 @@ def check_operation_tokens() -> None:
     # ai-config#195 before they silently fail to resolve for non-Claude models.
     operation_ids = load_operation_ids()
     skills_dir = ROOT / "skills"
-    if not skills_dir.is_dir() or not operation_ids:
+    if not skills_dir.is_dir():
+        return
+    if not operation_ids:
+        warnings.append("tool-mappings.yml has no operations; skipping token validation")
         return
     for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
         rel = skill_md.relative_to(ROOT)

@@ -161,8 +161,8 @@ finding → push → post summary → re-request review → repeat until clean.
    can become conflicting at any time (someone merges to `main` while the review
    runs). Poll every few minutes with `/loop` or a manual re-check:
    ```bash
-   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS \
-     --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'
+   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments \
+     --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'   # LIST_PRS
    ```
    Verify each candidate with `git merge-tree --write-tree origin/main
    origin/<branch>` (see `resolve-conflicts`, "Verify before you act") before
