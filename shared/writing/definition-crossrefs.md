@@ -1,8 +1,8 @@
 When reviewing prose that defines technical terms or named results via
 formal cross-reference divs --- Quarto's theorem-like div syntax
 (`::: {#def-...}`, `{#thm-...}`, `{#lem-...}`, `{#cor-...}`, `{#prp-...}`,
-`{#cnj-...}`) or an equivalent glossary/definition-list convention --- check
-two things for every mention:
+`{#cnj-...}`, `{#exm-...}`, `{#exr-...}`) or an equivalent
+glossary/definition-list convention --- check two things for every mention:
 
 - **Hyperlinked on first mention.** The first place a technical term or
   named result appears in running prose should link to the div that
@@ -14,6 +14,13 @@ two things for every mention:
   must appear **before** its first mention in reading order --- earlier in
   the same document, not later. A crossref pointing at a div the reader
   hasn't reached yet is a forward reference.
+
+Scope note: "same document" means the single rendered file this checklist
+runs against. In a multi-file Quarto book, a term defined in a later
+chapter and referenced from an earlier one is a forward reference from the
+reader's perspective too, but checking reading order across chapter files
+is out of scope here --- flag that case manually when reviewing a book-level
+diff.
 
 ## What to check
 
