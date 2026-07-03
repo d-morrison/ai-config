@@ -225,6 +225,24 @@
   git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
   blocked, which is why the background `Monitor` is the workable one. There is no
   `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
+- **`add_repo` refuses a cross-owner add once the session already has a repo from a
+  different owner** ("cross-tier adds are not supported in v1: requested `<owner>/<repo>`
+  but session already has repos from owner(s) `[...]`") — it does NOT fall back to a
+  read-only or degraded mode, so a session scoped to e.g. `d-morrison/*` repos cannot add
+  a `UCD-SERG/*` repo (or vice versa) no matter how the request is phrased. When a task
+  needs to read a PR/issue in such an out-of-scope repo, don't stop at the `add_repo`
+  failure or a raw `api.github.com` 403 (a plain `WebFetch` GET to
+  `api.github.com/repos/.../issues/comments/<id>` for a public repo 403'd with no body —
+  exact cause unconfirmed; `WebFetch` isn't threaded through the GitHub MCP session's own
+  auth, so this isn't necessarily the same failure mode as a scoped/cross-owner API call,
+  and GitHub's REST API does generally allow unauthenticated reads of public repos at a
+  lower rate limit, so don't over-generalize from this one data point) — try `WebFetch`
+  on the **rendered** `https://github.com/<owner>/<repo>/pull/<N>`
+  (or `/issues/<N>`) page instead. For a public repo this reliably returns the PR/issue
+  title, state, and recent comment/review content (works even for reading a *specific*
+  comment by its anchor), succeeding where both the MCP tool and the JSON API failed.
+  (Used to read UCD-SERG/serodynamics#193's `@claude`-bot comment from a
+  `d-morrison/gha`-scoped session, which surfaced the root cause fixed in gha#191.)
 - `d-morrison/gha`'s `CLAUDE.md` carries its own `gh`->MCP substitution table
   (the "GitHub access in remote / web sessions" section), scoped to that repo.
   `d-morrison/ai-config` has its own cross-model registry at
@@ -1262,6 +1280,38 @@ not block `claude-review`.)
   composite would have consumed as a plain input (e.g. an `apt-packages` string). Learned
   while extracting `update-snapshots` (gha#103): bcs's `install-system-deps` composite
   couldn't be called; the package list was passed as a string input instead.
+- **The inverse gotcha: `actions/checkout` (no explicit `repository:`) inside a
+  `workflow_call` reusable workflow checks out the CALLER's repo, not the reusable
+  workflow's own.** A `run:` step that then references a script by a
+  `GITHUB_WORKSPACE`-relative path (e.g.
+  `bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/foo.sh"`) silently assumes the
+  checked-out tree is the reusable workflow's own repo — true only when a repo calls its
+  own workflow (dogfooding), false for every other consumer, which gets
+  `No such file or directory`. Fix: resolve the reusable workflow's own repo/ref via
+  `github.job_workflow_ref` and check that out into a side directory before invoking the
+  script — or move the logic into a composite action instead of a bare script path, since
+  composite actions auto-resolve from their own repo via `uses:` regardless of checkout
+  state (this also matters for a step that must run BEFORE any checkout has happened at
+  all, where no script-file path can work yet). **Empirically verified, not just inferred
+  from docs:** a step inside `claude-code-review.yml` (the CALLEE) read
+  `${{ github.workflow_ref }}` and it evaluated to
+  `d-morrison/gha/.github/workflows/claude-review.yml@refs/pull/191/merge` — the
+  CALLER's stub file (`claude-review.yml`), not the callee's own
+  (`claude-code-review.yml`) — confirmed straight from the job's log output (gha#191,
+  run 28628848306, job 84901231352, the `selfmod` step's `WORKFLOW_REF` env dump). This
+  contradicts a naive reading of GitHub's docs (which describe `workflow_ref` simply as
+  "the ref path to the [running] workflow" without spelling out the reusable-workflow
+  case), so trust the log evidence over the doc summary if they seem to disagree.
+  `job_workflow_ref` wasn't separately logged in that same run to get its literal string
+  value too, but resolving the checkout from it worked in production (the guard script
+  was found and the CI job went green) — strong indirect confirmation it resolved to the
+  callee's own repo/ref rather than the caller's. Selftests that
+  exercise the script by running it directly inside the reusable workflow's own repo
+  don't catch this class of bug — they test the script's logic, never the cross-repo
+  path resolution that only manifests when a genuinely different repo calls the
+  workflow. (d-morrison/gha#190/#191: `claude-code-review.yml`'s fail-check guard broke
+  for every consumer after its logic was extracted from inline shell into a standalone
+  script, landing right after the last known-good run.)
 - **`secrets: inherit` is NOT needed when the reusable workflow only uses `github.token`.**
   `github.token` auto-injects the caller's token via `permissions:` — not via `secrets:`.
   `secrets: inherit` is only needed for named secrets (`secrets.MY_PAT`, etc.). Automated
