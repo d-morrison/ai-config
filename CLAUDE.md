@@ -353,7 +353,7 @@ This keeps figures consistent with tables, which already use div syntax.
 
 The `ard`/`ardi` skill family and `use-preferred-style`/`find-ai-tells` operationalize this in their respective review contexts.
 
-## Question redundant content in review
+## Challenge redundant content in review
 
 <!-- Shared with the lab manual; edit shared/workflow/challenge-redundant-content.md, not here. -->
 @shared/workflow/challenge-redundant-content.md

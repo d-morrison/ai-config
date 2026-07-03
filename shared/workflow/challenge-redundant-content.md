@@ -1,8 +1,8 @@
 When reviewing code or prose --- including mathematical content (derivations,
 proofs, restated formulas) --- check for redundant content that could be
 consolidated, and question it rather than silently accepting duplication.
-Redundancy costs tidiness twice over: it's more to read, and it's more to keep
-in sync when one copy changes and the other doesn't.
+Redundancy is doubly costly: more to read, and more to keep in sync when one
+copy changes and the other doesn't.
 
 **The litmus test: only flag content as redundant when consolidating it would
 lose nothing.** If removing one copy would drop a case, an edge condition, a
@@ -39,5 +39,6 @@ mandate to sweep an entire corpus for duplication --- that's a separate,
 larger job with its own tooling. When the redundancy found here turns out to
 span more than the current diff (the same fact duplicated across many files,
 the same procedure copied into several unrelated places), say so and route it
-to whatever handles corpus-scale consolidation, rather than trying to fix
-everything found along the way in the current review.
+to `find-overlap` (or `consolidate-skills`/`consolidate-memory` for
+skills/memories), rather than trying to fix everything found along the way in
+the current review.
