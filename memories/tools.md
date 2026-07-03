@@ -1059,6 +1059,16 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   anyway. Front-load that ToolSearch call and note in the row's PR
   description (or commit message) that it was verified, so the review can
   skip straight past it.
+- **`PUSH` is the closest registry token for a remote ref/tag *deletion*
+  (`git push origin :refs/tags/<tag>`), but it's an imperfect fit** — the
+  registry's `PUSH` operation is documented as "push commits to a branch,"
+  and a colon-prefix ref-delete pushes nothing and isn't a branch. Flagged as
+  a non-blocking observation by the `@claude` reviewer on batch 3 (PR #423,
+  `skills/slide-tag/SKILL.md` and `skills/ts/SKILL.md`). Left as `PUSH` for
+  now (two instances, both tag-slide skills, not the token-rollout's main
+  surface) rather than adding a speculative `DELETE_REF`/`DELETE_TAG`
+  operation for a two-site case — revisit and add the dedicated token if a
+  later batch of #416 hits more ref-deletion commands than that.
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
