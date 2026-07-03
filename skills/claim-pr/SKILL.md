@@ -31,9 +31,12 @@ comment on the thread already says you're working on it, **skip** re-posting.
 ### GitHub
 
 ```bash
-gh pr comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
-gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
+gh pr comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."      # COMMENT_PR
+gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."   # COMMENT_ISSUE
 ```
+
+(`COMMENT_PR` / `COMMENT_ISSUE` are abstract operation tokens — resolve to your
+model's tool via [`tool-mappings.md`](../../tool-mappings.md).)
 
 ### GitLab
 
@@ -77,8 +80,8 @@ glab api --method PUT \
 ### GitHub — post a closing comment
 
 ```bash
-gh pr comment <N> --body "Done with my local session — unclaiming."
-gh issue comment <N> --body "Done with my local session — unclaiming."
+gh pr comment <N> --body "Done with my local session — unclaiming."      # COMMENT_PR
+gh issue comment <N> --body "Done with my local session — unclaiming."   # COMMENT_ISSUE
 ```
 
 ## Notes

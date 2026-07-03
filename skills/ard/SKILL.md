@@ -25,7 +25,7 @@ Pure praise or neutral observations with **no** requested change ("nice refactor
 |------|---------|-----------------|
 | **A** — Address | Valid and in-scope. | Fix it in this PR/MR and commit. |
 | **R** — Rebut | Incorrect, already handled, or a misunderstanding. | Explain *why*, citing concrete evidence (line, test, doc, spec). Specific enough that the reviewer can verify it without re-reading the whole PR. |
-| **D** — Defer | Valid but out of scope (new feature, broad refactor, needs design discussion). | File a follow-up issue (`gh issue create` / `glab issue create`), link it, and add it to the PR/MR's **Deferred / Out-of-Scope** section. |
+| **D** — Defer | Valid but out of scope (new feature, broad refactor, needs design discussion). | File a follow-up issue (`CREATE_ISSUE` on GitHub — `gh issue create`; `glab issue create` on GitLab), link it, and add it to the PR/MR's **Deferred / Out-of-Scope** section. |
 | **K** — Acknowledge | Praise or a neutral observation with no change requested. | Give it a row so it's accounted for; no code change, no rebuttal needed. Don't stretch this to dodge a real finding. |
 
 ### Decision order
@@ -63,13 +63,13 @@ For anything that requests a change, choose among the first three (Acknowledge i
 
 ### 1. Gather every finding
 
-Collect the full set *before* dispositioning, so none slips through. Pull both the summary comment and the inline review threads.
+Collect the full set *before* dispositioning, so none slips through. Pull both the summary comment and the inline review threads — `READ_PR_COMMENTS` and `READ_PR_REVIEW_COMMENTS` (abstract operation tokens; resolve to your model's tool via [`tool-mappings.md`](../../tool-mappings.md)).
 
 **GitHub**
 
 ```bash
-gh pr view <N> --comments                            # top-level + summary comments
-gh api repos/{owner}/{repo}/pulls/<N>/comments       # inline review-thread comments
+gh pr view <N> --comments                            # READ_PR_COMMENTS — top-level + summary comments
+gh api repos/{owner}/{repo}/pulls/<N>/comments       # READ_PR_REVIEW_COMMENTS — inline review-thread comments
 ```
 
 **GitLab**
@@ -91,8 +91,8 @@ Apply the decision order above. For Address items, make the edits now.
 
 ```bash
 git add -p                                           # stage deliberately
-git commit -m "fix: address round <k> review findings"
-git push
+git commit -m "fix: address round <k> review findings"   # COMMIT
+git push                                                  # PUSH
 ```
 
 - **One commit per round**, not one per finding — reference its SHA in every Address row.
@@ -106,7 +106,7 @@ Write the summary to a file and post it *from* the file — **never inline on Gi
 
 ```bash
 # write the summary to ard-summary.md, then:
-gh pr comment <N> --body-file ard-summary.md         # GitHub
+gh pr comment <N> --body-file ard-summary.md         # COMMENT_PR — GitHub
 glab mr note <N> -F ard-summary.md                   # GitLab
 ```
 
@@ -150,23 +150,24 @@ elsewhere. For every inline comment, post a short reply on its own thread with
 the disposition (and the commit SHA for an Address), then **resolve** the thread
 once the item is genuinely settled.
 
-**GitHub** — reply on the comment's thread, then resolve via GraphQL:
+**GitHub** — reply on the comment's thread (`REPLY_REVIEW_COMMENT`), then
+resolve via GraphQL (`RESOLVE_REVIEW_THREAD`):
 
 ```bash
 # Reply on the same thread as inline comment <comment_id>:
 gh api repos/{owner}/{repo}/pulls/<N>/comments \
-  -f body="✅ Addressed in <sha>." -F in_reply_to=<comment_id>
+  -f body="✅ Addressed in <sha>." -F in_reply_to=<comment_id>   # REPLY_REVIEW_COMMENT
 
 # List threads to get the node id, then resolve the settled one:
 gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
   pullRequest(number:<N>) { reviewThreads(first:100) { nodes {
     id isResolved comments(first:1){ nodes { databaseId body } } } } } } }'
 gh api graphql -f query='mutation {
-  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'
+  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'   # RESOLVE_REVIEW_THREAD
 ```
 
-In a remote/web session without `gh`, use `mcp__github__resolve_review_thread`
-instead (see `tool-mappings.md`).
+In a remote/web session without `gh`, resolve `RESOLVE_REVIEW_THREAD` via
+`mcp__github__resolve_review_thread` instead (see `tool-mappings.md`).
 
 **GitLab** — reply to the discussion, then resolve it:
 

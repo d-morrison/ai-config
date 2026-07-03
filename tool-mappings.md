@@ -26,6 +26,8 @@ operation to the equivalent GitHub MCP tool so any model can run a skill.
 | `SEARCH_PRS` | Search pull requests by keyword / query string. | `gh pr list --search "<query>"` | `mcp__github__search_pull_requests` |
 | `DIFF_PR` | Read a pull request's diff. | `gh pr diff <N>` | `mcp__github__pull_request_read (method=get_diff)` |
 | `PR_CHECKS` | Read a pull request's CI check / status results. | `gh pr checks <N>` | `mcp__github__pull_request_read (method=get_check_runs)` |
+| `READ_PR_COMMENTS` | Read a pull request's top-level (conversation) comments. | `gh pr view <N> --comments` | `mcp__github__pull_request_read (method=get_comments)` |
+| `READ_PR_REVIEW_COMMENTS` | Read a pull request's inline review-thread comments (also returns thread ids). | `gh api repos/<owner>/<repo>/pulls/<N>/comments` | `mcp__github__pull_request_read (method=get_review_comments)` |
 | `CREATE_PR` | Open a new pull request. | `gh pr create` | `mcp__github__create_pull_request` |
 | `EDIT_PR` | Edit a pull request (reviewers, labels, base, etc.). | `gh pr edit <N>` | `mcp__github__update_pull_request` |
 | `MERGE_PR` | Merge a pull request. | `gh pr merge <N>` | `mcp__github__merge_pull_request` |
