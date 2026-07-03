@@ -67,6 +67,9 @@ For every claim or reasoning step checked, state:
    reader would benefit from a pointer to a source (a foundational
    result, a dataset's documentation, a package's reference page) even if
    the prose isn't currently wrong without it.
+4. **Which claims are undefended** --- identify factual claims that carry no
+   citation and no internal reasoning, even when the claim itself turns out
+   to be accurate.
 
 Silence on a checkable claim reads as "verified" --- don't leave one unchecked
 because it sounded right on a first pass.
