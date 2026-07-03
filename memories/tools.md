@@ -231,8 +231,13 @@
   read-only or degraded mode, so a session scoped to e.g. `d-morrison/*` repos cannot add
   a `UCD-SERG/*` repo (or vice versa) no matter how the request is phrased. When a task
   needs to read a PR/issue in such an out-of-scope repo, don't stop at the `add_repo`
-  failure or a raw `api.github.com` 403 (unauthenticated REST calls also fail, even for
-  public repos) — try `WebFetch` on the **rendered** `https://github.com/<owner>/<repo>/pull/<N>`
+  failure or a raw `api.github.com` 403 (a plain `WebFetch` GET to
+  `api.github.com/repos/.../issues/comments/<id>` for a public repo 403'd with no body —
+  exact cause unconfirmed; `WebFetch` isn't threaded through the GitHub MCP session's own
+  auth, so this isn't necessarily the same failure mode as a scoped/cross-owner API call,
+  and GitHub's REST API does generally allow unauthenticated reads of public repos at a
+  lower rate limit, so don't over-generalize from this one data point) — try `WebFetch`
+  on the **rendered** `https://github.com/<owner>/<repo>/pull/<N>`
   (or `/issues/<N>`) page instead. For a public repo this reliably returns the PR/issue
   title, state, and recent comment/review content (works even for reading a *specific*
   comment by its anchor), succeeding where both the MCP tool and the JSON API failed.
