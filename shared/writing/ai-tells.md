@@ -1,7 +1,10 @@
 Write plainly up front, then **scan the draft for AI tells before sending**.
 Before presenting non-trivial prose --- PR/issue descriptions, commit bodies,
 README/doc/vignette text, or a long answer meant as deliverable prose ---
-self-check it and cut the tells. Watch for:
+self-check it and cut the tells. Apply the same catalog **when reviewing
+someone else's prose** too --- a PR/MR diff, a doc change, any non-code
+narrative content --- not just your own drafts; flag each tell found rather
+than waving a plausible-sounding paragraph through unchecked. Watch for:
 
 - **Overused vocabulary:** actionable (→ "to act on"), delve, leverage, utilize,
   tapestry, testament, realm, robust, seamless, holistic, nuanced, multifaceted,
