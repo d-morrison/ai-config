@@ -18,6 +18,9 @@
 - ALWAYS record what I learn in memory/AI-instruction notes as I work (standing request).
 - When recording a factual claim about tool/workflow behavior (an implementation detail or a causal explanation derived from a specific source), cite the source inline — e.g., "(source: gha#70 PR body)" — so future sessions can calibrate trust and verify if needed.
   Directly observed facts need no citation, but explanations inferred from a PR body, commit message, or doc do. (Learned on ai-config#118.)
+- Before rebutting — or accepting — a review finding that predicts a CI failure ("this will break Spellcheck / lint / R CMD check"), check the actual CI log for that exact commit rather than just re-reasoning about the tool's behavior.
+  A plausible-sounding mechanism (e.g. "Rd `\arguments{\item{name}{...}}` labels get spell-checked") can be wrong for the specific tool in use; the log's literal output ("No spelling errors found") is the authoritative signal, not a theory about what the tool probably does.
+  (Learned on UCD-SERG/serodynamics#193: rebutted a claude[bot] WORDLIST finding by reading the Spellcheck job's actual log rather than debating the claim in the abstract.)
 - When creating a GitHub PR, request reviewer `d-morrison` (see request-pr-review skill).
 - When deferring work out of scope during a review iteration, always file a follow-up issue (via `gh issue create` or `glab issue create`) capturing the deferred item.
   Don't just mention it in a comment — create the issue so it's tracked.

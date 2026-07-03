@@ -136,7 +136,11 @@
   `actions: write` the re-run API needs. So a flaky CI failure can't be re-kicked
   via MCP — **push a commit to re-trigger the whole workflow** (the normal path
   during an iterate loop anyway), or ask the user to click Re-run. (Hit
-  re-running a flaky `link-checker` timeout on a lab-manual PR.) Prefer folding
+  re-running a flaky `link-checker` timeout on a lab-manual PR.) **`method:
+  run_workflow` (a fresh `workflow_dispatch`, not a rerun) 403s the same way** —
+  the token lacks `actions: write` for dispatch too, not just for reruns, so
+  don't expect a direct-dispatch workaround to succeed where rerun failed
+  (confirmed on UCD-SERG/serodynamics#193). Prefer folding
   the retry into a real, already-pending fix (e.g. a reviewer's requested
   wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
   no throwaway commit in history. Only use an empty commit when no real fix is
@@ -212,6 +216,18 @@
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
+- **A CI-failure webhook event's `HeadSHA` can be stale — compare it against
+  the PR's actual current head before investigating.** Pushing a fix-up commit
+  right after a bad one (e.g. correcting an encoding mistake seconds later)
+  produces a cascade of failure events for every check on the now-superseded
+  commit, arriving over the next several minutes as each job finishes. Check
+  the event's `HeadSHA` field against the PR's live head (`pull_request_read`
+  `get`, `.head.sha`) — if it doesn't match, the event is about a commit no
+  one will ever see the result of; skip it with a one-line "stale, superseded"
+  note instead of re-diagnosing content you've already fixed. (Hit on
+  UCD-SERG/serodynamics#193: an accidental double-base64-encoded push
+  triggered ~10 failure events across the whole CI matrix, all for the
+  immediately-superseded commit.)
 - **Self-wake to re-check CI in remote/web sessions.** Webhooks don't deliver CI
   *success*, new pushes, or merge transitions, so re-check on a timer. Prefer
   `CronCreate` (a harness scheduling tool, not an MCP tool): schedule a one-shot
@@ -1236,6 +1252,25 @@ common patterns.
   section against what you're about to pass. Filed as gha#179; worked around
   in `d-morrison/altdoc`#14 by omitting `ANTHROPIC_API_KEY` until `@v1` catches
   up.
+- **A `workflow_call` reusable-workflow ref (`@v1`/`@v2`) resolves ONCE, at the
+  run's original creation time, and stays pinned to that SHA across every
+  re-run of that same run — even after the tag has since moved to a fix.** So
+  if a consumer PR's `claude-code-review.yml` run first ran while `@v2` still
+  pointed at a broken gha commit, re-running that same run (whether via the
+  Actions UI "Re-run failed jobs" or a bot re-dispatch that happens to target
+  the existing run rather than creating a new one) reproduces the identical
+  pre-fix failure forever, no matter how many times you retry or how long ago
+  the tag was fixed. **Diagnose this by comparing `run_attempt` and
+  `created_at`** (`mcp__github__actions_get`, `method: get_workflow_run`) against
+  when the fix landed, and read `referenced_workflows[].sha` in the same
+  response — it shows the ACTUAL resolved commit for that run, which you can
+  diff against the tag's current `get_tag` SHA to confirm staleness. **Only a
+  genuinely NEW run (a new `run_id`) re-resolves the tag fresh** — a new commit
+  (`pull_request: synchronize`) is the reliable trigger; an `@claude review`
+  comment sometimes causes the bot to re-run the existing stale run instead of
+  dispatching a new one (observed on UCD-SERG/serodynamics#193 — a direct
+  `workflow_dispatch` via `actions_run_trigger` would have sidestepped this,
+  but that call 403s in these sessions too, per the note above).
 - **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
   `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
   example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
