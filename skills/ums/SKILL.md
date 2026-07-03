@@ -130,6 +130,15 @@ committed pass.
   Search the file for all enumerations of the changed category and make them consistent.
 - [ ] Did I add a shared-procedure step to one skill but not to sibling skills? →
   Grep sibling skills for the same action and add the step there too.
+- [ ] Did I change how a skill describes its relationship/contrast to a sibling
+  skill (e.g. "X is passive, Y is explicit")? → Grep the sibling skill for its
+  own mirrored description of that same relationship and update it too — a
+  one-directional fix leaves the sibling's docs contradicting the new
+  behavior. (Caught by `@claude` review on ai-config#439: `ums/SKILL.md`'s
+  passive-vs-active contrast with `record-learnings` was fixed, but
+  `record-learnings/SKILL.md`'s own mirrored line describing `ums` as "the
+  explicit ... counterpart" was missed until review flagged it as a
+  follow-on.)
 
 ## Relationship to record-learnings
 
