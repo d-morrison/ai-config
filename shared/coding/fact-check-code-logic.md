@@ -31,9 +31,6 @@ written in prose; this one fact-checks the logic embedded in code itself.
   formula is right because the code compiles and runs. Re-derive or
   spot-check by hand, or construct a small worked example with a known
   answer and compare it against the code's output.
-- Use domain knowledge and, where checkable, an external source (the
-  referenced paper, a package's own docs, a spec) --- the same evidentiary
-  bar prose fact-checking applies.
 
 ## What to report
 
