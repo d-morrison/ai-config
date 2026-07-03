@@ -201,15 +201,18 @@ Escalate a deadlock via the `request-pr-review` skill (human reviewer `d-morriso
 
 The `ardi` / `iterate` skill family runs this loop. (See *What "fully clean" means* above; the mechanics for each step are in the sections around here.)
 
-## Do the review yourself when the @claude workflow is quota-skipped
+## Do the review yourself when the @claude workflow doesn't produce a verdict
 
-When a PR you're managing has its `@claude` review workflow **skipped because of a quota** (the review job never runs, so no bot review lands), don't stall the ARDI loop waiting for it — **do the review yourself and post it** as a PR comment.
+When a PR you're managing has its `@claude` review workflow fail to produce a usable verdict — whether because it was **skipped for quota** or because it **ran to completion but never stated a verdict** (a "stub review") — don't stall the ARDI loop waiting for it — **do the review yourself and post it** as a PR comment.
 Apply the same review standards the bot would (the SERG lab manual and d-morrison's modular/idiomatic priorities), then keep iterating to fully-clean on your own findings.
-A quota-skipped review leaves the PR unreviewed; it is not an approval.
+Neither failure mode is an approval — an unreviewed PR stays unreviewed regardless of why the bot didn't weigh in.
 
-The skip surfaces as a bot comment — either `Claude review skipped — API quota exhausted` (the review workflow) or `You've hit your org's monthly spend limit` (the `@claude` agent workflow).
-Both mean no bot will respond on this run, so don't wait on it; do the review yourself and keep driving.
-Re-running the workflow only helps once the quota actually resets.
+**Quota-skipped:** surfaces as a bot comment — either `Claude review skipped — API quota exhausted` (the review workflow) or `You've hit your org's monthly spend limit` (the `@claude` agent workflow).
+Both mean no bot will respond on this run; re-running the workflow only helps once the quota actually resets.
+
+**Stub review:** the review job reports success (`is_error: false`, real cost/turns logged) but the posted comment never states a `### Verdict` — the run genuinely executed but got cut short before reaching a conclusion (e.g. by escalating permission denials on tool calls it needed). This looks superficially fine (green check, a comment exists) so it's easy to mistake for a real review — read the comment body for an actual verdict section before trusting it. Re-running the same workflow can reproduce the same stub pattern repeatedly rather than self-resolving; if a retry doesn't help within a round or two, treat it as this failure mode and self-review rather than continuing to re-trigger. (Hit repeatedly on gha#193/gha#198, where `claude-review` produced escalating permission-denial-driven stub reviews across many runs before the actual fix — a same-prompt retry composite, gha#201 — landed.)
+
+Either way: don't wait on the bot indefinitely — do the review yourself and keep driving to fully-clean.
 
 ## Watch and ARDI every PR you touch — don't ask first
 
