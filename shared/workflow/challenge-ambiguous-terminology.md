@@ -50,6 +50,6 @@ the exact future-edit trap this note originally warned against. A second
 review (Copilot) caught that too, and the evergreen-conditional phrasing
 above was adopted. On gha#217, the citation was written as an already-
 established fact again --- even though the evergreen-conditional phrasing
-had already landed on `main` days earlier --- because nothing prompted a
-check of this guideline while writing a brand-new citation, only once a
-review flagged it after the fact.)
+had already landed on `main` in the same session --- because nothing
+prompted a check of this guideline while writing a brand-new citation, only
+once a review flagged it after the fact.)
