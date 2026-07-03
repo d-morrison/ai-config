@@ -20,7 +20,23 @@ intent, ask rather than assume.
 
 **Cross-repo citations have a merge-order trap.** Citing a specific file path
 or construct in another repo is itself unverifiable --- and will 404 a link
-checker --- if the PR that adds it hasn't merged yet. Name the repo generically
-until the referenced PR merges, then tighten the citation to the specific path.
-(Caught by this very guideline, twice, while adding it to gha#151 --- the file
-it pointed at only existed on this fragment's own not-yet-merged PR.)
+checker --- if the PR that adds it hasn't merged yet.
+
+Don't fix this by promising a future edit ("cite it generically for now, then
+tighten the citation once it merges") --- that's still a citation that needs
+someone to remember to come back and fix it, the same future-edit fragility
+this guideline warns against, just moved one level up. Instead, phrase the
+citation as a conditional that's already accurate regardless of which PR
+merges first: "This is a global standing rule proposed in `<repo>#<PR>` ---
+once merged, the fragment lives at `<path>` there." That sentence never needs
+editing; it's true before the merge and still true after.
+
+(Caught by this very guideline three times now, all while cross-linking a
+still-open `ai-config` PR into `gha`'s `CLAUDE.md`: twice on gha#151 --- the
+file it pointed at only existed on this fragment's own not-yet-merged PR ---
+and again on gha#208, where the first fix cited the file as already
+established, a review caught that, the reworded "not yet merged as of this
+writing, tighten this citation once it lands" fix repeated the exact
+future-edit trap this note originally warned against, and a second review
+(Copilot) caught that too before the evergreen-conditional phrasing above was
+adopted.)
