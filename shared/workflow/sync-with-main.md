@@ -117,8 +117,10 @@ you're the one resyncing after `main` moved a copy of your logic; here,
 *you* are the one who moved the logic, so the burden of noticing and fixing
 the resulting conflict falls on you, not on the sibling PR's author waiting
 to hit it. Don't wait for that PR's own merge/CI to surface the conflict ---
-`git merge-tree` (or `gh pr diff` against the new `main`) against every open
-PR touching the same file right after your extraction merges. Re-apply the
+check every open PR touching the same file right after your extraction
+merges: `git merge-tree "$(git merge-base origin/main origin/<sibling-branch>)" origin/main origin/<sibling-branch>`
+(or `gh pr diff <N>` against the new `main`) shows whether it still applies
+cleanly. Re-apply the
 sibling PR's actual semantic change (not a mechanical `--theirs`) to the new
 location, verify with a direct diff that the extracted unit now differs from
 `main` by exactly that PR's intended change and nothing else, then push to
