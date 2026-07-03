@@ -353,6 +353,13 @@ This keeps figures consistent with tables, which already use div syntax.
 
 The `ard`/`ardi` skill family and `use-preferred-style`/`find-ai-tells` operationalize this in their respective review contexts.
 
+## Question redundant content in review
+
+<!-- Shared with the lab manual; edit shared/workflow/challenge-redundant-content.md, not here. -->
+@shared/workflow/challenge-redundant-content.md
+
+The `ard`/`ardi` skill family and `code-review` apply this in PR/MR review; `find-overlap` (and its `consolidate-skills`/`consolidate-memory` actors) is the corpus-wide counterpart when redundancy spans more than the current diff.
+
 ## Writing style: scan for AI tells
 
 The detector counterpart to the plain-prose guide above.

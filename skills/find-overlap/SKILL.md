@@ -153,6 +153,9 @@ when an opt-in signal is present; otherwise propose with a cost estimate first.
 - **`consolidate-memory`** — the action counterpart for the memory corpus.
 - **`link-skills`** — finds the *inverse* (distinct skills that should reference
   each other but don't); hand it the adjacent-but-distinct clusters.
+- **`challenge-redundant-content`** (`shared/workflow/`) — the review-time,
+  single-diff counterpart: questions redundancy while reviewing one PR's
+  prose/math/code, rather than sweeping the whole corpus.
 - **`find-ai-tells`** — sibling read-only scanner over prose, for a different
   signal (AI tells, not duplication).
 - **`tidy` / `simplify`** — code-level dedup once overlap is found.
