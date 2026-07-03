@@ -379,6 +379,12 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
+## Hyperlink technical terms and results; no forward references
+
+@shared/writing/definition-crossrefs.md
+
+Applies wherever `code-review`/`ard`/`ardi` already reviews a prose diff, alongside the fact-check and ambiguous-terminology checks above.
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
