@@ -107,3 +107,27 @@ at merge time too. (PR #352's `check-info-quality` landed alongside `#344`'s
 independently-authored `fact-check-prose` this way --- distinct enough to
 keep both, resolved by adding an explicit boundary in each skill's
 Relationship section rather than consolidating.)
+
+**After merging a PR that extracts an inline block into a reusable unit
+(a composite action, a shared script/function), check other open PRs that
+still edit that same inline block --- your merge just broke their textual
+diff, even though their intended change is usually trivial to re-apply to
+the new location.** This is the mirror image of the case above: there,
+you're the one resyncing after `main` moved a copy of your logic; here,
+*you* are the one who moved the logic, so the burden of noticing and fixing
+the resulting conflict falls on you, not on the sibling PR's author waiting
+to hit it. Don't wait for that PR's own merge/CI to surface the conflict ---
+check every open PR touching the same file right after your extraction
+merges: `git merge-tree "$(git merge-base origin/main origin/<sibling-branch>)" origin/main origin/<sibling-branch>`
+(or `gh pr diff <N>` against the new `main`) shows whether it still applies
+cleanly. Re-apply the
+sibling PR's actual semantic change (not a mechanical `--theirs`) to the new
+location, verify with a direct diff that the extracted unit now differs from
+`main` by exactly that PR's intended change and nothing else, then push to
+their branch and flag what you did in a PR comment. (gha#201 extracted
+`claude-code-review.yml`'s `claude_args` block into a new
+`run-claude-review-attempt` composite action to support a retry; gha#202,
+open in parallel, edited that same inline block to allowlist `WebFetch`/
+`Bash(curl:*)`. Proactively rebasing #202 and re-applying its allowlist
+change to the new composite action --- rather than leaving its author to
+discover a conflict --- let it merge within the hour instead of stalling.)
