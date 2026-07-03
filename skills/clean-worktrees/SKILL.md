@@ -100,7 +100,7 @@ git -C <path> status --porcelain    # any output → DIRTY, skip (or --force onl
 
 ```bash
 git -C <path> rev-parse --abbrev-ref HEAD                 # the branch
-gh pr list --head <branch> --state open --json number,url  # open PR? (glab mr list on GitLab)
+gh pr list --head <branch> --state open --json number,url  # LIST_PRS — open PR? (glab mr list on GitLab)
 git rev-list --count origin/main..<branch>                # commits ahead of main
 git rev-list --count <branch>@{upstream}..<branch> 2>/dev/null \
   || echo "no-upstream"                                   # unpushed commits (or no remote)
