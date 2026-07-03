@@ -36,12 +36,16 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `CREATE_PR` | Open a new pull request. | `gh pr create` | `mcp__github__create_pull_request` |
 | `EDIT_PR` | Edit a pull request (reviewers, labels, base, etc.). | `gh pr edit <N>` | `mcp__github__update_pull_request` |
 | `MERGE_PR` | Merge a pull request. | `gh pr merge <N>` | `mcp__github__merge_pull_request` |
+| `MARK_PR_READY` | Flip a draft pull request to ready for review. | `gh pr ready <N>` | `mcp__github__update_pull_request (draft=false)` |
 | `COMMENT_PR` | Post a top-level comment on a pull request. | `gh pr comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `REPLY_REVIEW_COMMENT` | Reply to an inline pull-request review comment. | `gh api (reply to review comment)` | `mcp__github__add_reply_to_pull_request_comment` |
 | `RESOLVE_REVIEW_THREAD` | Mark an inline pull-request review thread as resolved. | `gh api graphql (resolveReviewThread)` | `mcp__github__resolve_review_thread` |
 | `WATCH_PR` | Subscribe to / unsubscribe from a pull request's activity. | (no CLI equivalent) | `mcp__github__subscribe_pr_activity / mcp__github__unsubscribe_pr_activity` |
 | `VIEW_ISSUE` | Read an issue's details. | `gh issue view <N>` | `mcp__github__issue_read` |
 | `LIST_ISSUES` | List issues. | `gh issue list` | `mcp__github__list_issues` |
+| `SEARCH_ISSUES` | Search issues by keyword / query string. | `gh issue list --search "<query>"` | `mcp__github__search_issues` |
+| `READ_ISSUE_COMMENTS` | Read an issue's comments. | `gh issue view <N> --comments` | `mcp__github__issue_read (method=get_comments)` |
+| `ISSUE_LINKED_PRS` | List the pull requests cross-referenced from an issue's timeline (i.e. PRs that link or close it). | `gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline` | (no GitHub MCP tool; approximate with SEARCH_PRS) |
 | `CREATE_ISSUE` | Open a new issue. | `gh issue create` | `mcp__github__issue_write (method=create)` |
 | `COMMENT_ISSUE` | Post a comment on an issue. | `gh issue comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `LIST_DISCUSSIONS` | List a repository's discussions. Discussions are GraphQL-only. | `gh api graphql (list discussions)` | (no GitHub MCP tool; use gh api graphql) |

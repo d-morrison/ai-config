@@ -64,7 +64,7 @@ gh pr list --repo "$REPO" --state open --limit 200 \
           (.author.login | test("dependabot|renovate"))
           or (.title | startswith("chore("))
           or ([.labels[].name] | index("dependencies"))
-        ) | "\(.number)\t\(.mergeable)\t\(.title)"'
+        ) | "\(.number)\t\(.mergeable)\t\(.title)"'   # LIST_PRS
 ```
 
 `--limit 200` because `gh pr list` defaults to 30 — a piled-up weekly backlog
@@ -96,7 +96,7 @@ A bump is only "safe to merge" if every required check passes. `skipping` is
 fine (path-filtered jobs); `pending` means wait, `fail` means stop.
 
 ```bash
-gh pr checks "$N" --repo "$REPO"
+gh pr checks "$N" --repo "$REPO"   # PR_CHECKS
 # pass / skipping → ok;  pending → not ready yet;  fail → do not merge
 ```
 
@@ -104,13 +104,13 @@ Also confirm it isn't conflicting:
 
 ```bash
 gh pr view "$N" --repo "$REPO" --json mergeable,mergeStateStatus \
-  --jq '"\(.mergeable) / \(.mergeStateStatus)"'
+  --jq '"\(.mergeable) / \(.mergeStateStatus)"'   # VIEW_PR
 ```
 
 If `CONFLICTING` / `DIRTY`, ask the bot to rebase rather than resolving by hand:
 
 ```bash
-gh pr comment "$N" --repo "$REPO" --body "@dependabot rebase"   # Dependabot only
+gh pr comment "$N" --repo "$REPO" --body "@dependabot rebase"   # COMMENT_PR — Dependabot only
 ```
 
 For a Renovate PR, tick the rebase checkbox in the PR body (or its Dependency
@@ -121,7 +121,7 @@ Dashboard) — `@dependabot` comment commands do nothing on Renovate PRs.
 Merge directly. Dependabot deletes its own branch on merge.
 
 ```bash
-gh pr merge "$N" --repo "$REPO" --squash
+gh pr merge "$N" --repo "$REPO" --squash   # MERGE_PR
 ```
 
 Pick a merge method the repo actually allows — `--squash` errors when squash
@@ -131,7 +131,7 @@ settings.
 If checks are still running and you want it to land once they pass:
 
 ```bash
-gh pr merge "$N" --repo "$REPO" --squash --auto   # needs auto-merge enabled; swap --squash for --merge/--rebase if squash is disabled
+gh pr merge "$N" --repo "$REPO" --squash --auto   # MERGE_PR — needs auto-merge enabled; swap --squash for --merge/--rebase if squash is disabled
 ```
 
 For **Dependabot** you can also hand the merge back to the bot — it waits for
@@ -139,7 +139,7 @@ CI, merges, and deletes its branch (handy when the branch needs a rebase
 first):
 
 ```bash
-gh pr comment "$N" --repo "$REPO" --body "@dependabot squash and merge"   # Dependabot only
+gh pr comment "$N" --repo "$REPO" --body "@dependabot squash and merge"   # COMMENT_PR — Dependabot only
 ```
 
 `@dependabot ...` comment commands do nothing on **Renovate** PRs — for those,
@@ -156,7 +156,7 @@ hide a behavior change. For each:
 1. **Read the release notes Dependabot already embedded in the PR body** — the
    fastest source:
    ```bash
-   gh pr view "$N" --repo "$REPO" --json body --jq .body
+   gh pr view "$N" --repo "$REPO" --json body --jq .body   # VIEW_PR
    # look for the "Release notes", "Changelog", and "Commits" sections
    ```
 2. **If the body is thin, go to the source.** For a GitHub Action the title's

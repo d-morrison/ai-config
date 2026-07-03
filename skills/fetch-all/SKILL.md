@@ -65,7 +65,7 @@ for d in */; do
   if ! git -C "$repo" remote | grep -qx origin; then
     echo "SKIP $repo (no origin remote)"; continue
   fi
-  if ! out=$(git -C "$repo" fetch origin 2>&1); then
+  if ! out=$(git -C "$repo" fetch origin 2>&1); then   # FETCH
     echo "FAIL $repo: $(echo "$out" | tr '\n' ' ')"
   elif [ -z "$out" ]; then
     echo "OK   $repo"

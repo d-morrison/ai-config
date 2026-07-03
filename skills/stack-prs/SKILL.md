@@ -47,8 +47,8 @@ decision made inline inside a sweep loop.
 ### 1. Create the dependent branch off the base PR's tip
 
 ```bash
-git fetch origin <base-branch>
-git checkout -b <dependent-branch> "origin/<base-branch>"
+git fetch origin <base-branch>                              # FETCH
+git checkout -b <dependent-branch> "origin/<base-branch>"    # CREATE_BRANCH
 ```
 
 Use the base PR's `headRefName` (`gh pr view <base-N> --json headRefName -q
@@ -60,7 +60,7 @@ session) as `<base-branch>` — never guess the branch name from the PR title.
 ```bash
 gh pr create --base <base-branch> --title "<title>" --body "Stacked on #<base-N> --- merge that first.
 
-<description>"
+<description>"   # CREATE_PR
 ```
 
 In a remote/web session without `gh`, use `mcp__github__create_pull_request`
@@ -83,8 +83,8 @@ or review trigger — the same standing rule
 here applied to the base branch instead:
 
 ```bash
-git fetch origin <base-branch>
-git merge "origin/<base-branch>"
+git fetch origin <base-branch>     # FETCH
+git merge "origin/<base-branch>"   # MERGE_BRANCH
 ```
 
 Resolve any conflicts (see [`resolve-conflicts`](../resolve-conflicts/SKILL.md)),
@@ -98,9 +98,9 @@ dependent PR no longer needs to target the base branch — retarget it so it
 merges normally and the stacking note stops being misleading:
 
 ```bash
-git fetch origin main
-git merge origin/main          # picks up the now-merged base commits via main
-gh pr edit <dependent-N> --base main
+git fetch origin main            # FETCH
+git merge origin/main            # MERGE_BRANCH — picks up the now-merged base commits via main
+gh pr edit <dependent-N> --base main   # EDIT_PR
 ```
 
 In a remote/web session, use `mcp__github__update_pull_request` with `base:
@@ -117,15 +117,15 @@ unmerged commits from the dependent branch's history — don't leave a PR
 silently based on a branch that will never land:
 
 ```bash
-git fetch origin main
+git fetch origin main    # FETCH
 git rebase --onto origin/main "origin/<base-branch>" <dependent-branch>
-gh pr edit <dependent-N> --base main
+gh pr edit <dependent-N> --base main   # EDIT_PR
 ```
 
 This rewrites the dependent branch's history — **get explicit approval from
 the user before running it**, and before force-pushing the result
-(`git push --force-with-lease origin <dependent-branch>`), since it discards
-the abandoned base PR's commits from a published branch.
+(`git push --force-with-lease origin <dependent-branch>` — `PUSH`), since it
+discards the abandoned base PR's commits from a published branch.
 
 ## Relationship to other skills
 

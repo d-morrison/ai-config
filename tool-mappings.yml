@@ -73,6 +73,10 @@ operations:
     description: Merge a pull request.
     cli: gh pr merge <N>
     github_mcp: mcp__github__merge_pull_request
+  - id: MARK_PR_READY
+    description: Flip a draft pull request to ready for review.
+    cli: gh pr ready <N>
+    github_mcp: mcp__github__update_pull_request (draft=false)
   - id: COMMENT_PR
     description: Post a top-level comment on a pull request.
     cli: gh pr comment <N> --body "..."
@@ -97,6 +101,18 @@ operations:
     description: List issues.
     cli: gh issue list
     github_mcp: mcp__github__list_issues
+  - id: SEARCH_ISSUES
+    description: Search issues by keyword / query string.
+    cli: gh issue list --search "<query>"
+    github_mcp: mcp__github__search_issues
+  - id: READ_ISSUE_COMMENTS
+    description: Read an issue's comments.
+    cli: gh issue view <N> --comments
+    github_mcp: mcp__github__issue_read (method=get_comments)
+  - id: ISSUE_LINKED_PRS
+    description: List the pull requests cross-referenced from an issue's timeline (i.e. PRs that link or close it).
+    cli: gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline
+    github_mcp: (no GitHub MCP tool; approximate with SEARCH_PRS)
   - id: CREATE_ISSUE
     description: Open a new issue.
     cli: gh issue create
