@@ -19,7 +19,7 @@ each to a clean review verdict in series.
 1. **List the open PRs/MRs and decide which are in scope.**
    ```bash
    gh pr list --state open --limit 100 \
-     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision
+     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision   # LIST_PRS
    ```
    On GitLab, use `glab api "projects/:id/merge_requests?state=opened&per_page=100"`
    and look for `source_branch` (≡ `headRefName`) and `target_branch` (≡ `baseRefName`)

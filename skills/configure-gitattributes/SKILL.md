@@ -60,10 +60,10 @@ For a merge-driver line, sanity-check it actually changed behavior rather than
 trusting the `.gitattributes` edit alone:
 
 ```bash
-git add .gitattributes && git commit -m "..."
+git add .gitattributes && git commit -m "..."   # COMMIT
 # Simulate the conflict this was meant to prevent, e.g.:
-git fetch origin main -q
-git merge origin/main   # should now auto-resolve where it previously conflicted
+git fetch origin main -q   # FETCH
+git merge origin/main      # MERGE_BRANCH — should now auto-resolve where it previously conflicted
 ```
 
 If a merge that used to need manual resolution now completes with

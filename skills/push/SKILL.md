@@ -46,7 +46,7 @@ Another session or the author may have pushed since your last fetch.
 
 ```bash
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git fetch origin "$BRANCH" 2>/dev/null
+git fetch origin "$BRANCH" 2>/dev/null   # FETCH
 # Commits on the remote that you don't have locally:
 git log --oneline HEAD.."origin/$BRANCH" 2>/dev/null
 ```
@@ -62,9 +62,9 @@ session or person. (Your own most-recent "I'm working on this" comment is fine â
 that's your claim.)
 
 ```bash
-PR=$(gh pr view --json number,headRefName -q .number 2>/dev/null)
+PR=$(gh pr view --json number,headRefName -q .number 2>/dev/null)   # VIEW_PR
 gh pr view "$PR" --json comments \
-  -q '.comments[] | select(.body | test("paws off"; "i")) | "\(.author.login): \(.body)"'
+  -q '.comments[] | select(.body | test("paws off"; "i")) | "\(.author.login): \(.body)"'   # READ_PR_COMMENTS
 ```
 
 If the latest "paws off" comment is from someone **other than you** and hasn't
@@ -73,7 +73,7 @@ been unclaimed, **do not push.** Ask the user.
 ### 4. Hold / block labels
 
 ```bash
-gh pr view "$PR" --json labels -q '.labels[].name'
+gh pr view "$PR" --json labels -q '.labels[].name'   # VIEW_PR
 ```
 
 If any label signals a hold â€” case-insensitive matches on `do-not-merge`,
@@ -114,7 +114,7 @@ commits ahead) so the user can answer without digging.
 Once every check passes, push with the standard upstream + retry backoff:
 
 ```bash
-git push -u origin "$BRANCH"
+git push -u origin "$BRANCH"   # PUSH
 ```
 
 If the push fails on a **network** error, retry up to 4 times with exponential

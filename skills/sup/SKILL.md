@@ -102,7 +102,7 @@ Do NOT run `gh issue create` until the user confirms.
 ```bash
 gh issue create --repo <owner>/<repo> \
   --title "<title>" \
-  --body "<body>"
+  --body "<body>"   # CREATE_ISSUE
 ```
 
 Or for GitLab:
@@ -124,23 +124,23 @@ before running `gh pr create`.** Same rule as issues — draft first, post after
 ```bash
 # Clone or add remote
 git remote add upstream https://github.com/<owner>/<repo>.git 2>/dev/null || true
-git fetch upstream
+git fetch upstream   # FETCH
 
 # Branch from upstream's default branch
-git checkout -b fix/<slug> upstream/main  # or upstream/master, upstream/develop
+git checkout -b fix/<slug> upstream/main  # CREATE_BRANCH — or upstream/master, upstream/develop
 
 # Apply your fix (copy from local workaround, write fresh, cherry-pick)
 # ... make edits ...
 
-git add -A && git commit -m "<conventional commit message>"
-git push upstream fix/<slug>
+git add -A && git commit -m "<conventional commit message>"   # COMMIT
+git push upstream fix/<slug>                                   # PUSH
 
 # Open PR
 gh pr create --repo <owner>/<repo> \
   --base main \
   --head fix/<slug> \
   --title "<title>" \
-  --body "<body>"
+  --body "<body>"   # CREATE_PR
 ```
 
 #### If you need to fork first:
@@ -154,17 +154,17 @@ gh repo clone <your-username>/<repo> /tmp/upstream-fix
 cd /tmp/upstream-fix
 
 # Branch, fix, commit, push to YOUR fork
-git checkout -b fix/<slug>
+git checkout -b fix/<slug>   # CREATE_BRANCH
 # ... make edits ...
-git add -A && git commit -m "<conventional commit message>"
-git push origin fix/<slug>
+git add -A && git commit -m "<conventional commit message>"   # COMMIT
+git push origin fix/<slug>                                     # PUSH
 
 # Open PR from your fork to upstream
 gh pr create --repo <owner>/<repo> \
   --base main \
   --head <your-username>:fix/<slug> \
   --title "<title>" \
-  --body "<body>"
+  --body "<body>"   # CREATE_PR
 ```
 
 ### 4. Link back to local context
