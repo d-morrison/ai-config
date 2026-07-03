@@ -374,6 +374,13 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
+## Challenge unnecessary complexity in review
+
+<!-- Shared with the lab manual; edit shared/workflow/challenge-unnecessary-complexity.md, not here. -->
+@shared/workflow/challenge-unnecessary-complexity.md
+
+When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-style`, `find-ai-tells`, `fact-check-prose`), apply this alongside the normal review — those skills don't name it internally, so this CLAUDE.md directive governs regardless. It's distinct from `simplify` (dead-code removal only, triggered after a refactor) and `tidy` (a separate on-demand, code-only audit).
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->

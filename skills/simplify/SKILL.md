@@ -70,3 +70,17 @@ unreachable.
 > The best code is code that doesn't exist. Every line is a liability —
 > it must be read, understood, maintained, and tested. Remove what you can;
 > document what you keep.
+
+## Relationship to other skills
+
+- **`shared/workflow/challenge-unnecessary-complexity.md`** — the standing
+  review-time counterpart. This skill only prunes *dead* code made
+  unreachable by a narrowed invocation context, triggered after a specific
+  refactor; the fragment is the broader "flag complexity in
+  otherwise-correct, reachable content" rule folded into every review pass
+  (prose and math too, not just code). Run this skill when code just
+  became unreachable; the fragment's check applies continuously, to code
+  that is fully reachable but more complex than it needs to be.
+- **`tidy`** — the broader on-demand code audit (5 axes, one of which is
+  "Simplify"); this skill is narrower and specifically about dead-code
+  removal after a context change.
