@@ -172,7 +172,7 @@ operations:
   - id: DELETE_REF
     description: Delete a remote branch or tag ref.
     cli: git push origin --delete <branch> (or git push origin :refs/tags/<tag>)
-    github_mcp: (no GitHub MCP tool; use gh api -X DELETE repos/<owner>/<repo>/git/refs/<ref>)
+    github_mcp: (no GitHub MCP tool; use gh api -X DELETE repos/<owner>/<repo>/git/refs/heads/<branch>)
   - id: READ_FILE
     description: Read a file's contents from the repo.
     cli: gh api repos/<owner>/<repo>/contents/<path>
