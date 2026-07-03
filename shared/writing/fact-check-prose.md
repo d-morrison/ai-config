@@ -62,3 +62,21 @@ For every claim or reasoning step checked, state:
 
 Silence on a checkable claim reads as "verified" --- don't leave one unchecked
 because it sounded right on a first pass.
+
+## Applies to your own PR descriptions and comments too
+
+This checklist isn't just for reviewing someone else's prose --- run it on
+your **own** PR description, commit message, and code comments before
+posting them, especially any "design choice" claim (a justification for why
+the code does X instead of Y, or a claim that it *excludes* / *handles* a
+specific case). A design-choice claim is exactly the "informal reasoning"
+category above, and it's checkable against the same code you just wrote: did
+you actually implement the exclusion/handling you're describing, or does the
+claim just describe your *intent*? (gha#201's PR description and code
+comments asserted a retry mechanism "excludes" a known bad pattern via a
+`stub_review` flag --- but the flag was set purely from "no verdict," with no
+check on the signal (`permission_denials_count`) that actually distinguished
+the excluded pattern from the retried one. A `claude[bot]` review caught the
+gap: the code didn't implement what the prose claimed. Re-reading the claim
+against the actual `if` conditions before posting would have caught it
+without needing a review round.)
