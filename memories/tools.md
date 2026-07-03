@@ -1287,13 +1287,7 @@ not block `claude-review`.)
   `bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/foo.sh"`) silently assumes the
   checked-out tree is the reusable workflow's own repo — true only when a repo calls its
   own workflow (dogfooding), false for every other consumer, which gets
-  `No such file or directory`. Fix: resolve the reusable workflow's own repo/ref via
-  `github.job_workflow_ref` and check that out into a side directory before invoking the
-  script — or move the logic into a composite action instead of a bare script path, since
-  composite actions auto-resolve from their own repo via `uses:` regardless of checkout
-  state (this also matters for a step that must run BEFORE any checkout has happened at
-  all, where no script-file path can work yet). **Empirically verified, not just inferred
-  from docs:** a step inside `claude-code-review.yml` (the CALLEE) read
+  `No such file or directory`. A step inside `claude-code-review.yml` (the CALLEE) read
   `${{ github.workflow_ref }}` and it evaluated to
   `d-morrison/gha/.github/workflows/claude-review.yml@refs/pull/191/merge` — the
   CALLER's stub file (`claude-review.yml`), not the callee's own
@@ -1302,16 +1296,58 @@ not block `claude-review`.)
   contradicts a naive reading of GitHub's docs (which describe `workflow_ref` simply as
   "the ref path to the [running] workflow" without spelling out the reusable-workflow
   case), so trust the log evidence over the doc summary if they seem to disagree.
-  `job_workflow_ref` wasn't separately logged in that same run to get its literal string
-  value too, but resolving the checkout from it worked in production (the guard script
-  was found and the CI job went green) — strong indirect confirmation it resolved to the
-  callee's own repo/ref rather than the caller's. Selftests that
-  exercise the script by running it directly inside the reusable workflow's own repo
-  don't catch this class of bug — they test the script's logic, never the cross-repo
-  path resolution that only manifests when a genuinely different repo calls the
-  workflow. (d-morrison/gha#190/#191: `claude-code-review.yml`'s fail-check guard broke
+  (d-morrison/gha#190/#191: `claude-code-review.yml`'s fail-check guard broke
   for every consumer after its logic was extracted from inline shell into a standalone
   script, landing right after the last known-good run.)
+  **`github.job_workflow_ref` is NOT a reliable fix for this — correcting an earlier
+  entry here that claimed otherwise.** #191's fix resolved the callee's own repo/ref via
+  `github.job_workflow_ref`, parsed it, and checked that ref out into a side directory
+  before running the script; at the time this looked "empirically verified" because the
+  CI job went green afterward. It wasn't: on real consumer runs (a genuinely fresh
+  `pull_request: reopened` event on a cross-repo consumer, well after the tag moved to
+  the fix commit) `github.job_workflow_ref` evaluated to an **empty string** at that call
+  site, crashing the step with a bare `usage: ...` error (gha#196). The earlier "green CI
+  = confirmed working" inference was wrong — the green run just hadn't exercised the
+  cross-repo path yet. A second, independent investigation (gha#194, a same-repo
+  dogfooding failure on `d-morrison/gha` reviewing its own PR) found a documented
+  explanation: per [github/community discussions #31054](https://github.com/orgs/community/discussions/31054)
+  and #45342, `github.job_workflow_ref` is a **known no-op for a SAME-repository**
+  reusable-workflow call — it only reliably populates for a genuine cross-repo
+  `owner/repo/...@ref` call. That explains the same-repo dogfooding failure cleanly, but
+  doesn't fully explain gha#196's original *cross-repo* failure (`Lacaedemon/sparta`
+  calling `d-morrison/gha`) — so treat "populates correctly for cross-repo, no-op for
+  same-repo" as the documented claim, not as fully reconciled with every observed
+  failure; don't re-litigate it, just don't rely on the value being non-empty in ANY
+  case. **The robust fix:** don't resolve-and-checkout at all — move the logic into a
+  composite action and reference its own files via `${{ github.action_path }}`. A
+  composite action's own files are always reachable through `github.action_path`
+  regardless of how the calling reusable workflow was invoked (`workflow_call`, a
+  re-dispatched `workflow_dispatch`, automatic `pull_request`, same-repo or cross-repo),
+  with no conditional branching on `job_workflow_ref` needed. (d-morrison/gha#197,
+  `.github/actions/run-review-guard/`.)
+- **A fix that's only unit-tested against the extracted logic in isolation, never against
+  the actual `uses:` invocation, can ship a broken integration point undetected.** #191's
+  own test (`parse-workflow-ref/tests/run-tests.sh`) fed hardcoded ref strings straight to
+  the sed-parsing script and proved the parsing logic correct — but never exercised
+  whether GitHub actually populates `github.job_workflow_ref` with a non-empty value at
+  the real call site, so the regression above (gha#196) shipped and went undetected until
+  a live consumer run hit it. The fix (gha#197) closed this gap by adding a selftest step
+  that invokes the new composite action itself via a real `uses: ./.github/actions/<name>`
+  step against a canned fixture — the same category of gap `sync-with-main.md`'s "derived
+  artifacts" and "extracted copy" entries describe, but for a composite action's runtime
+  resolution specifically rather than a checked-out script's content.
+- **An unrelated open PR can independently patch the same root cause as an incidental,
+  second commit — without ever linking the issue — surfacing only as a merge conflict
+  after your own fix lands.** `post-merge`'s cascade-conflict-scan step (1.5) is what
+  catches this, not `check-history` or issue cross-referencing: neither would have
+  flagged it, since the other PR (gha#194, primarily a `gh`-subcommand-allowlist fix)
+  never mentioned or linked the job_workflow_ref issue it happened to also patch as a
+  bundled "second, unrelated fix" commit. When resolving the resulting conflict, prefer
+  the more general/robust fix over a narrower band-aid patching the same symptom (here:
+  keep the composite-action fix, drop the other PR's `if: job_workflow_ref != ''`
+  same-repo-only conditional and its now-inaccurate changelog fragment describing a fix
+  that no longer ships) — and explain the resolution and why in a PR comment, since it's
+  discarding another author's already-committed work.
 - **`secrets: inherit` is NOT needed when the reusable workflow only uses `github.token`.**
   `github.token` auto-injects the caller's token via `permissions:` — not via `secrets:`.
   `secrets: inherit` is only needed for named secrets (`secrets.MY_PAT`, etc.). Automated
