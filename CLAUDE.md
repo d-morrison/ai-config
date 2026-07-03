@@ -94,6 +94,13 @@ Don't trust an earlier "verdict" you've cached — a new review may have been po
 Specifically: when scanning checks (`gh pr checks`) shows green or "no failures", that's about CI state, **not** review verdict.
 Always pull the latest claude comment (`gh pr view N --json comments --jq '[.comments[] | select(.author.login == "claude")] | last | .body'`) and parse it for any "Findings", "Issues", "Remaining" sections before declaring a PR ready.
 
+**Also check formal GitHub reviews, not just issue-style comments — a human's `CHANGES_REQUESTED` can be invisible to a comments-only scan.** A review submitted via GitHub's review UI (as opposed to a plain PR comment) shows up in `gh pr view N --json reviews`, and its top-level `body` is frequently **empty** — the actual finding lives entirely in a per-line inline comment, which only appears via `gh api repos/<owner>/<repo>/pulls/N/comments` (a different endpoint from issue comments). Checking `--json comments` alone can miss the review's existence entirely. Before declaring a PR ready, also run:
+```
+gh pr view N --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
+gh api repos/<owner>/<repo>/pulls/N/comments --jq '.[] | "\(.path):\(.line) \(.user.login) \(.body)"'
+```
+A `CHANGES_REQUESTED` state is blocking regardless of whether an automated re-review later says "Ready for merge" — that bot verdict doesn't clear a human's own review state, which only the human (or an explicit dismissal) can resolve.
+
 (A specific case of the standing **never assume; always verify** rule in `memories/preferences.md` — confirm the verdict with a fresh query, don't recall it.)
 
 ## Post in-chat feedback to the PR
