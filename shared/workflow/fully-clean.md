@@ -9,7 +9,7 @@ A PR/MR is **fully clean** when **both** of these hold:
 **A clean CI run and a clean review verdict are a snapshot, not a standing
 guarantee of mergeability.** `main` can advance after your last check ---
 including gaining its own independent addition that collides with yours
-(see `sync-with-main.md`'s "two PRs append to the same numbered list" case)
+(see `sync-with-main.md`'s "two PRs append the same numbered subsection" case)
 --- so re-verify the branch still merges cleanly against current `main`
 before reporting a PR ready, not just trust the last green run.
 
