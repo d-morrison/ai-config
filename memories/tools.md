@@ -225,6 +225,19 @@
   git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
   blocked, which is why the background `Monitor` is the workable one. There is no
   `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
+- **`mcp__Claude_Code_Remote__send_later` can become unavailable mid-session,
+  not just absent from the start** (contrast the rme case above, where it was
+  never present). Observed failure sequence: first a few transient "Tool
+  permission stream closed before response received" errors (retrying the
+  identical call sometimes still worked), then a hard "Error: No such tool
+  available: mcp__Claude_Code_Remote__send_later" that no retry cleared.
+  Fallback to `CronCreate` with `recurring: false`, pinned to a specific
+  near-future cron time (compute it with `date`, since `CronCreate` takes an
+  absolute cron expression, not a relative "N minutes from now" delay).
+  **`CronCreate` jobs are session-only** — they die with the session, unlike
+  `send_later`'s durable server-side triggers — so this is a degraded
+  substitute, not an equivalent; say so rather than treating it as a full
+  replacement. (gha#193 PR-babysitting session, 2026-07-03.)
 - **`add_repo` refuses a cross-owner add once the session already has a repo from a
   different owner** ("cross-tier adds are not supported in v1: requested `<owner>/<repo>`
   but session already has repos from owner(s) `[...]`") — it does NOT fall back to a

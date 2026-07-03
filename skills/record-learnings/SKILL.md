@@ -129,8 +129,9 @@ After adding or updating any skill file, always commit and push to origin:
 - **`agent-builder`** — the same construction step for a dedicated read-only
   fan-out worker (`.claude/agents/<name>.md`) rather than a user-invocable
   skill.
-- **`ums`** — the explicit, session-checkpoint counterpart to this skill's
-  continuous, passive recording.
+- **`ums`** — the reflective, full-context-sweep counterpart to this skill's
+  in-place, fact-at-a-time recording. Both fire proactively, as the learning
+  or fact arises; `ums` additionally runs as a backstop before `/clear`.
 
 ## Anti-patterns
 
