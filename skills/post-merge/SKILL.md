@@ -77,9 +77,21 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
    ```
 5. **Resolve conflicts** using the `resolve-conflicts` skill (consolidate both
    sides' intent; do not blindly pick one side wholesale).
-6. **Run the repo's pre-commit checks**, then push and remove the worktree:
+6. **Run the repo's pre-commit checks, `git fetch` the branch again, then push.**
+   The claim comment isn't an atomic lock — a repo's own automated bot (e.g. an
+   `@claude` CI agent triggered independently by the same merge event) can pick up
+   and resolve the identical cascade conflict in parallel even when no claim
+   comment was posted. If the fetch shows the remote has moved with an
+   **equivalent** fix already pushed, adopt it (verify with `git merge-tree
+   --write-tree origin/main origin/<branch>` — no remaining conflict — plus a
+   content diff against what you were about to push) instead of force-pushing
+   a duplicate merge commit. Only push your own resolution if the remote is
+   still where you left it.
    ```bash
-   git push origin <branch>   # PUSH
+   git fetch origin <branch>   # FETCH
+   # If origin/<branch> already carries an equivalent fix, stop here — don't push.
+   git diff HEAD origin/<branch>   # empty/equivalent means the bot beat you to it
+   git push origin <branch>   # PUSH — only if the remote hasn't moved
    cd -
    git worktree remove .claude/worktrees/pr-<N>
    ```
