@@ -140,9 +140,11 @@ the branch's own commits are never ancestors of `origin/main`: `git branch
 checks silently fail on every squash-merged branch, misclassifying it as
 **Dirty** (unpushed work) instead of **Dead**. Don't trust local ancestry for
 landed detection in a squash-merge repo (check `git log --oneline -5
-origin/main` for single-commit "PR #N: ..." messages, or just try it — the
-false positive is cheap to spot once you know to look). Use the PR's own
-merge state as the authoritative signal instead:
+origin/main` for single-commit messages — GitHub's default squash-commit
+subject is `"<title> (#N)"`, though a repo can configure a different template
+(e.g. `Lacaedemon/sparta` uses `"PR #N: ..."`) — or just try it, the false
+positive is cheap to spot once you know to look). Use the PR's own merge
+state as the authoritative signal instead:
 ```bash
 gh pr list --head <branch> --state all --json number,state,mergedAt --jq '.[0]'
 ```

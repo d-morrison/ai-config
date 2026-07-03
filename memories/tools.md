@@ -1699,9 +1699,15 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   summary (`is_error`, `num_turns`, `total_cost_usd`, `permission_denials_count`)
   — enough to confirm a stub occurred, not why. The workflow separately uploads
   the full turn-by-turn transcript as a `claude-review-execution-<run>-<attempt>.zip`
-  artifact (`gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` to find
-  it, `curl -H "Authorization: token $(gh auth token)" .../artifacts/<id>/zip`
-  to fetch). It's a single pretty-printed JSON array, not NDJSON — parse with
+  artifact (the name is defined by `d-morrison/gha`'s reusable workflow, not a
+  Claude Code convention — a future rename there invalidates this; confirm via
+  `gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` rather than
+  assuming the name, then `curl -H "Authorization: token $(gh auth token)"
+  .../artifacts/<id>/zip` to fetch). It's a single pretty-printed JSON array of
+  Claude Code SDK message objects, not NDJSON — each element has a top-level
+  `type` (`"system"`/`"assistant"`/`"user"`/`"result"`) and, for `"assistant"`
+  elements, a `message.content` array of blocks (`{"type":"tool_use", "name":
+  ..., ...}`, `{"type":"text", "text": ...}`, etc.) — parse with
   `jq '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name'`
   for a tool-use histogram, or pull `is_error==true` tool_results for the actual
   denial messages. This is how a "stub review" traced back to the model
