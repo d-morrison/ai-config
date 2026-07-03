@@ -83,7 +83,7 @@ gh pr comment <N> --body "⏸️ **Local session paused** (<local timestamp>) �
 
 <2-4 bullets: in-flight jobs + IDs, unpushed local commits and why held, what runs next>
 
-Please don't push to this branch in the meantime."
+Please don't push to this branch in the meantime."   # COMMENT_PR
 ```
 
 If the work is genuinely *finished* (merged/closed, nothing outstanding), post a

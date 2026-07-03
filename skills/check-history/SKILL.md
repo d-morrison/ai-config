@@ -29,7 +29,7 @@ checks (skipping them wastes a whole issue-pick):
   `main` before implementing.
 
   ```bash
-  gh issue view <N> --json state,title,body | cat   # also: is it already closed?
+  gh issue view <N> --json state,title,body | cat   # VIEW_ISSUE — also: is it already closed?
   ```
 
 - **Existing open PR for it?** Search open PRs for one that already addresses the
@@ -37,7 +37,7 @@ checks (skipping them wastes a whole issue-pick):
 
   ```bash
   gh pr list --state open --json number,title,headRefName,body \
-    --jq '.[] | select(((.body // "") | test("#<N>\\b")) or (.title | test("#<N>\\b"))) | "#\(.number) \(.title) [\(.headRefName)]"'
+    --jq '.[] | select(((.body // "") | test("#<N>\\b")) or (.title | test("#<N>\\b"))) | "#\(.number) \(.title) [\(.headRefName)]"'   # LIST_PRS
   ```
 
 - **On a long-lived or foundational issue, the issue text AND any design-doc
@@ -68,7 +68,7 @@ correct the stale issue/doc status, and scope only the genuine remaining slice.
    **GitHub:**
    ```bash
    gh pr list --state open --limit 100 --json number,title,body \
-     --jq '.[] | select((.body // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "#\(.number) \(.title)"'
+     --jq '.[] | select((.body // "") | test("(Closes|Fixes|Resolves) #<N>\\b"; "i")) | "#\(.number) \(.title)"'   # LIST_PRS
    ```
 
    **GitLab:**
@@ -85,7 +85,7 @@ correct the stale issue/doc status, and scope only the genuine remaining slice.
 
    **GitHub:**
    ```bash
-   gh pr list --state merged --limit 20 --json number,title,headRefName | cat
+   gh pr list --state merged --limit 20 --json number,title,headRefName | cat   # LIST_PRS
    ```
 
    **GitLab:**
@@ -100,7 +100,7 @@ correct the stale issue/doc status, and scope only the genuine remaining slice.
 
    **GitHub:**
    ```bash
-   gh pr view <N> --json body --jq '.body' | cat
+   gh pr view <N> --json body --jq '.body' | cat   # VIEW_PR
    ```
 
    **GitLab:**

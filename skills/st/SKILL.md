@@ -49,9 +49,9 @@ first.
 
 ```bash
 # GitHub — open first, then all states (it may already be filed or closed)
-gh issue list --state open --search "<keywords>" --json number,title,url | cat
+gh issue list --state open --search "<keywords>" --json number,title,url | cat   # SEARCH_ISSUES
 gh issue list --state all  --search "<keywords>" --limit 10 \
-  --json number,title,state,url | cat
+  --json number,title,state,url | cat   # SEARCH_ISSUES
 
 # GitLab
 glab issue list --search "<keywords>" --per-page=20 2>&1 | cat
@@ -71,7 +71,7 @@ glab issue list --search "<keywords>" --per-page=20 2>&1 | cat
 gh issue create --title "<concise title>" --body "<what & why>
 
 **Done when:** <acceptance criteria>
-<scope notes / out-of-scope>"
+<scope notes / out-of-scope>"   # CREATE_ISSUE
 
 # GitLab
 glab issue create --title "<concise title>" --description "<what & why>
@@ -86,7 +86,7 @@ glab issue create --title "<concise title>" --description "<what & why>
 - Then **claim it** (`claim-pr` pattern) so a parallel session / the `@claude`
   bot doesn't collide:
   ```bash
-  gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
+  gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."   # COMMENT_ISSUE
   ```
 
 ### 4. Check history
@@ -99,25 +99,25 @@ touched the same area so you don't undo past progress.
 From here the tail is identical to `gi`:
 
 ```bash
-git fetch origin main
-git checkout -b <type>/<slug> origin/main   # fix/ feat/ docs/ refactor/
+git fetch origin main                       # FETCH
+git checkout -b <type>/<slug> origin/main   # CREATE_BRANCH — fix/ feat/ docs/ refactor/
 ```
 
 - **Open the draft PR now**, before implementing — an empty commit gives the
   branch a diff to open against, kept as a draft so the review bot doesn't run
   on an empty diff (see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md)):
   ```bash
-  git commit --allow-empty -m "start: <title> (closes #<N>)"
-  git push -u origin <type>/<slug>
+  git commit --allow-empty -m "start: <title> (closes #<N>)"   # COMMIT
+  git push -u origin <type>/<slug>                              # PUSH
   gh pr create --draft --title "<title>" --body "Closes #<N>
 
-  WIP — opened up front to claim the issue; implementing now."
+  WIP — opened up front to claim the issue; implementing now."   # CREATE_PR
   ```
 - Implement (code, tests, docs), run the repo's standard checks, and push the
   implementation onto the PR, committing with a message referencing the issue
   (`fix: … (closes #N)`).
-- **Mark the PR ready for review** (`gh pr ready <N>`) and request `d-morrison`
-  as reviewer (`request-pr-review`).
+- **Mark the PR ready for review** (`gh pr ready <N>` — `MARK_PR_READY`) and
+  request `d-morrison` as reviewer (`request-pr-review`).
 - **ARDI** the PR to a clean verdict (`ardi`). Don't merge unless asked.
 
 ### 6. Report
