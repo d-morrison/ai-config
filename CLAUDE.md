@@ -97,7 +97,7 @@ Always pull the latest claude comment (`gh pr view N --json comments --jq '[.com
 **Also check formal GitHub reviews, not just issue-style comments — a human's `CHANGES_REQUESTED` can be invisible to a comments-only scan.** A review submitted via GitHub's review UI (as opposed to a plain PR comment) shows up in `gh pr view N --json reviews`, and its top-level `body` is frequently **empty** — the actual finding lives entirely in a per-line inline comment, which only appears via `gh api repos/<owner>/<repo>/pulls/N/comments` (a different endpoint from issue comments). Checking `--json comments` alone can miss the review's existence entirely. Before declaring a PR ready, also run:
 ```
 gh pr view N --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
-gh api repos/<owner>/<repo>/pulls/N/comments --jq '.[] | "\(.path):\(.line) \(.user.login) \(.body)"'
+gh api repos/<owner>/<repo>/pulls/N/comments --jq '.[] | "\(.path):\(.line // .original_line // "?") \(.user.login) \(.body)"'
 ```
 A `CHANGES_REQUESTED` state is blocking regardless of whether an automated re-review later says "Ready for merge" — that bot verdict doesn't clear a human's own review state, which only the human (or an explicit dismissal) can resolve.
 
