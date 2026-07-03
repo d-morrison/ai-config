@@ -374,6 +374,15 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
+## Fact-check code logic and math in review
+
+@shared/coding/fact-check-code-logic.md
+
+The code counterpart to the prose fact-check above --- catches strategic
+mistakes (wrong algorithm/approach) and tactical mistakes (wrong
+implementation of a right approach, including math/statistics embedded in
+code), not just prose claims and derivations.
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
