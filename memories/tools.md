@@ -1260,11 +1260,12 @@ common patterns.
   Actions UI "Re-run failed jobs" or a bot re-dispatch that happens to target
   the existing run rather than creating a new one) reproduces the identical
   pre-fix failure forever, no matter how many times you retry or how long ago
-  the tag was fixed. **Diagnose this by comparing `run_attempt` and
-  `created_at`** (`mcp__github__actions_get`, `method: get_workflow_run`) against
-  when the fix landed, and read `referenced_workflows[].sha` in the same
-  response — it shows the ACTUAL resolved commit for that run, which you can
-  diff against the tag's current `get_tag` SHA to confirm staleness. **Only a
+  the tag was fixed. **Diagnose by checking `run_attempt`** (> 1 means this is
+  a re-run, not a fresh dispatch) **and `created_at`** (`mcp__github__actions_get`,
+  `method: get_workflow_run` — compare against when the fix landed), then read
+  `referenced_workflows[].sha` in the same response — it shows the ACTUAL
+  resolved commit for that run, which you can diff against the tag's current
+  `get_tag` SHA to confirm staleness. **Only a
   genuinely NEW run (a new `run_id`) re-resolves the tag fresh** — a new commit
   (`pull_request: synchronize`) is the reliable trigger; an `@claude review`
   comment sometimes causes the bot to re-run the existing stale run instead of
