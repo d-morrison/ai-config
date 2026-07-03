@@ -226,7 +226,7 @@
   blocked, which is why the background `Monitor` is the workable one. There is no
   `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
 - **`mcp__Claude_Code_Remote__send_later` can become unavailable mid-session,
-  not just absent from the start** (contrast the rme case below, where it was
+  not just absent from the start** (contrast the rme case above, where it was
   never present). Observed failure sequence: first a few transient "Tool
   permission stream closed before response received" errors (retrying the
   identical call sometimes still worked), then a hard "Error: No such tool
