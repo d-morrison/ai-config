@@ -64,6 +64,23 @@ if you want the branch to reflect the now-current `main`, do a plain
 `git merge origin/main && git push`, no conflict markers involved). Only
 proceed to the consolidation procedure below when it reports a real conflict.
 
+**Check `git --version` before trusting the exit code — on git <2.38 this
+command fails a different way that a naive check misreads.** `--write-tree`
+mode doesn't exist before 2.38; on an older install the command errors with
+`fatal: unknown rev --write-tree` (a non-zero exit, same as a real conflict)
+or, if scripted with a text-based check instead of the exit code, an error
+message that a naive `grep -qi conflict` fails to match — silently
+misclassifying every single PR in a batch scan as clean (a false negative
+that defeats the whole scan; hit across a 5-PR cascade scan on ai-config,
+2026-07-03). Confirm `git --version` is 2.38+ before relying on this
+command's exit code at all. On an older git, use the legacy 3-arg form
+instead (same read-only guarantee, no worktree/checkout):
+```bash
+base=$(git merge-base origin/main origin/<branch>)
+git merge-tree "$base" origin/main origin/<branch>   # git <2.38 (any version)
+# conflict markers ("<<<<<<<") in the output = real conflict; empty/clean = no conflict
+```
+
 ## Core principle: consolidate the best of both branches
 
 Each conflict hunk has three inputs — the common **base**, **our** side, and
