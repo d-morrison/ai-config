@@ -73,7 +73,7 @@ lines had accumulated — unrelated to fence state, but found in the same cycle.
   history; sort by `run_number` descending and read the most recent entries'
   `conclusion`. If it's already `failure` on `main`'s current HEAD commit (and
   several commits back), the failure predates your branch and is safe to defer
-  — cite the specific `main` commit SHA(s) it fails on on the PR/issue as the
+  — cite the specific `main` commit SHA(s) it fails on in the PR/issue as the
   evidence, not just "looks unrelated."
 - The GitHub Checks API's check-run `name` (e.g. `jarl-check`) is often NOT the
   workflow **file** name `list_workflow_runs` needs as `resource_id` — grep

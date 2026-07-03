@@ -650,8 +650,10 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 
 ## jarl (Just Another R Linter) — `jarl.toml` fields lag the published docs
 - `jarl` (`etiennebacher/jarl`, installed via `etiennebacher/setup-jarl@vX` in
-  CI) is a fast Rust-based R linter, a sibling to `{air}`/`{flir}` by the same
-  author. Its `unused_function` rule flags any function jarl's static analysis
+  CI) is a fast Rust-based R linter, a sibling to `{flir}` by the same author
+  (both are `etiennebacher` projects; `{air}`, the R formatter jarl builds on,
+  is a separate Posit project by Davis Vaughan and Lionel Henry, not the same
+  author). Its `unused_function` rule flags any function jarl's static analysis
   can't find a call site for — including functions in **fixture/test-data R
   packages** (e.g. a `tests/testthat/examples/testpkg.*/R/*.R` tree copied and
   rendered as test input), which are genuine false positives: nothing in the
