@@ -63,6 +63,33 @@ lines had accumulated — unrelated to fence state, but found in the same cycle.
 - Wait ~30-60s, then check. If nothing after ~2min, check pipeline status.
 - The iterate skill now has explicit polling instructions for both GitHub and GitLab.
 
+## Confirm a CI failure is pre-existing (not your diff) via workflow-run history on main
+- Before waving off a red CI check as "unrelated, pre-existing" (e.g. to defer
+  fixing it as out of scope for the current PR), verify it, don't assume —
+  check that same workflow's run history filtered to `main`, not just that the
+  failure looks unrelated to the files in your diff.
+- `mcp__github__actions_list` (`list_workflow_runs`, `resource_id: "<file>.yml"`,
+  `workflow_runs_filter: {"branch": "main"}`) returns that job's own run
+  history; sort by `run_number` descending and read the most recent entries'
+  `conclusion`. If it's already `failure` on `main`'s current HEAD commit (and
+  several commits back), the failure predates your branch and is safe to defer
+  — cite the specific `main` commit SHA(s) it fails on in the PR/issue as the
+  evidence, not just "looks unrelated."
+- The GitHub Checks API's check-run `name` (e.g. `jarl-check`) is often NOT the
+  workflow **file** name `list_workflow_runs` needs as `resource_id` — grep
+  `.github/workflows/*.y*ml` for the job's `name:` field to find which file
+  defines it (a repo can have several workflow files; the job name doesn't
+  say which one).
+- `actions_list` responses for an active repo can exceed the tool's token cap
+  and get written to a scratch file instead of returned inline — when that
+  happens, `python3 -c "import json; ..."` on the saved file (filter by
+  `path`/`head_branch`, sort by `run_number`) is far more reliable than
+  grepping the raw JSON text, since a single workflow run's JSON blob is
+  usually one unbroken line with no per-field markers to grep on the same
+  line. (`d-morrison/altdoc#16`: confirmed `jarl-check`'s failures via
+  `lint.yml`'s run history on `main` going back 4+ commits before reporting it
+  as pre-existing and out of scope.)
+
 ## VS Code editor buffer vs disk desync
 - `replace_string_in_file` / `read_file` operate on the VS Code editor buffer.
 - If the file was externally modified (e.g., by `git pull`), the editor buffer
