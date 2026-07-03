@@ -1283,12 +1283,24 @@ not block `claude-review`.)
   checked-out tree is the reusable workflow's own repo — true only when a repo calls its
   own workflow (dogfooding), false for every other consumer, which gets
   `No such file or directory`. Fix: resolve the reusable workflow's own repo/ref via
-  `github.job_workflow_ref` (NOT `github.workflow_ref`, which is the CALLER's stub
-  path/ref in a `workflow_call` run) and check that out into a side directory before
-  invoking the script — or move the logic into a composite action instead of a bare
-  script path, since composite actions auto-resolve from their own repo via `uses:`
-  regardless of checkout state (this also matters for a step that must run BEFORE any
-  checkout has happened at all, where no script-file path can work yet). Selftests that
+  `github.job_workflow_ref` and check that out into a side directory before invoking the
+  script — or move the logic into a composite action instead of a bare script path, since
+  composite actions auto-resolve from their own repo via `uses:` regardless of checkout
+  state (this also matters for a step that must run BEFORE any checkout has happened at
+  all, where no script-file path can work yet). **Empirically verified, not just inferred
+  from docs:** a step inside `claude-code-review.yml` (the CALLEE) read
+  `${{ github.workflow_ref }}` and it evaluated to
+  `d-morrison/gha/.github/workflows/claude-review.yml@refs/pull/191/merge` — the
+  CALLER's stub file (`claude-review.yml`), not the callee's own
+  (`claude-code-review.yml`) — confirmed straight from the job's log output (gha#191,
+  run 28628848306, job 84901231352, the `selfmod` step's `WORKFLOW_REF` env dump). This
+  contradicts a naive reading of GitHub's docs (which describe `workflow_ref` simply as
+  "the ref path to the [running] workflow" without spelling out the reusable-workflow
+  case), so trust the log evidence over the doc summary if they seem to disagree.
+  `job_workflow_ref` wasn't separately logged in that same run to get its literal string
+  value too, but resolving the checkout from it worked in production (the guard script
+  was found and the CI job went green) — strong indirect confirmation it resolved to the
+  callee's own repo/ref rather than the caller's. Selftests that
   exercise the script by running it directly inside the reusable workflow's own repo
   don't catch this class of bug — they test the script's logic, never the cross-repo
   path resolution that only manifests when a genuinely different repo calls the

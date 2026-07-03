@@ -83,13 +83,15 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
    and resolve the identical cascade conflict in parallel even when no claim
    comment was posted. If the fetch shows the remote has moved with an
    **equivalent** fix already pushed, adopt it (verify with `git merge-tree
-   --write-tree main <branch>` — no remaining conflict — plus a content diff
-   against what you were about to push) instead of force-pushing a duplicate
-   merge commit. Only push your own resolution if the remote is still where you
-   left it.
+   --write-tree origin/main origin/<branch>` — no remaining conflict — plus a
+   content diff against what you were about to push) instead of force-pushing
+   a duplicate merge commit. Only push your own resolution if the remote is
+   still where you left it.
    ```bash
    git fetch origin <branch>
-   git push origin <branch>
+   # If origin/<branch> already carries an equivalent fix, stop here — don't push.
+   git diff HEAD origin/<branch>   # empty/equivalent means the bot beat you to it
+   git push origin <branch>        # only if the remote hasn't moved
    cd -
    git worktree remove .claude/worktrees/pr-<N>
    ```
