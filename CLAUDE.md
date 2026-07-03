@@ -383,12 +383,14 @@ Applies wherever `code-review`/`ard`/`ardi` already reviews a prose diff, alongs
 
 ## Fact-check code logic and math in review
 
+<!-- Not yet shared with the lab manual; edit shared/coding/fact-check-code-logic.md, not here. -->
 @shared/coding/fact-check-code-logic.md
 
 The code counterpart to the prose fact-check above --- catches strategic
-mistakes (wrong algorithm/approach) and tactical mistakes (wrong
-implementation of a right approach, including math/statistics embedded in
-code), not just prose claims and derivations.
+mistakes (wrong algorithm or approach), tactical mistakes (wrong
+implementation of a right approach), and math/statistics errors (wrong
+formula or method, verified against a source), not just prose claims and
+derivations.
 
 ## Useful prompt formats for coding agents
 

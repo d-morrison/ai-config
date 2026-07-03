@@ -1,9 +1,10 @@
-When reviewing code that implements an algorithm, computation, or math or
-statistics, check whether it's *right* --- not just styled well. This is the
-code counterpart to
-[`fact-check-prose.md`](../writing/fact-check-prose.md): that fragment
-fact-checks claims and reasoning written in prose; this one fact-checks the
-logic embedded in code itself.
+When reviewing code that implements an algorithm, computation, math, or
+statistics, check whether it's *right* --- not just styled well. Use domain
+knowledge and, where checkable, an external source (the referenced paper, a
+package's own docs, a spec) --- the same evidentiary bar
+[`fact-check-prose.md`](../writing/fact-check-prose.md) applies. This is the
+code counterpart to that fragment: it fact-checks claims and reasoning
+written in prose; this one fact-checks the logic embedded in code itself.
 
 ## What to check
 
