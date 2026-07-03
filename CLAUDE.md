@@ -9,10 +9,12 @@ keep fragments ASCII (write `---` for em-dashes) so the manual's character check
 passes. See README.md, "Shared content".
 -->
 
-## Run UMS before /clear
+## Run UMS proactively, as learnings accumulate
 
-When the user says "clear", "/clear", or otherwise asks to reset the conversation, **first** run the `ums` (Update Memories and Skills) procedure to capture any accumulated learnings before context is lost.
-Then proceed with the clear.
+Don't wait for `/clear` or the end of a task to run `ums` (Update Memories and Skills).
+As soon as a learning worth saving shows up during a session — a corrected mistake, a new preference, a tool quirk, a workflow gap — run UMS right then, interleaved with the main work, rather than batching it for a wrap-up step at the end.
+
+Still run UMS before `/clear` too, as a final catch-all for anything accumulated since the last proactive pass — but treat that as a backstop, not the trigger to wait for.
 
 ## Keep ai-config and repo checkouts fresh
 
@@ -23,6 +25,7 @@ In every session — at session start, and again periodically during long sessio
    **If `pull --ff-only` fails with "diverged" rather than a dirty-tree error**, don't assume unpushed work is at risk — a fresh container can seed local `main` from a stale/orphaned snapshot (e.g. a pre-history-rewrite state) whose commits never landed on `origin/main` at all.
    Confirm the working tree is clean (`git status --short`) and spot-check a couple of the "unique" local commit messages against `git log origin/main` — if they don't appear there either (not even under a different hash), the divergent commits are orphaned, not real work, and it's safe to realign: `git checkout -B main origin/main`.
    Still flag it rather than force if the tree is dirty or the messages *do* look like genuine unpushed work.
+   **If `main` isn't the currently checked-out branch** (the session is already working on a feature branch), skip the checkout dance entirely — `git branch -f main origin/main` realigns the ref in place without touching the working tree or switching away from the branch you're actively on.
 2. **The `~/.claude` consumer copies.** On symlink-capable systems the children of `~/.claude` (`skills/`, `shared/`, `commands/`, `memories/`) are symlinks into the checkout, so the pull alone refreshes them; rerun `bootstrap.sh` only when the repo gained a new top-level dir.
    On Windows, Git Bash `ln -s` silently falls back to **real copies**, so a pull does NOT propagate there — copy-sync every file whose repo version changed into `~/.claude`.
    Before overwriting, check for edits made directly in `~/.claude` (a diff that adds prose the repo lacks) and upstream the genuine ones into the repo first; never clobber an un-upstreamed local edit.
@@ -90,6 +93,13 @@ Don't trust an earlier "verdict" you've cached — a new review may have been po
 
 Specifically: when scanning checks (`gh pr checks`) shows green or "no failures", that's about CI state, **not** review verdict.
 Always pull the latest claude comment (`gh pr view N --json comments --jq '[.comments[] | select(.author.login == "claude")] | last | .body'`) and parse it for any "Findings", "Issues", "Remaining" sections before declaring a PR ready.
+
+**Also check formal GitHub reviews, not just issue-style comments — a human's `CHANGES_REQUESTED` can be invisible to a comments-only scan.** A review submitted via GitHub's review UI (as opposed to a plain PR comment) shows up in `gh pr view N --json reviews`, and its top-level `body` is frequently **empty** — the actual finding lives entirely in a per-line inline comment, which only appears via `gh api repos/<owner>/<repo>/pulls/N/comments` (a different endpoint from issue comments). Checking `--json comments` alone can miss the review's existence entirely. Before declaring a PR ready, also run:
+```
+gh pr view N --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
+gh api repos/<owner>/<repo>/pulls/N/comments --jq '.[] | "\(.path):\(.line // .original_line // "?") \(.user.login) \(.body)"'
+```
+A `CHANGES_REQUESTED` state is blocking regardless of whether an automated re-review later says "Ready for merge" — that bot verdict doesn't clear a human's own review state, which only the human (or an explicit dismissal) can resolve.
 
 (A specific case of the standing **never assume; always verify** rule in `memories/preferences.md` — confirm the verdict with a fresh query, don't recall it.)
 
@@ -200,15 +210,18 @@ Escalate a deadlock via the `request-pr-review` skill (human reviewer `d-morriso
 
 The `ardi` / `iterate` skill family runs this loop. (See *What "fully clean" means* above; the mechanics for each step are in the sections around here.)
 
-## Do the review yourself when the @claude workflow is quota-skipped
+## Do the review yourself when the @claude workflow doesn't produce a verdict
 
-When a PR you're managing has its `@claude` review workflow **skipped because of a quota** (the review job never runs, so no bot review lands), don't stall the ARDI loop waiting for it — **do the review yourself and post it** as a PR comment.
+When a PR you're managing has its `@claude` review workflow fail to produce a usable verdict — whether because it was **skipped for quota** or because it **ran to completion but never stated a verdict** (a "stub review") — don't stall the ARDI loop waiting for it — **do the review yourself and post it** as a PR comment.
 Apply the same review standards the bot would (the SERG lab manual and d-morrison's modular/idiomatic priorities), then keep iterating to fully-clean on your own findings.
-A quota-skipped review leaves the PR unreviewed; it is not an approval.
+Neither failure mode is an approval — an unreviewed PR stays unreviewed regardless of why the bot didn't weigh in.
 
-The skip surfaces as a bot comment — either `Claude review skipped — API quota exhausted` (the review workflow) or `You've hit your org's monthly spend limit` (the `@claude` agent workflow).
-Both mean no bot will respond on this run, so don't wait on it; do the review yourself and keep driving.
-Re-running the workflow only helps once the quota actually resets.
+**Quota-skipped:** surfaces as a bot comment — either `Claude review skipped — API quota exhausted` (the review workflow) or `You've hit your org's monthly spend limit` (the `@claude` agent workflow).
+Both mean no bot will respond on this run; re-running the workflow only helps once the quota actually resets.
+
+**Stub review:** the review job reports success (`is_error: false`, real cost/turns logged) but the posted comment never states a `### Verdict` — the run genuinely executed but got cut short before reaching a conclusion (e.g. by escalating permission denials on tool calls it needed). This looks superficially fine (green check, a comment exists) so it's easy to mistake for a real review — read the comment body for an actual verdict section before trusting it. Re-running the same workflow can reproduce the same stub pattern repeatedly rather than self-resolving; if a retry doesn't help within a round or two, treat it as this failure mode and self-review rather than continuing to re-trigger. (Hit repeatedly on gha#193/gha#198, where `claude-review` produced escalating permission-denial-driven stub reviews across many runs before the actual fix — a same-prompt retry composite, gha#201 — landed.)
+
+Either way: don't wait on the bot indefinitely — do the review yourself and keep driving to fully-clean.
 
 ## Watch and ARDI every PR you touch — don't ask first
 
@@ -297,25 +310,12 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 
 The `use-preferred-style` skill (alias `style`) spells out the procedure, the PSW chapter links, and a filler/jargon swap table; the `find-ai-tells` skill (alias `ai-tells`) is the scan-after detector counterpart.
 
-## Writing style: line breaks in .qmd prose
+## Writing style: semantic line breaks in prose
 
-When editing existing `.qmd` prose, preserve the original line breaks exactly —
-don't reflow to single long lines or a different wrap width. When writing new
-`.qmd` prose, add line breaks at major phrase and sentence boundaries; one
-clause per line works well, targeting roughly 60 to 80 characters per line.
+<!-- Shared with the lab manual; edit shared/writing/semantic-line-breaks.md, not here. -->
+@shared/writing/semantic-line-breaks.md
 
-**When a review flags semantic-line-break violations, fix every over-length
-line in the touched section in one pass — not just the specifically-flagged
-ones.** The `@claude` / Copilot review bots re-scan on each push and flag the
-next batch of adjacent borderline lines the prior round left alone, so fixing
-only what was named drags the PR through round after round of the same finding
-(asymptotic noise; UCD-SERG/lab-manual#297 took five review rounds this way).
-
-**URL-inflation exception:** a line that runs long *only* because of an embedded
-`[{pkg}](long-url)` link — where the visible prose before the link is well
-under 40 characters — is accepted as-is. Don't force an awkward mid-clause
-break just to shorten the raw line; the bots themselves classify these as
-borderline / not-required.
+## Quarto: link packages on first mention
 
 **Link packages up front.** Package names in `.qmd` prose take the
 `[{pkg}](url)` link form on first mention in a section (e.g.
@@ -352,6 +352,13 @@ This keeps figures consistent with tables, which already use div syntax.
 
 The `ard`/`ardi` skill family and `use-preferred-style`/`find-ai-tells` operationalize this in their respective review contexts.
 
+## Challenge redundant content in review
+
+<!-- Shared with the lab manual; edit shared/workflow/challenge-redundant-content.md, not here. -->
+@shared/workflow/challenge-redundant-content.md
+
+The `ard`/`ardi` skill family and `code-review` apply this in PR/MR review; `find-overlap` (and its `consolidate-skills`/`consolidate-memory` actors) is the corpus-wide counterpart when redundancy spans more than the current diff.
+
 ## Writing style: scan for AI tells
 
 The detector counterpart to the plain-prose guide above.
@@ -360,6 +367,8 @@ The detector counterpart to the plain-prose guide above.
 @shared/writing/ai-tells.md
 
 The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand against any target text.
+
+When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
 ## Writing style: cite sources thoroughly
 
@@ -372,6 +381,23 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 @shared/writing/fact-check-prose.md
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
+
+## Hyperlink technical terms and results; no forward references
+
+@shared/writing/definition-crossrefs.md
+
+Applies wherever `code-review`/`ard`/`ardi` already reviews a prose diff, alongside the fact-check and ambiguous-terminology checks above.
+
+## Fact-check code logic and math in review
+
+<!-- Not yet shared with the lab manual; edit shared/coding/fact-check-code-logic.md, not here. -->
+@shared/coding/fact-check-code-logic.md
+
+The code counterpart to the prose fact-check above --- catches strategic
+mistakes (wrong algorithm or approach), tactical mistakes (wrong
+implementation of a right approach), and math/statistics errors (wrong
+formula or method, verified against a source), not just prose claims and
+derivations.
 
 ## Useful prompt formats for coding agents
 

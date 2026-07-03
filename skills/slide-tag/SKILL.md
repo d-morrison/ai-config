@@ -58,7 +58,7 @@ git log --oneline <tag>..<target> | head -20
 ```bash
 git tag -d <tag>
 git tag <tag> <target>
-git push origin :refs/tags/<tag>   # PUSH
+git push origin :refs/tags/<tag>   # DELETE_REF
 git push origin <tag>              # PUSH
 ```
 

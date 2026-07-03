@@ -79,7 +79,7 @@ this is outward-facing and hard to reverse.
    <original body, quoted>
 
    Key points from the discussion thread:
-   - @<login>: <summary>'
+   - @<login>: <summary>'   # CREATE_ISSUE
    ```
 
    In a remote/web session, use `mcp__github__issue_write` (`method: create`)
@@ -92,14 +92,14 @@ this is outward-facing and hard to reverse.
        addDiscussionComment(input: {discussionId: $discussionId, body: $body}) {
          comment { url }
        }
-     }'
+     }'   # COMMENT_DISCUSSION
 
    gh api graphql -f discussionId='<discussion-id>' -f query='
      mutation($discussionId: ID!) {
        closeDiscussion(input: {discussionId: $discussionId, reason: OUTDATED}) {
          discussion { url closed }
        }
-     }'
+     }'   # CLOSE_DISCUSSION
    ```
 
    `closeDiscussion` reasons are `RESOLVED`, `OUTDATED`, or `DUPLICATE`; use
@@ -107,8 +107,8 @@ this is outward-facing and hard to reverse.
 
 ### Issue → Discussion
 
-1. Read the source issue (`gh issue view <N>` or `mcp__github__issue_read`) for
-   its title, body, author, URL, and comments.
+1. Read the source issue (`gh issue view <N>` — `VIEW_ISSUE` — or
+   `mcp__github__issue_read`) for its title, body, author, URL, and comments.
 2. Look up the repository node ID and the target category ID (only certain
    categories exist per repo):
 
@@ -132,15 +132,15 @@ this is outward-facing and hard to reverse.
        createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) {
          discussion { number url }
        }
-     }'
+     }'   # CREATE_DISCUSSION
    ```
 
 4. Comment on the issue pointing at the new discussion, then close the issue as
    not planned:
 
    ```bash
-   gh issue comment <N> --body 'Moved to <discussion-url> — this is better suited to Discussions.'
-   gh issue close <N> --reason 'not planned'
+   gh issue comment <N> --body 'Moved to <discussion-url> — this is better suited to Discussions.'   # COMMENT_ISSUE
+   gh issue close <N> --reason 'not planned'   # CLOSE_ISSUE
    ```
 
    In a remote/web session, use `mcp__github__add_issue_comment` and

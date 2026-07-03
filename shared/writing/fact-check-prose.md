@@ -11,6 +11,14 @@ claims and reasoning that are resolved but wrong.
   and, where the claim is checkable against an external source (a paper, a
   spec, a package's documentation, a dataset), fetch and check it there too.
   Don't accept a plausible-sounding claim without checking it.
+- **Undefended claims.** Separately from accuracy, check that each factual
+  claim is *defended* --- either by reasoning laid out in the surrounding
+  text, or by a citation to an external source. Flag a bare assertion that
+  has neither, even when it turns out to be true: a reader has no way to
+  verify an undefended claim without redoing the checking work themselves.
+  This is distinct from `check-info-quality`'s citation-mismatch check
+  (does an existing citation actually back its claim) --- this check is
+  about claims that carry **no** citation or reasoning at all.
 - **Tool/library behavior claims.** When prose describes how a specific tool
   or library behaves (a git merge driver, a shell built-in, a regex engine, a
   function's edge-case handling) and that behavior is deterministic and cheap
@@ -59,6 +67,27 @@ For every claim or reasoning step checked, state:
    reader would benefit from a pointer to a source (a foundational
    result, a dataset's documentation, a package's reference page) even if
    the prose isn't currently wrong without it.
+4. **Which claims are undefended** --- identify factual claims that carry no
+   citation and no internal reasoning, even when the claim itself turns out
+   to be accurate.
 
 Silence on a checkable claim reads as "verified" --- don't leave one unchecked
 because it sounded right on a first pass.
+
+## Applies to your own PR descriptions and comments too
+
+This checklist isn't just for reviewing someone else's prose --- run it on
+your **own** PR description, commit message, and code comments before
+posting them, especially any "design choice" claim (a justification for why
+the code does X instead of Y, or a claim that it *excludes* / *handles* a
+specific case). A design-choice claim is exactly the "informal reasoning"
+category above, and it's checkable against the same code you just wrote: did
+you actually implement the exclusion/handling you're describing, or does the
+claim just describe your *intent*? (gha#201's PR description and code
+comments asserted a retry mechanism "excludes" a known bad pattern via a
+`stub_review` flag --- but the flag was set purely from "no verdict," with no
+check on the signal (`permission_denials_count`) that actually distinguished
+the excluded pattern from the retried one. A `claude[bot]` review caught the
+gap: the code didn't implement what the prose claimed. Re-reading the claim
+against the actual `if` conditions before posting would have caught it
+without needing a review round.)

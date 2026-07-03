@@ -59,6 +59,10 @@ to read or post to.
 
 ### 2. List topics
 
+`LIST_DISCUSSIONS` (abstract operation token; resolve to your model's tool via
+[`tool-mappings.md`](../../tool-mappings.md) — no GitHub MCP tool exists for
+Discussions, so every model runs this same `gh api graphql`):
+
 ```bash
 gh api graphql -f owner='<owner>' -f repo='<repo>' -f query='
   query($owner: String!, $repo: String!) {
@@ -82,7 +86,7 @@ clickable URLs.
 ### 3. Read one topic and its thread
 
 The reply and answer mutations need node **IDs** (not numbers), so capture them
-here:
+here (`VIEW_DISCUSSION`):
 
 ```bash
 gh api graphql -f owner='<owner>' -f repo='<repo>' -F number=<N> -f query='
@@ -118,7 +122,8 @@ than guessing on a public thread.
 
 ### 5. Post the reply
 
-Top-level comment on the discussion (uses the discussion `id` from step 3):
+Top-level comment on the discussion (uses the discussion `id` from step 3,
+`COMMENT_DISCUSSION`):
 
 ```bash
 gh api graphql -f discussionId='<discussion-id>' -f body='<reply text>' -f query='
@@ -129,7 +134,8 @@ gh api graphql -f discussionId='<discussion-id>' -f body='<reply text>' -f query
   }'
 ```
 
-Threaded reply to a specific comment — add `replyToId` (the comment `id`):
+Threaded reply to a specific comment — add `replyToId` (the comment `id`,
+also `COMMENT_DISCUSSION`):
 
 ```bash
 gh api graphql -f discussionId='<discussion-id>' -f replyToId='<comment-id>' -f body='<reply text>' -f query='
@@ -143,7 +149,8 @@ gh api graphql -f discussionId='<discussion-id>' -f replyToId='<comment-id>' -f 
 ### 6. Mark an answer (Q&A topics only)
 
 Only categories where `isAnswerable` is true accept an answer. Mark a comment
-(usually one you just posted, or an existing one the user points to):
+(usually one you just posted, or an existing one the user points to,
+`ANSWER_DISCUSSION`):
 
 ```bash
 gh api graphql -f commentId='<comment-id>' -f query='

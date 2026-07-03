@@ -108,6 +108,51 @@ independently-authored `fact-check-prose` this way --- distinct enough to
 keep both, resolved by adding an explicit boundary in each skill's
 Relationship section rather than consolidating.)
 
+**Two PRs that each append a new terminal numbered subsection to the same
+file (e.g. `### 5. ...` in a `CLAUDE.md` review-guidelines list) will
+conflict on merge even when neither side's content actually disagrees.**
+This isn't an editorial clash --- it's two authors both writing to "the next
+number" at the same insertion point. Resolve by keeping **both** additions
+and renumbering sequentially from the collision point on, not by dropping
+either side; then grep the file for any other place that names the old
+numbering (a cross-reference, an index). This is also a reason
+[`fully-clean`](fully-clean.md)'s CI-green-and-review-clean verdict is a
+snapshot, not a mergeability guarantee --- `main` can pick up its own append
+in the same spot after your last review round, so a PR can go from
+"reviewed clean" to "needs a merge conflict resolved" with no defect in its
+own diff. Before reporting a PR ready to merge, re-check with
+`git fetch origin main` plus the `git merge-tree` command from
+`resolve-conflicts`, not just a cached `mergeable` flag or an earlier green
+CI run. (gha#211: `main` merged #209's own new
+`### 5. Check for AI-generated prose tells` subsection between this PR's
+clean review and its actual merge --- `git merge-tree` surfaced a real
+conflict that neither PR's own CI nor review status had flagged, since
+neither had rerun since `main` advanced.)
+
+**After merging a PR that extracts an inline block into a reusable unit
+(a composite action, a shared script/function), check other open PRs that
+still edit that same inline block --- your merge just broke their textual
+diff, even though their intended change is usually trivial to re-apply to
+the new location.** This is the mirror image of the case above: there,
+you're the one resyncing after `main` moved a copy of your logic; here,
+*you* are the one who moved the logic, so the burden of noticing and fixing
+the resulting conflict falls on you, not on the sibling PR's author waiting
+to hit it. Don't wait for that PR's own merge/CI to surface the conflict ---
+check every open PR touching the same file right after your extraction
+merges: `git merge-tree "$(git merge-base origin/main origin/<sibling-branch>)" origin/main origin/<sibling-branch>`
+(or `gh pr diff <N>` against the new `main`) shows whether it still applies
+cleanly. Re-apply the
+sibling PR's actual semantic change (not a mechanical `--theirs`) to the new
+location, verify with a direct diff that the extracted unit now differs from
+`main` by exactly that PR's intended change and nothing else, then push to
+their branch and flag what you did in a PR comment. (gha#201 extracted
+`claude-code-review.yml`'s `claude_args` block into a new
+`run-claude-review-attempt` composite action to support a retry; gha#202,
+open in parallel, edited that same inline block to allowlist `WebFetch`/
+`Bash(curl:*)`. Proactively rebasing #202 and re-applying its allowlist
+change to the new composite action --- rather than leaving its author to
+discover a conflict --- let it merge within the hour instead of stalling.)
+
 **An add/add conflict on a *shared config file* usually means two PRs
 independently fixed the same root cause --- reconcile the reasoning, don't
 just pick a side.** This generalizes the skill-file case above beyond
@@ -126,4 +171,9 @@ not a reintroduction of what the other, now-merged PR already added.
 excluding the same fixture directory for the same `jarl-check` failure;
 `#18` merged first, `#7`'s merge conflicted on the new file, resolved by
 keeping `#18`'s more detailed comment and re-confirming `#7`'s diff against
-`main` was back down to just its own four files.)
+`main` was back down to just its own four files. This same "append-collision"
+pattern struck a third time one insertion point over: this bullet and the
+two above it were each added by independent PRs landing in quick succession,
+all appending after the same "PR #352's `check-info-quality`..." paragraph
+--- resolved, per the guidance above, by keeping all three rather than
+picking one.)

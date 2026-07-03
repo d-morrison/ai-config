@@ -18,6 +18,9 @@
 - ALWAYS record what I learn in memory/AI-instruction notes as I work (standing request).
 - When recording a factual claim about tool/workflow behavior (an implementation detail or a causal explanation derived from a specific source), cite the source inline — e.g., "(source: gha#70 PR body)" — so future sessions can calibrate trust and verify if needed.
   Directly observed facts need no citation, but explanations inferred from a PR body, commit message, or doc do. (Learned on ai-config#118.)
+- Before rebutting — or accepting — a review finding that predicts a CI failure ("this will break Spellcheck / lint / R CMD check"), check the actual CI log for that exact commit rather than just re-reasoning about the tool's behavior.
+  A plausible-sounding mechanism (e.g. "Rd `\arguments{\item{name}{...}}` labels get spell-checked") can be wrong for the specific tool in use; the log's literal output ("No spelling errors found") is the authoritative signal, not a theory about what the tool probably does.
+  (Learned on UCD-SERG/serodynamics#193: rebutted a claude[bot] WORDLIST finding by reading the Spellcheck job's actual log rather than debating the claim in the abstract.)
 - When creating a GitHub PR, request reviewer `d-morrison` (see request-pr-review skill).
 - When deferring work out of scope during a review iteration, always file a follow-up issue (via `gh issue create` or `glab issue create`) capturing the deferred item.
   Don't just mention it in a comment — create the issue so it's tracked.
@@ -113,6 +116,7 @@
   If you think the scope should change, say so explicitly with a recommendation instead of silently re-asking. (Learned on gha#110: re-asked content structure + deploy after the PR was built and green; the user had to reconcile the conflict with "keep what's built.")
 - When finishing work on an MR/PR (clean review, ready to merge, etc.), always provide a clickable link to the MR/PR in the chat message.
 - When discovering bugs in upstream/shared infrastructure (e.g., HACtions templates), always file an issue immediately — don't ask first.
+- When a CI/review gate on your OWN PR keeps failing because of the repo owner's tooling (a flaky review workflow, a misfiring guard) and NOT your content, don't rabbit-hole opening fix-PR after fix-PR against their CI infra — FIRST check whether the owner is already reworking that same infra in parallel (scan recent `main` commits and open PRs), since a fix landed under them collides with their work and is likely superseded; then verify the deliverable independently (render/lint/tests) and hand off/escalate to the owner sooner. Corollary — bootstrap deadlock: you can't cleanly fix a review workflow via PRs that are themselves reviewed by that broken workflow, so such a fix lands by admin-merge, not self-certification. (Learned on rme#954: content was done+verified early, but I iterated several `gha` review-workflow PRs chasing a no-verdict gate that d-morrison was concurrently fixing via his own #201/#204.)
 - Always check r-lib, tidyverse, and similar R ecosystem organizations for off-the-shelf solutions before building custom implementations.
   Prefer well-maintained upstream packages over hand-rolled code when they meet the requirements.
 - When borrowing code or ideas from another repo, verify its license from the source FIRST (fetch its LICENSE file / `gh api repos/<o>/<r>/license`).
@@ -335,6 +339,16 @@
 - When a dispatched agent's brief says "find the worktree holding branch X, likely at path Y, or create one" as a fallback pattern, explicitly forbid it from ever operating in the conductor's own worktree — don't just imply this by naming a *different* expected path.
   An agent's `git worktree list` search can match loosely and land in the conductor's workspace by mistake, switching it to an unrelated branch (or leaving it in a detached-HEAD state), discovered only when the conductor's own next `git status`/`git log` call returns something unrecognizable.
   Fix is a plain `git checkout <conductor's-own-branch>` once caught (verify `git status --short` is clean first), but the real fix is naming the conductor's own worktree path explicitly as off-limits in every "find or create a worktree" brief. (Learned on sparta, 2026-07-02: a wave-3 agent tasked with finding the worktree for `feat/lod-phase3-tier-transitions-558` "likely at `gia2-558`" instead checked it out directly inside the conductor's own worktree.)
+- **General principle behind the worktree case above: when writing instructions for a subagent (or any delegated brief), state both what to do and what NOT to do — don't rely on the reader to infer a forbidden path from what the instruction simply never mentioned.**
+  A brief that only describes the desired positive action leaves every unmentioned path unconstrained; an agent under time/task pressure will happily take a technically-unmentioned-but-obviously-wrong action rather than stall on ambiguity (the worktree case: the brief named the *expected* path but never said the conductor's own path was off-limits, so a loose search matched it anyway).
+  Apply this especially for anything scope- or safety-sensitive — target paths (worktrees, branches, files), destructive operations, credentials, merge/self-approval authority — pair the positive instruction with an explicit negative constraint ("do X on branch Y; never touch branch Z or the conductor's own worktree") rather than a single-sided one. (d-morrison, ai-config#462 review, 2026-07-03.)
+- A conductor cannot post its own "Ready for merge" / positive-verdict comment on a PR authored by its own dispatched subagent, even when the automated review bot is broken and the conductor has independently verified the diff is correct.
+  This is self-approval — the conductor and the PR's author are the same principal — and the harness's auto-mode classifier blocks it outright, regardless of how solid the verification behind it is.
+  When the intended independent reviewer isn't functioning (bot outage, quota exhaustion, a stub/no-verdict failure), the right moves are: get an independent review to actually run (retry the bot, or wait for a fix), or escalate the specific PR to the user for their own call — never self-declare readiness to route around a missing reviewer. (Learned on sparta, 2026-07-02: attempting to post a "Ready for merge" summary on a PR whose review job had failed twice was blocked with an explicit self-approval reason.)
+- A dispatched subagent that ends its own turn with "waiting for the background task/monitor to notify me" has NOT set up anything that will actually resume it — a subagent's own background wait (a `Monitor` call, a `ScheduleWakeup`, a described intent to "check back later") does not survive past that turn ending, and no one will follow up on its behalf automatically.
+  The conductor must poll the real external state itself (CI checks, PR comments) and use `SendMessage` with the agent's id to resume it once something is actually ready — treat "I'll wait for X" in a subagent's final message as a signal that *you* need to come back to it, not that it's still working. This happened repeatedly across four separate subagents in one session (each ended a multi-hour dispatch on an unresumable "waiting" message). Brief agents doing multi-stage work (implement → wait for CI → react) to expect this: either they must actively poll within their own turn before finishing, or the brief should explicitly say the conductor will resume them later.
+- Before trusting a subagent's claim that it pushed a specific fix commit, independently verify the SHA actually reached the remote — `gh pr view <N> --json headRefOid` (or `git ls-remote origin <branch>`) compared against the claimed SHA — rather than trusting narrative confidence in the report.
+  A subagent reported "both fixed, pushed in f7d5c60" with full circumstantial detail (file names, line numbers, a plausible-sounding diff); the commit was never actually on the remote branch, and only an independent PR-state check caught it before it was reported upstream as done. This is the commit-SHA-specific instance of the standing "verify agent reports with unfakeable asks" rule — the unfakeable ask here is the remote ref itself, not more narrative.
 
 ## Output-highlighting taxonomy
 
@@ -379,6 +393,25 @@ provenance-stamped SLURM jobs. And custom macro command-names leak into
 spelling filter strips common LaTeX like `\text`/`\frac` but not custom macros),
 so add every macro name used, plus genuine terms, to `inst/WORDLIST`; files
 under `inst/analyses/` are not spell-checked.
+
+This is the author-side half; the review-side counterpart is
+`d-morrison/gha`'s `claude-code-review.yml` `check-latex-macros` opt-in input
+(gha#204), which flags PR-diff LaTeX simplifiable via an existing macro and
+nontrivial expressions repeated 3+ times as new-macro candidates. It needs
+`checkout-submodules: true` alongside it (the reviewer has no network-fetch
+tools, so it can only read macro definitions from a locally checked-out
+submodule).
+
+## Encourage filing feedback with Anthropic
+
+When something in a session suggests a genuine product gap or bug worth
+Anthropic knowing about — a harness limitation, a confusing tool error, a
+missing capability — proactively suggest the user file feedback, rather than
+just working around it and moving on. This applies beyond the cases where the
+user already asked; flag it whenever it seems like it would help, even for
+something I worked around successfully. (Prompted directly by the user during
+the gha#204 session, 2026-07-03, after hitting the auto-mode `add_repo`
+approval issue documented in `tools.md`'s "GitHub MCP tools" section.)
 
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.

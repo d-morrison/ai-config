@@ -136,7 +136,11 @@
   `actions: write` the re-run API needs. So a flaky CI failure can't be re-kicked
   via MCP — **push a commit to re-trigger the whole workflow** (the normal path
   during an iterate loop anyway), or ask the user to click Re-run. (Hit
-  re-running a flaky `link-checker` timeout on a lab-manual PR.) Prefer folding
+  re-running a flaky `link-checker` timeout on a lab-manual PR.) **`method:
+  run_workflow` (a fresh `workflow_dispatch`, not a rerun) 403s the same way** —
+  the token lacks `actions: write` for dispatch too, not just for reruns, so
+  don't expect a direct-dispatch workaround to succeed where rerun failed
+  (confirmed on UCD-SERG/serodynamics#193). Prefer folding
   the retry into a real, already-pending fix (e.g. a reviewer's requested
   wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
   no throwaway commit in history. Only use an empty commit when no real fix is
@@ -212,6 +216,18 @@
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
+- **A CI-failure webhook event's `HeadSHA` can be stale — compare it against
+  the PR's actual current head before investigating.** Pushing a fix-up commit
+  right after a bad one (e.g. correcting an encoding mistake seconds later)
+  produces a cascade of failure events for every check on the now-superseded
+  commit, arriving over the next several minutes as each job finishes. Check
+  the event's `HeadSHA` field against the PR's live head (`pull_request_read`
+  `get`, `.head.sha`) — if it doesn't match, the event is about a commit no
+  one will ever see the result of; skip it with a one-line "stale, superseded"
+  note instead of re-diagnosing content you've already fixed. (Hit on
+  UCD-SERG/serodynamics#193: an accidental double-base64-encoded push
+  triggered ~10 failure events across the whole CI matrix, all for the
+  immediately-superseded commit.)
 - **Self-wake to re-check CI in remote/web sessions.** Webhooks don't deliver CI
   *success*, new pushes, or merge transitions, so re-check on a timer. Prefer
   `CronCreate` (a harness scheduling tool, not an MCP tool): schedule a one-shot
@@ -225,6 +241,19 @@
   git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
   blocked, which is why the background `Monitor` is the workable one. There is no
   `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
+- **`mcp__Claude_Code_Remote__send_later` can become unavailable mid-session,
+  not just absent from the start** (contrast the rme case above, where it was
+  never present). Observed failure sequence: first a few transient "Tool
+  permission stream closed before response received" errors (retrying the
+  identical call sometimes still worked), then a hard "Error: No such tool
+  available: mcp__Claude_Code_Remote__send_later" that no retry cleared.
+  Fallback to `CronCreate` with `recurring: false`, pinned to a specific
+  near-future cron time (compute it with `date`, since `CronCreate` takes an
+  absolute cron expression, not a relative "N minutes from now" delay).
+  **`CronCreate` jobs are session-only** — they die with the session, unlike
+  `send_later`'s durable server-side triggers — so this is a degraded
+  substitute, not an equivalent; say so rather than treating it as a full
+  replacement. (gha#193 PR-babysitting session, 2026-07-03.)
 - **`add_repo` refuses a cross-owner add once the session already has a repo from a
   different owner** ("cross-tier adds are not supported in v1: requested `<owner>/<repo>`
   but session already has repos from owner(s) `[...]`") — it does NOT fall back to a
@@ -243,6 +272,20 @@
   comment by its anchor), succeeding where both the MCP tool and the JSON API failed.
   (Used to read UCD-SERG/serodynamics#193's `@claude`-bot comment from a
   `d-morrison/gha`-scoped session, which surfaced the root cause fixed in gha#191.)
+- **`add_repo` (and likely other approval-gated MCP tools) can fail repeatedly
+  and silently under auto-mode, with no useful error.** In auto mode, a call
+  that needs an interactive permission-dialog approval has no human present to
+  click it, so it errors `Streamable HTTP error: Error POSTing to endpoint:
+  MCP tool call requires approval` — identical on every retry, giving no
+  signal that the real blocker is "no one is watching to approve this."
+  Retrying the same call in auto mode doesn't help. The fix is to have the
+  user switch to a non-auto permission mode (e.g. accept-edits) so there's
+  someone to grant it, then retry once — it then either succeeds outright or
+  fails with a real, actionable error (e.g. `add_repo`'s cross-tier-owner
+  refusal, above). Don't burn more than one or two identical retries in auto
+  mode before flagging this to the user. (gha#204 session, 2026-07-03: `rme`
+  succeeded immediately after the user switched modes; `epi204`/`epi202` then
+  failed with the real cross-tier error instead.)
 - `d-morrison/gha`'s `CLAUDE.md` carries its own `gh`->MCP substitution table
   (the "GitHub access in remote / web sessions" section), scoped to that repo.
   `d-morrison/ai-config` has its own cross-model registry at
@@ -1076,16 +1119,18 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   anyway. Front-load that ToolSearch call and note in the row's PR
   description (or commit message) that it was verified, so the review can
   skip straight past it.
-- **`PUSH` is the closest registry token for a remote ref/tag *deletion*
-  (`git push origin :refs/tags/<tag>`), but it's an imperfect fit** — the
-  registry's `PUSH` operation is documented as "push commits to a branch,"
-  and a colon-prefix ref-delete pushes nothing and isn't a branch. Flagged as
-  a non-blocking observation by the `@claude` reviewer on batch 3 (PR #423,
-  `skills/slide-tag/SKILL.md` and `skills/ts/SKILL.md`). Left as `PUSH` for
-  now (two instances, both tag-slide skills, not the token-rollout's main
-  surface) rather than adding a speculative `DELETE_REF`/`DELETE_TAG`
-  operation for a two-site case — revisit and add the dedicated token if a
-  later batch of #416 hits more ref-deletion commands than that.
+- **`PUSH` was an imperfect fit for remote ref/tag *deletion* — resolved.**
+  Flagged as a non-blocking observation by the `@claude` reviewer on batch 3
+  (PR #423, `skills/slide-tag/SKILL.md` and `skills/ts/SKILL.md`'s
+  `git push origin :refs/tags/<tag>`): the registry's `PUSH` operation is
+  documented as "push commits to a branch," and a colon-prefix ref-delete
+  pushes nothing and isn't a branch. Initially left as `PUSH` (two instances,
+  not the rollout's main surface) with a note to revisit if the pattern
+  recurred. It did, a third time, in batch 4 (`clean-branches`'s
+  `git push origin --delete <branch>`) — past the self-set threshold — so
+  batch 4 added a dedicated `DELETE_REF` operation to `tool-mappings.yml` and
+  retro-fitted all three sites (including the two already-merged ones) from
+  `PUSH` to `DELETE_REF`.
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
@@ -1224,6 +1269,26 @@ common patterns.
   section against what you're about to pass. Filed as gha#179; worked around
   in `d-morrison/altdoc`#14 by omitting `ANTHROPIC_API_KEY` until `@v1` catches
   up.
+- **A `workflow_call` reusable-workflow ref (`@v1`/`@v2`) resolves ONCE, at the
+  run's original creation time, and stays pinned to that SHA across every
+  re-run of that same run — even after the tag has since moved to a fix.** So
+  if a consumer PR's `claude-code-review.yml` run first ran while `@v2` still
+  pointed at a broken gha commit, re-running that same run (whether via the
+  Actions UI "Re-run failed jobs" or a bot re-dispatch that happens to target
+  the existing run rather than creating a new one) reproduces the identical
+  pre-fix failure forever, no matter how many times you retry or how long ago
+  the tag was fixed. **Diagnose by checking `run_attempt`** (> 1 means this is
+  a re-run, not a fresh dispatch) **and `created_at`** (`mcp__github__actions_get`,
+  `method: get_workflow_run` — compare against when the fix landed), then read
+  `referenced_workflows[].sha` in the same response — it shows the ACTUAL
+  resolved commit for that run, which you can diff against the tag's current
+  `get_tag` SHA to confirm staleness. **Only a
+  genuinely NEW run (a new `run_id`) re-resolves the tag fresh** — a new commit
+  (`pull_request: synchronize`) is the reliable trigger; an `@claude review`
+  comment sometimes causes the bot to re-run the existing stale run instead of
+  dispatching a new one (observed on UCD-SERG/serodynamics#193 — a direct
+  `workflow_dispatch` via `actions_run_trigger` would have sidestepped this,
+  but that call 403s in these sessions too, per the note above).
 - **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
   `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
   example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
@@ -1646,6 +1711,41 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
   notation looks non-idiomatic next to the dot notation used everywhere else in the
   same workflow. Caught in gha#134 review.
+- **A `claude-code-review`-style job that fails with "no verdict written" but `is_error: false` and real cost/turns can be root-caused by downloading the uploaded execution-transcript artifact, not just reading the summary `result` object.**
+  The `Run Claude Code Review` step's own JSON output only shows the final SDK
+  summary (`is_error`, `num_turns`, `total_cost_usd`, `permission_denials_count`)
+  — enough to confirm a stub occurred, not why. The workflow separately uploads
+  the full turn-by-turn transcript as a `claude-review-execution-<run>-<attempt>.zip`
+  artifact (the name is defined by `d-morrison/gha`'s reusable workflow, not a
+  Claude Code convention — a future rename there invalidates this; confirm via
+  `gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` rather than
+  assuming the name, then `curl -H "Authorization: token $(gh auth token)"
+  .../artifacts/<id>/zip` to fetch). It's a single pretty-printed JSON array of
+  Claude Code SDK message objects, not NDJSON — each element has a top-level
+  `type` (`"system"`/`"assistant"`/`"user"`/`"result"`) and, for `"assistant"`
+  elements, a `message.content` array of blocks (`{"type":"tool_use", "name":
+  ..., ...}`, `{"type":"text", "text": ...}`, etc.) — parse with
+  `jq '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name'`
+  for a tool-use histogram, or pull `is_error==true` tool_results for the actual
+  denial messages. This is how a "stub review" traced back to the model
+  fanning its own review out across background `Agent` calls and ending its turn
+  on "waiting for background agents" — a mechanism the summary object alone
+  can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **`gh pr checks <N>` can return a momentarily-stale check entry right after a
+  state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
+  immediately after triggering can show the check that was current a few
+  seconds ago — including a red/failed one from a run that already finished
+  hours earlier — rather than the freshly-queued run. Don't trust a `gh pr
+  checks` read taken within seconds of triggering; instead look up the actual
+  newest run for the branch and watch that specific run id:
+  `gh run list --workflow "<name>" --json databaseId,createdAt,headBranch --jq
+  'map(select(.headBranch=="<branch>")) | sort_by(.createdAt) | last | .databaseId'`,
+  then poll `gh run view <id> --json status,conclusion` directly. A poll loop
+  built on `gh pr checks`'s live state must also treat every non-`"completed"`
+  status (`queued`, `in_progress`, and any value not explicitly enumerated) as
+  still-running rather than allow-listing only `PENDING`/`IN_PROGRESS` —
+  `QUEUED` slipping through an allow-list caused a premature "settled" false
+  positive in one session (`Lacaedemon/sparta`, 2026-07-03).
 
 ## Changelog section ordering in d-morrison/gha
 

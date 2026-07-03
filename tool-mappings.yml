@@ -121,6 +121,10 @@ operations:
     description: Post a comment on an issue.
     cli: gh issue comment <N> --body "..."
     github_mcp: mcp__github__add_issue_comment
+  - id: CLOSE_ISSUE
+    description: Close an issue with a reason.
+    cli: gh issue close <N> --reason "..."
+    github_mcp: mcp__github__issue_write (method=update, state=closed, state_reason=...)
   - id: LIST_DISCUSSIONS
     description: List a repository's discussions. Discussions are GraphQL-only.
     cli: gh api graphql (list discussions)
@@ -165,6 +169,10 @@ operations:
     description: Create a new branch (e.g. off the default branch).
     cli: git switch -c <branch> origin/<base>
     github_mcp: mcp__github__create_branch
+  - id: DELETE_REF
+    description: Delete a remote branch or tag ref.
+    cli: git push origin --delete <branch> (or git push origin :refs/tags/<tag>)
+    github_mcp: (no GitHub MCP tool; use gh api -X DELETE repos/<owner>/<repo>/git/refs/heads/<branch>)
   - id: READ_FILE
     description: Read a file's contents from the repo.
     cli: gh api repos/<owner>/<repo>/contents/<path>

@@ -13,17 +13,22 @@ allowed-tools:
 
 Actively review recent session context and update all relevant memory files
 and skill definitions to capture what was learned. Unlike `record-learnings`
-(which fires passively as you work), UMS is an explicit checkpoint: stop,
-reflect, and persist.
+(which records individual facts in place as they arise), UMS is a reflective
+checkpoint: survey what accumulated, categorize it, and persist it all in one
+committed pass.
 
 ## When this fires
 
+- **As soon as a learning worth saving shows up** — a corrected mistake, a
+  new preference, a tool quirk, a workflow gap. This is the primary trigger:
+  run UMS right then, interleaved with the main work, instead of batching
+  learnings for a wrap-up step at the end. Don't wait for the task to finish
+  or for `/clear` to accumulate a backlog.
 - User says "ums", "update memories and skills", "record what we learned"
-- **At the start of `/clear`** — before context is lost, capture any
-  accumulated learnings from the session
+- **At the start of `/clear`** — a backstop, not the primary trigger: catch
+  anything accumulated since the last proactive pass before context is lost
 - After a workflow reveals a gap (e.g., a skill was followed but missed a
   step, or a preference wasn't encoded)
-- After a multi-step session where several learnings accumulated
 - When the user says "did you update memories?" (the answer should be "let
   me do that now")
 
@@ -125,14 +130,24 @@ reflect, and persist.
   Search the file for all enumerations of the changed category and make them consistent.
 - [ ] Did I add a shared-procedure step to one skill but not to sibling skills? →
   Grep sibling skills for the same action and add the step there too.
+- [ ] Did I change how a skill describes its relationship/contrast to a sibling
+  skill (e.g. "X is passive, Y is explicit")? → Grep the sibling skill for its
+  own mirrored description of that same relationship and update it too — a
+  one-directional fix leaves the sibling's docs contradicting the new
+  behavior. (Caught by `@claude` review on ai-config#439: `ums/SKILL.md`'s
+  passive-vs-active contrast with `record-learnings` was fixed, but
+  `record-learnings/SKILL.md`'s own mirrored line describing `ums` as "the
+  explicit ... counterpart" was missed until review flagged it as a
+  follow-on.)
 
 ## Relationship to record-learnings
 
-- `record-learnings` = passive, continuous, fires as you work
-- `ums` = active, explicit, user-invoked checkpoint
+- `record-learnings` = records individual facts in place, in the moment they arise
+- `ums` = a reflective, full-context sweep — survey what accumulated, categorize it, and persist it all in one committed pass
 
-Both write to the same destinations. UMS is for when you forgot to
-record-as-you-go, or when the user wants to ensure nothing was missed.
+Both write to the same destinations. `ums` fires proactively, as soon as a
+learning worth saving shows up, rather than waiting to catch up later; the
+`/clear` trigger is only a backstop for anything that slipped through.
 
 `spot-skill-opportunities` is the standing, continuous version of this
 skill's "did a workflow emerge that could be a new skill?" checklist item —
