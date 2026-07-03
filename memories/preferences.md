@@ -397,7 +397,7 @@ just working around it and moving on. This applies beyond the cases where the
 user already asked; flag it whenever it seems like it would help, even for
 something I worked around successfully. (Prompted directly by the user during
 the gha#204 session, 2026-07-03, after hitting the auto-mode `add_repo`
-approval issue above.)
+approval issue documented in `tools.md`'s "GitHub MCP tools" section.)
 
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
