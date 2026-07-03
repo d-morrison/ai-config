@@ -964,6 +964,17 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   who copies the command without substituting the placeholder runs something wrong.
   Use `<path>`, `<url>`, `<target>` instead. (PR #99 fixed `test -e PATH` →
   `test -e <path>` and `curl … URL` → `curl … <url>` in purge-hallucinations.)
+- **A trailing `# TOKEN` annotation on a `\`-continued line swallows the
+  continuation.** When annotating a command with an inline marker comment
+  (e.g. the `tool-mappings.yml` abstract-operation-token pilot, #195/#415),
+  putting `# TOKEN` on a line that ends in a line-continuation `\` breaks the
+  command: bash's `#` starts a comment that runs to the end of the line,
+  consuming the `\` along with it, so the next line's flags are no longer
+  part of the same command. Put the annotation on the **last** line of a
+  multi-line command (after the final flag/filter), never on an intermediate
+  `\`-continued line. The `@claude` reviewer caught this on PR #415's first
+  pass (`skills/ardi/SKILL.md`'s `gh pr list \` / `--jq ...` block) — worth
+  checking for on every subsequent skill in #416's token-rollout.
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
