@@ -380,6 +380,25 @@ spelling filter strips common LaTeX like `\text`/`\frac` but not custom macros),
 so add every macro name used, plus genuine terms, to `inst/WORDLIST`; files
 under `inst/analyses/` are not spell-checked.
 
+This is the author-side half; the review-side counterpart is
+`d-morrison/gha`'s `claude-code-review.yml` `check-latex-macros` opt-in input
+(gha#204), which flags PR-diff LaTeX simplifiable via an existing macro and
+nontrivial expressions repeated 3+ times as new-macro candidates. It needs
+`checkout-submodules: true` alongside it (the reviewer has no network-fetch
+tools, so it can only read macro definitions from a locally checked-out
+submodule).
+
+## Encourage filing feedback with Anthropic
+
+When something in a session suggests a genuine product gap or bug worth
+Anthropic knowing about — a harness limitation, a confusing tool error, a
+missing capability — proactively suggest the user file feedback, rather than
+just working around it and moving on. This applies beyond the cases where the
+user already asked; flag it whenever it seems like it would help, even for
+something I worked around successfully. (Prompted directly by the user during
+the gha#204 session, 2026-07-03, after hitting the auto-mode `add_repo`
+approval issue documented in `tools.md`'s "GitHub MCP tools" section.)
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.

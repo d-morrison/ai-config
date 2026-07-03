@@ -243,6 +243,20 @@
   comment by its anchor), succeeding where both the MCP tool and the JSON API failed.
   (Used to read UCD-SERG/serodynamics#193's `@claude`-bot comment from a
   `d-morrison/gha`-scoped session, which surfaced the root cause fixed in gha#191.)
+- **`add_repo` (and likely other approval-gated MCP tools) can fail repeatedly
+  and silently under auto-mode, with no useful error.** In auto mode, a call
+  that needs an interactive permission-dialog approval has no human present to
+  click it, so it errors `Streamable HTTP error: Error POSTing to endpoint:
+  MCP tool call requires approval` — identical on every retry, giving no
+  signal that the real blocker is "no one is watching to approve this."
+  Retrying the same call in auto mode doesn't help. The fix is to have the
+  user switch to a non-auto permission mode (e.g. accept-edits) so there's
+  someone to grant it, then retry once — it then either succeeds outright or
+  fails with a real, actionable error (e.g. `add_repo`'s cross-tier-owner
+  refusal, above). Don't burn more than one or two identical retries in auto
+  mode before flagging this to the user. (gha#204 session, 2026-07-03: `rme`
+  succeeded immediately after the user switched modes; `epi204`/`epi202` then
+  failed with the real cross-tier error instead.)
 - `d-morrison/gha`'s `CLAUDE.md` carries its own `gh`->MCP substitution table
   (the "GitHub access in remote / web sessions" section), scoped to that repo.
   `d-morrison/ai-config` has its own cross-model registry at
