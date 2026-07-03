@@ -1694,6 +1694,41 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
   notation looks non-idiomatic next to the dot notation used everywhere else in the
   same workflow. Caught in gha#134 review.
+- **A `claude-code-review`-style job that fails with "no verdict written" but `is_error: false` and real cost/turns can be root-caused by downloading the uploaded execution-transcript artifact, not just reading the summary `result` object.**
+  The `Run Claude Code Review` step's own JSON output only shows the final SDK
+  summary (`is_error`, `num_turns`, `total_cost_usd`, `permission_denials_count`)
+  — enough to confirm a stub occurred, not why. The workflow separately uploads
+  the full turn-by-turn transcript as a `claude-review-execution-<run>-<attempt>.zip`
+  artifact (the name is defined by `d-morrison/gha`'s reusable workflow, not a
+  Claude Code convention — a future rename there invalidates this; confirm via
+  `gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` rather than
+  assuming the name, then `curl -H "Authorization: token $(gh auth token)"
+  .../artifacts/<id>/zip` to fetch). It's a single pretty-printed JSON array of
+  Claude Code SDK message objects, not NDJSON — each element has a top-level
+  `type` (`"system"`/`"assistant"`/`"user"`/`"result"`) and, for `"assistant"`
+  elements, a `message.content` array of blocks (`{"type":"tool_use", "name":
+  ..., ...}`, `{"type":"text", "text": ...}`, etc.) — parse with
+  `jq '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name'`
+  for a tool-use histogram, or pull `is_error==true` tool_results for the actual
+  denial messages. This is how a "stub review" traced back to the model
+  fanning its own review out across background `Agent` calls and ending its turn
+  on "waiting for background agents" — a mechanism the summary object alone
+  can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **`gh pr checks <N>` can return a momentarily-stale check entry right after a
+  state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
+  immediately after triggering can show the check that was current a few
+  seconds ago — including a red/failed one from a run that already finished
+  hours earlier — rather than the freshly-queued run. Don't trust a `gh pr
+  checks` read taken within seconds of triggering; instead look up the actual
+  newest run for the branch and watch that specific run id:
+  `gh run list --workflow "<name>" --json databaseId,createdAt,headBranch --jq
+  'map(select(.headBranch=="<branch>")) | sort_by(.createdAt) | last | .databaseId'`,
+  then poll `gh run view <id> --json status,conclusion` directly. A poll loop
+  built on `gh pr checks`'s live state must also treat every non-`"completed"`
+  status (`queued`, `in_progress`, and any value not explicitly enumerated) as
+  still-running rather than allow-listing only `PENDING`/`IN_PROGRESS` —
+  `QUEUED` slipping through an allow-list caused a premature "settled" false
+  positive in one session (`Lacaedemon/sparta`, 2026-07-03).
 
 ## Changelog section ordering in d-morrison/gha
 
