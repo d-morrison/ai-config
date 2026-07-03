@@ -42,6 +42,10 @@ Read the changed prose and pull out three kinds of units to check:
 - **Factual claims** — statements that cite a value, a behavior, a result, an
   external fact ("X was introduced in version Y", "the estimator is
   unbiased under Z").
+- **Undefended claims** — a factual claim with no internal reasoning and no
+  citation backing it, even if it turns out to be accurate. Flag it
+  separately from an accuracy check (below) — a claim can pass accuracy and
+  still fail this one.
 - **Reasoning chains** — an argument the document makes, not just its
   individual facts. This includes **formal mathematical reasoning**
   (derivations, proofs, algebraic manipulations — check every step follows
@@ -61,6 +65,11 @@ secondhand summary. Don't wave a plausible-sounding claim through
 unchecked — see
 [`challenge-ambiguous-terminology`](../../shared/workflow/challenge-ambiguous-terminology.md)
 for the sibling rule on ambiguous phrasing specifically.
+
+Separately from accuracy, check that the claim is **defended**: does the
+surrounding text give reasoning for it, or does it carry a citation? A
+claim can be accurate and still undefended — flag both kinds of gap, not
+just outright inaccuracy.
 
 ### 3. Verify document-internal reasoning
 
@@ -105,6 +114,7 @@ For every unit checked:
 | "the estimator is unbiased" | Inaccurate | Biased under this design per [source/derivation]; see step 3 below |
 | Derivation step 4 → 5 | Confirmed | Re-derived; algebra holds, dimensions consistent |
 | "Table 2, row 3 = 4.7" | Inaccurate | Rendered preview (pr-preview/pr-N/chapter.html) shows 4.9 |
+| "adoption has grown steadily" | Undefended | No citation or reasoning given; claim itself checks out but needs a source or an explicit basis |
 ```
 
 Then, separately, list **additional citations/references worth adding** —
