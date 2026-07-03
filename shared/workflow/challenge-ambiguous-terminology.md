@@ -34,9 +34,9 @@ editing; it's true before the merge and still true after.
 (Caught by this very guideline three times now, all while cross-linking a
 still-open `ai-config` PR into `gha`'s `CLAUDE.md`: twice on gha#151 --- the
 file it pointed at only existed on this fragment's own not-yet-merged PR ---
-and again on gha#208, where the first fix cited the file as already
-established, a review caught that, the reworded "not yet merged as of this
+and again on gha#208. There, the first fix cited the file as already
+established; a review caught that. The reworded "not yet merged as of this
 writing, tighten this citation once it lands" fix repeated the exact
-future-edit trap this note originally warned against, and a second review
-(Copilot) caught that too before the evergreen-conditional phrasing above was
+future-edit trap this note originally warned against. A second review
+(Copilot) caught that too, and the evergreen-conditional phrasing above was
 adopted.)
