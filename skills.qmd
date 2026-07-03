@@ -53,6 +53,7 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`mwc`](skills/mwc/SKILL.md) | `merge-when-confident`, `maw`, `merge-at-will` | Grant session-scoped permission to merge fully-clean PRs without asking per PR |
 | [`post-merge`](skills/post-merge/SKILL.md) | | After a merge: checkout main, pull, delete branch, run UMS |
 | [`clean-branches`](skills/clean-branches/SKILL.md) | `prune` | Delete local branches already merged or closed |
+| [`resolve-conflicts`](skills/resolve-conflicts/SKILL.md) | `rmc` | Resolve merge/rebase/cherry-pick conflicts by consolidating the best of both branches |
 
 ### Memory and skills maintenance
 
