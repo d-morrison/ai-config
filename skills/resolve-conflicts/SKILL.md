@@ -38,7 +38,7 @@ Before claiming and fixing a PR flagged by a cascade conflict scan
 ground truth locally instead of acting on the API field directly:
 
 ```bash
-git fetch origin main <branch> -q
+git fetch origin main <branch> -q   # FETCH
 git merge-tree --write-tree origin/main origin/<branch>   # git >=2.38; no worktree/checkout needed
 echo "exit: $?"   # 0 = clean merge (no action needed); 1 = real conflict exists
 ```

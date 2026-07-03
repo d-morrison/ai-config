@@ -147,12 +147,12 @@ PR (not direct to main), request `d-morrison` as reviewer (`request-pr-review`),
 then **ARDI to clean** (`ardi`).
 
 ```bash
-git checkout -b consolidate-memory-<topic> origin/main
+git checkout -b consolidate-memory-<topic> origin/main   # CREATE_BRANCH
 # build the canonical entry, remove the absorbed copies, repoint links
 git add memories/<file>.md   # only the files you touched — never a bare
                              # `git add memories/` (sweeps in unrelated edits) or `git add -A`
-git commit -m "memories: consolidate <topic> duplicates into one canonical entry"
-git push -u origin HEAD && gh pr create --fill
+git commit -m "memories: consolidate <topic> duplicates into one canonical entry"   # COMMIT
+git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR
 ```
 
 ## Relationship to other skills

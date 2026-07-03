@@ -55,7 +55,7 @@ git log --oneline v2..origin/main | head -20
 
 git tag -d v2
 git tag v2 origin/main
-git push origin :refs/tags/v2   # PUSH
+git push origin :refs/tags/v2   # DELETE_REF
 git push origin v2              # PUSH
 
 echo "Confirmed: $(git log --oneline -1 v2)"
