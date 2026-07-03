@@ -993,6 +993,20 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   `\`-continued line. The `@claude` reviewer caught this on PR #415's first
   pass (`skills/ardi/SKILL.md`'s `gh pr list \` / `--jq ...` block) — worth
   checking for on every subsequent skill in #416's token-rollout.
+- **Verify a brand-new `tool-mappings.yml` `github_mcp` tool name with
+  `ToolSearch` before adding the operation, not after.** When #416's
+  token-rollout needs a new operation whose GitHub MCP form hasn't been used
+  in this repo yet, the tool name is easy to *guess* correctly by pattern
+  (e.g. `mcp__github__search_issues` from the existing
+  `mcp__github__search_pull_requests`) but still worth confirming live —
+  `ToolSearch({query: "select:mcp__github__<name>"})` returns the real schema
+  if it exists, or no match if it doesn't. Doing this before adding the row
+  avoids a review round-trip flagging the name as unverified (batch 2, PR
+  #419): the reviewer couldn't confirm the tool from a static read and had to
+  ask for a live check, which a rebuttal citing the schema then resolved
+  anyway. Front-load that ToolSearch call and note in the row's PR
+  description (or commit message) that it was verified, so the review can
+  skip straight past it.
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
