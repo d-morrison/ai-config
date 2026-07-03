@@ -648,6 +648,35 @@ documented pattern (see `vignette("creating_linters", package = "lintr")`).
 Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 `lms::function_length_linter()` in UCD-SERG/lab-manual#381.)
 
+## jarl (Just Another R Linter) — `jarl.toml` fields lag the published docs
+- `jarl` (`etiennebacher/jarl`, installed via `etiennebacher/setup-jarl@vX` in
+  CI) is a fast Rust-based R linter, a sibling to `{air}`/`{flir}` by the same
+  author. Its `unused_function` rule flags any function jarl's static analysis
+  can't find a call site for — including functions in **fixture/test-data R
+  packages** (e.g. a `tests/testthat/examples/testpkg.*/R/*.R` tree copied and
+  rendered as test input), which are genuine false positives: nothing in the
+  outer package is ever meant to "call" fixture content.
+- **The `jarl.toml` config schema in the repo's `CHANGELOG.md`/docs can
+  describe a feature not yet in the released version CI actually installs.**
+  `[lint.per-file-ignores]` (scope a rule to specific files/globs) appears in
+  jarl's `CHANGELOG.md` on `main`, but `jarl check` itself is the source of
+  truth for what the *installed* version accepts — it errors immediately with
+  `Invalid configuration ... Unknown field 'per-file-ignores' in '[lint]'.
+  Expected one of: select, extend-select, ignore, fixable, unfixable, exclude,
+  default-exclude, include, check-roxygen, fix-roxygen` when the field isn't
+  supported yet (hit against jarl 0.5.0 via `setup-jarl@v0.1.0`, no version
+  pin -> latest). The error message's "Expected one of" list is authoritative;
+  don't trust changelog/docs-site prose for what a *pinned or auto-latest* CI
+  install actually accepts, since "on `main`" doc content can be ahead of the
+  latest tagged release.
+- **Fallback when the wanted field isn't supported: `[lint] exclude = ["<dir>/"]`**
+  (full path/glob exclusion — coarser than `per-file-ignores`, silences ALL
+  jarl rules for that directory, not just the one false-positive rule) rather
+  than editing fixture file content to appease the linter (fixture bytes often
+  feed snapshot/rendering tests, so editing them risks unrelated test
+  breakage). File a follow-up issue to narrow `exclude` to `per-file-ignores`
+  once the installed jarl version supports it. (`d-morrison/altdoc#18`, #19.)
+
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
   Action") and a **version-check**. A user-visible PR needs **both** a
@@ -705,6 +734,27 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   (separate findings). They can DISAGREE — one says clean while the other finds
   nits. Reconcile BOTH before calling a PR clean; the agent post-step tends to
   drip 1–2 pre-existing cosmetic nits per round (asymptotic).
+
+## WebFetch 403 on a rendered docs site -> raw.githubusercontent.com; WebSearch to find the exact source path
+- A GitHub-Pages/Quarto-rendered docs site (e.g. `jarl.etiennebacher.com`,
+  `ucd-serg.github.io/lab-manual/...`) can reject `WebFetch` outright (403 —
+  likely anti-scraping), even though the plain-text/markdown **source** it was
+  built from is a public file in a public repo and fetches fine via
+  `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>`. This
+  isn't `d-morrison/gha`-specific (that repo's own `CLAUDE.md` documents it
+  for the lab manual) — it generalizes to any Quarto/Docusaurus-style site,
+  including third-party tool docs with no relation to our own repos.
+- **When the exact source path isn't obvious** (unlike the lab-manual case
+  where `foo.html` predictably maps to `foo.qmd`), guessing candidate paths
+  one `curl -o /dev/null -w "%{http_code}"` at a time is slow and often wrong.
+  `WebSearch` for `<repo-or-tool-name> <topic> site:github.com` (or just
+  `<tool> <config-file> github`) surfaces the actual repo file path (e.g.
+  `jarl/docs/reference/config-file.md`) from its indexed GitHub listing —
+  faster than blind guessing, and the found path fetches cleanly via
+  `raw.githubusercontent.com` immediately after. (Confirmed on jarl's docs
+  site: `jarl.etiennebacher.com/reference/config-file` 403'd, but
+  `WebSearch` surfaced `docs/reference/config-file.md` as the underlying
+  file, which raw-fetched with the full field-by-field config reference.)
 
 ## Claude Code on the web: CI monitoring toggles have no default setting
 - The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
