@@ -187,6 +187,10 @@ already set for their skills.
   context, cherry-picking, or a citation that only weakly supports it. Checks
   A and B (staleness, relevance) have no `fact-check-prose` counterpart at
   all. Run both on a substantive prose review; neither subsumes the other.
+  `fact-check-prose` also flags **undefended** claims (no citation, no
+  internal reasoning, even if true) — a fourth failure mode distinct from
+  this skill's check C, which only fires when a citation already exists but
+  doesn't back its claim.
 - **`address-every-comment` / `ardi`** — findings from this skill route
   through the same Address/Rebut/Defer discipline as any other review
   finding.

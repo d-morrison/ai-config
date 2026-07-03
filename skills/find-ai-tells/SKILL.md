@@ -29,6 +29,9 @@ reflexes — **not** to ban words or flatten a real human voice.
   tells", "make this not sound AI-generated"
 - "does this sound like AI / ChatGPT?", "was this written by AI?", "check this
   draft for tells"
+- As part of any PR/MR review where the diff touches narrative prose — docs,
+  READMEs, PR/commit descriptions, or other prose. Run it alongside
+  `fact-check-prose` and `use-preferred-style`.
 - **Standing self-check (no invocation needed):** before I present any
   non-trivial prose I authored — a PR/issue description, a commit body, README
   or doc text, a vignette paragraph, a long chat answer meant as deliverable
