@@ -21,13 +21,13 @@ took five review rounds this way).
 **URL-inflation exception:** a line that runs long *only* because of an
 embedded `[text](long-url)` link — where the visible prose before the link
 is well under 40 characters — is fine as-is. Don't force an awkward
-mid-clause break just to shorten the raw line.
+mid-clause break just to shorten the raw line; review bots themselves
+classify these as borderline / acceptable.
 
 **When reviewing prose, suggest semantic-line-break fixes — don't insist on
 them.** Flag lines that ignore clause/sentence boundaries as a style
 suggestion, the same weight as a word-choice nit: worth raising, not worth
 blocking approval over, and not worth re-raising if the author declines.
 This is distinct from the rule above: that one governs how thoroughly to
-fix violations once a review has already committed to flagging them as
-must-fix; this one governs how to raise the issue in the first place when
-you are the one reviewing.
+fix violations once a review has flagged them; this one governs the
+weight to give the finding when you are the reviewer in the first place.
