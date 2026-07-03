@@ -696,6 +696,23 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   feed snapshot/rendering tests, so editing them risks unrelated test
   breakage). File a follow-up issue to narrow `exclude` to `per-file-ignores`
   once the installed jarl version supports it. (`d-morrison/altdoc#18`, #19.)
+- **There is no `.jarlignore` file — jarl has never supported one.** Don't
+  assume jarl follows the `.gitignore`/`.eslintignore`-style convention of a
+  dotfile-per-tool; its only exclusion mechanism is `jarl.toml`'s `[lint]`
+  table (`exclude` / `per-file-ignores`, above). A `.jarlignore` file is
+  silently inert — `jarl check` never reads it, so violations inside the
+  "excluded" paths still fire, and no error or warning flags the typo'd
+  config. This is easy to miss because CI can still look green: pairing the
+  fake `.jarlignore` with `continue-on-error: true` on the lint step (to
+  paper over the failures it doesn't actually suppress) hides the breakage
+  entirely, and a bot review can approve the change on the false premise that
+  `.jarlignore` works, since nothing about the diff itself is wrong-looking.
+  Verify a suppression file is real by checking the tool's own config-file
+  reference (or just removing `continue-on-error` and running the check) —
+  not by pattern-matching on other tools' ignore-file conventions.
+  (`d-morrison/altdoc#7`: `continue-on-error: true` masked a `.jarlignore`
+  that did nothing; removing the flag immediately reproduced the
+  `unused_function` failure it was supposed to prevent.)
 
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog

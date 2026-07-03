@@ -107,3 +107,23 @@ at merge time too. (PR #352's `check-info-quality` landed alongside `#344`'s
 independently-authored `fact-check-prose` this way --- distinct enough to
 keep both, resolved by adding an explicit boundary in each skill's
 Relationship section rather than consolidating.)
+
+**An add/add conflict on a *shared config file* usually means two PRs
+independently fixed the same root cause --- reconcile the reasoning, don't
+just pick a side.** This generalizes the skill-file case above beyond
+skills: a repo-wide CI/lint/build config fix (a new tool config file, a
+workflow tweak) is exactly the kind of change multiple sessions or bots are
+likely to attempt in parallel once a check starts failing on `main` for
+everyone. When the conflict is a whole-file add/add (not just competing
+edits to an existing file), read both sides' reasoning --- code comments,
+commit messages, the PR discussion --- before resolving; usually one side's
+explanation is more complete (covers a case the other missed, cites the
+tool's actual constraint) and should win outright rather than mechanically
+merging fragments of both. Re-diff the PR against `origin/main` after
+resolving to confirm the PR's remaining changes are its own original scope,
+not a reintroduction of what the other, now-merged PR already added.
+(`d-morrison/altdoc#7` vs `#18`: both independently added a `jarl.toml`
+excluding the same fixture directory for the same `jarl-check` failure;
+`#18` merged first, `#7`'s merge conflicted on the new file, resolved by
+keeping `#18`'s more detailed comment and re-confirming `#7`'s diff against
+`main` was back down to just its own four files.)
