@@ -74,18 +74,18 @@ reflect, and persist.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-   git commit -m "ums: <brief summary>"
-   git push origin HEAD
+   git commit -m "ums: <brief summary>"   # COMMIT
+   git push origin HEAD                   # PUSH
    ```
 
    *No PR yet:* branch off main first — a direct-to-main push is denied by
    auto-mode and bypasses review.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-   git fetch origin main && git checkout -b ums-<topic> origin/main
+   git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-   git commit -m "ums: <brief summary>"
-   git push -u origin HEAD && gh pr create --fill   # then request d-morrison as reviewer
+   git commit -m "ums: <brief summary>"   # COMMIT
+   git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then request d-morrison as reviewer
    ```
    **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing*
    was committed — verify with `git status` / `git log` before any `git reset

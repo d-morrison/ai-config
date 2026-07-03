@@ -33,7 +33,9 @@ only applies those existing rules to threads that already carry a reply.
 
 ### 1. List every inline review thread
 
-**GitHub** — pull threads with their resolution state and last reply:
+**GitHub** — pull threads with their resolution state and last reply
+(`READ_PR_REVIEW_COMMENTS` — abstract operation token; resolve to your
+model's tool via [`tool-mappings.md`](../../tool-mappings.md)):
 
 ```bash
 gh api graphql -f query='query {
@@ -89,7 +91,7 @@ Don't resolve a thread that has no reply on it — that skips straight past
 
 ```bash
 gh api graphql -f query='mutation {
-  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'
+  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'   # RESOLVE_REVIEW_THREAD
 ```
 
 **GitLab**:

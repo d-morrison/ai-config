@@ -14,6 +14,11 @@ allowed-tools:
 Pick the highest-priority open issue, implement it, open an MR/PR, and drive
 it to a clean review verdict via ARDI.
 
+Commands below are annotated with their abstract operation token (e.g.
+`LIST_ISSUES`, `CREATE_PR`) — resolve to your model's tool via
+[`tool-mappings.md`](../../tool-mappings.md) instead of the `gh` command shown
+if this session doesn't have `gh`.
+
 ## When this fires
 
 - User says "gi", "grab an issue", "pick up the next issue"
@@ -26,7 +31,7 @@ it to a clean review verdict via ARDI.
 
 ```bash
 # GitHub
-gh issue list --state open --limit 20 --json number,title,labels,assignees,createdAt | cat
+gh issue list --state open --limit 20 --json number,title,labels,assignees,createdAt | cat   # LIST_ISSUES
 
 # GitLab
 glab issue list --per-page=20 2>&1 | cat
@@ -81,7 +86,7 @@ check both explicitly here).
 
 ```bash
 # GitHub — read the issue's latest comment:
-gh issue view <N> --json comments --jq '.comments | last | .body' | cat
+gh issue view <N> --json comments --jq '.comments | last | .body' | cat   # READ_ISSUE_COMMENTS
 ```
 
 If it contains "Working on this" / "paws off" (or an equivalent claim), skip
@@ -91,14 +96,14 @@ the issue.
 
 ```bash
 # GitHub — list open PRs and scan for any whose title or branch references this issue:
-gh pr list --state open --json number,title,headRefName | cat
+gh pr list --state open --json number,title,headRefName | cat   # LIST_PRS
 # Authoritative — the issue's cross-referenced open PRs via the REST timeline API.
 # (gh issue view --json has no timelineItems field; in the timeline, source.type is
 #  always "issue", so a PR is one whose source.issue.pull_request is non-null. The
 #  state filter keeps only open PRs — merged/closed siblings aren't active competitors.
 #  --paginate walks every page so a cross-reference past the first 30 events isn't missed.)
 gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline \
-  --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"' | cat
+  --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"' | cat   # ISSUE_LINKED_PRS
 ```
 
 If an open PR already exists for the issue:
@@ -117,7 +122,7 @@ MRs/PRs that touched the same area. Don't undo past progress.
 
 ```bash
 # GitHub
-gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
+gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."   # COMMENT_ISSUE
 
 # GitLab
 glab issue note <N> --message "Claude Code CLI (local session) is working on this — paws off until I'm done."
@@ -126,8 +131,8 @@ glab issue note <N> --message "Claude Code CLI (local session) is working on thi
 ### 7. Create a branch
 
 ```bash
-git fetch origin main
-git checkout -b fix/<slug> origin/main   # or feat/<slug>, docs/<slug>
+git fetch origin main                    # FETCH
+git checkout -b fix/<slug> origin/main   # CREATE_BRANCH — or feat/<slug>, docs/<slug>
 ```
 
 Branch naming:
@@ -144,13 +149,13 @@ worked (see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md)). Give the
 branch a diff with an empty commit, push, and open a **draft** PR:
 
 ```bash
-git commit --allow-empty -m "start: <issue title> (closes #<N>)"
-git push -u origin fix/<slug>
+git commit --allow-empty -m "start: <issue title> (closes #<N>)"   # COMMIT
+git push -u origin fix/<slug>                                      # PUSH
 
 # GitHub — draft PR
 gh pr create --draft --title "<title>" --body "Closes #<N>
 
-WIP — opened up front to claim the issue; implementing now."
+WIP — opened up front to claim the issue; implementing now."   # CREATE_PR
 
 # GitLab — draft MR
 glab mr create --draft --title "<title>" --description "Closes #<N>
@@ -173,8 +178,8 @@ merge.
 ### 10. Push and mark the PR ready for review
 
 ```bash
-git push origin fix/<slug>   # push the implementation onto the draft PR from step 8
-gh pr ready <N>              # GitHub — flip draft → ready, which kicks off review
+git push origin fix/<slug>   # PUSH — push the implementation onto the draft PR from step 8
+gh pr ready <N>              # MARK_PR_READY — GitHub, flip draft → ready, which kicks off review
 # GitLab: glab mr update <N> --ready
 ```
 
@@ -205,8 +210,8 @@ opening PR-list scan won't catch a PR that didn't exist yet. Re-check right
 before merging (and treat an unexpected merge conflict as a signal):
 
 - Search open *and merged* PRs for one that already references `Closes #<N>`
-  for your issue (`gh pr list --state all --search "closes #<N>"` / the GitHub
-  `mcp__github__search_pull_requests` tool) — the default `gh pr list` lists only open PRs
+  for your issue (`SEARCH_PRS` — `gh pr list --state all --search "closes #<N>"`
+  / the GitHub `mcp__github__search_pull_requests` tool) — the default `gh pr list` lists only open PRs
   and would miss a sibling that already merged and closed the issue, the case
   that matters most. If the issue is already closed, don't merge a now-redundant
   PR blindly.

@@ -32,7 +32,7 @@ review lifecycle is still fresh in context.
 ### 1. Verify the merge — never assume
 
 ```bash
-gh pr view <N> --json number,title,state,mergedAt,mergeCommit,headRefName
+gh pr view <N> --json number,title,state,mergedAt,mergeCommit,headRefName   # VIEW_PR
 # GitLab
 glab mr view <N>
 ```
@@ -48,7 +48,7 @@ Scan right after the merge is confirmed:
 
 ```bash
 gh pr list --state open \
-  --json number,title,headRefName,mergeable,mergeStateStatus,comments
+  --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS
 ```
 
 For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (GitHub can
@@ -64,28 +64,28 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
    this — paws off" (or equivalent), skip it — another session owns it.
 3. **Claim it.**
    ```bash
-   gh pr comment <N> --body "Working on this — paws off until I'm done."
+   gh pr comment <N> --body "Working on this — paws off until I'm done."   # COMMENT_PR
    ```
 4. **Create an isolated worktree**, fetch the latest `main` (the squash-merge
    commit that caused the conflict), and merge:
    ```bash
-   git fetch origin main <branch>   # fetch both: we need the new main tip
+   git fetch origin main <branch>   # FETCH — fetch both: we need the new main tip
    git worktree add .claude/worktrees/pr-<N> origin/<branch>
    cd .claude/worktrees/pr-<N>
    git checkout -b <branch>         # or --track origin/<branch> if the name is free
-   git merge origin/main            # picks up the new squash-merge commit
+   git merge origin/main            # MERGE_BRANCH — picks up the new squash-merge commit
    ```
 5. **Resolve conflicts** using the `resolve-conflicts` skill (consolidate both
    sides' intent; do not blindly pick one side wholesale).
 6. **Run the repo's pre-commit checks**, then push and remove the worktree:
    ```bash
-   git push origin <branch>
+   git push origin <branch>   # PUSH
    cd -
    git worktree remove .claude/worktrees/pr-<N>
    ```
 7. **Unclaim** with a brief resolution summary:
    ```bash
-   gh pr comment <N> --body "Conflict resolved — branch is now mergeable. <one-line summary of what conflicted and how it was resolved>"
+   gh pr comment <N> --body "Conflict resolved — branch is now mergeable. <one-line summary of what conflicted and how it was resolved>"   # COMMENT_PR
    ```
 
 Resolve PRs one at a time — not because worktrees race each other (each

@@ -38,7 +38,7 @@ Synonyms: `sync`, `resync-branch`, `merge-main` — all route here.
 1. **Fetch everything from origin** (gets both `origin/main` and the
    remote-tracking copy of the current branch in one shot):
    ```bash
-   git fetch origin
+   git fetch origin   # FETCH
    BR="$(git branch --show-current)"
    ```
    If `BR` is empty (detached HEAD) or `main`/`master`, stop and tell the user
@@ -49,13 +49,13 @@ Synonyms: `sync`, `resync-branch`, `merge-main` — all route here.
    rebase or squash-rewrite a *published* branch unless the user explicitly
    asks.
    ```bash
-   git merge origin/main
+   git merge origin/main   # MERGE_BRANCH
    ```
 
 3. **Merge `origin/<current-branch>` into local** — reconcile any commits that
    reached the remote from elsewhere:
    ```bash
-   git merge "origin/$BR"
+   git merge "origin/$BR"   # MERGE_BRANCH
    ```
    "Already up to date" just means local was already ahead of or equal to the
    remote — fine, carry on.
@@ -64,7 +64,7 @@ Synonyms: `sync`, `resync-branch`, `merge-main` — all route here.
    commits, those may predate the `main` you merged in step 2. When that's the
    case, merge `main` once more so the final tree is current with both inputs:
    ```bash
-   git merge origin/main
+   git merge origin/main   # MERGE_BRANCH
    ```
    Skip this when step 3 was a no-op — it would just be an empty merge.
 
@@ -91,7 +91,7 @@ Synonyms: `sync`, `resync-branch`, `merge-main` — all route here.
 
 7. **Push the branch back to origin:**
    ```bash
-   git push origin HEAD
+   git push origin HEAD   # PUSH
    ```
    Because step 3 already merged the remote tip, this is a fast-forward of the
    remote and won't be rejected. If it *is* rejected, the remote moved again

@@ -42,8 +42,9 @@ standing yes (see `preferences.md`).
 - Check `mergeStateStatus` in addition to `mergeable`. A PR can be
   `"MERGEABLE"` but `"BLOCKED"` when branch protection requires at least one
   approving review and only bot/comment reviews exist. Fix: request
-  `d-morrison` as reviewer (`gh pr edit <N> --add-reviewer d-morrison`) and
-  leave a note that the PR is clean and ready. Don't attempt to force-merge.
+  `d-morrison` as reviewer (`gh pr edit <N> --add-reviewer d-morrison` —
+  `EDIT_PR`) and leave a note that the PR is clean and ready. Don't attempt to
+  force-merge.
 - If CI is red or the review still has open findings, **do not merge** — report
   what's blocking instead. (Only merge a not-clean PR if the user explicitly
   says to anyway.)
@@ -60,7 +61,7 @@ standing yes (see `preferences.md`).
   the message so the linked issue auto-closes.
 
 ```bash
-# remote/web (GitHub MCP):
+# MERGE_PR — remote/web (GitHub MCP):
 #   mcp__github__merge_pull_request  merge_method=squash  commit_title=…  commit_message=…
 # local:
 gh pr merge <N> --squash --subject "<title>" --body "<accurate summary; Closes #N>"

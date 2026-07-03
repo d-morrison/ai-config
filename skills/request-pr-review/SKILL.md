@@ -21,6 +21,10 @@ notification.
 
 ## Command
 
+`EDIT_PR` (abstract operation token; resolve to your model's tool via
+[`tool-mappings.md`](../../tool-mappings.md) — the GitHub MCP form is
+`mcp__github__update_pull_request` with `reviewers: ["d-morrison"]`):
+
 ```sh
 gh api -X POST repos/<owner>/<repo>/pulls/<num>/requested_reviewers \
   -f "reviewers[]=d-morrison"
