@@ -1311,7 +1311,8 @@ not block `claude-review`.)
   cross-repo path yet. A second, independent investigation (gha#194, a same-repo
   dogfooding failure on `d-morrison/gha` reviewing its own PR) found a documented
   explanation: per [github/community discussions #31054](https://github.com/orgs/community/discussions/31054)
-  and #45342, `github.job_workflow_ref` is a **known no-op for a SAME-repository**
+  and [github/community discussions #45342](https://github.com/orgs/community/discussions/45342),
+  `github.job_workflow_ref` is a **known no-op for a SAME-repository**
   reusable-workflow call — it only reliably populates for a genuine cross-repo
   `owner/repo/...@ref` call. That explains the same-repo dogfooding failure cleanly, but
   doesn't fully explain gha#196's original *cross-repo* failure (`Lacaedemon/sparta`
