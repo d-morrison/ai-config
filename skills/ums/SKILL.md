@@ -18,12 +18,16 @@ reflect, and persist.
 
 ## When this fires
 
+- **As soon as a learning worth saving shows up** — a corrected mistake, a
+  new preference, a tool quirk, a workflow gap. This is the primary trigger:
+  run UMS right then, interleaved with the main work, instead of batching
+  learnings for a wrap-up step at the end. Don't wait for the task to finish
+  or for `/clear` to accumulate a backlog.
 - User says "ums", "update memories and skills", "record what we learned"
-- **At the start of `/clear`** — before context is lost, capture any
-  accumulated learnings from the session
+- **At the start of `/clear`** — a backstop, not the primary trigger: catch
+  anything accumulated since the last proactive pass before context is lost
 - After a workflow reveals a gap (e.g., a skill was followed but missed a
   step, or a preference wasn't encoded)
-- After a multi-step session where several learnings accumulated
 - When the user says "did you update memories?" (the answer should be "let
   me do that now")
 

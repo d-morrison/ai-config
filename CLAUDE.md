@@ -9,10 +9,12 @@ keep fragments ASCII (write `---` for em-dashes) so the manual's character check
 passes. See README.md, "Shared content".
 -->
 
-## Run UMS before /clear
+## Run UMS proactively, as learnings accumulate
 
-When the user says "clear", "/clear", or otherwise asks to reset the conversation, **first** run the `ums` (Update Memories and Skills) procedure to capture any accumulated learnings before context is lost.
-Then proceed with the clear.
+Don't wait for `/clear` or the end of a task to run `ums` (Update Memories and Skills).
+As soon as a learning worth saving shows up during a session — a corrected mistake, a new preference, a tool quirk, a workflow gap — run UMS right then, interleaved with the main work, rather than batching it for a wrap-up step at the end.
+
+Still run UMS before `/clear` too, as a final catch-all for anything accumulated since the last proactive pass — but treat that as a backstop, not the trigger to wait for.
 
 ## Keep ai-config and repo checkouts fresh
 
