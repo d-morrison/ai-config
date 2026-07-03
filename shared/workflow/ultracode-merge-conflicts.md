@@ -29,11 +29,25 @@ repo defines custom merge drivers.
 
 When correctness matters (deciding whether a worktree branch's result really
 conflicts, whether a PR branch can fast-forward, whether two parallel agents'
-output can combine), do the merge for real in a checkout that has
-`.gitattributes` applied, rather than trusting the platform's indicator alone:
+output can combine), do the merge for real rather than trusting the
+platform's indicator alone. Prefer the non-destructive `git merge-tree` form
+--- it doesn't touch the working tree or current branch, so there's no
+checkout or abort to get wrong:
 
 ```bash
 git fetch origin <branch-a> <branch-b>
-git merge --no-commit --no-ff origin/<branch-b>   # or: git merge-tree <base> <a> <b>
-git merge --abort                                  # once you've read the result
+git merge-tree "$(git merge-base origin/<branch-a> origin/<branch-b>)" \
+  origin/<branch-a> origin/<branch-b>
+```
+
+If you need the merge actually materialized (to inspect merged file
+contents, not just conflict/no-conflict), check out `branch-a` explicitly
+first --- `git merge --no-commit` merges into whatever is currently checked
+out, not into whichever branch you happened to fetch:
+
+```bash
+git fetch origin <branch-a> <branch-b>
+git checkout -b _check-merge origin/<branch-a>
+git merge --no-commit --no-ff origin/<branch-b>
+# inspect, then: git merge --abort
 ```
