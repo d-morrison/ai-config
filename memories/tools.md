@@ -946,10 +946,11 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   literal substring `@claude` in a new PR comment, not just a genuine mention. A manual
   self-review that refers to the failed job by name (e.g. "the `@claude` review job
   failed with a hard SDK error") satisfies that match and spins up an unrelated agent
-  run. That run isn't wasted, though: it re-reads the whole thread, correctly concludes
-  there's no new request, and in one observed case went further — independently caught
-  and fixed a real stale-doc bug (a `CLAUDE.md` line no longer matching the PR's own
-  diff), committing the fix under the same GitHub identity a human session posts under.
+  run. That run isn't wasted, though: it re-reads the whole thread, finds no new
+  directed request, but still runs a general review pass — and in one observed case
+  that was enough to independently catch and fix a real stale-doc bug (a `CLAUDE.md`
+  line no longer matching the PR's own diff), committing the fix under the same GitHub
+  identity a human session posts under.
   From outside, this looks exactly like a second human/session claiming the same PR (a
   duplicate "Working on this" comment, an unexplained new commit) even though only one
   person was ever working it. Before treating that as a collision worth investigating,
