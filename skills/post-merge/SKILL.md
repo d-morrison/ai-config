@@ -60,7 +60,22 @@ advanced (PR #N merged) --- fetch and merge origin/main into your branch now,
 resolve any conflict yourself (you have the context on your own change), then
 continue." This is faster and higher-context than a scanning subagent
 guessing at the resolution from outside: the branch's own owning agent
-already knows why its code looks the way it does. Reserve the scan-and-fix
+already knows why its code looks the way it does.
+
+**This depends on the coordinator finding out about a merge in the first
+place --- so brief every delegated agent, up front, to report back the
+instant its OWN tracked PR merges, not just when its ARDI work is done.**
+A PR sitting "ready for merge" isn't the end of that agent's watch: keep
+polling until the merge actually happens --- by a human, since the agent
+itself must not self-merge --- then notify the coordinator immediately. This
+is what lets the coordinator fan out the "merge main now" nudge above to
+every OTHER live agent right when it matters, instead of the coordinator
+having to separately poll every open PR's merge state itself to notice. Fold
+this into the standard delegation brief (see `gia`/`gii`'s per-issue agent
+prompts) alongside the no-self-merge instruction, rather than treating it as
+a one-off ask.
+
+Reserve the scan-and-fix
 subagent above for branches with NO active owning agent (e.g. a completed
 `Workflow` run's one-shot agent that already returned).
 
