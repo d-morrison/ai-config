@@ -39,7 +39,7 @@ correctness forces the review loop to spend a round re-deriving what the
 project's own docs already said. Before the first push, re-read the
 project's own stated review criteria and check the diff against each one
 directly, instead of waiting for the bot to enumerate them one per round.
-(gha#219/#220: one review round surfaced five findings --- a DRY
+([gha#219](https://github.com/d-morrison/gha/issues/219)/[#220](https://github.com/d-morrison/gha/pull/220): one review round surfaced five findings --- a DRY
 duplication, an incomplete-coverage doc overclaim, a wrong changelog
 category, an uncited claim, and missing test coverage for new logic --- all
 catchable this way, since each was a direct match against gha's own
