@@ -187,9 +187,19 @@ already set for their skills.
   context, cherry-picking, or a citation that only weakly supports it. Checks
   A and B (staleness, relevance) have no `fact-check-prose` counterpart at
   all. Run both on a substantive prose review; neither subsumes the other.
+  `fact-check-prose` also flags **undefended** claims (no citation, no
+  internal reasoning, even if true) — a fourth failure mode distinct from
+  this skill's check C, which only fires when a citation already exists but
+  doesn't back its claim.
 - **`address-every-comment` / `ardi`** — findings from this skill route
   through the same Address/Rebut/Defer discipline as any other review
   finding.
+- **`shared/workflow/challenge-unnecessary-complexity.md`** — a sibling
+  standing review rule, not a skill: flags unnecessary complexity or
+  verbosity in prose, math, or code and asks for a simplification.
+  Orthogonal to this skill's three checks — content can be maximally
+  simple and still stale, off-topic, or misleading, and vice versa. Fold
+  both into the same review pass.
 
 ## Anti-patterns
 

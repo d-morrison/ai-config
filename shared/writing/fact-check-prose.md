@@ -11,6 +11,14 @@ claims and reasoning that are resolved but wrong.
   and, where the claim is checkable against an external source (a paper, a
   spec, a package's documentation, a dataset), fetch and check it there too.
   Don't accept a plausible-sounding claim without checking it.
+- **Undefended claims.** Separately from accuracy, check that each factual
+  claim is *defended* --- either by reasoning laid out in the surrounding
+  text, or by a citation to an external source. Flag a bare assertion that
+  has neither, even when it turns out to be true: a reader has no way to
+  verify an undefended claim without redoing the checking work themselves.
+  This is distinct from `check-info-quality`'s citation-mismatch check
+  (does an existing citation actually back its claim) --- this check is
+  about claims that carry **no** citation or reasoning at all.
 - **Tool/library behavior claims.** When prose describes how a specific tool
   or library behaves (a git merge driver, a shell built-in, a regex engine, a
   function's edge-case handling) and that behavior is deterministic and cheap
@@ -59,6 +67,9 @@ For every claim or reasoning step checked, state:
    reader would benefit from a pointer to a source (a foundational
    result, a dataset's documentation, a package's reference page) even if
    the prose isn't currently wrong without it.
+4. **Which claims are undefended** --- identify factual claims that carry no
+   citation and no internal reasoning, even when the claim itself turns out
+   to be accurate.
 
 Silence on a checkable claim reads as "verified" --- don't leave one unchecked
 because it sounded right on a first pass.

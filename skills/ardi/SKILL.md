@@ -102,7 +102,7 @@ finding → push → post summary → re-request review → repeat until clean.
    For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (see
    `resolve-conflicts`, "Verify before you act" — `UNKNOWN` can mean GitHub
    hasn't finished computing yet, not that there's no conflict), verify with
-   `git merge-tree --write-tree origin/main origin/<branch>` before acting,
+   `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38) before acting,
    then check claim status (most recent comment) and fix unclaimed ones —
    same cascade procedure as `post-merge` step 1.5 (claim → isolated worktree
    → fetch main → merge → `resolve-conflicts` skill → push → unclaim). A
@@ -165,7 +165,7 @@ finding → push → post summary → re-request review → repeat until clean.
      --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'   # LIST_PRS
    ```
    Verify each candidate with `git merge-tree --write-tree origin/main
-   origin/<branch>` (see `resolve-conflicts`, "Verify before you act") before
+   origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, "Verify before you act") before
    claiming — `UNKNOWN` isn't proof of a real conflict, and `CONFLICTING` can
    be stale if a sibling PR merged since GitHub last computed it. Claim and
    fix confirmed conflicts using the cascade procedure in `post-merge` step

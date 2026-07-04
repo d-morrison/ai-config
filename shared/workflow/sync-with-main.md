@@ -2,6 +2,13 @@ Whenever `main` has moved ahead of a PR branch you're working on, **merge
 `main` into the PR branch** before the next push or review trigger. Don't wait
 for a conflict to surface or for someone to ask.
 
+This fragment covers the single-branch-vs-`main` case. When orchestrating a
+multi-agent `ultracode` session, merges can happen at more points than that —
+see [`ultracode-merge-conflicts`](ultracode-merge-conflicts.md) for the
+broader check (worktree-isolated agent branches, concurrent `parallel()`
+results) and the note on GitHub's mergeable indicator not evaluating custom
+`.gitattributes` merge drivers.
+
 **Always check for merge conflicts with main before pushing results to remote.**
 Run this before every push, not just before triggering a review:
 
@@ -108,6 +115,27 @@ independently-authored `fact-check-prose` this way --- distinct enough to
 keep both, resolved by adding an explicit boundary in each skill's
 Relationship section rather than consolidating.)
 
+**Two PRs that each append a new terminal numbered subsection to the same
+file (e.g. `### 5. ...` in a `CLAUDE.md` review-guidelines list) will
+conflict on merge even when neither side's content actually disagrees.**
+This isn't an editorial clash --- it's two authors both writing to "the next
+number" at the same insertion point. Resolve by keeping **both** additions
+and renumbering sequentially from the collision point on, not by dropping
+either side; then grep the file for any other place that names the old
+numbering (a cross-reference, an index). This is also a reason
+[`fully-clean`](fully-clean.md)'s CI-green-and-review-clean verdict is a
+snapshot, not a mergeability guarantee --- `main` can pick up its own append
+in the same spot after your last review round, so a PR can go from
+"reviewed clean" to "needs a merge conflict resolved" with no defect in its
+own diff. Before reporting a PR ready to merge, re-check with
+`git fetch origin main` plus the `git merge-tree` command from
+`resolve-conflicts`, not just a cached `mergeable` flag or an earlier green
+CI run. (gha#211: `main` merged #209's own new
+`### 5. Check for AI-generated prose tells` subsection between this PR's
+clean review and its actual merge --- `git merge-tree` surfaced a real
+conflict that neither PR's own CI nor review status had flagged, since
+neither had rerun since `main` advanced.)
+
 **After merging a PR that extracts an inline block into a reusable unit
 (a composite action, a shared script/function), check other open PRs that
 still edit that same inline block --- your merge just broke their textual
@@ -131,3 +159,23 @@ open in parallel, edited that same inline block to allowlist `WebFetch`/
 `Bash(curl:*)`. Proactively rebasing #202 and re-applying its allowlist
 change to the new composite action --- rather than leaving its author to
 discover a conflict --- let it merge within the hour instead of stalling.)
+
+**A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
+review guidelines" section) can produce zero blank lines between two
+adjacent headings
+even with no textual conflict --- lint catches it, git doesn't.** When a
+section is a hotspot several PRs independently append items to (each PR
+adding its own `### N.` block at the end), a clean three-way merge can
+still splice one PR's closing line directly against the next PR's heading
+with no blank line between them --- this doesn't produce a `<<<<<<<`
+conflict marker (git resolves it as a straightforward insertion), so it's
+easy to push without noticing. `markdownlint`'s MD022
+(blanks-around-headings) is what actually catches it, as a CI failure with
+no proximate code change to explain it. Re-run the repo's markdown lint (or
+at minimum re-read the diff around every `### N.` boundary you didn't
+personally write) after any merge that touches a shared growing list, not
+just after a merge with conflicts. (gha#208: an out-of-band merge from
+`main` --- done by a different session, not the one that opened the PR ---
+landed a new item 7 directly against the PR's own item 6 with no blank
+line; `lint-markdown`'s MD022 failed with no conflict marker anywhere in
+the diff to point at.)

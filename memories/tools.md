@@ -136,7 +136,11 @@
   `actions: write` the re-run API needs. So a flaky CI failure can't be re-kicked
   via MCP — **push a commit to re-trigger the whole workflow** (the normal path
   during an iterate loop anyway), or ask the user to click Re-run. (Hit
-  re-running a flaky `link-checker` timeout on a lab-manual PR.) Prefer folding
+  re-running a flaky `link-checker` timeout on a lab-manual PR.) **`method:
+  run_workflow` (a fresh `workflow_dispatch`, not a rerun) 403s the same way** —
+  the token lacks `actions: write` for dispatch too, not just for reruns, so
+  don't expect a direct-dispatch workaround to succeed where rerun failed
+  (confirmed on UCD-SERG/serodynamics#193). Prefer folding
   the retry into a real, already-pending fix (e.g. a reviewer's requested
   wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
   no throwaway commit in history. Only use an empty commit when no real fix is
@@ -212,6 +216,18 @@
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
+- **A CI-failure webhook event's `HeadSHA` can be stale — compare it against
+  the PR's actual current head before investigating.** Pushing a fix-up commit
+  right after a bad one (e.g. correcting an encoding mistake seconds later)
+  produces a cascade of failure events for every check on the now-superseded
+  commit, arriving over the next several minutes as each job finishes. Check
+  the event's `HeadSHA` field against the PR's live head (`pull_request_read`
+  `get`, `.head.sha`) — if it doesn't match, the event is about a commit no
+  one will ever see the result of; skip it with a one-line "stale, superseded"
+  note instead of re-diagnosing content you've already fixed. (Hit on
+  UCD-SERG/serodynamics#193: an accidental double-base64-encoded push
+  triggered ~10 failure events across the whole CI matrix, all for the
+  immediately-superseded commit.)
 - **Self-wake to re-check CI in remote/web sessions.** Webhooks don't deliver CI
   *success*, new pushes, or merge transitions, so re-check on a timer. Prefer
   `CronCreate` (a harness scheduling tool, not an MCP tool): schedule a one-shot
@@ -225,6 +241,19 @@
   git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
   blocked, which is why the background `Monitor` is the workable one. There is no
   `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
+- **`mcp__Claude_Code_Remote__send_later` can become unavailable mid-session,
+  not just absent from the start** (contrast the rme case above, where it was
+  never present). Observed failure sequence: first a few transient "Tool
+  permission stream closed before response received" errors (retrying the
+  identical call sometimes still worked), then a hard "Error: No such tool
+  available: mcp__Claude_Code_Remote__send_later" that no retry cleared.
+  Fallback to `CronCreate` with `recurring: false`, pinned to a specific
+  near-future cron time (compute it with `date`, since `CronCreate` takes an
+  absolute cron expression, not a relative "N minutes from now" delay).
+  **`CronCreate` jobs are session-only** — they die with the session, unlike
+  `send_later`'s durable server-side triggers — so this is a degraded
+  substitute, not an equivalent; say so rather than treating it as a full
+  replacement. (gha#193 PR-babysitting session, 2026-07-03.)
 - **`add_repo` refuses a cross-owner add once the session already has a repo from a
   different owner** ("cross-tier adds are not supported in v1: requested `<owner>/<repo>`
   but session already has repos from owner(s) `[...]`") — it does NOT fall back to a
@@ -383,6 +412,27 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
 - In a non-interactive (headless) session git uses the auto-generated merge commit message without prompting — no editor opens.
+
+## Git merge — uncommitted edits to an untouched file silently ride along, uncommitted, through repeated merges
+- `git merge <branch>` only refuses when the incoming branch's commits touch a
+  file you also have uncommitted changes to. If the incoming commits don't
+  touch that file, the merge succeeds and your uncommitted edit is left
+  exactly as it was --- still uncommitted, sitting on top of the new merge
+  commit. Repeat the pattern (merge again while the edit is still
+  uncommitted, e.g. reconciling with a remote branch another actor pushed to)
+  and it survives through multiple merge commits without ever landing in one.
+- This is easy to miss because `grep`/`cat` against the **working tree** shows
+  the fix is present, creating false confidence that it's committed. Verify
+  against the actual commit instead: `git show HEAD:<path>` (or `git status
+  --short` for a stray `M`), not a plain file read, before pushing and
+  declaring a review finding addressed.
+- Fix: commit the edit (`git add <path> && git commit`) as its own step
+  **before** merging anything else in, not after. (Hit on ai-config#461: a
+  one-line prose fix sat uncommitted through two merge commits — one merging
+  `origin/main` in, one reconciling with a bot's competing push to the same
+  branch — so what got pushed both times still had the pre-fix text, and a
+  review correctly re-flagged it as unaddressed after an incorrect "addressed"
+  reply.)
 
 ## Git stash — verify supersession line-by-line, tag before dropping
 - Before dropping a stash as "already landed", verify against `origin/main`,
@@ -1223,6 +1273,26 @@ common patterns.
   section against what you're about to pass. Filed as gha#179; worked around
   in `d-morrison/altdoc`#14 by omitting `ANTHROPIC_API_KEY` until `@v1` catches
   up.
+- **A `workflow_call` reusable-workflow ref (`@v1`/`@v2`) resolves ONCE, at the
+  run's original creation time, and stays pinned to that SHA across every
+  re-run of that same run — even after the tag has since moved to a fix.** So
+  if a consumer PR's `claude-code-review.yml` run first ran while `@v2` still
+  pointed at a broken gha commit, re-running that same run (whether via the
+  Actions UI "Re-run failed jobs" or a bot re-dispatch that happens to target
+  the existing run rather than creating a new one) reproduces the identical
+  pre-fix failure forever, no matter how many times you retry or how long ago
+  the tag was fixed. **Diagnose by checking `run_attempt`** (> 1 means this is
+  a re-run, not a fresh dispatch) **and `created_at`** (`mcp__github__actions_get`,
+  `method: get_workflow_run` — compare against when the fix landed), then read
+  `referenced_workflows[].sha` in the same response — it shows the ACTUAL
+  resolved commit for that run, which you can diff against the tag's current
+  `get_tag` SHA to confirm staleness. **Only a
+  genuinely NEW run (a new `run_id`) re-resolves the tag fresh** — a new commit
+  (`pull_request: synchronize`) is the reliable trigger; an `@claude review`
+  comment sometimes causes the bot to re-run the existing stale run instead of
+  dispatching a new one (observed on UCD-SERG/serodynamics#193 — a direct
+  `workflow_dispatch` via `actions_run_trigger` would have sidestepped this,
+  but that call 403s in these sessions too, per the note above).
 - **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
   `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
   example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
@@ -1645,9 +1715,73 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
   notation looks non-idiomatic next to the dot notation used everywhere else in the
   same workflow. Caught in gha#134 review.
+- **A `claude-code-review`-style job that fails with "no verdict written" but `is_error: false` and real cost/turns can be root-caused by downloading the uploaded execution-transcript artifact, not just reading the summary `result` object.**
+  The `Run Claude Code Review` step's own JSON output only shows the final SDK
+  summary (`is_error`, `num_turns`, `total_cost_usd`, `permission_denials_count`)
+  — enough to confirm a stub occurred, not why. The workflow separately uploads
+  the full turn-by-turn transcript as a `claude-review-execution-<run>-<attempt>.zip`
+  artifact (the name is defined by `d-morrison/gha`'s reusable workflow, not a
+  Claude Code convention — a future rename there invalidates this; confirm via
+  `gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` rather than
+  assuming the name, then `curl -H "Authorization: token $(gh auth token)"
+  .../artifacts/<id>/zip` to fetch). It's a single pretty-printed JSON array of
+  Claude Code SDK message objects, not NDJSON — each element has a top-level
+  `type` (`"system"`/`"assistant"`/`"user"`/`"result"`) and, for `"assistant"`
+  elements, a `message.content` array of blocks (`{"type":"tool_use", "name":
+  ..., ...}`, `{"type":"text", "text": ...}`, etc.) — parse with
+  `jq '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name'`
+  for a tool-use histogram, or pull `is_error==true` tool_results for the actual
+  denial messages. This is how a "stub review" traced back to the model
+  fanning its own review out across background `Agent` calls and ending its turn
+  on "waiting for background agents" — a mechanism the summary object alone
+  can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **`gh pr checks <N>` can return a momentarily-stale check entry right after a
+  state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
+  immediately after triggering can show the check that was current a few
+  seconds ago — including a red/failed one from a run that already finished
+  hours earlier — rather than the freshly-queued run. Don't trust a `gh pr
+  checks` read taken within seconds of triggering; instead look up the actual
+  newest run for the branch and watch that specific run id:
+  `gh run list --workflow "<name>" --json databaseId,createdAt,headBranch --jq
+  'map(select(.headBranch=="<branch>")) | sort_by(.createdAt) | last | .databaseId'`,
+  then poll `gh run view <id> --json status,conclusion` directly. A poll loop
+  built on `gh pr checks`'s live state must also treat every non-`"completed"`
+  status (`queued`, `in_progress`, and any value not explicitly enumerated) as
+  still-running rather than allow-listing only `PENDING`/`IN_PROGRESS` —
+  `QUEUED` slipping through an allow-list caused a premature "settled" false
+  positive in one session (`Lacaedemon/sparta`, 2026-07-03).
 
 ## Changelog section ordering in d-morrison/gha
 
 - **The established order in `CHANGELOG.md` is: Added → Changed → Fixed → Security.**
   Match this when adding new `## [Unreleased]` entries or when resolving merge
   conflicts in the changelog. Caught in gha#134 review (Fixed appeared before Changed).
+
+## ScheduleWakeup is scoped to `/loop` dynamic mode --- use `send_later` for ad-hoc waits
+
+`ScheduleWakeup` requires a `prompt` param and is meant to re-arm a `/loop`
+session's next firing (its own docs say to pass the same `/loop` input back,
+or the `<<autonomous-loop-dynamic>>` sentinel). Calling it outside a `/loop`
+context --- e.g. to arm a plain "check back on this PR in 5 minutes" wait ---
+throws `InputValidationError: prompt is missing`, since there's no `/loop`
+input to hand it. Use `mcp__Claude_Code_Remote__send_later` (or the harness's
+plain wakeup tool, if present) for a one-off self check-in instead; reserve
+`ScheduleWakeup` for actual `/loop` iterations. See `send_later` mid-session
+availability above for the fallback (`CronCreate`) if it disappears.
+(ai-config#455/gha#216, 2026-07-03.)
+
+## Evergreen-conditional citation phrasing can still regress in adjacent prose
+
+`shared/workflow/challenge-ambiguous-terminology.md`'s "cross-repo citations
+have a merge-order trap" note prescribes evergreen-conditional phrasing
+("proposed in `<repo>#<PR>` --- once merged, the fragment lives at `<path>`
+there") specifically so a citation never needs a follow-up edit. That
+phrasing held up correctly once applied --- but while writing the *PR
+description* for the companion PR, a draft sentence ("once this merges, that
+citation should be tightened to the standard present-tense form") reintroduced
+the same future-edit-fragility anti-pattern the citation fix had just avoided,
+one level up. Caught before pushing by re-reading against the fragment's own
+"never needs editing" design intent, not by a reviewer. When writing about an
+evergreen-conditional citation elsewhere (a PR description, a commit message),
+don't promise a future tightening --- the whole point of that phrasing is that
+none is needed. (ai-config#455, 2026-07-03.)

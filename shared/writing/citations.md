@@ -24,6 +24,22 @@ misleading/out-of-context check catches that case; run it on content with
 citations alongside `purge-hallucinations` (which only checks the citation
 *exists*).
 
+**Mirroring a precedent's citation style doesn't guarantee the new citation
+holds.** When a new section is modeled on an existing one --- same structure,
+same "this is a global standing rule from X (see file Y)" closing sentence
+--- read the *newly cited* file's own text before reusing that phrasing, not
+just the precedent's. The precedent's citation can be self-sufficient (the
+cited file's own opening sentence already makes the claim) while the new
+file doesn't say what's being attributed to it --- a real gap, not a
+copy-paste nitpick. (Caught by `@claude` review on `gha`#209: item 5 mirrored
+item 4's "cite the specific `shared/writing/*.md` file" pattern, but
+`shared/writing/ai-tells.md` only framed itself as a pre-send self-check,
+while `shared/writing/fact-check-prose.md` --- the file item 4 cites --- opens
+by stating the review-time claim directly. Fixed at the root in
+`ai-config`#445 by adding the missing framing to `ai-tells.md` itself, making
+the fragment self-sufficient rather than just softening the downstream
+citation.)
+
 **Match the claim's strength to what was actually verified.** Fetching a
 file's *current* content only supports a present-tense claim ("X currently
 does Y") --- it does not support a comparative or temporal claim ("X predates
