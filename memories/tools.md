@@ -744,7 +744,7 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   dotfile-per-tool; its only exclusion mechanism is `jarl.toml`'s `[lint]`
   table (`exclude` / `per-file-ignores`, above). A `.jarlignore` file is
   silently inert — `jarl check` never reads it, so violations inside the
-  "excluded" paths still fire, and no error or warning flags the typo'd
+  "excluded" paths still fire, and no error or warning flags the unsupported
   config. This is easy to miss because CI can still look green: pairing the
   fake `.jarlignore` with `continue-on-error: true` on the lint step (to
   paper over the failures it doesn't actually suppress) hides the breakage
