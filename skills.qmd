@@ -36,6 +36,7 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 | Skill | Aliases | What it does |
 |-------|---------|--------------|
+| [`brainstorm`](skills/brainstorm/SKILL.md) | | Socratic clarifying-question loop before any code/issue, ending in a plan file |
 | [`start-task`](skills/start-task/SKILL.md) | `st` | File a tracking issue (if none exists), branch, implement, open PR, ARDI to clean |
 | [`grab-issue`](skills/grab-issue/SKILL.md) | `gi` | Pick the highest-priority open issue and work it end-to-end |
 | [`grab-issues-in-parallel`](skills/grab-issues-in-parallel/SKILL.md) | `gip` | Grab multiple issues and work them in parallel worktrees |
