@@ -1,7 +1,7 @@
-When reviewing prose, math, or code, check it for unnecessary complexity,
-too --- not just correctness or clarity of meaning. Flag content that is
-harder to read, derive, or maintain than the problem requires, and propose
-a concrete simpler equivalent rather than just naming the complexity.
+When reviewing prose, math, or code, check for unnecessary complexity ---
+not just correctness or clarity of meaning. Flag content that is harder
+to read, derive, or maintain than the problem requires, and propose a
+concrete simpler equivalent rather than just naming the complexity.
 
 This is a review-time check on content that already exists, not a
 writing-time style default. [`plain-prose.md`](../writing/plain-prose.md)
@@ -35,8 +35,8 @@ be more complex than the current problem needs.
    result. This is broader than `avoid-nesting.md` (nested calls/
    definitions only), and it's a *standing review check* --- not
    `simplify`'s narrow dead-code-after-refactor sweep, and not `tidy`'s
-   separate on-demand, code-only audit. Fold this into every normal review
-   pass instead of waiting for either to be invoked.
+   separate on-demand audit. Fold this into every normal review pass
+   instead of waiting for either to be invoked.
 
 ## What to report
 
@@ -53,3 +53,14 @@ be more complex than the current problem needs.
 Silence on a needlessly complex passage reads as "this is as simple as it
 needs to be" --- don't let a correct-but-bloated derivation or a
 three-layer wrapper through unchallenged just because it isn't wrong.
+
+## Relationship to other rules
+
+[`challenge-redundant-content.md`](challenge-redundant-content.md) covers a
+related but distinct failure: the *same* content restated in two places
+(duplication). This fragment covers a *single* passage being more
+elaborate than its own content requires (verbosity), even with no
+duplicate copy anywhere. "A point restated from multiple angles" here
+means one passage circling its own point several ways, not the same point
+appearing twice --- check both fragments on a substantive review, since a
+paragraph can fail either, both, or neither.

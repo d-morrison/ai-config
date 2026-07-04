@@ -404,7 +404,7 @@ derivations.
 <!-- Shared with the lab manual; edit shared/workflow/challenge-unnecessary-complexity.md, not here. -->
 @shared/workflow/challenge-unnecessary-complexity.md
 
-When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-style`, `find-ai-tells`, `fact-check-prose`), apply this alongside the normal review — those skills don't name it internally, so this CLAUDE.md directive governs regardless. It's distinct from `simplify` (dead-code removal only, triggered after a refactor) and `tidy` (a separate on-demand, code-only audit).
+When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-style`, `find-ai-tells`, `fact-check-prose`), apply this alongside the normal review — those skills don't name it internally, so this CLAUDE.md directive governs regardless. It's distinct from `simplify` (a dead-code-after-refactor sweep, triggered after a refactor) and `tidy` (a separate on-demand audit).
 
 ## Useful prompt formats for coding agents
 
