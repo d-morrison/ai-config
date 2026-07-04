@@ -159,3 +159,23 @@ open in parallel, edited that same inline block to allowlist `WebFetch`/
 `Bash(curl:*)`. Proactively rebasing #202 and re-applying its allowlist
 change to the new composite action --- rather than leaving its author to
 discover a conflict --- let it merge within the hour instead of stalling.)
+
+**A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
+review guidelines" section) can produce zero blank lines between two
+adjacent headings
+even with no textual conflict --- lint catches it, git doesn't.** When a
+section is a hotspot several PRs independently append items to (each PR
+adding its own `### N.` block at the end), a clean three-way merge can
+still splice one PR's closing line directly against the next PR's heading
+with no blank line between them --- this doesn't produce a `<<<<<<<`
+conflict marker (git resolves it as a straightforward insertion), so it's
+easy to push without noticing. `markdownlint`'s MD022
+(blanks-around-headings) is what actually catches it, as a CI failure with
+no proximate code change to explain it. Re-run the repo's markdown lint (or
+at minimum re-read the diff around every `### N.` boundary you didn't
+personally write) after any merge that touches a shared growing list, not
+just after a merge with conflicts. (gha#208: an out-of-band merge from
+`main` --- done by a different session, not the one that opened the PR ---
+landed a new item 7 directly against the PR's own item 6 with no blank
+line; `lint-markdown`'s MD022 failed with no conflict marker anywhere in
+the diff to point at.)
