@@ -129,6 +129,14 @@ git worktree remove <path>        # refuses on a dirty tree — don't blindly --
 git branch -d <merged-branch>     # now succeeds
 ```
 
+**Worktree containing a submodule:** `git worktree remove <path>` refuses with
+`fatal: working trees containing submodules cannot be moved or removed` even
+when the tree is perfectly clean (`git status --short` empty) — this is a
+different refusal than the dirty-tree one above, triggered by the mere
+presence of a submodule, not by uncommitted state. Confirm clean with
+`git status --short` first (as always), then `git worktree remove --force
+<path>` is the correct move here, not a sign of misclassification.
+
 **Running from within the worktree:** if post-merge fires while the shell is
 inside the worktree being tidied, `git worktree remove <path>` fails ("cannot
 remove the currently checked out worktree") and `git checkout main` is blocked
