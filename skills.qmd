@@ -64,6 +64,7 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`push-memory`](skills/push-memory/SKILL.md) | | Push a general-purpose memory into ai-config from a session working in another repo — on a branch + PR |
 | [`record-learnings`](skills/record-learnings/SKILL.md) | | Structured post-mortem: extract lessons from a completed task |
 | [`consolidate-memory`](skills/consolidate-memory/SKILL.md) | | Merge or deduplicate memory files that have drifted |
+| [`skill-audit`](skills/skill-audit/SKILL.md) | | Report which skills actually fire (and how often) vs. dead weight, and recommend pruning candidates |
 
 ### Writing and style
 
@@ -100,4 +101,4 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 ## Full skill list
 
-All 143+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 147+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
