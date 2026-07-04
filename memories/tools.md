@@ -1889,7 +1889,7 @@ own `CLAUDE.md` explicitly pulls specific files in with Claude Code's
 `@.ai-config/shared/workflow/ardi.md` (the path is `.ai-config/`-prefixed
 in a consumer repo, unlike ai-config's own `@claude` bot, which resolves
 `@shared/...` straight from the repo root --- see this repo's own
-`README.md`, "Vendored from the lab manual").
+`README.md`, "Shared content (`shared/`)").
 
 Two caveats a reviewer raised are worth pre-empting rather than leaving as
 open questions.
