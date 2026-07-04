@@ -310,6 +310,15 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 <!-- Shared with the lab manual; edit shared/coding/avoid-hardcoding-external-data.md, not here. -->
 @shared/coding/avoid-hardcoding-external-data.md
 
+## Coding: write tidy code; prefer tidyverse over base R/rlang for it
+
+<!-- Not yet shared with the lab manual; edit shared/coding/tidy-code.md, not here. -->
+@shared/coding/tidy-code.md
+
+Apply this both when writing code and when reviewing it — flag base R or
+`{rlang}` verbosity in review the same way `per-operation-grouping` flags a
+persistent `group_by()` that `.by` would replace.
+
 ## Coding: reuse function documentation and argument lists
 
 <!-- Not yet shared with the lab manual; edit shared/coding/reuse-docs-and-args.md, not here. -->
