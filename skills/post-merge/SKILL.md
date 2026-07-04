@@ -58,8 +58,8 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
 
 1. **Verify before claiming — don't trust the flag alone.** See
    `resolve-conflicts`, "Verify before you act": `git merge-tree --write-tree
-   origin/main origin/<branch>` gives ground truth without a worktree (requires
-   git ≥ 2.38). Skip if it comes back clean.
+   origin/main origin/<branch>` gives ground truth without a worktree
+   (git ≥ 2.38). Skip if it comes back clean.
 2. **Check claim status.** Read the most recent comment. If it says "Working on
    this — paws off" (or equivalent), skip it — another session owns it.
 3. **Claim it.**
