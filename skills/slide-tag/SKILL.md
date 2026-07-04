@@ -102,3 +102,18 @@ User: "slide v3 to the release branch"
 - ❌ Sliding without fetching first (tag might already be at target)
 - ❌ Sliding without showing the user what commits are being added
 - ❌ Moving a tag backward without explicit confirmation
+
+## Relationship to other skills
+
+**"Slide the `<x>` submodule" is a different operation from this skill** —
+this skill moves a floating *tag* (e.g. `v2`) to a new commit; a submodule
+pin is a gitlink entry in the parent repo pointing at a specific commit of a
+different repo. Bumping a submodule pin means: fetch the submodule's
+upstream, check out its new commit, `git add <submodule-path>` in the parent
+repo, and commit — no tag involved. `check-dependency-updates` (`cdu`)'s
+"Git submodules" step covers this; `use-math-macros` covers it specifically
+for the `d-morrison/macros` submodule as part of a broader macro-conversion
+pass. Don't reach for `slide-tag` on a "slide the submodule" request — the
+name similarity is coincidental. (Confirmed on ai-config's own session
+history: sliding the `macros` submodule pin in `d-morrison/rme`#983 and
+`ucdavis/epi204`#361 was done by hand, `slide-tag` doesn't apply.)
