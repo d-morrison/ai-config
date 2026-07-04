@@ -941,6 +941,24 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   <branch>` (or `git rev-parse HEAD` vs `origin/<branch>`), and if the cited SHA fails
   `git cat-file -t <sha>` it never existed. Post a one-line clarification on the PR so the
   phantom doesn't confuse later readers, and keep going. (Hit on ai-config#254.)
+- **A self-review's own prose can false-positive-trigger the `@claude` agent via
+  substring match.** `claude.yml`'s comment dispatcher matches any occurrence of the
+  literal substring `@claude` in a new PR comment, not just a genuine mention. A manual
+  self-review that refers to the failed job by name (e.g. "the `@claude` review job
+  failed with a hard SDK error") satisfies that match and spins up an unrelated agent
+  run. That run isn't wasted, though: it re-reads the whole thread, correctly concludes
+  there's no new request, and in one observed case went further — independently caught
+  and fixed a real stale-doc bug (a `CLAUDE.md` line no longer matching the PR's own
+  diff), committing the fix under the same GitHub identity a human session posts under.
+  From outside, this looks exactly like a second human/session claiming the same PR (a
+  duplicate "Working on this" comment, an unexplained new commit) even though only one
+  person was ever working it. Before treating that as a collision worth investigating,
+  check the commit author: `Claude <noreply@anthropic.com>` committing without a
+  matching claim from an actual second session is this false-positive-trigger pattern,
+  not a real parallel-session conflict. (Hit on d-morrison/gha#225: the self-review
+  comment's own reference to the failed `@claude` review job triggered a real agent
+  run, which found and fixed a stale `CLAUDE.md` trigger-type claim before the PR
+  merged.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's
