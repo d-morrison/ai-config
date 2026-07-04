@@ -1855,3 +1855,22 @@ required a `--force-with-lease` push to fix and explicit user sign-off given
 the ref-mutation risk.)
 
 **On Windows, `~/.claude`'s real-copy consumer directories can drift far more than a quick glance suggests — check the whole corpus, not just `CLAUDE.md`.** CLAUDE.md's own "Keep ai-config and repo checkouts fresh" step 2 already says a `git pull` on the ai-config checkout doesn't propagate to `~/.claude/{skills,shared,commands,memories}` on Windows (real copies, not symlinks). In practice the drift found there can be large even in an actively-used setup: one check found `CLAUDE.md` itself missing ~10 sections, `skills/` with 56 of ~90 files differing (plus 6 new skills never copied over), `shared/` with 5 differing/missing fragments, and `memories/` with 3 of 4 files differing — accumulated silently because the per-session refresh habit checks `CLAUDE.md` (loaded every turn, so staleness there is visible) but not the other three directories (loaded on-demand, so staleness there is invisible until a skill/memory is actually needed and reads wrong). Before trusting a sync is complete, `diff -rq` (or `cp -r` unconditionally, after checking for genuine un-upstreamed local edits per the existing before-overwriting caution) all four directories, not just the one that happens to render in every prompt. (`Lacaedemon/sparta`, 2026-07-04.)
+
+## Windows Git Bash: MSYS path conversion mangles a colon-refspec that contains a slash
+
+Git Bash's MSYS layer auto-converts POSIX-looking arguments into Windows paths,
+and the heuristic fires on *any* argument containing a `/` — including a git
+refspec like `origin/main:.ai-config` (checking a submodule pin as recorded on
+a branch other than the one currently checked out). The `/` inside
+`origin/main` flips the heuristic on for the whole argument, and it mangles the
+colon too: `origin/main:.ai-config` silently becomes `origin\main;.ai-config`,
+then fails with `fatal: ambiguous argument ... unknown revision or path not in
+the working tree`. A colon-refspec with no `/` before the colon
+(`HEAD:.ai-config`, `some-tag:.ai-config`) is unaffected — the heuristic keys
+on the slash, not the colon. Fix: prefix just that one command with
+`MSYS_NO_PATHCONV=1` rather than disabling path conversion shell-wide, e.g.
+`MSYS_NO_PATHCONV=1 git rev-parse "origin/main:.ai-config"`. (Hit checking
+whether `Lacaedemon/sparta`'s vendored `.ai-config` submodule pin was actually
+stale on `origin/main`, vs. only stale on the current feature-branch worktree
+— see the `CLAUDE.md` "Keep ai-config and repo checkouts fresh" step 4 update
+this same session added. `Lacaedemon/sparta`, 2026-07-04.)
