@@ -1785,3 +1785,48 @@ one level up. Caught before pushing by re-reading against the fragment's own
 evergreen-conditional citation elsewhere (a PR description, a commit message),
 don't promise a future tightening --- the whole point of that phrasing is that
 none is needed. (ai-config#455, 2026-07-03.)
+
+## Wiring ai-config skills/memories into a consumer repo's `claude` bots
+
+`bootstrap.sh` only reaches local CLI sessions --- a consumer repo's
+`claude`/`claude-code-review` bots (running via `d-morrison/gha`'s reusable
+workflows and `anthropics/claude-code-action`) get nothing from it. The
+pattern that worked, with no workflow changes needed, on `d-morrison/rme#982`
+and `ucdavis/epi204#360`:
+
+1. `git submodule add https://github.com/d-morrison/ai-config.git .ai-config`
+   in the consumer repo.
+2. Replace any hand-copied `.claude/skills/<name>/SKILL.md` (these drift ---
+   confirmed via `diff` against ai-config's canonical copy before removing)
+   with a **committed symlink** `.claude/skills -> ../.ai-config/skills`, so
+   all of ai-config's skills become discoverable, not just the one that was
+   hand-copied. `.claude/commands/` was left as-is in both repos --- those
+   were genuinely project-specific, not ai-config duplicates.
+3. Check `.gitignore` for a blanket `.claude/*` ignore (rme had one, with an
+   existing `!.claude/commands` exception already carved out for the same
+   reason) --- add `!.claude/skills` alongside it, or the new symlink won't
+   `git add` at all (`git rm -r --cached .claude/skills` first if the old
+   directory was already tracked).
+4. Confirm `checkout-submodules: true` (or an unconditional
+   `git submodule update --init --recursive`, as in rme's bespoke `claude.yml`)
+   is already set on both bot workflows --- both repos already had it, so no
+   workflow edit was needed.
+
+The committed symlink survives `claude-code-action`'s `restoreConfigFromBase`
+(which wipes/restores `.claude/` from the base branch on PR-triggered runs)
+because it's part of that committed base --- this is the same technique
+ai-config's own repo already uses for its own `@claude` bot. `memories/` and
+`shared/` get no equivalent auto-load mechanism (Claude Code doesn't scan a
+project memories folder the way it does skills), so document in the
+consumer's `CLAUDE.md` that `.ai-config/memories/` and `.ai-config/shared/`
+are just readable on disk, not injected into context automatically.
+
+Two caveats a reviewer raised and worth pre-empting rather than leaving as
+open questions: a pinned submodule SHA that isn't `ai-config`'s current tip
+is still fetchable with `git fetch --depth 1 origin <sha>` (GitHub's
+shallow-clone protocol supports fetching any reachable commit, not just
+branch tips); and a fine-grained `SUBMODULES_TOKEN` scoped to a private
+submodule (e.g. rme's `latex-macros`) authenticates a newly-added *public*
+submodule fine too --- confirmed empirically by the PR's own `claude-review`
+check (which runs with submodule checkout on) completing successfully.
+(rme#982, epi204#359/#360, 2026-07-04.)
