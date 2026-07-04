@@ -14,14 +14,15 @@ between functions:
 - **`@inheritDotParams other_fn`** — document a `...` argument by pointing at
   the function it's forwarded to (see "`...` passthrough" below), rather than
   writing out each forwarded parameter by hand.
-- **`@inheritSection other_fn "Section Title"`** — reuse a full prose section
+- **`@inheritSection other_fn Section Title`** — reuse a full prose section
   (e.g. a shared "Details" block) instead of duplicating it.
 
 Reused docs stay in sync automatically when the source function's docs
 change; copy-pasted docs silently drift. In other languages, use the
 equivalent inheritance mechanism instead of copying prose by hand — e.g.
-Python Sphinx's `napoleon_use_param`/`:param:` inheritance or a shared
-docstring template, JSDoc's `@inheritdoc`, or Doxygen's `@copydoc`.
+JSDoc's `@inheritdoc` or Doxygen's `@copydoc`. Python/Sphinx has no direct
+equivalent; cross-reference the wrapped function in the docstring (e.g.
+`See :func:\`other_fn\` for parameter descriptions.`) instead of retyping it.
 
 ## `...` passthrough
 

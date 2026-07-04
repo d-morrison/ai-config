@@ -309,6 +309,7 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 
 ## Coding: reuse function documentation and argument lists
 
+<!-- Not yet shared with the lab manual; edit shared/coding/reuse-docs-and-args.md, not here. -->
 @shared/coding/reuse-docs-and-args.md
 
 ## Writing style: plain, direct prose
