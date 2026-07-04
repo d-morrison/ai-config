@@ -2,6 +2,13 @@ Whenever `main` has moved ahead of a PR branch you're working on, **merge
 `main` into the PR branch** before the next push or review trigger. Don't wait
 for a conflict to surface or for someone to ask.
 
+This fragment covers the single-branch-vs-`main` case. When orchestrating a
+multi-agent `ultracode` session, merges can happen at more points than that —
+see [`ultracode-merge-conflicts`](ultracode-merge-conflicts.md) for the
+broader check (worktree-isolated agent branches, concurrent `parallel()`
+results) and the note on GitHub's mergeable indicator not evaluating custom
+`.gitattributes` merge drivers.
+
 **Always check for merge conflicts with main before pushing results to remote.**
 Run this before every push, not just before triggering a review:
 
@@ -177,3 +184,22 @@ two above it were each added by independent PRs landing in quick succession,
 all appending after the same "PR #352's `check-info-quality`..." paragraph
 --- resolved, per the guidance above, by keeping all three rather than
 picking one.)
+**A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
+review guidelines" section) can produce zero blank lines between two
+adjacent headings
+even with no textual conflict --- lint catches it, git doesn't.** When a
+section is a hotspot several PRs independently append items to (each PR
+adding its own `### N.` block at the end), a clean three-way merge can
+still splice one PR's closing line directly against the next PR's heading
+with no blank line between them --- this doesn't produce a `<<<<<<<`
+conflict marker (git resolves it as a straightforward insertion), so it's
+easy to push without noticing. `markdownlint`'s MD022
+(blanks-around-headings) is what actually catches it, as a CI failure with
+no proximate code change to explain it. Re-run the repo's markdown lint (or
+at minimum re-read the diff around every `### N.` boundary you didn't
+personally write) after any merge that touches a shared growing list, not
+just after a merge with conflicts. (gha#208: an out-of-band merge from
+`main` --- done by a different session, not the one that opened the PR ---
+landed a new item 7 directly against the PR's own item 6 with no blank
+line; `lint-markdown`'s MD022 failed with no conflict marker anywhere in
+the diff to point at.)
