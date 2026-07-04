@@ -184,6 +184,10 @@
   Run `git branch --show-current` before committing or pushing to confirm.
   `gh` commands keyed by PR or issue number are cwd-agnostic, so only `git` breaks.
   Learned on PR #62: a `cd`-prefixed push hit `main` and made my own worktree commits look missing.
+- The opposite mistake happens when a session juggles several full (non-worktree) repo checkouts side by side: the Bash tool's cwd DOES persist across separate calls, so a call with no `cd` silently runs against whichever repo an earlier call last `cd`'d into, not the repo you mean this time.
+  Never omit an explicit `cd <repo>` in any Bash call when more than one repo checkout is in play this session — don't rely on a `cd` from a previous call carrying forward correctly, and re-verify with `pwd` or `git remote -v` after any call whose target repo matters.
+  This bites hardest in back-to-back "same shape, different repo" calls (e.g. an identical empty claim-commit pushed to two sibling PRs one after another) — the second call looks correct in isolation but silently repeats the first call's repo.
+  Caught it by checking `mergeable_state` output afterward; recovery was a `git reset --hard` to the last-good local commit plus `git push --force-with-lease` to undo the wrong-repo push before redoing it with an explicit `cd`. (Learned on ai-config#454/gha#215: an empty commit meant for `gha` landed on `ai-config`'s branch instead.)
 - Before pushing skill/memory changes to ai-config, run the two local validators that `validate.yml` runs in CI — `python3 scripts/validate-skills.py` and `python3 scripts/check-links.py` — to catch frontmatter and broken-relative-link errors before they cost an ARDI round.
 - When creating a new acronym/short-name skill (e.g., `gi`, `sup`, `ums`), always also create a spelled-out alias skill (e.g., `grab-issue`, `send-upstream`, `update-memories-and-skills`) that points to the canonical file.
 - Some skills are platform/global — present in the Claude Code skill registry but with NO local `skills/<name>/` directory (e.g. `deep-research`).
@@ -195,6 +199,9 @@
   If a review ends up canceled with no comment, dispatch one cleanly: `gh workflow run claude-review.yml -f pr_number=<N>`.
 - During ARDI loops: always ANTICIPATE what the reviewer will flag next and fix those issues preemptively in the same commit.
   Don't wait for each round to surface issues one at a time — read the code holistically, think about what patterns the reviewer has flagged in prior rounds (documentation gaps, coupling without cross-references, missing edge-case guards, inconsistent accounting), and fix analogous issues elsewhere in the same file before pushing.
+- When a PR's own body states a blocking dependency ("draft, blocked on sibling-repo PR #N landing first"), that sentence is a claim about the PR's *actual* state, not just a note to the reader — verify the PR really is in that state (draft, not marked ready) before moving on, don't just describe the constraint in prose and leave the PR ready/open regardless.
+  Caught by the `@claude` reviewer (twice, once inline and once in the full verdict) after a companion PR was opened ready-for-review while its own body said "blocked, should stay draft" — the citation it made to a sibling-repo file genuinely 404'd on that repo's `main` because the dependency hadn't merged yet.
+  Fix pattern once caught: convert back to draft, reword any forward-looking citation to something that stays accurate regardless of merge timing (e.g. "proposed in #N — once merged, lives at `path`" rather than asserting the path already resolves), then flip back to ready and re-verify the citation resolves once the dependency actually merges. (Learned on ai-config#454/gha#215.)
   The goal is to minimize back-and-forth rounds.
 - During ARDI loops: only stop iterating (without consensus) if you're at a literal impasse — going in circles, redoing and undoing the same changes.
   Asymptotic new nits each round is NOT an impasse; keep addressing them.
