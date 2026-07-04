@@ -23,6 +23,23 @@ requester. If after 3--4 rounds the reviewer keeps generating new nits each
 cycle (asymptotic noise), surface that and ask whether to keep going or accept
 the current state.
 
+**Noise is per-item, not per-round --- don't stop the whole loop over one
+recurring flag.** A long-running PR can have both real findings (worth fixing
+every round) and one specific item the reviewer re-raises verbatim round after
+round even though it's already deferred/tracked (e.g. a file-length guideline
+already split into a follow-up issue). Keep fixing every *new* finding as it
+appears --- don't let the recurring item make you stop processing genuinely
+new ones. But stop re-litigating *that one item* every round: reply once
+pointing at the tracked issue, and hold on it specifically rather than
+re-deferring it on each pass. Surface the pattern to the user (which item, how
+many rounds, where it's tracked) and let them decide whether to resolve it now
+(e.g. do the split) or leave it as accepted recurring noise --- don't decide
+unilaterally to either keep re-processing it or silently drop it. (rme#706 ran
+100+ review rounds: each round's *new* findings --- a missing derivation step,
+a missing i.i.d. hypothesis, an unverified citation locator --- got fixed
+every time; the one recurring file-length flag got a single reply-and-hold
+each round until the user weighed in.)
+
 **When a finding is a pattern (a formatting/style rule broken in one spot),
 apply it everywhere it recurs in the same file, not just the flagged line.**
 A reviewer that flags one inconsistent list-item format is telling you about
