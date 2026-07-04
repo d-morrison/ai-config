@@ -184,6 +184,7 @@ two above it were each added by independent PRs landing in quick succession,
 all appending after the same "PR #352's `check-info-quality`..." paragraph
 --- resolved, per the guidance above, by keeping all three rather than
 picking one.)
+
 **A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
 review guidelines" section) can produce zero blank lines between two
 adjacent headings
