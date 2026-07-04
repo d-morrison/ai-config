@@ -14,8 +14,8 @@ be more complex than the current problem needs.
 
 ## What to check
 
-1. **Prose.** Look for circumlocution beyond any single overlong sentence:
-   a point restated from multiple angles, a definition nested behind three
+1. **Prose.** Look for circumlocution at the passage level: a point
+   restated from multiple angles, a definition nested behind three
    qualifiers when one would do, a section that could be a sentence. This
    goes further than `plain-prose.md`'s per-sentence rules --- it asks
    whether the *passage as a whole* carries more words than its content
