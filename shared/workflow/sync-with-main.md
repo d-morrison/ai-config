@@ -132,8 +132,9 @@ open in parallel, edited that same inline block to allowlist `WebFetch`/
 change to the new composite action --- rather than leaving its author to
 discover a conflict --- let it merge within the hour instead of stalling.)
 
-**A merge into a growing numbered list (e.g. `CLAUDE.md`'s "Code review
-guidelines") can produce zero blank lines between two adjacent headings
+**A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
+review guidelines" section) can produce zero blank lines between two
+adjacent headings
 even with no textual conflict --- lint catches it, git doesn't.** When a
 section is a hotspot several PRs independently append items to (each PR
 adding its own `### N.` block at the end), a clean three-way merge can
