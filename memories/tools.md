@@ -413,6 +413,27 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
 - In a non-interactive (headless) session git uses the auto-generated merge commit message without prompting — no editor opens.
 
+## Git merge — uncommitted edits to an untouched file silently ride along, uncommitted, through repeated merges
+- `git merge <branch>` only refuses when the incoming branch's commits touch a
+  file you also have uncommitted changes to. If the incoming commits don't
+  touch that file, the merge succeeds and your uncommitted edit is left
+  exactly as it was --- still uncommitted, sitting on top of the new merge
+  commit. Repeat the pattern (merge again while the edit is still
+  uncommitted, e.g. reconciling with a remote branch another actor pushed to)
+  and it survives through multiple merge commits without ever landing in one.
+- This is easy to miss because `grep`/`cat` against the **working tree** shows
+  the fix is present, creating false confidence that it's committed. Verify
+  against the actual commit instead: `git show HEAD:<path>` (or `git status
+  --short` for a stray `M`), not a plain file read, before pushing and
+  declaring a review finding addressed.
+- Fix: commit the edit (`git add <path> && git commit`) as its own step
+  **before** merging anything else in, not after. (Hit on ai-config#461: a
+  one-line prose fix sat uncommitted through two merge commits — one merging
+  `origin/main` in, one reconciling with a bot's competing push to the same
+  branch — so what got pushed both times still had the pre-fix text, and a
+  review correctly re-flagged it as unaddressed after an incorrect "addressed"
+  reply.)
+
 ## Git stash — verify supersession line-by-line, tag before dropping
 - Before dropping a stash as "already landed", verify against `origin/main`,
   not by eyeball: extract the stash's added lines

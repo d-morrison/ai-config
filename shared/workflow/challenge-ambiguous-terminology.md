@@ -31,12 +31,25 @@ merges first: "This is a global standing rule proposed in `<repo>#<PR>` ---
 once merged, the fragment lives at `<path>` there." That sentence never needs
 editing; it's true before the merge and still true after.
 
-(Caught by this very guideline three times now, all while cross-linking a
+**This isn't only a review-time catch --- apply it while authoring the
+citation, not just when checking one.** Before writing a sentence in one
+repo's `CLAUDE.md` that names a specific path in another repo's still-open
+PR, stop and check whether that companion PR has merged yet. Knowing the
+evergreen-conditional phrasing exists doesn't help if the trap only comes to
+mind during review, after the premature citation is already written --- by
+then it takes a review round to catch what a ten-second merge-status check
+would have prevented.
+
+(Caught by this very guideline four times now, all while cross-linking a
 still-open `ai-config` PR into `gha`'s `CLAUDE.md`: twice on gha#151 --- the
 file it pointed at only existed on this fragment's own not-yet-merged PR ---
-and again on gha#208. There, the first fix cited the file as already
-established; a review caught that. The reworded "not yet merged as of this
-writing, tighten this citation once it lands" fix repeated the exact
-future-edit trap this note originally warned against. A second review
-(Copilot) caught that too, and the evergreen-conditional phrasing above was
-adopted.)
+again on gha#208, and again on gha#217. On gha#208, the first fix cited the
+file as already established; a review caught that. The reworded "not yet
+merged as of this writing, tighten this citation once it lands" fix repeated
+the exact future-edit trap this note originally warned against. A second
+review (Copilot) caught that too, and the evergreen-conditional phrasing
+above was adopted. On gha#217, the citation was written as an already-
+established fact again --- even though the evergreen-conditional phrasing
+had already landed on `main` in the same session --- because nothing
+prompted a check of this guideline while writing a brand-new citation, only
+once a review flagged it after the fact.)
