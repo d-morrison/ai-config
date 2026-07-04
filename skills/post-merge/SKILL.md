@@ -52,6 +52,18 @@ have it report back which PRs it found conflicting, what it did about each,
 and any it skipped (already claimed, conflict it couldn't understand). Do the
 scan inline only for a solo (non-orchestrated) session.
 
+**If any OTHER agents already own a claimed branch (an active, resumable
+`Agent`-tool session, not a one-shot `Workflow`-internal `agent()` call),
+message each one directly right after the merge, instead of relying solely on
+a separate scan to find and fix their conflict after the fact:** "main just
+advanced (PR #N merged) --- fetch and merge origin/main into your branch now,
+resolve any conflict yourself (you have the context on your own change), then
+continue." This is faster and higher-context than a scanning subagent
+guessing at the resolution from outside: the branch's own owning agent
+already knows why its code looks the way it does. Reserve the scan-and-fix
+subagent above for branches with NO active owning agent (e.g. a completed
+`Workflow` run's one-shot agent that already returned).
+
 A squash-merge on `main` can knock previously-mergeable open PRs into conflict.
 Scan right after the merge is confirmed:
 
