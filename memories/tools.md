@@ -1745,8 +1745,9 @@ context --- e.g. to arm a plain "check back on this PR in 5 minutes" wait ---
 throws `InputValidationError: prompt is missing`, since there's no `/loop`
 input to hand it. Use `mcp__Claude_Code_Remote__send_later` (or the harness's
 plain wakeup tool, if present) for a one-off self check-in instead; reserve
-`ScheduleWakeup` for actual `/loop` iterations. (ai-config#455/gha#216,
-2026-07-03.)
+`ScheduleWakeup` for actual `/loop` iterations. See `send_later` mid-session
+availability above for the fallback (`CronCreate`) if it disappears.
+(ai-config#455/gha#216, 2026-07-03.)
 
 ## Evergreen-conditional citation phrasing can still regress in adjacent prose
 
