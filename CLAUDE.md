@@ -319,6 +319,11 @@ Apply this both when writing code and when reviewing it — flag base R or
 `{rlang}` verbosity in review the same way `per-operation-grouping` flags a
 persistent `group_by()` that `.by` would replace.
 
+## Coding: reuse function documentation and argument lists
+
+<!-- Not yet shared with the lab manual; edit shared/coding/reuse-docs-and-args.md, not here. -->
+@shared/coding/reuse-docs-and-args.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
