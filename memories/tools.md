@@ -1039,16 +1039,23 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   silent-green-stub failure mode with a loud one, so don't read the red check
   as a content problem in your diff — check the job log
   (`mcp__github__get_job_logs`) for this exact error string before assuming
-  otherwise. gha#173 traces the root cause to the review **agent** stalling on
-  **push-triggered** runs specifically, and confirms `workflow_dispatch`
-  re-triggers succeed far more reliably than another push. If the API returns
+  otherwise. gha#173's primary contribution is that `run-review-guard` step
+  itself, not a proven root cause for *why* the agent stubs — its issue body
+  only *observed* (hedged, not traced) that `workflow_dispatch` re-triggers
+  succeeded more reliably than another push in the incidents it cites, and
+  don't read that as push-trigger-*specific*: the separate gha#185/#187
+  root-cause investigation later found the underlying stall reproduces across
+  **both** push-triggered and dispatched reruns on the same PR/diff (gha#180)
+  — so `workflow_dispatch` is a practically-useful re-trigger, not a guaranteed
+  fix tied to the push/dispatch distinction. If the API returns
   `403 Resource not accessible by integration` on
   `rerun_failed_jobs`/`run_workflow` (no Actions-write permission in the
   session), you can't self-trigger the dispatch — surface it to the user with
   the fix path rather than guessing at a comment-based re-trigger. In practice,
   the very next push-triggered review after the failure has also gone through
-  cleanly (rme#706, #976) — so a subsequent normal push can clear it too,
-  though `workflow_dispatch` is the reliably documented fix.
+  cleanly both times it recurred (rme#706, #976) — so a subsequent normal
+  push can clear it too; try `workflow_dispatch` if you have the permission
+  and a normal push isn't an option (e.g. no new commit to make).
 - **Write accurate `workflow_dispatch` comments when adapting the upstream
   `claude-code-review.yml` template.** The upstream template says "workflow_dispatch is
   fired by claude.yml" — but that's only true when the repo's `claude.yml` actually
