@@ -72,7 +72,7 @@ project-type-specific; sections 4-6 apply to every project.
   `C:\`, `setwd(`, a bare drive letter, or any string that names a
   specific machine's directory layout.
   ```bash
-  grep -rnE '(/home/[a-zA-Z0-9_.-]+|/Users/[a-zA-Z0-9_.-]+|[A-Za-z]:\\\\|setwd\()' \
+  grep -rnE '(/home/[a-zA-Z0-9_.-]+|/Users/[a-zA-Z0-9_.-]+|[A-Za-z]:\\{1,2}|setwd\()' \
     --include='*.R' --include='*.py' --include='*.sh' --include='*.qmd' .
   ```
 - **Undocumented env vars.** Grep for env-var reads (`Sys.getenv(`,
@@ -96,8 +96,8 @@ script:line** that produced it? Check for:
   output from source, rather than outputs having been produced once by
   hand and never regenerated since.
 - Seeds captured for anything stochastic (`set.seed(`, `random.seed(`,
-  `np.random.seed(` or a `withr::with_seed()` call per this repo's own
-  `avoid-hardcoding-external-data`/coding conventions) — an unseeded
+  `np.random.seed(` or a `withr::with_seed()` call per the
+  `prefer-packaged-functions` coding convention) — an unseeded
   random process makes a result strictly non-reproducible, not just hard
   to trace.
 
