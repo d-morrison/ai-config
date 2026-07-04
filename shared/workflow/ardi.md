@@ -27,3 +27,20 @@ merge" gates only the merge --- it does **not** pause the sweep. A
 clean-but-unmerged PR is not a stop; move to the next item, and stack it when it
 isn't naturally independent of that PR. See
 [`stack-dont-pause`](stack-dont-pause.md).
+
+**Self-review against the project's own stated conventions before the first
+push.** Don't treat the review bot as the mechanism that discovers a
+project's documented conventions --- self-apply them first. When a project's
+own `CLAUDE.md` (or equivalent agent doc) already states specific criteria
+--- a DRY/no-duplication rule, a doc-sync checklist for a new input, a
+changelog-category rule, a citation requirement, a "new logic needs test
+coverage" norm --- a first-pass implementation checked only against feature
+correctness forces the review loop to spend a round re-deriving what the
+project's own docs already said. Before the first push, re-read the
+project's own stated review criteria and check the diff against each one
+directly, instead of waiting for the bot to enumerate them one per round.
+([gha#219](https://github.com/d-morrison/gha/issues/219)/[#220](https://github.com/d-morrison/gha/pull/220): one review round surfaced five findings --- a DRY
+duplication, an incomplete-coverage doc overclaim, a wrong changelog
+category, an uncited claim, and missing test coverage for new logic --- all
+catchable this way, since each was a direct match against gha's own
+`CLAUDE.md` conventions, not new information the review surfaced.)

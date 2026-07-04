@@ -58,8 +58,8 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
 
 1. **Verify before claiming — don't trust the flag alone.** See
    `resolve-conflicts`, "Verify before you act": `git merge-tree --write-tree
-   origin/main origin/<branch>` gives ground truth without a worktree. Skip
-   if it comes back clean.
+   origin/main origin/<branch>` gives ground truth without a worktree
+   (git ≥ 2.38). Skip if it comes back clean.
 2. **Check claim status.** Read the most recent comment. If it says "Working on
    this — paws off" (or equivalent), skip it — another session owns it.
 3. **Claim it.**
@@ -83,7 +83,7 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
    and resolve the identical cascade conflict in parallel even when no claim
    comment was posted. If the fetch shows the remote has moved with an
    **equivalent** fix already pushed, adopt it (verify with `git merge-tree
-   --write-tree origin/main origin/<branch>` — no remaining conflict — plus a
+   --write-tree origin/main origin/<branch>` [git ≥ 2.38] — no remaining conflict — plus a
    content diff against what you were about to push) instead of force-pushing
    a duplicate merge commit. Only push your own resolution if the remote is
    still where you left it.
@@ -128,6 +128,14 @@ git worktree list                 # find the merged branch's worktree path
 git worktree remove <path>        # refuses on a dirty tree — don't blindly --force
 git branch -d <merged-branch>     # now succeeds
 ```
+
+**Worktree containing a submodule:** `git worktree remove <path>` refuses with
+`fatal: working trees containing submodules cannot be moved or removed` even
+when the tree is perfectly clean (`git status --short` empty) — this is a
+different refusal than the dirty-tree one above, triggered by the mere
+presence of a submodule, not by uncommitted state. Confirm clean with
+`git status --short` first (as always), then `git worktree remove --force
+<path>` is the correct move here, not a sign of misclassification.
 
 **Running from within the worktree:** if post-merge fires while the shell is
 inside the worktree being tidied, `git worktree remove <path>` fails ("cannot

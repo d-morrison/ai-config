@@ -159,3 +159,48 @@ open in parallel, edited that same inline block to allowlist `WebFetch`/
 `Bash(curl:*)`. Proactively rebasing #202 and re-applying its allowlist
 change to the new composite action --- rather than leaving its author to
 discover a conflict --- let it merge within the hour instead of stalling.)
+
+**An add/add conflict on a *shared config file* usually means two PRs
+independently fixed the same root cause --- reconcile the reasoning, don't
+just pick a side.** This generalizes the skill-file case above beyond
+skills: a repo-wide CI/lint/build config fix (a new tool config file, a
+workflow tweak) is exactly the kind of change multiple sessions or bots are
+likely to attempt in parallel once a check starts failing on `main` for
+everyone. When the conflict is a whole-file add/add (not just competing
+edits to an existing file), read both sides' reasoning --- code comments,
+commit messages, the PR discussion --- before resolving; usually one side's
+explanation is more complete (covers a case the other missed, cites the
+tool's actual constraint) and should win outright rather than mechanically
+merging fragments of both. Re-diff the PR against `origin/main` after
+resolving to confirm the PR's remaining changes are its own original scope,
+not a reintroduction of what the other, now-merged PR already added.
+(`d-morrison/altdoc#7` vs `#18`: both independently added a `jarl.toml`
+excluding the same fixture directory for the same `jarl-check` failure;
+`#18` merged first, `#7`'s merge conflicted on the new file, resolved by
+keeping `#18`'s more detailed comment and re-confirming `#7`'s diff against
+`main` was back down to just its own four files. This same "append-collision"
+pattern struck a third time one insertion point over: this bullet and the
+two above it were each added by independent PRs landing in quick succession,
+all appending after the same "PR #352's `check-info-quality`..." paragraph
+--- resolved, per the guidance above, by keeping all three rather than
+picking one.)
+
+**A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
+review guidelines" section) can produce zero blank lines between two
+adjacent headings
+even with no textual conflict --- lint catches it, git doesn't.** When a
+section is a hotspot several PRs independently append items to (each PR
+adding its own `### N.` block at the end), a clean three-way merge can
+still splice one PR's closing line directly against the next PR's heading
+with no blank line between them --- this doesn't produce a `<<<<<<<`
+conflict marker (git resolves it as a straightforward insertion), so it's
+easy to push without noticing. `markdownlint`'s MD022
+(blanks-around-headings) is what actually catches it, as a CI failure with
+no proximate code change to explain it. Re-run the repo's markdown lint (or
+at minimum re-read the diff around every `### N.` boundary you didn't
+personally write) after any merge that touches a shared growing list, not
+just after a merge with conflicts. (gha#208: an out-of-band merge from
+`main` --- done by a different session, not the one that opened the PR ---
+landed a new item 7 directly against the PR's own item 6 with no blank
+line; `lint-markdown`'s MD022 failed with no conflict marker anywhere in
+the diff to point at.)

@@ -338,6 +338,23 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 - This is the manual form of what lab-manual's `bump-ai-config.yml` and gha's
   `bump-submodule` workflows do automatically. Use it for a one-off bump (e.g.
   lab-manual#338 picked up an ai-config reprexes fix this way).
+- **Verify additive-only before bumping**, especially when the bump PR itself
+  won't adopt the new content: `git -C <submodule> diff <old-sha>..<new-sha> --
+  <file>` and confirm no `^-` lines (removed/changed) — only `^+` additions.
+  An additive-only diff means the bump can't break any existing render/usage,
+  which is worth stating explicitly in the bump PR body as the safety argument.
+- **Bump-then-adopt sequencing when the consumer isn't on `main` yet.** If a
+  submodule bump adds macros/content meant for files that only exist on an
+  *unmerged* content PR branch (not yet on `main`), the bump itself must still
+  be scoped to a `main`-based branch — you can't adopt the new macros in the
+  same PR, because those consuming files aren't there to edit. Split into two
+  PRs: (1) the bump alone (safe, additive, mergeable now), and (2) an adoption
+  follow-up filed as a tracked issue, scoped to run **after** the content PR
+  merges and those files land on `main`. Don't try to do both in one PR just
+  because they're conceptually related — the file-existence dependency forces
+  the split. (rme #976 bumped `latex-macros`; the `\ppi`/`\opi` adoption in the
+  marginal-risk content was deferred to #977 because those `.qmd` files were
+  still only on the unmerged #706.)
 
 ## Git — scanning for parallel/in-flight work
 - A remote-only scan (`git branch -r`) **misses** work a parallel CLI session is
@@ -760,6 +777,23 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   feed snapshot/rendering tests, so editing them risks unrelated test
   breakage). File a follow-up issue to narrow `exclude` to `per-file-ignores`
   once the installed jarl version supports it. (`d-morrison/altdoc#18`, #19.)
+- **There is no `.jarlignore` file — jarl has never supported one.** Don't
+  assume jarl follows the `.gitignore`/`.eslintignore`-style convention of a
+  dotfile-per-tool; its only exclusion mechanism is `jarl.toml`'s `[lint]`
+  table (`exclude` / `per-file-ignores`, above). A `.jarlignore` file is
+  silently inert — `jarl check` never reads it, so violations inside the
+  "excluded" paths still fire, and no error or warning flags the unsupported
+  config. This is easy to miss because CI can still look green: pairing the
+  fake `.jarlignore` with `continue-on-error: true` on the lint step (to
+  paper over the failures it doesn't actually suppress) hides the breakage
+  entirely, and a bot review can approve the change on the false premise that
+  `.jarlignore` works, since nothing about the diff itself is wrong-looking.
+  Verify a suppression file is real by checking the tool's own config-file
+  reference (or just removing `continue-on-error` and running the check) —
+  not by pattern-matching on other tools' ignore-file conventions.
+  (`d-morrison/altdoc#7`: `continue-on-error: true` masked a `.jarlignore`
+  that did nothing; removing the flag immediately reproduced the
+  `unused_function` failure it was supposed to prevent.)
 
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
@@ -994,6 +1028,34 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   byte-identical to the default-branch copy (`Workflow validation failed … must … match the
   default branch`) — both are deliberate guards, so a diagnostic workflow only works once
   it's on `main`.
+- **`review / claude-review` fails with "no '### Verdict' heading" (gha#173,
+  closed/fixed) — a DIFFERENT failure than the `is_error=true` cases above.**
+  Symptom: the job's SDK run reports `is_error: false` / `subtype: success` (it
+  genuinely completed, no crash), but a guard step (`run-review-guard`) still
+  fails the job because the review's final message never emitted the mandated
+  `### Verdict` heading or `Verdict:` line — the review agent silently
+  stubbed. `review / require-review` then fails too, since it gates on this
+  job. **This is the fix, not a bug**: gha#173 replaced an earlier
+  silent-green-stub failure mode with a loud one, so don't read the red check
+  as a content problem in your diff — check the job log
+  (`mcp__github__get_job_logs`) for this exact error string before assuming
+  otherwise. gha#173's primary contribution is that `run-review-guard` step
+  itself, not a proven root cause for *why* the agent stubs — its issue body
+  only *observed* (hedged, not traced) that `workflow_dispatch` re-triggers
+  succeeded more reliably than another push in the incidents it cites, and
+  don't read that as push-trigger-*specific*: the separate gha#185/#187
+  root-cause investigation later found the underlying stall reproduces across
+  **both** push-triggered and dispatched reruns on the same PR/diff (gha#180)
+  — so `workflow_dispatch` is a practically-useful re-trigger, not a guaranteed
+  fix tied to the push/dispatch distinction. If the API returns
+  `403 Resource not accessible by integration` on
+  `rerun_failed_jobs`/`run_workflow` (no Actions-write permission in the
+  session), you can't self-trigger the dispatch — surface it to the user with
+  the fix path rather than guessing at a comment-based re-trigger. In practice,
+  the very next push-triggered review after the failure has also gone through
+  cleanly both times it recurred (rme#706, #976) — so a subsequent normal
+  push can clear it too; try `workflow_dispatch` if you have the permission
+  and a normal push isn't an option (e.g. no new commit to make).
 - **Write accurate `workflow_dispatch` comments when adapting the upstream
   `claude-code-review.yml` template.** The upstream template says "workflow_dispatch is
   fired by claude.yml" — but that's only true when the repo's `claude.yml` actually
@@ -1735,6 +1797,7 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   fanning its own review out across background `Agent` calls and ending its turn
   on "waiting for background agents" — a mechanism the summary object alone
   can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **A `claude-code-review` false-positive "stub" is also possible on a review that actually completed and posted a real, correctly-formatted verdict — distinct from the gha#185 background-agent-fanout pattern above.** `check-review-execution.sh`'s stub-detector scans only `type=="text"` content blocks for a line matching `^[[:space:]>*_#-]*verdict\b` (grep, anchored to line-start) — it does not look inside `tool_use` block arguments. If the agent's final free-text message merely *narrates* what it posted ("Posted the inline finding and a summary comment ending in `### Verdict: Ready for merge`.") rather than repeating the verdict as its own standalone line, the word "verdict" only appears mid-sentence, so the anchored regex correctly does *not* match it — even though the actual GitHub comment (posted via a tool call earlier in the same transcript) has a perfectly-formed `### Verdict` heading. This false stub classification then triggers an unnecessary retry, and if THAT retry genuinely stubs (e.g. the gha#185 pattern), the overall check reports `failure` on a PR that already had a valid, complete review. Diagnose by downloading both attempts' execution-transcript artifacts (see the note above) and checking attempt 1's own posted PR comment directly, not just its final "result" text. Filed with full evidence as `d-morrison/gha#218` (`Lacaedemon/sparta` PR #615, 2026-07-03) rather than reopening #185, since the mechanism (a scanning gap, not a fanout-and-never-resume) is distinct.
 - **`gh pr checks <N>` can return a momentarily-stale check entry right after a
   state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
   immediately after triggering can show the check that was current a few
@@ -1830,3 +1893,55 @@ submodule (e.g. rme's `latex-macros`) authenticates a newly-added *public*
 submodule fine too --- confirmed empirically by the PR's own `claude-review`
 check (which runs with submodule checkout on) completing successfully.
 (rme#982, epi204#359/#360, 2026-07-04.)
+
+## Windows/Git Bash: `core.fileMode=false` silently blocks executable-bit fixes
+
+On a Windows checkout with `core.fileMode=false` (common, since NTFS has no
+native Unix execute bit), a plain `chmod +x <file>` followed by `git add`
+does **not** register a mode change with git at all — `git diff --stat` shows
+nothing, and the file stays `100644` in the index/next commit, even though the
+filesystem-level chmod itself succeeded. Fix by writing directly to the index
+instead of relying on the stat-based diff: `git update-index --chmod=+x
+<file>`, then verify with `git ls-files -s <file>` (should read `100755`) or
+`git diff --cached` (shows `old mode 100644` / `new mode 100755` headers).
+
+**Why this matters beyond the mechanic:** a missing executable bit on a script
+a CI workflow invokes *directly* (not via `bash script.sh`) fails at runtime
+with `Permission denied` / exit 126 — a failure mode invisible to a normal
+content-diff code review, since reviewing a diff shows added/changed lines,
+not file-mode metadata. This let a broken script merge to `main` via a
+reviewed, "Ready for merge" PR (`d-morrison/gha`-reviewed
+`Lacaedemon/sparta` PR #634, 2026-07-03) and then break the `demo` CI job on
+every *other* open PR that subsequently merged `main` in. When a PR adds a new
+executable script (a `tools/ci/*.sh` invoked directly, not sourced), verify
+its committed mode explicitly (`git ls-tree HEAD -- <path>`, compare against
+an existing sibling script) rather than trusting the code review alone to
+catch it.
+
+## Two worktrees on the same branch name silently move a shared ref, not a conflict error
+
+Git *should* refuse `git checkout -B <branch>` (or checking that branch out)
+when another worktree already has it checked out — but in practice, creating
+a second worktree for a branch name a leftover worktree from earlier in the
+same session still holds (e.g. via `git worktree add <path> origin/<branch>`
+then `git checkout -B <branch>` inside it) can succeed without error and
+silently repoint the shared branch ref out from under the first worktree.
+That worktree's `git status` then shows a wall of spurious modified/deleted
+files — not real data loss, just its checked-out files diffing against the
+ref's new (moved) tip while its own index/working tree still reflect the old
+one. Confirm via that worktree's own reflog (`git -C <path> reflog show
+HEAD`) that its real last commit is still there and reachable — check with
+`git merge-base --is-ancestor <that-commit> <new-ref-tip>` — before concluding
+anything, but treat any push made under this collision as suspect until
+verified, since it may have been built from a different, wrong base than
+intended. **Prevention:** always `git worktree list | grep <branch>` before
+creating a new worktree for a PR branch, especially one worked earlier in the
+same session (a `wave-N-*`-style dispatch worktree is exactly the kind that
+lingers). If one already exists, reuse it (`git fetch` +
+`git reset --hard origin/<branch>`) instead of adding a second one on the same
+name — or use a distinct local branch name if reuse isn't feasible.
+(`Lacaedemon/sparta` PR #626, 2026-07-03 — recovered with no data loss, but
+required a `--force-with-lease` push to fix and explicit user sign-off given
+the ref-mutation risk.)
+
+**On Windows, `~/.claude`'s real-copy consumer directories can drift far more than a quick glance suggests — check the whole corpus, not just `CLAUDE.md`.** CLAUDE.md's own "Keep ai-config and repo checkouts fresh" step 2 already says a `git pull` on the ai-config checkout doesn't propagate to `~/.claude/{skills,shared,commands,memories}` on Windows (real copies, not symlinks). In practice the drift found there can be large even in an actively-used setup: one check found `CLAUDE.md` itself missing ~10 sections, `skills/` with 56 of ~90 files differing (plus 6 new skills never copied over), `shared/` with 5 differing/missing fragments, and `memories/` with 3 of 4 files differing — accumulated silently because the per-session refresh habit checks `CLAUDE.md` (loaded every turn, so staleness there is visible) but not the other three directories (loaded on-demand, so staleness there is invisible until a skill/memory is actually needed and reads wrong). Before trusting a sync is complete, `diff -rq` (or `cp -r` unconditionally, after checking for genuine un-upstreamed local edits per the existing before-overwriting caution) all four directories, not just the one that happens to render in every prompt. (`Lacaedemon/sparta`, 2026-07-04.)

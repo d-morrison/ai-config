@@ -31,6 +31,9 @@ In every session — at session start, and again periodically during long sessio
    Before overwriting, check for edits made directly in `~/.claude` (a diff that adds prose the repo lacks) and upstream the genuine ones into the repo first; never clobber an un-upstreamed local edit.
    Don't rely on mtime to spot local edits — git operations reset mtimes on checkout, so it false-positives right after a `pull`, the case this check most needs to handle correctly.
 3. **The working repo's main checkout.** Fast-forward the `main` checkout of whatever repo the session is working on (`git fetch origin`, then `git pull --ff-only` when `main` is checked out) — it goes stale as the session's own PRs and other sessions' PRs merge.
+4. **The `.ai-config` submodule pin, in any repo that vendors ai-config as a git submodule** (check `.gitmodules` for a `.ai-config` entry — not every repo has one; most consume ai-config only via the Plugin Marketplace, which doesn't need this). Compare the pinned commit against ai-config's current `origin/main`: `git rev-parse HEAD:.ai-config` for the pin's SHA, then `git -C <path-to-a-local-ai-config-clone> rev-list --count <pin>..origin/main` for how far behind it is.
+   A pin more than a few weeks or dozens of commits stale is worth refreshing: file a tracking issue, bump it (`git submodule update --init --remote .ai-config` from the parent repo handles both init and fetch in one step; or, if already checked out, `git fetch origin` inside the submodule before `git checkout origin/main`), then `git add .ai-config` in the parent repo to record the new gitlink, verify the parent repo's own checks still pass, and open a PR.
+   Before assuming this is risk-free, check whether the parent repo's CI actually reads the submodule's checked-out content (vs. treating it as inert until a dev runs `git submodule update --init` locally) — a pin bump is a pure pointer change with no functional surface only when nothing reads it. (First done on `Lacaedemon/sparta` [PR #651](https://github.com/Lacaedemon/sparta/pull/651): the pin was 325 commits (~9 days) stale, unreferenced by CI, and not checked out by default.)
 
 ## Timestamp recaps in local time
 
@@ -307,6 +310,20 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 <!-- Shared with the lab manual; edit shared/coding/avoid-hardcoding-external-data.md, not here. -->
 @shared/coding/avoid-hardcoding-external-data.md
 
+## Coding: write tidy code; prefer tidyverse over base R/rlang for it
+
+<!-- Not yet shared with the lab manual; edit shared/coding/tidy-code.md, not here. -->
+@shared/coding/tidy-code.md
+
+Apply this both when writing code and when reviewing it — flag base R or
+`{rlang}` verbosity in review the same way `per-operation-grouping` flags a
+persistent `group_by()` that `.by` would replace.
+
+## Coding: reuse function documentation and argument lists
+
+<!-- Not yet shared with the lab manual; edit shared/coding/reuse-docs-and-args.md, not here. -->
+@shared/coding/reuse-docs-and-args.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
@@ -371,8 +388,6 @@ The detector counterpart to the plain-prose guide above.
 @shared/writing/ai-tells.md
 
 The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand against any target text.
-
-When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
 ## Writing style: cite sources thoroughly
 
