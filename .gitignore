@@ -11,6 +11,9 @@ skill-zips/
 __pycache__/
 *.pyc
 
+# Claude Code worktree-isolated background agents
+.claude/worktrees/
+
 # Quarto website build
 _site/
 .quarto/
