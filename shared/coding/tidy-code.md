@@ -23,12 +23,12 @@ vapply(x, mean, numeric(1))
 
 ```r
 # Preferred — rlang's {{ }} embrace, when you do need tidy eval
-my_fn <- function(data, col) data |> dplyr::summarise(mean(!!col))
+my_fn <- function(data, col) data |> dplyr::summarise(mean({{ col }}))
 
-# Avoid — spelling the same thing out with rlang::enquo()/rlang::eval_tidy()
+# Avoid — spelling the same thing out with rlang::enquo()/!!
 my_fn <- function(data, col) {
   col <- rlang::enquo(col)
-  dplyr::summarise(data, rlang::eval_tidy(rlang::quo(mean(!!col)), data))
+  dplyr::summarise(data, mean(!!col))
 }
 ```
 
