@@ -307,6 +307,10 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 <!-- Shared with the lab manual; edit shared/coding/avoid-hardcoding-external-data.md, not here. -->
 @shared/coding/avoid-hardcoding-external-data.md
 
+## Coding: reuse function documentation and argument lists
+
+@shared/coding/reuse-docs-and-args.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
