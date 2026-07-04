@@ -426,7 +426,7 @@ code literally uses what the prose claims — don't rely on a plausible-looking
 snippet. On `shared/coding/tidy-code.md` (ai-config#476), a "Preferred" R
 example labeled "rlang's `{{ }}` embrace" actually used `!!col` (bang-bang)
 instead of `{{ col }}` — a different operator with different semantics
-(`!!` only unquotes an already-quosured value; `{{ }}` quotes-and-unquotes a
+(`!!` only unquotes a value already captured as a quosure; `{{ }}` quotes-and-unquotes a
 plain argument in one step). The paired "Avoid" example was also contrived
 (a nested `eval_tidy()`/`quo()` call nobody writes, and not even equivalent
 inside `summarise()`'s NSE) rather than the realistic verbose form. Both were
