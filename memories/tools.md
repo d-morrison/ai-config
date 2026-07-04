@@ -1859,8 +1859,10 @@ the ref-mutation risk.)
 ## Windows Git Bash: MSYS path conversion mangles a colon-refspec that contains a slash
 
 Git Bash's MSYS layer auto-converts POSIX-looking arguments into Windows paths,
-and the heuristic fires on *any* argument containing a `/` — including a git
-refspec like `origin/main:.ai-config` (checking a submodule pin as recorded on
+and the heuristic fires on arguments that *look like* a POSIX path — including
+a `/`-containing git refspec like `origin/main:.ai-config`, though not on
+every `/`-containing string (a URL like `https://github.com/...` is left
+alone) (checking a submodule pin as recorded on
 a branch other than the one currently checked out). The `/` inside
 `origin/main` flips the heuristic on for the whole argument, and it mangles the
 colon too: `origin/main:.ai-config` silently becomes `origin\main;.ai-config`,
