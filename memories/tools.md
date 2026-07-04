@@ -1735,6 +1735,7 @@ across three review rounds on ai-config#341, `hallucination-detector` and
   fanning its own review out across background `Agent` calls and ending its turn
   on "waiting for background agents" — a mechanism the summary object alone
   can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **A `claude-code-review` false-positive "stub" is also possible on a review that actually completed and posted a real, correctly-formatted verdict — distinct from the gha#185 background-agent-fanout pattern above.** `check-review-execution.sh`'s stub-detector scans only `type=="text"` content blocks for a line matching `^[[:space:]>*_#-]*verdict\b` (grep, anchored to line-start) — it does not look inside `tool_use` block arguments. If the agent's final free-text message merely *narrates* what it posted ("Posted the inline finding and a summary comment ending in `### Verdict: Ready for merge`.") rather than repeating the verdict as its own standalone line, the word "verdict" only appears mid-sentence, so the anchored regex correctly does *not* match it — even though the actual GitHub comment (posted via a tool call earlier in the same transcript) has a perfectly-formed `### Verdict` heading. This false stub classification then triggers an unnecessary retry, and if THAT retry genuinely stubs (e.g. the gha#185 pattern), the overall check reports `failure` on a PR that already had a valid, complete review. Diagnose by downloading both attempts' execution-transcript artifacts (see the note above) and checking attempt 1's own posted PR comment directly, not just its final "result" text. Filed with full evidence as `d-morrison/gha#218` (`Lacaedemon/sparta` PR #615, 2026-07-03) rather than reopening #185, since the mechanism (a scanning gap, not a fanout-and-never-resume) is distinct.
 - **`gh pr checks <N>` can return a momentarily-stale check entry right after a
   state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
   immediately after triggering can show the check that was current a few
@@ -1785,3 +1786,53 @@ one level up. Caught before pushing by re-reading against the fragment's own
 evergreen-conditional citation elsewhere (a PR description, a commit message),
 don't promise a future tightening --- the whole point of that phrasing is that
 none is needed. (ai-config#455, 2026-07-03.)
+
+## Windows/Git Bash: `core.fileMode=false` silently blocks executable-bit fixes
+
+On a Windows checkout with `core.fileMode=false` (common, since NTFS has no
+native Unix execute bit), a plain `chmod +x <file>` followed by `git add`
+does **not** register a mode change with git at all — `git diff --stat` shows
+nothing, and the file stays `100644` in the index/next commit, even though the
+filesystem-level chmod itself succeeded. Fix by writing directly to the index
+instead of relying on the stat-based diff: `git update-index --chmod=+x
+<file>`, then verify with `git ls-files -s <file>` (should read `100755`) or
+`git diff --cached` (shows `old mode 100644` / `new mode 100755` headers).
+
+**Why this matters beyond the mechanic:** a missing executable bit on a script
+a CI workflow invokes *directly* (not via `bash script.sh`) fails at runtime
+with `Permission denied` / exit 126 — a failure mode invisible to a normal
+content-diff code review, since reviewing a diff shows added/changed lines,
+not file-mode metadata. This let a broken script merge to `main` via a
+reviewed, "Ready for merge" PR (`d-morrison/gha`-reviewed
+`Lacaedemon/sparta` PR #634, 2026-07-03) and then break the `demo` CI job on
+every *other* open PR that subsequently merged `main` in. When a PR adds a new
+executable script (a `tools/ci/*.sh` invoked directly, not sourced), verify
+its committed mode explicitly (`git ls-tree HEAD -- <path>`, compare against
+an existing sibling script) rather than trusting the code review alone to
+catch it.
+
+## Two worktrees on the same branch name silently move a shared ref, not a conflict error
+
+Git *should* refuse `git checkout -B <branch>` (or checking that branch out)
+when another worktree already has it checked out — but in practice, creating
+a second worktree for a branch name a leftover worktree from earlier in the
+same session still holds (e.g. via `git worktree add <path> origin/<branch>`
+then `git checkout -B <branch>` inside it) can succeed without error and
+silently repoint the shared branch ref out from under the first worktree.
+That worktree's `git status` then shows a wall of spurious modified/deleted
+files — not real data loss, just its checked-out files diffing against the
+ref's new (moved) tip while its own index/working tree still reflect the old
+one. Confirm via that worktree's own reflog (`git -C <path> reflog show
+HEAD`) that its real last commit is still there and reachable — check with
+`git merge-base --is-ancestor <that-commit> <new-ref-tip>` — before concluding
+anything, but treat any push made under this collision as suspect until
+verified, since it may have been built from a different, wrong base than
+intended. **Prevention:** always `git worktree list | grep <branch>` before
+creating a new worktree for a PR branch, especially one worked earlier in the
+same session (a `wave-N-*`-style dispatch worktree is exactly the kind that
+lingers). If one already exists, reuse it (`git fetch` +
+`git reset --hard origin/<branch>`) instead of adding a second one on the same
+name — or use a distinct local branch name if reuse isn't feasible.
+(`Lacaedemon/sparta` PR #626, 2026-07-03 — recovered with no data loss, but
+required a `--force-with-lease` push to fix and explicit user sign-off given
+the ref-mutation risk.)
