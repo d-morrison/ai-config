@@ -11,7 +11,7 @@ allowed-tools:
 
 # skill-audit — usage-frequency audit and pruning recommender
 
-Report which skills earn their keep and which are dead weight. With 148 skills
+Report which skills earn their keep and which are dead weight. With 147 skills
 in this repo's `skills/` directory, "senior devs run 8 skills, juniors run 30"
 is a real pruning signal here — but nobody can act on it without first knowing
 *which* skills actually fire. This skill answers that question; it never
@@ -100,15 +100,20 @@ found so the reader knows the window, not just today's date.
      grep -oP '"name":"Skill".*?"skill":"\K[^"]+' "$f"
    done | sort | uniq -c | sort -rn
    ```
-   Pull each matching record's `timestamp` field the same way
-   (`grep -oP '"timestamp":"\K[^"]+.*?"skill":"<name>"'` per skill of
-   interest, or re-run the loop above filtered to one skill name) to get the
-   most recent invocation date for the tier cutoff in step 4.
+   Pull each matching record's `timestamp` field by filtering to the skill
+   name first, then extracting just the timestamp:
+   ```bash
+   grep -P '"name":"Skill".*?"skill":"<name>"' "$f" | grep -oP '"timestamp":"\K[^"]+'
+   ```
+   to get the most recent invocation date for the tier cutoff in step 4.
 
    (Adjust the glob to match this environment's actual project-directory
    naming — `~/.claude/projects/<slug>/` slugs the working-directory path, so
    list `~/.claude/projects/` first and confirm the pattern before trusting
-   the glob matched everything.)
+   the glob matched everything. The step-2 grep also assumes compact JSON,
+   no spaces around `:` — if the first run returns nothing, sample one
+   `.jsonl` file and check its actual formatting before concluding every
+   skill is dead.)
 
 3. **Roll up alias counts into their canonical.** For each alias found in
    step 1, add its invocation count and latest timestamp into its canonical's
