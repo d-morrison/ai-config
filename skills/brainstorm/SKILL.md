@@ -6,7 +6,6 @@ allowed-tools:
   - Read
   - Write
   - Edit
-  - Bash
 ---
 
 # brainstorm — pre-implementation Socratic planning
@@ -58,8 +57,7 @@ filing an issue now would lock in the wrong scope.
   the task in 1-2 sentences and jumps straight to filing an issue. This
   skill runs *before* that: when the shape isn't settled yet, resolve it
   here first, then hand the resulting plan file to `st` to turn into an
-  issue. (Follow-up for a later PR, not this one: `st`'s own "Relationship
-  to other skills" section would benefit from a line pointing back here.)
+  issue.
 - **`gi`** — if an issue already exists but its scope is unclear or
   disputed, use this skill to resolve the ambiguity before implementing,
   then resume `gi`'s normal flow.
