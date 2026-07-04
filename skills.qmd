@@ -36,6 +36,7 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 | Skill | Aliases | What it does |
 |-------|---------|--------------|
+| [`brainstorm`](skills/brainstorm/SKILL.md) | | Socratic clarifying-question loop before any code/issue, ending in a plan file |
 | [`start-task`](skills/start-task/SKILL.md) | `st` | File a tracking issue (if none exists), branch, implement, open PR, ARDI to clean |
 | [`grab-issue`](skills/grab-issue/SKILL.md) | `gi` | Pick the highest-priority open issue and work it end-to-end |
 | [`grab-issues-in-parallel`](skills/grab-issues-in-parallel/SKILL.md) | `gip` | Grab multiple issues and work them in parallel worktrees |
@@ -100,4 +101,4 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 ## Full skill list
 
-All 143+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 147+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
