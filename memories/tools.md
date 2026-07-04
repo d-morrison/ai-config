@@ -1993,3 +1993,24 @@ whether `Lacaedemon/sparta`'s vendored `.ai-config` submodule pin was actually
 stale on `origin/main`, vs. only stale on the current feature-branch worktree
 — see the `CLAUDE.md` "Keep ai-config and repo checkouts fresh" step 4 update
 this same session added. `Lacaedemon/sparta`, 2026-07-04.)
+
+## Bash tool cwd persists across calls — an easy trap when juggling sibling repo checkouts
+
+The Bash tool's working directory carries over from one tool call to the
+next within a session (per its own tool description), not just within a
+single multi-line script. When a task touches several sibling repo
+checkouts in the same session (e.g. `rme`, `epi204`, and their shared
+`macros` submodule, each at its own path), a command issued without an
+explicit `cd` silently runs wherever the *previous* call left off — not in
+the repo the command's own text implies. This produced several
+wrong-directory mistakes in one session: a `git log --oneline -1` meant for
+`epi204/macros` instead reported `epi204`'s own root HEAD, and a `git push`
+meant for `epi204` silently ran again in `rme` and printed
+"Everything up-to-date" (which reads like a real, if uninteresting, result —
+not an obvious error — so the mistake wasn't visually distinct from success).
+When issuing single-line Bash calls across multiple repo checkouts in the
+same session, either prefix every command with an explicit `cd
+/path/to/repo &&`, or use `git -C /path/to/repo <command>` for read-only
+checks — don't rely on remembering which directory the last call left you
+in. (Session sliding the `macros` submodule pin in `d-morrison/rme` and
+`ucdavis/epi204`, 2026-07-04.)
