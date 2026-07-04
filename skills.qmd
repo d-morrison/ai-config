@@ -87,6 +87,9 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`send-upstream`](skills/send-upstream/SKILL.md) | `sup` | Open a PR or issue in an upstream repo for a bug found here |
 | [`reprexes`](skills/reprexes/SKILL.md) | | Build minimal reproducible examples for a bug |
 | [`r-pkg-spellcheck`](skills/r-pkg-spellcheck/SKILL.md) | | Spell-check an R package's documentation |
+| [`r-pkg-check`](skills/r-pkg-check/SKILL.md) | | Run `devtools::check()`/`R CMD check` and triage the results |
+| [`r-pkg-news`](skills/r-pkg-news/SKILL.md) | | Draft a new NEWS.md entry for an R package |
+| [`r-pkg-cran-checklist`](skills/r-pkg-cran-checklist/SKILL.md) | | Walk through the standard CRAN submission checklist |
 
 ### Session management
 
@@ -100,4 +103,4 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 ## Full skill list
 
-All 143+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 149+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
