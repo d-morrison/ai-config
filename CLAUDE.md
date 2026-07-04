@@ -399,6 +399,13 @@ implementation of a right approach), and math/statistics errors (wrong
 formula or method, verified against a source), not just prose claims and
 derivations.
 
+## Challenge unnecessary complexity in review
+
+<!-- Shared with the lab manual; edit shared/workflow/challenge-unnecessary-complexity.md, not here. -->
+@shared/workflow/challenge-unnecessary-complexity.md
+
+When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-style`, `find-ai-tells`, `fact-check-prose`), apply this alongside the normal review — those skills don't name it internally, so this CLAUDE.md directive governs regardless. It's distinct from `simplify` (a dead-code-after-refactor sweep) and `tidy` (a separate on-demand audit).
+
 ## Useful prompt formats for coding agents
 
 <!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->

@@ -194,6 +194,12 @@ already set for their skills.
 - **`address-every-comment` / `ardi`** — findings from this skill route
   through the same Address/Rebut/Defer discipline as any other review
   finding.
+- **`shared/workflow/challenge-unnecessary-complexity.md`** — a sibling
+  standing review rule, not a skill: flags unnecessary complexity or
+  verbosity in prose, math, or code and asks for a simplification.
+  Orthogonal to this skill's three checks — content can be maximally
+  simple and still stale, off-topic, or misleading, and vice versa. Fold
+  both into the same review pass.
 
 ## Anti-patterns
 
