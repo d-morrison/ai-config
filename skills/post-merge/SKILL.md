@@ -43,6 +43,15 @@ standing **never assume; always verify** rule applied to closing out a PR.)
 
 ### 1.5. Cascade conflict scan
 
+**In an ultracode/coordinator session, delegate this whole step to a
+subagent** rather than running the scan-and-resolve loop in the main thread
+--- it's exactly the kind of investigation-plus-fix work the coordinator
+should hand off (see `memories/preferences.md`'s coordinator-mode bullet).
+Brief the subagent with the merged PR's number/branch and the steps below;
+have it report back which PRs it found conflicting, what it did about each,
+and any it skipped (already claimed, conflict it couldn't understand). Do the
+scan inline only for a solo (non-orchestrated) session.
+
 A squash-merge on `main` can knock previously-mergeable open PRs into conflict.
 Scan right after the merge is confirmed:
 
