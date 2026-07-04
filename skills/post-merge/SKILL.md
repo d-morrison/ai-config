@@ -58,8 +58,8 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
 
 1. **Verify before claiming — don't trust the flag alone.** See
    `resolve-conflicts`, "Verify before you act": `git merge-tree --write-tree
-   origin/main origin/<branch>` gives ground truth without a worktree. Skip
-   if it comes back clean.
+   origin/main origin/<branch>` gives ground truth without a worktree
+   (git ≥ 2.38). Skip if it comes back clean.
 2. **Check claim status.** Read the most recent comment. If it says "Working on
    this — paws off" (or equivalent), skip it — another session owns it.
 3. **Claim it.**
@@ -83,7 +83,7 @@ conflicting PR can sit in `UNKNOWN` and get missed if you filter for
    and resolve the identical cascade conflict in parallel even when no claim
    comment was posted. If the fetch shows the remote has moved with an
    **equivalent** fix already pushed, adopt it (verify with `git merge-tree
-   --write-tree origin/main origin/<branch>` — no remaining conflict — plus a
+   --write-tree origin/main origin/<branch>` [git ≥ 2.38] — no remaining conflict — plus a
    content diff against what you were about to push) instead of force-pushing
    a duplicate merge commit. Only push your own resolution if the remote is
    still where you left it.

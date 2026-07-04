@@ -57,7 +57,7 @@ git log --oneline -5 origin/main           # what actually landed on main
   `mergeable` field. For each PR with `mergeable == "CONFLICTING"` **or
   `"UNKNOWN"`** (see `resolve-conflicts`, "Verify before you act" —
   `UNKNOWN` can mean GitHub hasn't finished computing yet), verify with
-  `git merge-tree --write-tree origin/main origin/<branch>` before acting,
+  `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38) before acting,
   then check claim status (most recent comment) and fix confirmed conflicts
   using the cascade procedure in `post-merge` step 1.5 (claim → isolated
   worktree → merge main → `resolve-conflicts` skill → push → unclaim). Don't
