@@ -4,6 +4,8 @@ description: Walk through the standard CRAN submission checklist for an R packag
 user-invocable: true
 allowed-tools:
   - Read
+  - Edit
+  - Write
   - Bash
 ---
 
@@ -23,12 +25,12 @@ CRAN's own submission form expects an answer about.
 
 Work through each item; don't submit until every one is checked.
 
-1. **Clean `R CMD check --as-cran`.** Run
-   [`r-pkg-check`](../r-pkg-check/SKILL.md) with the `--as-cran` flag
-   (`Rscript -e 'devtools::check(args = "--as-cran")'`) and resolve every
-   NOTE, WARNING, and ERROR it reports — CRAN's own submission processing
-   runs this exact check and rejects anything short of clean or
-   fully-explained.
+1. **Clean `R CMD check --as-cran`.** Run the
+   [`r-pkg-check`](../r-pkg-check/SKILL.md) skill, using
+   `devtools::check(args = "--as-cran")` as the invocation (that skill notes
+   this variant for CRAN submissions), and resolve every NOTE, WARNING, and
+   ERROR it reports — CRAN's own submission processing runs this exact check
+   and rejects anything short of clean or fully-explained.
 
 2. **Version bump.** Confirm `DESCRIPTION`'s `Version:` field increased
    from the last version CRAN has (check
