@@ -418,6 +418,22 @@ something I worked around successfully. (Prompted directly by the user during
 the gha#204 session, 2026-07-03, after hitting the auto-mode `add_repo`
 approval issue documented in `tools.md`'s "GitHub MCP tools" section.)
 
+## Verify code examples actually demonstrate the claimed idiom
+
+When writing a doc/skill fragment with a "Preferred" vs. "Avoid" code example
+pair meant to illustrate a specific operator or function, double-check the
+code literally uses what the prose claims — don't rely on a plausible-looking
+snippet. On `shared/coding/tidy-code.md` (ai-config#476), a "Preferred" R
+example labeled "rlang's `{{ }}` embrace" actually used `!!col` (bang-bang)
+instead of `{{ col }}` — a different operator with different semantics
+(`!!` only unquotes a value already captured as a quosure; `{{ }}` quotes-and-unquotes a
+plain argument in one step). The paired "Avoid" example was also contrived
+(a nested `eval_tidy()`/`quo()` call nobody writes, and not even equivalent
+inside `summarise()`'s NSE) rather than the realistic verbose form. Both were
+caught by the `@claude` review bot, not by me — mentally (or actually)
+running the example against its stated claim before publishing would have
+caught it first.
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
