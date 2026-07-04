@@ -372,8 +372,6 @@ The detector counterpart to the plain-prose guide above.
 
 The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand against any target text.
 
-When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
-
 ## Writing style: cite sources thoroughly
 
 <!-- Shared with the lab manual; edit shared/writing/citations.md, not here. -->
