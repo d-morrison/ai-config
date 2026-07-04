@@ -1735,3 +1735,32 @@ across three review rounds on ai-config#341, `hallucination-detector` and
 - **The established order in `CHANGELOG.md` is: Added → Changed → Fixed → Security.**
   Match this when adding new `## [Unreleased]` entries or when resolving merge
   conflicts in the changelog. Caught in gha#134 review (Fixed appeared before Changed).
+
+## ScheduleWakeup is scoped to `/loop` dynamic mode --- use `send_later` for ad-hoc waits
+
+`ScheduleWakeup` requires a `prompt` param and is meant to re-arm a `/loop`
+session's next firing (its own docs say to pass the same `/loop` input back,
+or the `<<autonomous-loop-dynamic>>` sentinel). Calling it outside a `/loop`
+context --- e.g. to arm a plain "check back on this PR in 5 minutes" wait ---
+throws `InputValidationError: prompt is missing`, since there's no `/loop`
+input to hand it. Use `mcp__Claude_Code_Remote__send_later` (or the harness's
+plain wakeup tool, if present) for a one-off self check-in instead; reserve
+`ScheduleWakeup` for actual `/loop` iterations. See `send_later` mid-session
+availability above for the fallback (`CronCreate`) if it disappears.
+(ai-config#455/gha#216, 2026-07-03.)
+
+## Evergreen-conditional citation phrasing can still regress in adjacent prose
+
+`shared/workflow/challenge-ambiguous-terminology.md`'s "cross-repo citations
+have a merge-order trap" note prescribes evergreen-conditional phrasing
+("proposed in `<repo>#<PR>` --- once merged, the fragment lives at `<path>`
+there") specifically so a citation never needs a follow-up edit. That
+phrasing held up correctly once applied --- but while writing the *PR
+description* for the companion PR, a draft sentence ("once this merges, that
+citation should be tightened to the standard present-tense form") reintroduced
+the same future-edit-fragility anti-pattern the citation fix had just avoided,
+one level up. Caught before pushing by re-reading against the fragment's own
+"never needs editing" design intent, not by a reviewer. When writing about an
+evergreen-conditional citation elsewhere (a PR description, a commit message),
+don't promise a future tightening --- the whole point of that phrasing is that
+none is needed. (ai-config#455, 2026-07-03.)
