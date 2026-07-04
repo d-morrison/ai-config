@@ -1796,7 +1796,7 @@ nothing, and the file stays `100644` in the index/next commit, even though the
 filesystem-level chmod itself succeeded. Fix by writing directly to the index
 instead of relying on the stat-based diff: `git update-index --chmod=+x
 <file>`, then verify with `git ls-files -s <file>` (should read `100755`) or
-`git diff --cached --stat` (shows a 0-line "mode change" hunk).
+`git diff --cached` (shows `old mode 100644` / `new mode 100755` headers).
 
 **Why this matters beyond the mechanic:** a missing executable bit on a script
 a CI workflow invokes *directly* (not via `bash script.sh`) fails at runtime
