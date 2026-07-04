@@ -129,6 +129,24 @@ go read the history first (step 2).
    (`<<<<<<<`, `=======`, `>>>>>>>`). Take one side wholesale only when you've
    confirmed the other side has nothing worth keeping — and note that you did.
 
+   **Also check whether the merged result duplicates content that already
+   exists elsewhere in the file — a separate problem from the textual
+   conflict itself.** This can arise two ways: a single incoming PR may
+   internally copy a sentence into a new section (the merge is clean, but
+   the result now says the same thing twice), or both branches may
+   independently add equivalent sentences in different sections (a
+   cross-branch variant with the same symptom). In both cases `git
+   merge`/`merge-tree` reports zero conflicts even though the result
+   contains duplication — sometimes with a pronoun or reference that only
+   made sense in its original location. Grep the merged file for the
+   distinctive phrase from each side's addition before finishing;
+   if it already appears elsewhere, keep one copy (usually the version with
+   the clearer standalone referent) and drop the redundant one. (ai-config#446:
+   the merge itself was clean, but the incoming PR's own diff had separately
+   duplicated a CLAUDE.md sentence verbatim into a different section, where
+   "this policy" lost its antecedent — the intra-PR variant, caught by the
+   `@claude` review bot as a distinct finding from the conflict resolution.)
+
 4. **Prove no markers (or whitespace damage) slipped through:**
    ```bash
    git diff --check                      # flags leftover markers + whitespace errors
