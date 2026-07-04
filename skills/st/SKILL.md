@@ -126,6 +126,12 @@ Linked issue + PR, ARDI round count, and any deferred follow-up issues.
 
 ## Relationship to other skills
 
+- **`brainstorm`** — when the task's shape isn't settled yet (multiple
+  reasonable interpretations, a real design tradeoff, "done" can't yet be
+  stated in one sentence), run `brainstorm` first to resolve that through a
+  Socratic Q&A loop and a plan file, then hand the result to this skill's
+  "restate the task and 'done' criteria" step instead of starting from
+  scratch.
 - **`gi`** — once the issue exists, the implement → PR → ARDI tail is the same;
   `st` is "`gi`, but you write the issue first."
 - **`defer-issue`** — same issue-creation mechanics, for sub-tasks that emerge.
