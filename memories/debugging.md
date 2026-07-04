@@ -102,6 +102,16 @@ reverted fixes. Defenses:
   force-pushes — that's the claim-pr/parallel-session collision, and one driver
   should own it.
 
+## PR `mergeable_state: blocked` can just mean required checks are still running
+Don't treat `blocked` as a branch-protection or review-request mystery by
+default — GitHub reports it whenever any required check hasn't yet completed
+successfully, including one that's simply still `in_progress` after a fresh
+push. Check `get_check_runs` before hypothesizing about missing approvals or
+protection rules: if `build`/`claude-review`/etc. are `in_progress`, that alone
+explains `blocked`, and it clears on its own once they finish. Only dig into
+branch-protection settings if `blocked` persists after every check is
+`completed`.
+
 ## Appending to skill/memory files: grep for duplicate sections first
 Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —

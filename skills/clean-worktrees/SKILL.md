@@ -182,6 +182,13 @@ If `git worktree remove` reports the tree is dirty, that worktree was
 misclassified — re-inspect, don't reach for `--force`. Only `--force` after the
 user explicitly OKs discarding that worktree's changes.
 
+**Exception — a worktree containing a submodule:** the error `fatal: working
+trees containing submodules cannot be moved or removed` is a *different*
+refusal, triggered by the submodule's presence alone, not by dirty state. If
+`git -C <path> status --short` is empty (genuinely clean), `--force` here is
+correct and safe — it isn't the dirty-tree case above, so don't treat it as a
+misclassification signal.
+
 If `git branch -d` refuses (squash/rebase merge can hide the merge), confirm the
 PR merged (`gh pr list --head <branch> --state merged`) before `git branch -D`.
 

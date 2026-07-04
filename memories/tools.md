@@ -110,6 +110,23 @@
 - This is the manual form of what lab-manual's `bump-ai-config.yml` and gha's
   `bump-submodule` workflows do automatically. Use it for a one-off bump (e.g.
   lab-manual#338 picked up an ai-config reprexes fix this way).
+- **Verify additive-only before bumping**, especially when the bump PR itself
+  won't adopt the new content: `git -C <submodule> diff <old-sha>..<new-sha> --
+  <file>` and confirm no `^-` lines (removed/changed) — only `^+` additions.
+  An additive-only diff means the bump can't break any existing render/usage,
+  which is worth stating explicitly in the bump PR body as the safety argument.
+- **Bump-then-adopt sequencing when the consumer isn't on `main` yet.** If a
+  submodule bump adds macros/content meant for files that only exist on an
+  *unmerged* content PR branch (not yet on `main`), the bump itself must still
+  be scoped to a `main`-based branch — you can't adopt the new macros in the
+  same PR, because those consuming files aren't there to edit. Split into two
+  PRs: (1) the bump alone (safe, additive, mergeable now), and (2) an adoption
+  follow-up filed as a tracked issue, scoped to run **after** the content PR
+  merges and those files land on `main`. Don't try to do both in one PR just
+  because they're conceptually related — the file-existence dependency forces
+  the split. (rme #976 bumped `latex-macros`; the `\ppi`/`\opi` adoption in the
+  marginal-risk content was deferred to #977 because those `.qmd` files were
+  still only on the unmerged #706.)
 
 ## Git — scanning for parallel/in-flight work
 - A remote-only scan (`git branch -r`) **misses** work a parallel CLI session is
@@ -320,6 +337,26 @@
   is still valid. Fix: push a trivial commit to trigger a fresh review. Not caused by
   repo code — the upstream action exits with the wrong code. Observed on gha#92 run
   #28034977099.
+- **`review / claude-review` fails with "no '### Verdict' heading" (gha#173,
+  closed/fixed).** Symptom: the job's SDK run reports `is_error: false` /
+  `subtype: success` (it genuinely completed, no crash), but a guard step
+  (`run-review-guard`) still fails the job because the review's final message
+  never emitted the mandated `### Verdict` heading or `Verdict:` line — the
+  review agent silently stubbed. `review / require-review` then fails too,
+  since it gates on this job. **This is the fix, not a bug**: gha#173 replaced
+  an earlier silent-green-stub failure mode with a loud one, so don't read the
+  red check as a content problem in your diff — check the job log
+  (`mcp__github__get_job_logs`) for this exact error string before assuming
+  otherwise. gha#173 traces the root cause to the review **agent** stalling on
+  **push-triggered** runs specifically, and confirms `workflow_dispatch`
+  re-triggers succeed far more reliably than another push. If the API returns
+  `403 Resource not accessible by integration` on
+  `rerun_failed_jobs`/`run_workflow` (no Actions-write permission in the
+  session), you can't self-trigger the dispatch — surface it to the user with
+  the fix path rather than guessing at a comment-based re-trigger. In practice,
+  the very next push-triggered review after the failure has also gone through
+  cleanly (rme#706, #976) — so a subsequent normal push can clear it too,
+  though `workflow_dispatch` is the reliably documented fix.
 - **Write accurate `workflow_dispatch` comments when adapting the upstream
   `claude-code-review.yml` template.** The upstream template says "workflow_dispatch is
   fired by claude.yml" — but that's only true when the repo's `claude.yml` actually
