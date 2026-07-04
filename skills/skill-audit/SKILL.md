@@ -11,11 +11,11 @@ allowed-tools:
 
 # skill-audit — usage-frequency audit and pruning recommender
 
-Report which skills earn their keep and which are dead weight. With 147 skills
-in this repo's `skills/` directory, "senior devs run 8 skills, juniors run 30"
-is a real pruning signal here — but nobody can act on it without first knowing
-*which* skills actually fire. This skill answers that question; it never
-deletes anything itself.
+Report which skills earn their keep and which are dead weight. This repo's
+`skills/` directory grows fast enough that "senior devs run 8 skills,
+juniors run 30" is a real pruning signal here — but nobody can act on it
+without first knowing *which* skills actually fire. This skill answers that
+question; it never deletes anything itself.
 
 ## When this fires
 
