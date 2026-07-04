@@ -25,7 +25,7 @@ Pure praise or neutral observations with **no** requested change ("nice refactor
 |------|---------|-----------------|
 | **A** — Address | Valid and in-scope. | Fix it in this PR/MR and commit. |
 | **R** — Rebut | Incorrect, already handled, or a misunderstanding. | Explain *why*, citing concrete evidence (line, test, doc, spec). Specific enough that the reviewer can verify it without re-reading the whole PR. |
-| **D** — Defer | Valid but out of scope (new feature, broad refactor, needs design discussion). | File a follow-up issue (`gh issue create` / `glab issue create`), link it, and add it to the PR/MR's **Deferred / Out-of-Scope** section. |
+| **D** — Defer | Valid but out of scope (new feature, broad refactor, needs design discussion). | File a follow-up issue (`CREATE_ISSUE` on GitHub — `gh issue create`; `glab issue create` on GitLab), link it, and add it to the PR/MR's **Deferred / Out-of-Scope** section. |
 | **K** — Acknowledge | Praise or a neutral observation with no change requested. | Give it a row so it's accounted for; no code change, no rebuttal needed. Don't stretch this to dodge a real finding. |
 
 ### Decision order
@@ -45,17 +45,31 @@ For anything that requests a change, choose among the first three (Acknowledge i
 > the actual committed diff (`git show <commit> -- <file>`) rather than trusting
 > the finding's framing. (Seen on ai-config PR #52.)
 
+> **"Blocking: missing X" findings that cite a CI job or policy — check the job
+> still exists on `main` first.** A review can flag a CI failure (e.g. "the
+> Require Changelog Entry job is failing, add a CHANGELOG.md entry") as
+> blocking, but the requirement itself can be removed from `main` in the time
+> between when the review ran and when you address it — a different PR deletes
+> the CI job and/or the file it checks. This isn't the branch-behind-main case
+> above (nothing was deleted from *this* PR); the requirement stopped existing
+> project-wide. Before Addressing, check whether the cited job/file is still on
+> `main` (`git log --oneline origin/main -- <path>`, or `git show origin/main:<path>`).
+> If it's gone, Rebut with the removal commit(s) as evidence rather than
+> resurrecting a dead requirement. (Seen on ai-config PR #376: a "blocking"
+> CHANGELOG.md finding referenced `require-changelog.yml`, which had been
+> deleted from `main` in #385/#387 by the time the fix round ran.)
+
 ## Procedure
 
 ### 1. Gather every finding
 
-Collect the full set *before* dispositioning, so none slips through. Pull both the summary comment and the inline review threads.
+Collect the full set *before* dispositioning, so none slips through. Pull both the summary comment and the inline review threads — `READ_PR_COMMENTS` and `READ_PR_REVIEW_COMMENTS` (abstract operation tokens; resolve to your model's tool via [`tool-mappings.md`](../../tool-mappings.md)).
 
 **GitHub**
 
 ```bash
-gh pr view <N> --comments                            # top-level + summary comments
-gh api repos/{owner}/{repo}/pulls/<N>/comments       # inline review-thread comments
+gh pr view <N> --comments                            # READ_PR_COMMENTS — top-level + summary comments
+gh api repos/{owner}/{repo}/pulls/<N>/comments       # READ_PR_REVIEW_COMMENTS — inline review-thread comments
 ```
 
 **GitLab**
@@ -77,8 +91,8 @@ Apply the decision order above. For Address items, make the edits now.
 
 ```bash
 git add -p                                           # stage deliberately
-git commit -m "fix: address round <k> review findings"
-git push
+git commit -m "fix: address round <k> review findings"   # COMMIT
+git push                                                  # PUSH
 ```
 
 - **One commit per round**, not one per finding — reference its SHA in every Address row.
@@ -92,7 +106,7 @@ Write the summary to a file and post it *from* the file — **never inline on Gi
 
 ```bash
 # write the summary to ard-summary.md, then:
-gh pr comment <N> --body-file ard-summary.md         # GitHub
+gh pr comment <N> --body-file ard-summary.md         # COMMENT_PR — GitHub
 glab mr note <N> -F ard-summary.md                   # GitLab
 ```
 
@@ -126,26 +140,34 @@ Expand each Rebut below the table. Deferred rows must carry a real issue link.
 
 ### 4b. Reply to every inline review thread — and resolve where appropriate
 
+(The standalone [`resolve-pr-threads`](../resolve-pr-threads/SKILL.md) skill
+runs just the resolve half of this step on its own — useful for sweeping
+already-settled threads without a full ARD pass.)
+
 The one summary comment is **not** enough on its own. A reviewer who left
 inline comments wants a response **on each thread**, not just a table posted
 elsewhere. For every inline comment, post a short reply on its own thread with
 the disposition (and the commit SHA for an Address), then **resolve** the thread
 once the item is genuinely settled.
 
-**GitHub** — reply on the comment's thread, then resolve via GraphQL:
+**GitHub** — reply on the comment's thread (`REPLY_REVIEW_COMMENT`), then
+resolve via GraphQL (`RESOLVE_REVIEW_THREAD`):
 
 ```bash
 # Reply on the same thread as inline comment <comment_id>:
 gh api repos/{owner}/{repo}/pulls/<N>/comments \
-  -f body="✅ Addressed in <sha>." -F in_reply_to=<comment_id>
+  -f body="✅ Addressed in <sha>." -F in_reply_to=<comment_id>   # REPLY_REVIEW_COMMENT
 
 # List threads to get the node id, then resolve the settled one:
 gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
   pullRequest(number:<N>) { reviewThreads(first:100) { nodes {
     id isResolved comments(first:1){ nodes { databaseId body } } } } } } }'
 gh api graphql -f query='mutation {
-  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'
+  resolveReviewThread(input:{threadId:"<thread_node_id>"}) { thread { isResolved } } }'   # RESOLVE_REVIEW_THREAD
 ```
+
+In a remote/web session without `gh`, resolve `RESOLVE_REVIEW_THREAD` via
+`mcp__github__resolve_review_thread` instead (see `tool-mappings.md`).
 
 **GitLab** — reply to the discussion, then resolve it:
 
@@ -158,7 +180,11 @@ glab api -X PUT "projects/:id/merge_requests/<N>/discussions/<discussion_id>?res
 **Resolve only when the item is actually settled:**
 
 - **Address** — resolve after the fix is **pushed** (reply names the SHA). Never
-  resolve an Address whose fix isn't on the branch yet.
+  resolve an Address whose fix isn't on the branch yet. Not confident the fix
+  fully settles the concern? When the finding is ambiguous, turns on a design
+  choice, or admits only a partial fix, reply explaining what you did and
+  **ask for confirmation** instead of resolving. Leave the thread open for the
+  reviewer to verify.
 - **Defer** — reply with the tracked issue link, then resolve (work lives
   elsewhere now).
 - **Acknowledge** — reply briefly, then resolve.

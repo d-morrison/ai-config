@@ -100,7 +100,7 @@ git -C <path> status --porcelain    # any output → DIRTY, skip (or --force onl
 
 ```bash
 git -C <path> rev-parse --abbrev-ref HEAD                 # the branch
-gh pr list --head <branch> --state open --json number,url  # open PR? (glab mr list on GitLab)
+gh pr list --head <branch> --state open --json number,url  # LIST_PRS — open PR? (glab mr list on GitLab)
 git rev-list --count origin/main..<branch>                # commits ahead of main
 git rev-list --count <branch>@{upstream}..<branch> 2>/dev/null \
   || echo "no-upstream"                                   # unpushed commits (or no remote)
@@ -131,6 +131,27 @@ git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
 
 Merged into `origin/main`, or upstream `[gone]` with **no** unique commits (3b
 returned 0) → the work has landed.
+
+**Squash-merge repos break both checks above — verify via PR state instead.**
+A squash merge rewrites the branch's commits into one new commit on `main`, so
+the branch's own commits are never ancestors of `origin/main`: `git branch
+--merged` won't show it as MERGED, and step 3b's ahead-of-main count won't be
+0, so the `[gone]`-with-no-unique-commits path won't fire either — both landed
+checks silently fail on every squash-merged branch, misclassifying it as
+**Dirty** (unpushed work) instead of **Dead**. Don't trust local ancestry for
+landed detection in a squash-merge repo (check `git log --oneline -5
+origin/main` for single-commit messages — GitHub's default squash-commit
+subject is `"<title> (#N)"`, though a repo can configure a different template
+(e.g. `Lacaedemon/sparta` uses `"PR #N: ..."`) — or just try it, the false
+positive is cheap to spot once you know to look). Use the PR's own merge
+state as the authoritative signal instead:
+```bash
+gh pr list --head <branch> --state all --json number,state,mergedAt --jq '.[0]'
+```
+A `"state": "MERGED"` entry means landed regardless of what the ahead/merged
+checks above say. (Hit on `Lacaedemon/sparta`, 2026-07-02: ~40 of 48 worktrees
+slated for cleanup showed `ahead=2` to `ahead=15` on the naive check — every
+one had actually merged via squash minutes to hours earlier.)
 
 #### d. Live-session check — is another session using it?
 

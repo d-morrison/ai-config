@@ -48,15 +48,15 @@ For HACtions: run `bash -n` on all scripts, then trigger a pipeline on
 Follow the slide-tag procedure:
 
 ```bash
-git fetch origin main --tags
+git fetch origin main --tags   # FETCH
 echo "Current v2: $(git log --oneline -1 v2)"
 echo "Target:     $(git log --oneline -1 origin/main)"
 git log --oneline v2..origin/main | head -20
 
 git tag -d v2
 git tag v2 origin/main
-git push origin :refs/tags/v2
-git push origin v2
+git push origin :refs/tags/v2   # DELETE_REF
+git push origin v2              # PUSH
 
 echo "Confirmed: $(git log --oneline -1 v2)"
 ```

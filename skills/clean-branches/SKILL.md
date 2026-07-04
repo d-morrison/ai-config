@@ -92,7 +92,7 @@ Skip if created/last-committed within the last 7 days (too new).
 glab mr list --source-branch=<branch> 2>&1 | cat
 
 # GitHub
-gh pr list --head=<branch> --json number,title,state | cat
+gh pr list --head=<branch> --json number,title,state | cat   # LIST_PRS
 ```
 
 If an open MR exists → **Active**, skip.
@@ -134,7 +134,7 @@ Wait for user confirmation before proceeding. If user says "just go" or
 ### 5. Delete dead branches
 
 ```bash
-git push origin --delete <branch>
+git push origin --delete <branch>   # DELETE_REF
 ```
 
 Also clean up local tracking branches:
@@ -159,7 +159,7 @@ If rebase has conflicts:
 
 If rebase succeeds:
 ```bash
-git push --force-with-lease origin <branch>
+git push --force-with-lease origin <branch>   # PUSH
 ```
 
 ### 7. Open MRs for orphaned stale branches
@@ -177,7 +177,7 @@ glab mr create --source-branch=<branch> --target-branch=main \
 # GitHub
 gh pr create --head=<branch> --base=main \
   --title "<inferred title>" \
-  --body "Orphaned branch rebased onto main. Review or close if no longer needed."
+  --body "Orphaned branch rebased onto main. Review or close if no longer needed."   # CREATE_PR
 ```
 
 ### 8. Prune local branches
@@ -222,7 +222,7 @@ For each, confirm the PR/MR actually merged before deleting (never assume):
 
 ```bash
 # GitHub
-gh pr list --head <branch> --state merged --json number,mergedAt | cat
+gh pr list --head <branch> --state merged --json number,mergedAt | cat   # LIST_PRS
 
 # GitLab
 glab mr list --source-branch=<branch> --state merged 2>&1 | cat

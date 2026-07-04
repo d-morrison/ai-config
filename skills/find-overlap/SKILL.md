@@ -68,7 +68,7 @@ ai-config repo and none is given), and the unit you compare:
 | Corpus | Unit | Cheap signature | Similarity tell |
 |--------|------|-----------------|-----------------|
 | `skills/` | one `skills/<name>/SKILL.md` | `name` + `description` + body | shared trigger phrases / same outcome verb |
-| `memories/` | one memory file | `name` + `description` + body | same subject/fact restated |
+| `memories/` + `~/.claude/projects/*/memory/` | one memory file | `name` + `description` + body | same subject/fact restated |
 | docs / Quarto / markdown | one heading section | heading + first lines | same topic covered twice |
 | code | one function / file | signature + doc comment | same logic, different name |
 | pasted prose | one paragraph / section | first sentence | same claim repeated |
@@ -91,8 +91,12 @@ done | sort -n
 ```
 (A plain `awk -F'description:'` drops `description: >` block scalars — including
 this skill's own — to blank; the `python3` extractor handles both forms.)
-For memories: the same shape over `memories/*.md` (`name` + `description` from
-frontmatter). The line count separates thin stubs from real bodies at a glance.
+For memories: the same shape over **both** the in-repo `memories/*.md` and the
+per-repo project memories in `~/.claude/projects/*/memory/*.md` (`name` +
+`description` from frontmatter). Repo-specific memories moved out of
+`memories/repo/` into `~/.claude/projects/<path>/memory/`, so a scan of
+`memories/*.md` alone now misses the bulk of repo-level knowledge — glob both.
+The line count separates thin stubs from real bodies at a glance.
 
 ### 3. Cluster candidates — then read the bodies
 
@@ -129,6 +133,18 @@ adjacent-but-distinct missing a link → `link-skills`; redundant code → `tidy
 cluster — a raw similarity list with no disposition just pushes the judgment back
 to the reader.
 
+## Orchestration
+
+Overlap detection over a large corpus decomposes by comparison cluster --- each
+candidate group of comparable units can be classified independently, and the work
+is pure reading with no shared-runner cost. Consult
+`shared/workflow/when-to-orchestrate.md`. When the corpus is large (many skills,
+memories, or files), run a Workflow: parallel agents each judging one cluster
+against the three buckets, then a synthesis stage that assembles the
+dispositions, rather than reading the whole corpus in one context. This stays
+read-only; it only parallelizes the reading and classification. Launch directly
+when an opt-in signal is present; otherwise propose with a cost estimate first.
+
 ## Relationship to other skills
 
 - **`consolidate-skills`** — the action counterpart for the skills corpus; it
@@ -137,6 +153,9 @@ to the reader.
 - **`consolidate-memory`** — the action counterpart for the memory corpus.
 - **`link-skills`** — finds the *inverse* (distinct skills that should reference
   each other but don't); hand it the adjacent-but-distinct clusters.
+- **`challenge-redundant-content`** (`shared/workflow/`) — the review-time,
+  single-diff counterpart: questions redundancy while reviewing a diff or
+  document's prose/math/code, rather than sweeping the whole corpus.
 - **`find-ai-tells`** — sibling read-only scanner over prose, for a different
   signal (AI tells, not duplication).
 - **`tidy` / `simplify`** — code-level dedup once overlap is found.

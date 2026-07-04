@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -95,6 +96,114 @@ def check_skills() -> None:
     print(f"  checked {count} skills")
 
 
+TOKEN_PATTERN = re.compile(r"`([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`")
+
+# Backtick-wrapped ALL_CAPS_WITH_UNDERSCORE tokens already in skill prose for
+# reasons unrelated to the tool-mappings.yml abstract-operation-token pilot
+# (ai-config#195) — env vars, git refs, API constants. Not every such token is
+# meant to resolve via the registry, so they're exempted rather than flagged.
+NON_OPERATION_TOKENS = {
+    "ALLOWED_TOOLS",
+    "ANTHROPIC_API_KEY",
+    "CHERRY_PICK_HEAD",
+    "CLAUDE_CODE_OAUTH_TOKEN",
+    "ENTITY_NUMBER",
+    "ERR_TUNNEL_CONNECTION_FAILED",
+    "GITHUB_OUTPUT",
+    "GITHUB_TOKEN",
+    "GITLAB_TOKEN",
+    "NOT_CRAN",
+    "NOT_PLANNED",
+    "PROJECT_ID",
+    "PR_NUMBER",
+    "REBASE_HEAD",
+    "REVERT_HEAD",
+    "R_LIBS_USER",
+    "SHA_PLACEHOLDER",
+    "SUBMODULES_TOKEN",
+    "WORKFLOW_TOKEN",
+}
+
+
+def load_operation_ids() -> set[str]:
+    mappings_file = ROOT / "tool-mappings.yml"
+    if not mappings_file.is_file():
+        return set()
+    data = yaml.safe_load(mappings_file.read_text(encoding="utf-8"))
+    return {op["id"] for op in (data or {}).get("operations", [])}
+
+
+def check_operation_tokens() -> None:
+    # Every backtick-wrapped ALL_CAPS operation-shaped token in a skill body
+    # must be a real tool-mappings.yml operation id (or a known non-operation
+    # constant) -- catches typos in the abstract-operation-token pilot from
+    # ai-config#195 before they silently fail to resolve for non-Claude models.
+    operation_ids = load_operation_ids()
+    skills_dir = ROOT / "skills"
+    if not skills_dir.is_dir():
+        return
+    if not operation_ids:
+        warnings.append("tool-mappings.yml has no operations; skipping token validation")
+        return
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        rel = skill_md.relative_to(ROOT)
+        for match in TOKEN_PATTERN.finditer(skill_md.read_text(encoding="utf-8")):
+            token = match.group(1)
+            if token in operation_ids or token in NON_OPERATION_TOKENS:
+                continue
+            errors.append(
+                f"{rel}: `{token}` looks like an operation token but isn't in "
+                "tool-mappings.yml or the NON_OPERATION_TOKENS allowlist in "
+                "scripts/validate-skills.py"
+            )
+    print(f"  checked operation tokens ({len(operation_ids)} known operations)")
+
+
+def check_codex_wrappers() -> None:
+    wrappers_dir = ROOT / "codex-skills"
+    if not wrappers_dir.is_dir():
+        warnings.append("no codex-skills/ directory")
+        return
+
+    count = 0
+    for child in sorted(wrappers_dir.iterdir()):
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        count += 1
+        skill_md = child / "SKILL.md"
+        rel = skill_md.relative_to(ROOT)
+        if not skill_md.is_file():
+            errors.append(f"{child.relative_to(ROOT)}: no SKILL.md")
+            continue
+        fm = parse_frontmatter(skill_md.read_text(encoding="utf-8"), str(rel))
+        if fm is None:
+            continue
+        extra = sorted(set(fm) - {"name", "description"})
+        if extra:
+            errors.append(f"{rel}: Codex wrapper frontmatter has extra key(s): {', '.join(extra)}")
+        name = fm.get("name")
+        if not name or not str(name).strip():
+            errors.append(f"{rel}: frontmatter `name` is missing or empty")
+        elif name != child.name:
+            errors.append(f"{rel}: `name: {name}` does not match directory `{child.name}`")
+        desc = fm.get("description")
+        if not desc or not str(desc).strip():
+            errors.append(f"{rel}: frontmatter `description` is missing or empty")
+
+    print(f"  checked {count} Codex wrappers")
+
+    sync = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/sync-codex-skill-wrappers.py"), "--check"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    print("  " + sync.stdout.strip().replace("\n", "\n  "))
+    if sync.returncode != 0:
+        errors.append("codex-skills/ is out of sync; run scripts/sync-codex-skill-wrappers.py")
+
+
 def check_json(rel: str, required: list[str]) -> None:
     path = ROOT / rel
     if not path.is_file():
@@ -113,6 +222,9 @@ def check_json(rel: str, required: list[str]) -> None:
 def main() -> None:
     print("Validating skills…")
     check_skills()
+    check_operation_tokens()
+    print("Validating Codex wrappers…")
+    check_codex_wrappers()
     print("Validating manifests…")
     check_json(".claude-plugin/marketplace.json", ["name", "owner", "plugins"])
     check_json(".claude-plugin/plugin.json", ["name"])

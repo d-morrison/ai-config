@@ -19,7 +19,7 @@ repos:
   - repo: local
     hooks:
       - id: validate-skills
-        name: validate skills & manifests
+        name: validate skills, Codex wrappers & manifests
         entry: python scripts/validate-skills.py
         language: python
         additional_dependencies: [pyyaml==6.0.2]
@@ -30,4 +30,11 @@ repos:
         entry: python scripts/check-links.py
         language: python
         pass_filenames: false
+        always_run: true
+      - id: markdownlint
+        name: markdownlint (markdown style)
+        entry: markdownlint-cli2
+        language: node
+        additional_dependencies: ["markdownlint-cli2@0.22.1"]
+        pass_filenames: false  # globs/ignores come from .markdownlint-cli2.jsonc
         always_run: true

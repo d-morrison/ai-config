@@ -1,5 +1,30 @@
 # Debugging notes
 
+## Markdown line-by-line processors: every inner loop needs its own fence tracker
+
+When writing a script that reformats Markdown line by line, the outer loop usually
+tracks `in_code_block` to pass fence bodies verbatim. But inner collection loops
+(bullet continuation, blockquote accumulation) often collect lines first and process
+later — they need their **own** fence-state tracker, or fenced code blocks inside
+bullets/blockquotes get stripped, joined, and reflowed as prose.
+
+Pattern: any loop that accumulates lines before processing should break (or track
+`in_inner_code`) when it hits a ```` ``` ```` line.
+
+**Test matrix before shipping a Markdown reformatter:**
+- Top-level fenced code block (the baseline)
+- Fenced code block inside a numbered step / bullet item
+- Fenced code block inside a blockquote (`> ``` … > ``` `)
+- Multi-line code block body (not just single-line) in each of the above
+
+Hit on d-morrison/ai-config#265: the semantic-line-breaks script lacked fence
+tracking in the bullet continuation loop and the blockquote collection loop.
+Both took two rounds of review to fully fix (single-line fence caught in round 1,
+multi-line body in blockquotes caught in round 2).
+A separate edge case also surfaced in round 3: `_flush_bq_prose` silently dropped
+lines when `split_sentences` returned `[]` (empty blockquote text) and multiple
+lines had accumulated — unrelated to fence state, but found in the same cycle.
+
 ## Testing CSS/JS-dependent web features — use a REAL browser, not a DOM stub
 - A hand-rolled DOM shim (or jsdom-style unit test) can PASS while the feature is
   visibly broken, because it doesn't apply the page's CSS or run the framework's
@@ -20,6 +45,16 @@
   scripts (e.g. Quarto's `quarto-nav.js` / `quarto.js`) via CORS, so headroom/nav
   behavior won't run. Test viewport-specific behavior with `newPage({ viewport })`,
   and assert computed styles / `offsetHeight` (not just DOM presence).
+- **Quarto dark mode** (the `theme: {light: cosmo, dark: darkly}` pair in
+  `_quarto.yml` that adds a navbar toggle): to force/screenshot the dark theme,
+  set `localStorage["quarto-color-scheme"] = "alternate"` via `addInitScript`
+  BEFORE navigation, then load over HTTP (not `file://`). The toggle button calls
+  `window.quartoToggleColorScheme()`, but it only works once `quarto.js` has
+  loaded — which it can't under `file://` (CORS), so the toggle silently no-ops
+  and the page stays light. Verify the switch took with
+  `getComputedStyle(document.body).backgroundColor` (darkly → `rgb(34,34,34)`),
+  not by the toggle icon alone. The stored value is the literal string
+  `"alternate"` (dark) / `"default"` (light) — NOT `"dark"`/`"light"`.
 
 ## ARDI/iterate: must poll for new review after pushing
 - After pushing fixes during an iterate loop, DON'T declare "clean" based on
@@ -27,6 +62,33 @@
 - Poll until a review note appears that references your latest commit SHA.
 - Wait ~30-60s, then check. If nothing after ~2min, check pipeline status.
 - The iterate skill now has explicit polling instructions for both GitHub and GitLab.
+
+## Confirm a CI failure is pre-existing (not your diff) via workflow-run history on main
+- Before waving off a red CI check as "unrelated, pre-existing" (e.g. to defer
+  fixing it as out of scope for the current PR), verify it, don't assume —
+  check that same workflow's run history filtered to `main`, not just that the
+  failure looks unrelated to the files in your diff.
+- `mcp__github__actions_list` (`list_workflow_runs`, `resource_id: "<file>.yml"`,
+  `workflow_runs_filter: {"branch": "main"}`) returns that job's own run
+  history; sort by `run_number` descending and read the most recent entries'
+  `conclusion`. If it's already `failure` on `main`'s current HEAD commit (and
+  several commits back), the failure predates your branch and is safe to defer
+  — cite the specific `main` commit SHA(s) it fails on in the PR/issue as the
+  evidence, not just "looks unrelated."
+- The GitHub Checks API's check-run `name` (e.g. `jarl-check`) is often NOT the
+  workflow **file** name `list_workflow_runs` needs as `resource_id` — grep
+  `.github/workflows/*.y*ml` for the job's `name:` field to find which file
+  defines it (a repo can have several workflow files; the job name doesn't
+  say which one).
+- `actions_list` responses for an active repo can exceed the tool's token cap
+  and get written to a scratch file instead of returned inline — when that
+  happens, `python3 -c "import json; ..."` on the saved file (filter by
+  `path`/`head_branch`, sort by `run_number`) is far more reliable than
+  grepping the raw JSON text, since a single workflow run's JSON blob is
+  usually one unbroken line with no per-field markers to grep on the same
+  line. (`d-morrison/altdoc#16`: confirmed `jarl-check`'s failures via
+  `lint.yml`'s run history on `main` going back 4+ commits before reporting it
+  as pre-existing and out of scope.)
 
 ## VS Code editor buffer vs disk desync
 - `replace_string_in_file` / `read_file` operate on the VS Code editor buffer.
@@ -112,6 +174,19 @@ explains `blocked`, and it clears on its own once they finish. Only dig into
 branch-protection settings if `blocked` persists after every check is
 `completed`.
 
+## Test implicit path coverage when a change affects more branches than described
+When a code block is placed in a shared path (e.g. the non-append `else:` branch
+of an order dispatcher), it implicitly covers every non-append command type —
+plain moves, reform moves, form-up drags, etc. — even if the PR's focus was one
+specific case. Reviewers flag missing coverage for implicit paths.
+
+Pattern: after placing a change in a shared branch, enumerate the full set of
+command types that reach it, and add at least one test per type beyond the primary
+case. Name each test to make the path explicit (e.g. `test_form_up_pre_faces_march_direction`).
+
+Hit on Lacaedemon/sparta#352: the pre-facing block ran for form-up drags too,
+but no test covered that path until the reviewer flagged it.
+
 ## Appending to skill/memory files: grep for duplicate sections first
 Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —
@@ -143,3 +218,143 @@ pre-empt these when authoring shell, especially under `set -euo pipefail`:
 - **bash 3.2 (macOS default) compatibility:** indexed arrays, C-style
   `for ((…))`, and `${2+set}` all work; **associative arrays do NOT** (4.0+).
   Parse key=value records with `while IFS='=' read -r k v; do case "$k" in …`.
+
+## Verifying R-package tests: install + testthat, never `source()` the R files
+Hit on ucdavis/ettbc#14. The env had no `devtools`/`renv`, so I "verified" the new
+tests by `sys.source()`-ing every `R/*.R` file and re-running the assertions by
+hand. They passed — but CI's `R CMD check` failed with
+`could not find function "run_augment_one"`. Two lessons:
+- **testthat runs each test file top-to-bottom, and `test_that()` executes
+  immediately.** Helper functions (and file-scope fixtures) must be defined
+  **above** the `test_that()` blocks that call them. A helper defined at the
+  bottom of the file is undefined when the earlier tests run. Manual sourcing
+  hides this because you naturally define helpers before use in the REPL.
+- **Don't emulate the test run by sourcing `R/`.** It reproduces neither
+  testthat's execution model nor the package namespace (internal, unexported
+  functions resolve under `source()` but the suite's `test_check` exposes them
+  differently). Install the toolchain from the Posit package manager and run it
+  the way CI does:
+  `install.packages(c("testthat","cli", <Suggests used>), repos="https://packagemanager.posit.co/cran/__linux__/noble/latest")`,
+  then `R CMD INSTALL .`, then `testthat::test_dir("tests/testthat", load_package="installed")`.
+  roxygen2, lintr, and spelling install the same way — so `roxygenise()` (diff
+  check), `lint_package()`, and `spell_check_package()` are all runnable locally
+  even when `renv::restore()` can't reach the full dependency set.
+  **Caution: a full `test_dir()` / `devtools::test()` pass can PRUNE `_snaps/`
+  files whose snapshot test was skipped or went unrun this pass** (e.g. snapr
+  tests skipped because `NOT_CRAN` is unset) — see the snapr section below before
+  running it with `git add -A` in scope.
+
+## R test/lint gotchas that only surface in CI
+Also from ettbc#13/#14:
+- **`lintr::object_usage_linter` flags package datasets used inside a *named*
+  helper function in a test file** (`no visible binding for global variable
+  'cohort'`). The same dataset used directly inside a `test_that()` block is
+  fine. So reference lazy-loaded data at file scope or inside the test blocks,
+  not inside a top-level helper. The repo's `lint-changed-files` job runs
+  `R CMD INSTALL .` before `lint_package`, so cross-file *internal* functions
+  (e.g. a helper defined in another `R/` file) resolve — a single-file
+  `lintr::lint()` can't see them and will false-flag them.
+- **`spelling::spell_check_package()` locally over-reports vs CI** on accented
+  hyphenated names: line-wrapped `García-Albéniz`/`Hernán` in `.Rd` files
+  tokenize as `Garc`/`niz`/`Hern`, which the CI spellcheck action does not flag
+  (main passes with them). Trust CI's misspelled count; add only the genuinely
+  new words to `inst/WORDLIST`.
+- **The ettbc `review / claude-review` check fails/skips org-wide when the
+  Anthropic org spend limit is hit** (`github-actions[bot]` posts "monthly spend
+  limit"). It's environmental, non-blocking, and unfixable from a content PR
+  (the bot can't edit `.github/workflows`). Stand in with a manual self-review
+  rather than chasing it.
+
+## R snapshot tests (snapr / testthat) — regenerating without collateral damage
+Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
+- **When a snapshot's test is skipped or doesn't run in a given pass, a full
+  `testthat::test_dir()` / `devtools::test()` run PRUNES its now-orphaned
+  `_snaps/` file** (not every routine run — the trigger is the snapshot going
+  unproduced this pass). On #264 the snapr tests were skipped (`NOT_CRAN` unset,
+  see below), so a `test_dir()` pass treated their snapshots as orphaned and
+  deleted 23 of them; `git add -A` then silently staged every deletion. (Stock
+  testthat 3.x gates orphan *deletion* on snapshot-update mode — a normal run
+  only warns — so the #264 prune was likely either an implicit update pass or
+  snapr's own `expect_snapshot_data` pruning path; I didn't pin down which. The
+  defense below holds either way.) Regenerate **per file** with
+  `testthat::test_file("tests/testthat/test-<fn>.R")`, stage only the snapshots
+  you meant to touch (`git add tests/testthat/_snaps/<fn>.md`), and if the suite
+  did prune others, restore them: `git checkout origin/main -- tests/testthat/_snaps`.
+- **snapr snapshot tests are skipped unless `NOT_CRAN=true`** (they're guarded
+  like `skip_on_cran()`); locally you must set the env var or every snapshot
+  silently no-ops and "passes" without comparing.
+- **`furrr`/`future` parallel workers cannot load a `pkgload::load_all()`'d
+  package** — a worker starts a fresh R process that only sees installed
+  packages, so any snapshot that runs the analysis under `future_map` errors or
+  produces nothing. Regenerate those snapshots in a **sequential** plan
+  (`future::plan("sequential")` / set workers to 1), then copy the result into
+  the parallel snapshot path — verify seq==par output on `main` first so the
+  copy is sound.
+- **`require-review` failure caused by dispatch winning the concurrency race.**
+  `cancel-in-progress: true` on a concurrency group means a newly-dispatched
+  review cancels the still-running push-triggered review. The push-triggered
+  run's `require-review` gate then shows as failed (cancelled parent = failed
+  dependent), while the dispatched run's `require-review` is green. The PR
+  shows `mergeable_state: unstable` from the cancelled run but is still
+  mergeable — GitHub uses the most recent check run per name and commit SHA, so
+  the dispatched run's passing `require-review` replaces the cancelled push
+  run's check in branch protection. Confirm the dispatched run posted a clean
+  verdict and proceed to merge; don't re-trigger. (gha#133.)
+- **`tests/testthat.R` runs with `stop_on_warning = TRUE`**, so any warning
+  during a test FAILS CI even with 0 test failures (shows as `WARN N`). When you
+  hit it, don't guess the source — **capture the actual messages**
+  (`withCallingHandlers(..., warning = \(w) {message(conditionMessage(w)); ...})`).
+  On #264 the GLM "fitted probabilities 0 or 1" / "did not converge" warnings
+  were a red herring; the real one was a `cli::cli_warn("risk ratio is undefined")`
+  from a zero-risk group at small n. Muffle expected small-sample warnings in
+  BOTH the package source (a `suppress_*_warnings()` helper wrapping the fit
+  chain) AND the test helper, matching every pattern the fits actually emit.
+
+## A push-to-main-only workflow can't fail a PR — add a static PR guard when you fix one
+A workflow that triggers only on `push:` to `main` (deploy/publish/release jobs)
+never runs on pull requests, so a bug it would catch stays invisible until after
+merge — and then it fails on `main`, where no one is watching a specific PR.
+Hit on d-morrison/rme#966/#967: the Quarto **publish** workflow (push-to-main
+only) went red the moment the concept-map appendix merged and stayed red for two
+days across several later merges, because no PR ever ran the full multi-format
+website render that collides.
+
+When you fix such a post-merge-only failure, don't stop at the fix — add a
+**cheap static check that runs on `pull_request`** so the bug class can't regress
+unnoticed. It needn't reproduce the whole heavy job; a few seconds of parsing
+that asserts the invariant is enough. d-morrison/rme#970 added `check-render-headers`, a
+~120-line Python + PyYAML script that asserts "no two of a render-list page's
+formats resolve to the same output file," runs in ~8s, and would have caught the
+original bug at PR time. Prevention (fix the scaffolder/template that emits the
+bad input) and enforcement (the PR guard) are complementary — ship both.
+
+## stop-hook-git-check's "N" flag can be a false positive for SSH-signed commits
+The `~/.claude/stop-hook-git-check.sh` Stop hook flags a commit "N" (Unverified)
+whenever local `git log --show-signature` can't verify it — but locally that
+check needs `gpg.ssh.allowedSignersFile` configured, which this environment
+usually doesn't set up. A commit made with `commit.gpgsign=true` /
+`gpg.format=ssh` and the right `user.signingkey` is still genuinely signed even
+when the local verify fails; `git cat-file -p <sha>` shows a real
+`-----BEGIN SSH SIGNATURE-----` block with the correct author/committer email.
+GitHub verifies independently (it publishes the corresponding public signing
+key), so the commit still shows Verified there.
+
+Before treating the hook's feedback as an actionable problem: check
+`git cat-file -p <sha> | head -8` for the `gpgsig` block and confirm
+`author`/`committer` say `noreply@anthropic.com`. If both hold, the "N" is a
+local-verification artifact, not a real signing gap — no amend/re-sign needed.
+Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
+commit that's missing the `gpgsig` block entirely, or whose author/committer
+email is genuinely wrong. (ai-config#314 was the opposite: two SSH-signed
+`noreply@anthropic.com` commits flagged "N" back-to-back, but both were already
+correct — a false positive, not a real signing gap.)
+
+## Reproduce heavy-tool project bugs minimally
+The Quarto
+`safeMoveSync`/`renderProject` `rename '<stem>.html' -> No such file` collision
+reproduced in an R-free, LaTeX-free two-file website project (`format: {html,
+revealjs}`, one page missing the revealjs `output-file` rename so revealjs and
+html both write `<stem>.html`) in seconds. When a full render/build is too heavy
+to run in the sandbox, strip the failing behavior down to the smallest project
+that still triggers it — it confirms both the diagnosis and the fix far faster
+than the real pipeline, and becomes the negative test for the guard.

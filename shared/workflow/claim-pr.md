@@ -18,3 +18,13 @@ Skip the claim step if the most recent comment already says you are working on
 it. This applies to any task that will push commits to a PR branch or run
 iterative review loops. It does **not** apply to read-only inspection (showing a
 PR, checking status, explaining a diff) --- those don't risk a parallel session.
+
+This includes a PR **you opened yourself**: in repos with an active `@claude`
+agent (`claude.yml`), the agent can push commits to your branch on PR activity
+--- e.g. merging `main` in --- and collide with your in-flight push, so claim
+early to flag the branch as actively worked. (See `memories/tools.md`,
+"@claude CI action", for the collision-recovery steps.)
+
+When starting work from an issue, follow the claim comment with an immediate
+draft PR --- see [`pr-on-claim`](pr-on-claim.md) for the mechanics. An open
+PR is a stronger "in-flight" signal than a comment alone.

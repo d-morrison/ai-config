@@ -344,3 +344,12 @@ prompt:
 Two of the four runs silently lost their work. Both fixes (concurrency
 + polling) ship together — they cover different segments of the same
 failure mode.
+
+## Relationship to other skills
+
+- **`claude-review-workflow`** — the companion skill for the read-only PR
+  review workflow; see "Companion skill" above.
+- **`config-ai`** — the broader router: when a request is "change how the
+  `@claude` bot behaves when invoked," not "add something consumers' CI can
+  call," `config-ai` hands off to this skill (or `claude-review-workflow`)
+  rather than `skill-builder`/`agent-builder`.

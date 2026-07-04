@@ -37,6 +37,10 @@ X", "whenever I edit Y do Z"), memory can't execute it — that needs a **hook**
 in `settings.json` / `settings.local.json` (use the `update-config` skill).
 Say so and route it there; don't store a note that will never fire.
 
+Unsure whether a request is really a memory versus a skill, subagent, hook, or
+`gha` capability? `config-ai` (`ca`/`cai`) is the broader router across all of
+those forms — this skill is what it hands off to once memory is the answer.
+
 ## Procedure
 
 1. **Parse** the fact/preference from the user's message.
@@ -54,15 +58,18 @@ Say so and route it there; don't store a note that will never fire.
      `~/.claude/CLAUDE.md` (it's loaded every session)
    - **General reference fact** — a cross-project fact that only matters when
      relevant ("gh opens a pager — pipe to cat") → a topical file in
-     `/memories/` (e.g. `tools.md`, `debugging.md`)
+     `/memories/` (e.g. `tools.md`, `debugging.md`). When you add a *new* file
+     here (not just a bullet to an existing one), register it in
+     `memories/MEMORY.md` as an index entry.
    - **Conversation-only** → `/memories/session/`
    - When ambiguous between project and general, judge by relevance; default
      to general.
 3. **Choose file**: read the target's current contents first. Append to an
    existing section/file if one fits; otherwise create a descriptively named
-   file. Don't duplicate — if it's already recorded, update in place rather
-   than stacking a second copy, and say so. Delete a memory that turns out
-   wrong instead of leaving a contradiction.
+   file — and when you create a *new* file under `/memories/`, add a row for it
+   to `memories/MEMORY.md` (the index). Don't duplicate — if it's already
+   recorded, update in place rather than stacking a second copy, and say so.
+   Delete a memory that turns out wrong instead of leaving a contradiction.
 4. **Write** a concise bullet (one line preferred), matching the file's voice;
    include the *why* if it isn't obvious. Don't record what the repo already
    documents (code structure, git history) — capture only the non-obvious.
@@ -71,7 +78,10 @@ Say so and route it there; don't store a note that will never fire.
    memory writes to `~/.claude/projects/*/memory/` (they persist locally,
    outside the ai-config repo — no git commit needed). **Everything else —
    including `~/.claude/CLAUDE.md` writes — gets committed**. This assumes `bootstrap.sh` has symlinked `memories/` and
-   `CLAUDE.md` into the ai-config repo (the expected setup). Resolve the repo
+   `CLAUDE.md` into the ai-config repo (the expected setup) and that ai-config is
+   your working repo. When you're **working primarily in another repo** and want
+   to push a general memory to ai-config from there, use `push-memory` instead —
+   it delivers on a branch + PR and never touches the repo you're in. Resolve the repo
    from the `memories/` symlink and stage the file by its path *within* the
    repo (`git rev-parse --show-toplevel` follows the symlink to the repo root,
    robust across one or many hops — unlike single-hop `readlink`):

@@ -19,7 +19,7 @@ each to a clean review verdict in series.
 1. **List the open PRs/MRs and decide which are in scope.**
    ```bash
    gh pr list --state open --limit 100 \
-     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision
+     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision   # LIST_PRS
    ```
    On GitLab, use `glab api "projects/:id/merge_requests?state=opened&per_page=100"`
    and look for `source_branch` (≡ `headRefName`) and `target_branch` (≡ `baseRefName`)
@@ -44,6 +44,13 @@ each to a clean review verdict in series.
    If a circular stack is found (impossible in practice but check anyway),
    surface it to the user and skip those PRs.
 
+   **Tie-break with infrastructure-first.** Among PRs with no stacking
+   relationship, when otherwise equally pressing, process internal
+   infrastructure PRs (shared tooling, CI workflows, reusable actions,
+   templates) slightly ahead of feature PRs — see
+   [`pr-prioritization`](../../shared/workflow/pr-prioritization.md). This
+   never overrides the stacking order above.
+
    Report the in-scope list (with bare PR URLs) **before** you start, so the
    user can veto any before the loop pushes commits.
 
@@ -57,6 +64,14 @@ each to a clean review verdict in series.
    review findings), complete ARDI on the base first to drive it to clean and
    merge it, then start the derived PR. Never run ARDI on a derived PR while its
    base is still open and unclean — you'd be reviewing against a moving target.
+
+   A PR reaching **clean-but-unmerged** is that PR's terminal state, **not** a
+   reason to pause the sweep: merging is human-gated (you don't self-merge), but
+   that gates only the merge — move straight to the next PR rather than waiting
+   for a human to merge first. See
+   [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md), and use
+   [`stack-prs`](../stack-prs/SKILL.md) for the branch/PR mechanics when the
+   next item needs to stack on a clean-but-unmerged PR.
 
    Drive each to a terminal state:
    - **Clean** — zero flagged items under any heading; post the unclaim
@@ -83,6 +98,18 @@ each to a clean review verdict in series.
    For any PR not driven to clean, **list its remaining open items** so triage
    is one glance, not a re-investigation. Don't merge anything — opening merges
    is the user's call.
+
+## Orchestration
+
+ARDIA drives PRs **one at a time on purpose** (see *Process PRs one at a time*
+above): each round pushes commits and triggers shared review runners, so parallel
+pushes collide and make per-PR status illegible. A Workflow does not change that
+external limit --- do **not** fan out the push --- re-review --- merge loop. What
+you *can* orchestrate is the read-only survey: pull every open PR's latest review
+and triage its findings in parallel, then feed that into the serial fix loop.
+Consult `shared/workflow/when-to-orchestrate.md` (the shared-runner exception);
+default to the serial loop, and propose the read-only fan-out only when there are
+many PRs to survey.
 
 ## Recurring / unattended runs
 

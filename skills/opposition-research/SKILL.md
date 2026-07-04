@@ -146,6 +146,27 @@ copy, screenshots, or roadmap text.
 4. **Recommended issues to file** — the shortlist you'd open, pending the
    user's pick.
 
+## Orchestration
+
+Step 3 already fans out --- one agent per community surface (issue tracker,
+feature board, subreddit, Q&A site, forum, review site), each blind to the
+others, and the work is web reading with no shared-runner cost. That is the
+workflow-shaped pattern in `shared/workflow/when-to-orchestrate.md`. When the
+surfaces are many or the ask says "thorough", drive that fan-out through a
+Workflow: parallel finders by surface, then the dedupe-and-rank synthesis stage
+(step 6). Launch directly when an opt-in signal is present; otherwise propose with
+a cost estimate first.
+
+## Custom agent for the per-surface fan-out
+
+Step 3's fan-out workers have no need for Edit, Write, or Bash access.
+Spawn the `community-demand-scout` custom agent
+(`.claude/agents/community-demand-scout.md`) for each surface instead of a
+general-purpose subagent, for a hard, harness-enforced guarantee that no
+worker can file an issue or commit on its own --- rather than relying on
+this skill's own instruction-only discipline. Dedupe, rank, and file issues
+(§6--7) in the main session afterward.
+
 ## Relationship to other skills
 
 - **`scout-peers`** — the sibling, mirror image. `scout-peers` reads a

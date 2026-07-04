@@ -29,7 +29,7 @@ release.
 ### 2. Fetch and validate
 
 ```bash
-git fetch origin main --tags
+git fetch origin main --tags   # FETCH
 ```
 
 Confirm the tag exists:
@@ -40,7 +40,7 @@ git tag -l '<tag>'   # should output the tag name
 If the tag doesn't exist yet, create it fresh (skip the delete steps):
 ```bash
 git tag <tag> <target>
-git push origin <tag>
+git push origin <tag>   # PUSH
 ```
 
 ### 3. Show what's moving
@@ -58,8 +58,8 @@ git log --oneline <tag>..<target> | head -20
 ```bash
 git tag -d <tag>
 git tag <tag> <target>
-git push origin :refs/tags/<tag>
-git push origin <tag>
+git push origin :refs/tags/<tag>   # DELETE_REF
+git push origin <tag>              # PUSH
 ```
 
 **Why delete+recreate instead of `git push --force`?** Some GitLab/GitHub

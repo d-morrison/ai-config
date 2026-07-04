@@ -29,6 +29,10 @@ reflexes — **not** to ban words or flatten a real human voice.
   tells", "make this not sound AI-generated"
 - "does this sound like AI / ChatGPT?", "was this written by AI?", "check this
   draft for tells"
+- **As part of any PR/MR review where the diff touches narrative prose** —
+  docs, READMEs, lecture notes, textbook chapters, commit/PR descriptions
+  making a substantive claim. Run alongside (not instead of) accuracy review
+  (`fact-check-prose`) and style review (`use-preferred-style`).
 - **Standing self-check (no invocation needed):** before I present any
   non-trivial prose I authored — a PR/issue description, a commit body, README
   or doc text, a vignette paragraph, a long chat answer meant as deliverable
@@ -149,6 +153,12 @@ paragraphs; reads strongly AI. Recommend a rewrite pass,"* vs. *"One stray
 - **`find-overlap`** — the sibling read-only scanner: this skill scans prose for
   AI tells; `find-overlap` scans a corpus for duplicated/redundant content. Same
   detect-and-report posture, different signal.
+- **`check-info-quality` / `ciq`** — another sibling scanner: this skill checks
+  *how* text is written; `ciq` checks *what* it claims (stale, irrelevant, or
+  misleading/out-of-context content). Run both over the same target.
+- **`fact-check-prose`** — the accuracy-side sibling: this skill flags prose
+  that *reads* as machine-generated; `fact-check-prose` checks whether prose
+  claims and reasoning are actually *true*. Run both on a review pass.
 
 ## Anti-patterns
 

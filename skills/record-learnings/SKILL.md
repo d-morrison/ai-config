@@ -32,6 +32,9 @@ For facts that apply across all projects:
 - General preferences
 - Cross-project conventions
 
+When you add a *new* file under `/memories/` (not just a bullet to an existing
+one), register it in `memories/MEMORY.md` as an index entry.
+
 ### Repository memory (`~/.claude/projects/<project-path>/memory/`)
 For facts specific to ONE repo (build quirks, project conventions, CI behavior):
 write directly to that repo's Claude project memory directory. The project path
@@ -70,10 +73,17 @@ For standing instructions that should always be in context:
 3. **Check existing notes** — read the target file first to avoid duplicates
    and maintain organization
 4. **Write concisely** — bullet points, not prose. Include the *why* not just
-   the *what*
-5. **If it's a skill** — create it in `~/.claude/skills/` (symlink to the
-   cloned repo; discover the repo path with
-   `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`)
+   the *what*. If you created a *new* file under `/memories/`, also add a row
+   for it to `memories/MEMORY.md` (the index)
+5. **If it's a skill (or a dedicated fan-out worker)** — hand off to
+   `spot-skill-opportunities` to judge whether the pattern is genuinely
+   recurring (not a one-off), then to `skill-builder` to scaffold a new
+   user-invocable workflow in `~/.claude/skills/` (symlink to the cloned repo;
+   discover the repo path with
+   `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`), or to
+   `agent-builder` to scaffold a persistent read-only subagent in
+   `.claude/agents/` when the pattern is really a worker persona a heavy
+   skill's fan-out step needs.
 
 ## Sharing with other agents
 
@@ -108,6 +118,20 @@ After adding or updating any skill file, always commit and push to origin:
 - If a PR/branch for skill changes is already open, push there.
 - Otherwise, create a new branch + PR on the ai-config repo.
 - Never leave skill edits as local-only uncommitted changes.
+
+## Relationship to other skills
+
+- **`spot-skill-opportunities`** — the dedicated recognition step for the
+  "is this a skill?" case in step 5 above; hand off to it rather than judging
+  recurrence inline here.
+- **`skill-builder`** — scaffolds the `SKILL.md` once `spot-skill-opportunities`
+  (or this skill directly) decides a new one is warranted.
+- **`agent-builder`** — the same construction step for a dedicated read-only
+  fan-out worker (`.claude/agents/<name>.md`) rather than a user-invocable
+  skill.
+- **`ums`** — the reflective, full-context-sweep counterpart to this skill's
+  in-place, fact-at-a-time recording. Both fire proactively, as the learning
+  or fact arises; `ums` additionally runs as a backstop before `/clear`.
 
 ## Anti-patterns
 

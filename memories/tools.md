@@ -5,6 +5,14 @@
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
+- **Polling for the bot's verdict: match `Claude finished`, don't exclude a placeholder.** While a run is underway, the bot's comment holds an in-progress placeholder whose wording *varies between runs* ("### Review in progress …", "Claude Code is working…"), so a watcher that exits when comments exist, or when one known placeholder phrase disappears, fires early on the next differently-worded placeholder. Completed runs (review and agent alike) start the body with `**Claude finished`. Poll `gh api repos/<o>/<r>/issues/<N>/comments --jq '[.[] | select(.user.login=="claude[bot]")] | last | .body'` and wait for that marker. (Cost two wasted watch rounds on ai-config#357 before keying on it.)
+- **`gh pr view --json` does not accept `merged` as a field.** Use `state` (returns `"MERGED"`) and `mergedAt` (ISO timestamp, null if not merged) to check merge status. Example: `gh pr view <N> --json state,mergedAt`.
+- **`gh pr edit` exits 1 on repos with Projects Classic — use `gh api` to update PR body.** `gh pr edit <N> --body "..."` / `--body-file <f>` returns exit code 1 with a GraphQL deprecation warning (`Projects (classic) is being deprecated…`). Sometimes the edit lands anyway; **sometimes it does not apply at all** (seen on sparta 2026-06-30: three `gh pr edit --body-file` attempts left the body unchanged with the `SHA_PLACEHOLDER` still in place). Either way, don't trust it — verify with `gh api repos/<o>/<r>/pulls/<N> --jq .body`, and just use the REST PATCH directly, which always exits 0 and applies: `gh api -X PATCH repos/<o>/<r>/pulls/<N> -f body="..."`. For a multi-line body, read it from a file with `-F body=@<path>` (capital `-F` to pull the field value from the file) rather than cramming it into `-f body="..."`.
+- **PR description image embeds: use `raw.githubusercontent.com`, not `github.com/.../raw/...`.** Embedding a committed file in a PR body with `![](https://github.com/<owner>/<repo>/raw/<sha>/<path>)` may not render — the reviewer will flag it. The correct raw-content domain is `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>`. Reference the full commit SHA so the image keeps rendering after the branch is deleted on merge.
+- **Download a user-pasted PR screenshot with `curl -L`.** When a user pastes an image into a GitHub PR comment, the file lives at `https://github.com/user-attachments/assets/<uuid>` and is publicly downloadable: `curl -L -o <dest>.png "https://github.com/user-attachments/assets/<uuid>"`. Retrieve the URL from the comment body via `gh api repos/<o>/<r>/issues/comments/<comment_id> --jq .body`.
+- **Linking a GitHub sub-issue needs an integer DB id, not the number.** `POST /repos/<o>/<r>/issues/<parent>/sub_issues` takes `sub_issue_id` = the child's **database id** (`gh api repos/<o>/<r>/issues/<child> --jq .id`), *not* its issue number. Pass it with `-F` (typed, integer), never `-f` (string) — `-f sub_issue_id=…` fails with `422 Invalid property /sub_issue_id: "…" is not of type integer`. Full call: `gh api repos/<o>/<r>/issues/<parent>/sub_issues -F sub_issue_id=<child_db_id>`. Verify with `gh api .../issues/<parent>/sub_issues --jq '.[] | "#\(.number) \(.title)"'`.
+- **Backticks in a double-quoted `-m` / `--body` string get command-substituted by the shell.** In the Bash tool, `` git commit -m "... `origin` ..." `` or `` gh pr comment --body "use `foo`" `` makes the shell run `` `origin` ``/`` `foo` `` as a command and splice the (usually empty/erroring) output into the message — silently mangling it (seen on sparta 2026-06-30: a commit body's `` `origin` `` and `` `killer` `` vanished, with `origin: command not found` in stderr). For any message/body containing backticks, use a single-quoted **heredoc** (`` -m "$(cat <<'EOF' … EOF)" `` — the quoted `'EOF'` disables all expansion) or a `--body-file`, never a bare double-quoted string. (Same root cause as the dispatched-review quoting bug below.)
+- **Finding the PR(s) linked to an issue from the CLI: use the REST timeline endpoint, not `gh issue view --json`.** `gh issue view --json` has no `timelineItems` field (that exists only on `gh pr view --json`), so `gh issue view <N> --json timelineItems` errors — and a `2>/dev/null` swallows the error so the check silently returns nothing and *looks* like it passed. Query the timeline instead, with three gotchas: (1) in a `cross-referenced` event, `source.type` is always `"issue"`, so a PR is one whose `source.issue.pull_request` is non-null (`source.type == "pull_request"` never matches); (2) `--paginate` is required, or `gh api` returns only the first 30 events and silently misses a later cross-reference; (3) filter `source.issue.state` if you only want open PRs. Full call: `gh api --paginate repos/<o>/<r>/issues/<N>/timeline --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"'`. (Learned over three review rounds on #287.)
 
 ## Re-triggering the @claude PR *review* (d-morrison Quarto / R-pkg repos, e.g. `psw`)
 - Filenames below are those in the **content/package repos** (verified in
@@ -42,6 +50,70 @@
   - **Close + reopen the PR** → fires the `reopened` event, which re-runs the
     review. Works reliably, but clutters the timeline with close/reopen events;
     prefer workflow_dispatch unless dispatch isn't available.
+- **A successful `workflow_dispatch` review does not clear the PR's required
+  `pull_request`-triggered check.** The dispatched run's check-runs attach to
+  the **dispatch ref's SHA** (typically `main`, the default branch used to
+  invoke it), not the PR's actual head SHA — even though the run reviews and
+  comments on the right PR (it takes `pr_number` as an input and reads that
+  PR's diff). So after a stub/failed `pull_request`-triggered review (see
+  `mcp__github__actions_run_trigger` 403 below), posting `@claude review` or
+  `/review` gets you a fresh, real verdict in the PR thread, but
+  `review / claude-review` and any gate job on the PR's head SHA (checked via
+  `get_check_runs`, not `get_status` — see below) stay red. Since reruns 403 in
+  these sessions, the only way to get a fresh **gating** run is to push a new
+  commit (an empty `git commit --allow-empty` is fine) so a real `pull_request`
+  `synchronize` event fires against the actual head SHA. (Hit twice in one
+  session on gha#176: two consecutive genuine — not raced — stub reviews on the
+  pinned dogfooding checker, each requiring an empty retrigger commit after the
+  dispatched `/review` came back clean.)
+- **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
+  but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
+  is a field in the Claude Code SDK's runtime execution-output JSON, not
+  anything in this repo's own files — if a future SDK version renames it,
+  look for an equivalent counter in that JSON rather than assuming the
+  signature vanished.) Not the
+  quota-exhaustion case (`total_cost_usd==0 && num_turns==1`) and not a raced
+  cancellation (`conclusion: cancelled`) — the SDK call itself ran several
+  turns and cost real money, but a denied tool call mid-run derailed it before
+  it wrote a verdict. Reproduced 3× identically on the same PR/diff (gha#180)
+  across both push-triggered and dispatched reruns — not random flakiness once
+  it starts recurring on a given diff. **Root-caused and fixed in gha#185/#187:**
+  agent mode's default `allowedTools` has no `WebFetch`/`WebSearch`, but the
+  review prompt's own fact-checking instructions can still lead the agent to
+  attempt one, and on denial it sometimes stopped instead of finishing. The
+  fix is prompt-only — tell the reviewer up front that network-fetch tools
+  aren't available (so it doesn't try) and that a denied tool call is never a
+  reason to stop early — rather than widening `allowedTools`, since granting
+  broad `WebFetch` to a review-only job with secrets access raises its own
+  prompt-injection/exfiltration question for a workflow shared across
+  potentially-private consumer repos. That tradeoff (a domain-scoped
+  `WebFetch(domain:...)` allowlist to let the reviewer live-fact-check
+  external sources, matching `gha`'s own `CLAUDE.md` "Fact-check prose
+  against domain knowledge and external sources" review guideline) is left
+  as an open decision in gha#189, not decided unilaterally.
+- **Diagnosing which tool call was denied requires the reusable workflow's
+  `show-full-output` input turned on for a re-run — the job log alone won't
+  show it.** Same underlying hidden-output behavior as the
+  `show-full-output`/`show_full_output` note below (see there for the
+  input-vs-passthrough-parameter naming); worth restating here because it's
+  the reason `permission_denials_count` in the final result confirms *that*
+  something was denied but never *what* — the turn-by-turn tool-call detail
+  is exactly what stays hidden without it.
+- **Claude Code's tool-permission syntax scopes `WebFetch` by domain:**
+  `WebFetch(domain:host)` (e.g. `WebFetch(domain:docs.anthropic.com)`), with
+  wildcards like `WebFetch(domain:*.github.com)` (matches a subdomain at any
+  depth, not the bare domain) or `WebFetch(domain:example.*)` (matches
+  `example.org`, i.e. a wildcard segment can't cross a `.` — `example.*`
+  does not match `example.evil.com`). Confirmed against the official docs:
+  <https://code.claude.com/docs/en/permissions> (WebFetch section). Same
+  bracketed-scope pattern as `Bash(git commit:*)`. Useful for granting
+  narrow, exfiltration-bounded fetch access instead of unrestricted
+  `WebFetch` or none at all.
+
+## gh — stale remote URL causes cryptic `gh pr create` failure
+- `gh pr create` fails with `Head sha can't be blank, Base sha can't be blank, No commits between <owner>:main and <other-owner>:<branch>` when `origin` points to an **old repo URL** (e.g. after a GitHub repo transfer/rename).
+- Fix: `git remote set-url origin https://github.com/<new-owner>/<repo>.git` and re-push the branch before creating the PR.
+- Diagnosis: `git remote -v` shows the stale URL; `gh repo view --json nameWithOwner` shows where `gh` thinks the canonical repo is.
 
 ## GitHub MCP tools (Claude Code remote/web sessions)
 - In remote/web sessions the authenticated GitHub identity is the repo owner
@@ -58,38 +130,194 @@
   which can connect asynchronously after session start. Don't conclude a tool is
   absent from one check — `ToolSearch` for what you need before deciding it's
   missing (and don't assume the `github_ci` server is present either).
+- **`mcp__github__actions_run_trigger` can't re-run CI jobs in these sessions —
+  it 403s.** `method: rerun_failed_jobs` (and `rerun_workflow_run`) returns
+  `403 Resource not accessible by integration`: the integration token lacks the
+  `actions: write` the re-run API needs. So a flaky CI failure can't be re-kicked
+  via MCP — **push a commit to re-trigger the whole workflow** (the normal path
+  during an iterate loop anyway), or ask the user to click Re-run. (Hit
+  re-running a flaky `link-checker` timeout on a lab-manual PR.) **`method:
+  run_workflow` (a fresh `workflow_dispatch`, not a rerun) 403s the same way** —
+  the token lacks `actions: write` for dispatch too, not just for reruns, so
+  don't expect a direct-dispatch workaround to succeed where rerun failed
+  (confirmed on UCD-SERG/serodynamics#193). Prefer folding
+  the retry into a real, already-pending fix (e.g. a reviewer's requested
+  wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
+  no throwaway commit in history. Only use an empty commit when no real fix is
+  pending. (ai-config#403.)
 - `mcp__github__pull_request_read` `method:` enum: `get` · `get_diff` (PR
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
   `get_check_runs`.
+- **`get_status` can return "pending / 0 checks" even after CI has finished.**
+  Use `get_check_runs` for the authoritative CI state — it returns the real
+  job conclusions (`success`, `failure`, `skipped`). `get_status` aggregates
+  across check suites and can lag or show a stale "pending" when all runs have
+  actually completed; `get_status` is unreliable for CI state.
+  (Hit during the ai-config #275 GII session — `get_status` showed
+  `total_count: 0` / `pending` while `get_check_runs` correctly showed all 5
+  checks `success`.)
 - `mcp__github__pull_request_read` parameter names are **camelCase** — use
   `pullNumber`, NOT `pull_number`. Snake_case fails silently or errors.
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
   NOT `issueNumber`. This is the opposite of `pull_request_read`. Reload the
   tool schema when unsure rather than guessing.
+- **`mcp__github__create_or_update_file`'s `content` param is raw plain text,
+  not base64** — despite the GitHub REST API's own `PUT /repos/.../contents/`
+  endpoint taking base64, this MCP tool does the encoding for you. Passing an
+  already-encoded (or garbled-looking) string writes that literal string as the
+  file body — it does not decode it first, and the call still reports success,
+  so there's no error to catch the mistake. **Verify the write**: the response's
+  `content.size` should roughly match the source text's byte length; a
+  suspiciously small `size` (e.g. 113 bytes for a file that should be ~2700)
+  means the wrong content shipped. Fix immediately with a follow-up
+  `create_or_update_file` call using the new `sha` from the bad commit — don't
+  leave a broken file on the branch waiting for the next review round to catch
+  it. (Hit on lab-manual#376: an editing slip sent a truncated placeholder
+  instead of the real fragment text; caught by checking the returned `size`.)
+- **Issue *writes* 404 while *reads* succeed → the issue was transferred to
+  another repo, not a permissions gap.** If `mcp__github__add_issue_comment` /
+  `issue_write` to `owner/repo#<N>` fail (`404 Not Found`, or `Could not resolve
+  to an Issue with the number of <N>`) but `issue_read` (`get`) on the *same*
+  number succeeds and PR-comment writes work, suspect a **GitHub issue
+  transfer**. A transfer redirects the old number for *reads* — `issue_read`
+  silently follows the redirect and returns the issue at its NEW home, so check
+  the returned `html_url`/`number` (they show a different repo/number). Writes to
+  the old `owner/repo/issues/<N>` 404 because the issue no longer lives there.
+  Fix: re-read to get the new repo + number, then comment/close *there*. Don't
+  misdiagnose it as a missing `Issues:write` token scope. (Caught closing
+  `gha#75`, transferred to `rme#941`.)
+- **In a fresh web/remote container, local `origin/*` refs can be stale or
+  phantom — verify true remote state via MCP, not local refs.** The clone's
+  `remotes/origin/main` may lag the real default branch by already-merged
+  commits, and the harness-assigned `claude/<id>` branch can appear under
+  `git branch -a` as `remotes/origin/claude/<id>` while not existing on the real
+  remote (`get_file_contents` with `ref: refs/heads/claude/<id>` returns 404).
+  `git fetch origin` (all refs) can also exceed the 2-min Bash limit on large
+  repos with submodules (rme). To read the real default-branch HEAD cheaply,
+  `get_file_contents` any file with no `ref` (= default branch) — the returned
+  resource path embeds the live commit SHA. Fetch the single branch you need
+  (`git fetch origin main`) and branch off that, so you don't build on a
+  stale/polluted base.
 - `mcp__github__pull_request_review_write` with `method: resolve_thread`
   requires **only `threadId`** (node ID, e.g. `PRRT_kwDO...`); `owner`,
   `repo`, and `pullNumber` are ignored for that method. Thread node IDs come
   from `get_review_comments`.
+- **`mergeable_state` glossary — `unstable` is NOT a merge conflict.** GitHub's
+  `pull_request_read` `get` returns `mergeable_state` alongside `mergeable`;
+  the common values: `clean` (mergeable, all checks passing), `unstable`
+  (mergeable, but some check is pending/failing — not blocking), `dirty` (real
+  merge conflicts — this is the one that needs `git merge origin/main` +
+  conflict resolution), `blocked` (a required check hasn't passed),
+  `behind` (branch protection requires an update first). Only `dirty` means
+  conflicts; `unstable` just means "wait for CI" and needs no merge action.
+  (ai-config#373: `mergeable_state: unstable` right after a push was CI still
+  running, not a conflict signal.)
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
-- **Self-wake to re-check CI in remote/web sessions.** There is no `send_later`
-  tool, and the `Monitor` tool can't reach the GitHub API (no `gh`; the only git
-  remote is a git-only proxy). Since webhooks don't deliver CI *success*, arm a
-  one-shot `Monitor` with `sleep <N>; echo recheck` as a self-check-in timer,
-  then re-poll `mcp__github__pull_request_read` (`get_check_runs`) when it fires;
-  re-arm until the build goes green. (Foreground Bash `sleep` is blocked — the
-  background `Monitor` is the workable timer.) Learned driving rme#929.
-- The `gh`->MCP substitution **mapping table** lives in `d-morrison/gha`'s
-  `CLAUDE.md` specifically (the "GitHub access in remote / web sessions" table);
-  other repos' `CLAUDE.md` (e.g. `ai-config`) do NOT carry it. When a skill or
-  doc tells a reader to "use the GitHub MCP tools," name the tools by example
-  (`mcp__github__add_issue_comment`, `mcp__github__create_pull_request`,
-  `mcp__github__search_pull_requests`) rather than pointing at "the repo's
-  `CLAUDE.md` mapping table" — that cross-reference
-  resolves only in gha and reads as a fabricated reference elsewhere. (Caught in
-  ai-config#137 review: the gip skill referenced a table ai-config doesn't have.)
+- **A CI-failure webhook event's `HeadSHA` can be stale — compare it against
+  the PR's actual current head before investigating.** Pushing a fix-up commit
+  right after a bad one (e.g. correcting an encoding mistake seconds later)
+  produces a cascade of failure events for every check on the now-superseded
+  commit, arriving over the next several minutes as each job finishes. Check
+  the event's `HeadSHA` field against the PR's live head (`pull_request_read`
+  `get`, `.head.sha`) — if it doesn't match, the event is about a commit no
+  one will ever see the result of; skip it with a one-line "stale, superseded"
+  note instead of re-diagnosing content you've already fixed. (Hit on
+  UCD-SERG/serodynamics#193: an accidental double-base64-encoded push
+  triggered ~10 failure events across the whole CI matrix, all for the
+  immediately-superseded commit.)
+- **Self-wake to re-check CI in remote/web sessions.** Webhooks don't deliver CI
+  *success*, new pushes, or merge transitions, so re-check on a timer. Prefer
+  `CronCreate` (a harness scheduling tool, not an MCP tool): schedule a one-shot
+  (`recurring: false`) or recurring (`recurring: true`) job whose prompt re-polls
+  `mcp__github__pull_request_read` (`get_check_runs`) and acts on the result; it
+  fires at wall-clock time without holding a background process. (Used to watch
+  both PRs' merge transitions while migrating rme's preview workflows to the gha
+  reusable family.) Fallback when `CronCreate` isn't available: arm a one-shot
+  `Monitor` with `sleep <N>; echo recheck` and re-poll when it fires — the
+  `Monitor` can't reach the GitHub API itself (no `gh`; the only git remote is a
+  git-only proxy), so it's purely a timer, and foreground Bash `sleep` is
+  blocked, which is why the background `Monitor` is the workable one. There is no
+  `send_later` tool. Re-arm until the build goes green. Learned driving rme#929.
+- **`mcp__Claude_Code_Remote__send_later` can become unavailable mid-session,
+  not just absent from the start** (contrast the rme case above, where it was
+  never present). Observed failure sequence: first a few transient "Tool
+  permission stream closed before response received" errors (retrying the
+  identical call sometimes still worked), then a hard "Error: No such tool
+  available: mcp__Claude_Code_Remote__send_later" that no retry cleared.
+  Fallback to `CronCreate` with `recurring: false`, pinned to a specific
+  near-future cron time (compute it with `date`, since `CronCreate` takes an
+  absolute cron expression, not a relative "N minutes from now" delay).
+  **`CronCreate` jobs are session-only** — they die with the session, unlike
+  `send_later`'s durable server-side triggers — so this is a degraded
+  substitute, not an equivalent; say so rather than treating it as a full
+  replacement. (gha#193 PR-babysitting session, 2026-07-03.)
+- **`add_repo` refuses a cross-owner add once the session already has a repo from a
+  different owner** ("cross-tier adds are not supported in v1: requested `<owner>/<repo>`
+  but session already has repos from owner(s) `[...]`") — it does NOT fall back to a
+  read-only or degraded mode, so a session scoped to e.g. `d-morrison/*` repos cannot add
+  a `UCD-SERG/*` repo (or vice versa) no matter how the request is phrased. When a task
+  needs to read a PR/issue in such an out-of-scope repo, don't stop at the `add_repo`
+  failure or a raw `api.github.com` 403 (a plain `WebFetch` GET to
+  `api.github.com/repos/.../issues/comments/<id>` for a public repo 403'd with no body —
+  exact cause unconfirmed; `WebFetch` isn't threaded through the GitHub MCP session's own
+  auth, so this isn't necessarily the same failure mode as a scoped/cross-owner API call,
+  and GitHub's REST API does generally allow unauthenticated reads of public repos at a
+  lower rate limit, so don't over-generalize from this one data point) — try `WebFetch`
+  on the **rendered** `https://github.com/<owner>/<repo>/pull/<N>`
+  (or `/issues/<N>`) page instead. For a public repo this reliably returns the PR/issue
+  title, state, and recent comment/review content (works even for reading a *specific*
+  comment by its anchor), succeeding where both the MCP tool and the JSON API failed.
+  (Used to read UCD-SERG/serodynamics#193's `@claude`-bot comment from a
+  `d-morrison/gha`-scoped session, which surfaced the root cause fixed in gha#191.)
+- **`add_repo` (and likely other approval-gated MCP tools) can fail repeatedly
+  and silently under auto-mode, with no useful error.** In auto mode, a call
+  that needs an interactive permission-dialog approval has no human present to
+  click it, so it errors `Streamable HTTP error: Error POSTing to endpoint:
+  MCP tool call requires approval` — identical on every retry, giving no
+  signal that the real blocker is "no one is watching to approve this."
+  Retrying the same call in auto mode doesn't help. The fix is to have the
+  user switch to a non-auto permission mode (e.g. accept-edits) so there's
+  someone to grant it, then retry once — it then either succeeds outright or
+  fails with a real, actionable error (e.g. `add_repo`'s cross-tier-owner
+  refusal, above). Don't burn more than one or two identical retries in auto
+  mode before flagging this to the user. (gha#204 session, 2026-07-03: `rme`
+  succeeded immediately after the user switched modes; `epi204`/`epi202` then
+  failed with the real cross-tier error instead.)
+- `d-morrison/gha`'s `CLAUDE.md` carries its own `gh`->MCP substitution table
+  (the "GitHub access in remote / web sessions" section), scoped to that repo.
+  `d-morrison/ai-config` has its own cross-model registry at
+  [`tool-mappings.md`](../tool-mappings.md) (generated from `tool-mappings.yml`),
+  which ai-config skills can point to directly — see `CLAUDE.md`'s "Skills that
+  call gh/glab" section. When a skill or doc in a **different** repo (one with
+  neither table) tells a reader to "use the GitHub MCP tools," name the tools by
+  example (`mcp__github__add_issue_comment`, `mcp__github__create_pull_request`,
+  `mcp__github__search_pull_requests`) rather than pointing at a `CLAUDE.md`
+  mapping table that repo doesn't have — that cross-reference resolves only
+  where the table actually lives. (Caught in ai-config#137 review: the gip
+  skill referenced a table ai-config didn't have at the time; ai-config#327
+  later added `tool-mappings.md` to close that gap.)
+
+## GII (Grab Issues Iteratively) — startup cleanup sweep
+
+When starting a GII loop, do a cleanup pass before diving into ARDI:
+
+1. **List all open PRs** with `mcp__github__list_pull_requests`. Look for
+   stale bot-opened PRs that target the same issues as the queue.
+2. **Close empty PRs** — bot-opened branches with no commits (e.g. a `@claude`
+   task run that posted a comment but never pushed code). Check `get_commits`
+   on each PR before closing.
+3. **Identify the canonical PR** for each in-flight issue. Superseded drafts
+   should be closed with a note pointing to the canonical one.
+4. **Collapse stacked changes** — if two open PRs address the same issue or
+   have a causal dependency (one builds on the other), merge one branch into
+   the other before starting ARDI, so the reviewer evaluates the combined diff.
+
+Skipping this sweep leads to confusion: multiple PRs for the same issue,
+closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
+(Learned from the ai-config #275 / #272 / #265 / #266 cleanup pass.)
 
 ## Git tags (force-move / slide)
 - To move a tag to a new commit: `git tag -d <tag> && git tag <tag> <target> && git push origin :refs/tags/<tag> && git push origin <tag>`
@@ -150,6 +378,30 @@
 - `git switch -C "$BRANCH"` is already safe against flag-shaped branch names: `$BRANCH` is the argument *to* `-C`, so a value like `--weird` fails cleanly as `fatal: '--weird' is not a valid branch name` rather than being parsed as an option.
 - Do NOT "harden" it to `git switch -C -- "$BRANCH"` — that form is **broken**: the `--` is consumed as the branch name (the required argument to `-C`), so `$BRANCH` is parsed as the start-point instead and the command fails without creating the branch. (Verified on git 2.x; a review bot suggested the broken form on d-morrison/gha#58.)
 
+## Git — `gh pr merge --delete-branch` can orphan a stacked PR instead of retargeting it
+- GitHub's docs promise automatic retargeting: "If you delete a head branch
+  after its pull request has been merged, GitHub checks for any open pull
+  requests in the same repository that specify the deleted branch as their
+  base branch. GitHub automatically updates any such pull requests, changing
+  their base branch to the merged pull request's base branch."
+- In practice (Lacaedemon/sparta, 2026-07-01), `gh pr merge <N> --squash
+  --delete-branch` did NOT retarget a stacked PR onto the new base — it
+  auto-**closed** the stacked PR instead. Root cause unconfirmed (possibly a
+  timing/API-path difference between `gh`'s post-merge branch deletion and the
+  web UI's "Delete branch" button the docs describe) — but the failure mode is
+  reproducible enough to plan around regardless of cause.
+- **Before running `gh pr merge <N> --delete-branch`**, check whether another
+  open PR uses that branch as its base: `gh pr list --base <branch-name>`. If
+  one does, omit `--delete-branch` (merge without it, or delete manually
+  afterward once you've confirmed the stacked PR retargeted cleanly).
+- **Recovery when it happens anyway:** the *head* branch of the closed PR
+  usually still exists (only the deleted *base* branch is gone) —
+  `gh pr reopen` fails once the base is gone, so instead open a **new** PR
+  from that same head branch targeting `main` (or whatever the new
+  grandparent base is), note in the body that it supersedes the closed PR
+  number with identical commits, and comment on the closed PR linking the
+  replacement.
+
 ## Git — `worktree add` does not cd into the new worktree
 - `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
   shell in the **original** checkout. Subsequent bare git commands (`git checkout`,
@@ -161,10 +413,65 @@
   the squash commit is present when you merge. Fetching only the PR branch leaves
   origin/main stale and the merge won't pick up the commit that caused the conflict.
 
+## Git — removing a worktree that contains a submodule
+- `git worktree remove <path>` **fails** on a worktree that has an initialized
+  submodule: `fatal: working trees containing submodules cannot be moved or
+  removed`. Many repos with a vendored `.ai-config` submodule hit this after a
+  feature branch merges.
+- Fix: `git worktree remove --force <path>` removes it cleanly. (Plain `--force`
+  is enough; the submodule warning is the only blocker.) If the dir somehow
+  lingers, `rm -rf <path> && git worktree prune` finishes the cleanup.
+- The branch can't be deleted while the worktree still references it
+  (`error: cannot delete branch '…' used by worktree at '…'`), so remove the
+  worktree **first**, then `git branch -D <branch>`.
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
 - In a non-interactive (headless) session git uses the auto-generated merge commit message without prompting — no editor opens.
+
+## Git merge — uncommitted edits to an untouched file silently ride along, uncommitted, through repeated merges
+- `git merge <branch>` only refuses when the incoming branch's commits touch a
+  file you also have uncommitted changes to. If the incoming commits don't
+  touch that file, the merge succeeds and your uncommitted edit is left
+  exactly as it was --- still uncommitted, sitting on top of the new merge
+  commit. Repeat the pattern (merge again while the edit is still
+  uncommitted, e.g. reconciling with a remote branch another actor pushed to)
+  and it survives through multiple merge commits without ever landing in one.
+- This is easy to miss because `grep`/`cat` against the **working tree** shows
+  the fix is present, creating false confidence that it's committed. Verify
+  against the actual commit instead: `git show HEAD:<path>` (or `git status
+  --short` for a stray `M`), not a plain file read, before pushing and
+  declaring a review finding addressed.
+- Fix: commit the edit (`git add <path> && git commit`) as its own step
+  **before** merging anything else in, not after. (Hit on ai-config#461: a
+  one-line prose fix sat uncommitted through two merge commits — one merging
+  `origin/main` in, one reconciling with a bot's competing push to the same
+  branch — so what got pushed both times still had the pre-fix text, and a
+  review correctly re-flagged it as unaddressed after an incorrect "addressed"
+  reply.)
+
+## Git stash — verify supersession line-by-line, tag before dropping
+- Before dropping a stash as "already landed", verify against `origin/main`,
+  not by eyeball: extract the stash's added lines
+  (`git stash show -p 'stash@{0}' | grep '^+[^+]'` — the `[^+]` keeps the
+  `+++ b/<path>` diff headers out of the set, where they'd read as spurious
+  "missing from main" lines) and `grep -F` each one in
+  main's version of the file; for files the stash *creates*, check
+  `git cat-file -e origin/main:<path>`. A line that matches on topic but not
+  verbatim usually means main carries the **improved** review-cycle revision —
+  read both and confirm main's is a superset before calling it superseded.
+- `git stash show -p` **omits the untracked-files component.** Check
+  `git show 'stash@{0}^3'` (that parent exists only if the stash was made with
+  `-u`) before judging supersession.
+- `git stash drop` is irreversible, and Claude Code's auto-mode classifier
+  blocks it for exactly that reason — sometimes even after a general "do the
+  cleanup" go-ahead, when the stash is large. Don't fight it: run
+  `git tag backup/stash-<topic> 'stash@{0}'` first. The stash commit stays
+  reachable, the drop becomes genuinely reversible (recover with
+  `git stash apply backup/stash-<topic>`), and the retried drop passes. Tell
+  the user the tag exists; remove it with `git tag -d backup/stash-<topic>`
+  once confident.
 
 ## GitLab Discussions API (inline diff comments)
 - Endpoint: `POST /projects/:id/merge_requests/:iid/discussions`
@@ -219,6 +526,17 @@
   - CRAN pkgs → P3M binaries:
     `options(repos = c(P3M = "https://packagemanager.posit.co/cran/__linux__/noble/latest"))`
     then `install.packages(...)` (installs into the active renv library; fast).
+  - To restore the WHOLE lockfile (when you don't know which pkgs a render
+    pulls in), point renv itself at P3M binaries instead of hand-picking:
+    `Sys.setenv(RENV_CONFIG_PPM_ENABLED = "TRUE")` (or
+    `options(renv.config.ppm.enabled = TRUE)`) + P3M `repos`, then
+    `renv::restore(prompt = FALSE)`. Observed on rme: ~264 pkgs in ~5 min
+    (mostly cache-linked binaries; a few like glmmTMB still build from source).
+    A plain source-repo `renv::restore()` times out — enabling P3M is what
+    makes the full restore feasible. knitr/rmarkdown must be present for
+    `quarto render` to even start the knitr engine (`--no-execute` does NOT
+    skip the engine check), so a full restore is the surest path when an edit
+    needs a real render.
   - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
     has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
     anywhere reachable, so it blocks full renders of any chapter that does
@@ -230,6 +548,95 @@
     back and nothing installs — drop the unavailable pkg and retry. (Holds for
     `pak::pkg_install()`, and for `install.packages()` while renv's pak backend
     is active; base `install.packages()` on its own is NOT atomic.)
+  - The **`renv` autoloader can shadow a system-library install.** If you
+    `install.packages()` a Suggests-only tool (e.g. `lintr`, `spelling`) into the
+    *default* libPaths rather than the active renv library, `Rscript` run from the
+    repo root STILL fails with "no package called 'lintr'" — the project
+    `.Rprofile` autoloader resets `.libPaths()` to the renv library on startup.
+    Either install into the renv library (the P3M path above), or run the one-off
+    with the autoloader off:
+    `RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript -e 'lintr::lint("path/to/file.qmd")'`.
+    (Used to lint the changed files for rme #873 when lintr wasn't in the renv lib.)
+- **When the container's R is a brand-new release P3M hasn't built binaries for
+  yet** (e.g. R 4.6.1 in mid-2026), `install.packages()` from P3M silently falls
+  back to **source**, and heavy pkgs (DT → sass, etc.) fail or time out — so a
+  full HTML `quarto render` (needs knitr/DT/rmarkdown) isn't feasible locally.
+  Two mitigations: (1) replicate just the **build-breaking check in base R**
+  (e.g. a Quarto page's `stop()`-on-missing-data guard) — base R needs no
+  install; (2) `quarto install tinytex` **does** work, so validate the LaTeX/PDF
+  paths locally with lualatex (`quarto render <f>.qmd --to pdf`) even when the
+  HTML render is blocked. Let CI do the authoritative HTML render. (macros#71:
+  DT/knitr uninstallable, but a base-R interpretation-completeness check + a
+  lualatex PDF render of the new macros validated the change before push.)
+  **Before accepting "uninstallable," try `install.packages()` straight from a
+  source CRAN mirror** (`options(repos = c(CRAN = "https://cloud.r-project.org"));
+  install.packages(c("knitr", "rmarkdown", "DT"))`, no P3M) — it builds sass/DT
+  etc. from source and can succeed in a few minutes even when P3M's binary
+  fallback fails, unlocking the full local HTML render instead of falling back
+  to the base-R/PDF-only mitigations above. Why CRAN-direct can succeed where
+  P3M's source fallback doesn't isn't confirmed — both ultimately build the same
+  source tarball, so the difference is more likely P3M's build sandbox (timeout
+  or resource limits) than a real incompatibility; note the actual mechanism
+  here if a future session pins it down. (macros#74: same class of container,
+  but a plain-CRAN source install of knitr/rmarkdown/DT succeeded, letting all
+  three of `CONTRIBUTING.md`'s documented renders — both PDF demos and the full
+  HTML site — run locally before push.)
+- **R in these containers defaults to the `C` locale**, so
+  `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
+  chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
+  only an `invalid input found on input connection` warning — you get a few rows,
+  not all, and a completeness check then reports bogus "missing" rows. Run R with
+  `LANG=C.UTF-8 LC_ALL=C.UTF-8 Rscript …` to read UTF-8 data files correctly.
+  (CI runners are UTF-8, so this bites only locally.)
+- **renv activation failure when a GitHub remote is blocked**: if `DESCRIPTION`
+  lists a GitHub `Remotes:` entry the proxy can't reach (e.g. bcs's
+  `d-morrison/altdoc@recursive-qmd-search`), renv activation (via `.Rprofile`)
+  aborts on startup — every subsequent `R` call errors before loading any package.
+  Bypass: `R --no-save --no-restore --no-site-file --no-init-file` skips
+  `.Rprofile` entirely. Install needed packages from P3M into the user library
+  and proceed. (Observed on ucdavis/bcs cloud sessions.)
+- **A stale `00LOCK-*` directory silently blocks every subsequent
+  `install.packages()` call**, left behind when an earlier install was
+  interrupted (killed mid-run, or two `install.packages()` calls racing —
+  e.g. a foregrounded retry while an earlier `nohup`'d background install was
+  still holding the lock). Under `quiet = TRUE` the only symptom is
+  `installation of package 'X' had non-zero exit status` for every package in
+  the call, with no hint why — rerun once without `quiet` to see the real
+  `ERROR: failed to lock directory '.../site-library' for modifying` line.
+  Fix: `rm -rf` the lock directory shown in that error output — typically
+  `/usr/local/lib/R/site-library/00LOCK-*` in these containers, but confirm
+  the path from the error rather than assuming it (an renv project or a
+  user-library session uses a different one) — then retry; packages
+  installed before the interruption are still there; only the retry was
+  blocked. (ucdavis/ettbc#32: cost real time before diagnosing, since most of
+  a large dependency tree had actually installed fine and only the lock
+  blocked the last few packages.)
+- **To check whether a CRAN package is archived, query the PPM JSON API, not
+  WebFetch against the CRAN HTML page — and check `is_archived`, NOT
+  `tran_archive`.**
+  `curl -s https://packagemanager.posit.co/__api__/repos/cran/packages/<pkg>`
+  returns a top-level boolean `"is_archived": true|false` — that's the
+  authoritative field. `tran_archive` is a decoy: it's present in the same
+  response but stays `null` even for a package that **is** archived (verified
+  directly — `pryr`'s response has `"tran_archive": null` alongside
+  `"is_archived": true`), so checking it gives a false "not archived" on every
+  query. Confirmed by curling both packages live: `pryr` and `veccompare` each
+  return `"is_archived": true`. WebFetch summarizing
+  `cran.r-project.org/package=<pkg>` can also return confident-sounding but
+  unverified specifics (an "Archival Date" / "Reason" framing CRAN's actual
+  archived-package page doesn't present that way) — cross-check against the
+  PPM API's `is_archived` field before citing a date or reason as fact.
+  (Surfaced on ucdavis/fxtas#157: pak failed to resolve `pryr` +
+  `veccompare` from the PPM snapshot; the repo owner verified via this
+  endpoint before concluding they were genuinely archived.)
+- **`snapr` is not on CRAN or P3M**: install from the GitHub tarball.
+  `curl -L https://codeload.github.com/d-morrison/snapr/tar.gz/refs/heads/main -o /tmp/snapr.tar.gz`
+  then in R, install `readr` first (a direct `snapr` `Imports:` dependency):
+  `install.packages("readr")`, then
+  `install.packages("/tmp/snapr.tar.gz", repos=NULL, type="source")`.
+  `snapr::expect_snapshot_data()` silently skips snapshot generation/comparison when
+  `NOT_CRAN` is unset (respects the standard CRAN-skip convention):
+  `NOT_CRAN=true Rscript -e 'devtools::test()'`.
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
@@ -253,10 +660,185 @@
   (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
   light (math-prereqs needs just plotly).
 
+## renv.lock — adding a package that's only referenced via another package's Suggests
+
+Using a function that requires an **optional** dependency of an already-locked
+package (e.g. `lintr::cyclocomp_linter()`, which needs the `cyclocomp` package —
+listed only inside `lintr`'s own embedded `Suggests` metadata in `renv.lock`,
+never as its own top-level `Packages` entry) breaks CI silently: `renv::status()`
+looks clean beforehand, but `renv::restore()` never installs it, and the first
+run that actually calls the function errors at runtime (for `cyclocomp_linter()`:
+"disabled due to lack of the cyclocomp package"). Before relying on a new
+function that pulls in an optional dep like this, check with
+`jsonlite::fromJSON("renv.lock")$Packages` (or grep the lockfile) that the
+package has its own top-level entry — its name appearing SOMEWHERE in the file
+(inside another package's `Suggests` list) is not sufficient.
+
+**Fixing it: do NOT run `renv::snapshot()` (even scoped via `packages = c(...)`)
+in an environment that can't fully restore the lockfile's existing package set.**
+`renv::snapshot(packages = "cyclocomp")` in a sandboxed/offline container pruned
+~4000 unrelated lines from a real `renv.lock` (every package not physically
+installed in the local renv library got dropped) and mangled Unicode author
+names into octal-escaped bytes in surviving entries — collateral damage far
+outside the intended one-package addition. `renv::install()` has the same
+blast radius: it tries to resolve the WHOLE project's `Remotes:` field (e.g. a
+GitHub pin like `rstudio/bookdown`), which fails outright if GitHub API access
+is blocked, even though the failure has nothing to do with the CRAN package
+being installed. **`install.packages()` hits the identical failure while renv
+is active**, because renv's autoloader shims `install.packages()` to route
+through `renv::install()` internally (confirmed by the traceback: a plain
+`install.packages("cyclocomp")` call showed `renv::install("cyclocomp")` as
+a parent frame) — so avoid both, not just the namespaced call.
+
+The safe fix is a **surgical hand-edit of the lockfile JSON**: install the
+missing package locally just to read its DESCRIPTION metadata (e.g.
+`install.packages("cyclocomp", lib = <renv project lib>)`,
+`packageDescription("cyclocomp")`), then copy the exact field style of a
+neighboring `Packages` entry (`Package`, `Version`, `Source: "Repository"`,
+`Title`, `Authors@R`, `Description`, `License`, `URL`, `BugReports`,
+`Imports`/`Suggests` as arrays, `NeedsCompilation`, `Author`, `Maintainer`,
+`Repository: "CRAN"`) and insert it alphabetically with the Edit tool. Verify
+with `jsonlite::fromJSON("renv.lock")` that it still parses and
+`git diff --stat renv.lock` shows only the intended additive lines — a diff in
+the thousands means the wrong approach was used; `git checkout -- renv.lock`
+and redo it by hand. (UCD-SERG/lab-manual#381: `lint-project` failed on
+`cyclocomp_linter is disabled due to lack of the cyclocomp package`; the
+snapshot approach was tried first and reverted before the hand-edit.)
+
+## lintr — no built-in function-length (line-count) linter; custom-linter pattern
+
+`{lintr}` has no built-in linter that flags functions by raw line count — it's
+a long-standing unimplemented upstream feature request
+([r-lib/lintr#361](https://github.com/r-lib/lintr/issues/361)). The closest
+built-in is `lintr::cyclocomp_linter()`, which flags branching/decision
+complexity (via `{cyclocomp}`), not line count — a reasonable proxy but not
+the same metric. When a repo wants an actual `<N`-lines heuristic enforced,
+write a custom linter.
+
+Working pattern (verified against lintr 3.3.0):
+
+```r
+function_length_linter <- function(length_limit = 150L) {
+  xpath <- "//FUNCTION/parent::expr | //OP-LAMBDA/parent::expr"
+
+  lintr::Linter(linter_level = "expression", function(source_expression) {
+    if (!lintr::is_lint_level(source_expression, "expression")) {
+      return(list())
+    }
+    xml <- source_expression$xml_parsed_content
+    fun_defs <- xml2::xml_find_all(xml, xpath)
+    n_lines <- as.integer(xml2::xml_attr(fun_defs, "line2")) -
+      as.integer(xml2::xml_attr(fun_defs, "line1")) + 1L
+    lintr::xml_nodes_to_lints(
+      fun_defs[n_lines > length_limit],
+      source_expression = source_expression,
+      lint_message = sprintf("Function spans more than %d lines.", length_limit),
+      type = "warning"
+    )
+  })
+}
+```
+
+The XPath `//FUNCTION/parent::expr | //OP-LAMBDA/parent::expr` catches both
+`function(...)` and `\(...)` lambda syntax; `line1`/`line2` are XML attributes
+from `xmlparsedata` on the matched node, so line span is `line2 - line1 + 1`.
+`linter_level = "expression"` + the `is_lint_level()` guard is `lintr`'s own
+documented pattern (see `vignette("creating_linters", package = "lintr")`).
+Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
+`lms::function_length_linter()` in UCD-SERG/lab-manual#381.)
+
+## jarl (Just Another R Linter) — `jarl.toml` fields lag the published docs
+- `jarl` (`etiennebacher/jarl`, installed via `etiennebacher/setup-jarl@vX` in
+  CI) is a fast Rust-based R linter, a sibling to `{flir}` by the same author
+  (both are `etiennebacher` projects; `{air}`, the R formatter jarl builds on,
+  is a separate Posit project by Davis Vaughan and Lionel Henry, not the same
+  author). Its `unused_function` rule flags any function jarl's static analysis
+  can't find a call site for — including functions in **fixture/test-data R
+  packages** (e.g. a `tests/testthat/examples/testpkg.*/R/*.R` tree copied and
+  rendered as test input), which are genuine false positives: nothing in the
+  outer package is ever meant to "call" fixture content.
+- **The `jarl.toml` config schema in the repo's `CHANGELOG.md`/docs can
+  describe a feature not yet in the released version CI actually installs.**
+  `[lint.per-file-ignores]` (scope a rule to specific files/globs) appears in
+  jarl's `CHANGELOG.md` on `main`, but `jarl check` itself is the source of
+  truth for what the *installed* version accepts — it errors immediately with
+  `Invalid configuration ... Unknown field 'per-file-ignores' in '[lint]'.
+  Expected one of: select, extend-select, ignore, fixable, unfixable, exclude,
+  default-exclude, include, check-roxygen, fix-roxygen` when the field isn't
+  supported yet (hit against jarl 0.5.0 via `setup-jarl@v0.1.0`, no version
+  pin -> latest). The error message's "Expected one of" list is authoritative;
+  don't trust changelog/docs-site prose for what a *pinned or auto-latest* CI
+  install actually accepts, since "on `main`" doc content can be ahead of the
+  latest tagged release.
+- **Fallback when the wanted field isn't supported: `[lint] exclude = ["<dir>/"]`**
+  (full path/glob exclusion — coarser than `per-file-ignores`, silences ALL
+  jarl rules for that directory, not just the one false-positive rule) rather
+  than editing fixture file content to appease the linter (fixture bytes often
+  feed snapshot/rendering tests, so editing them risks unrelated test
+  breakage). File a follow-up issue to narrow `exclude` to `per-file-ignores`
+  once the installed jarl version supports it. (`d-morrison/altdoc#18`, #19.)
+- **There is no `.jarlignore` file — jarl has never supported one.** Don't
+  assume jarl follows the `.gitignore`/`.eslintignore`-style convention of a
+  dotfile-per-tool; its only exclusion mechanism is `jarl.toml`'s `[lint]`
+  table (`exclude` / `per-file-ignores`, above). A `.jarlignore` file is
+  silently inert — `jarl check` never reads it, so violations inside the
+  "excluded" paths still fire, and no error or warning flags the unsupported
+  config. This is easy to miss because CI can still look green: pairing the
+  fake `.jarlignore` with `continue-on-error: true` on the lint step (to
+  paper over the failures it doesn't actually suppress) hides the breakage
+  entirely, and a bot review can approve the change on the false premise that
+  `.jarlignore` works, since nothing about the diff itself is wrong-looking.
+  Verify a suppression file is real by checking the tool's own config-file
+  reference (or just removing `continue-on-error` and running the check) —
+  not by pattern-matching on other tools' ignore-file conventions.
+  (`d-morrison/altdoc#7`: `continue-on-error: true` masked a `.jarlignore`
+  that did nothing; removing the flag immediately reproduced the
+  `unused_function` failure it was supposed to prevent.)
+
+## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
+- These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
+  Action") and a **version-check**. A user-visible PR needs **both** a
+  `NEWS.md` entry under `# <pkg> (development version)` **and** a `DESCRIPTION`
+  `Version:` dev-bump (e.g. `0.0.0.9053` → `.9054`), or CI fails. Add them up
+  front rather than waiting for the red check. (Observed on ucdavis/bcs#223.)
+  For a **non-user-visible** PR (CI/workflow-only), skip both with the
+  `no changelog` + `no version increment` labels instead — see the label-bypass
+  note below.
+- The **Spellcheck** job (`spelling::spell_check_package()`) fails on any word
+  not in `inst/WORDLIST`. For one-off non-dictionary words in NEWS/prose, prefer
+  rewording (e.g. "uncaptioned" → "without captions") over polluting WORDLIST;
+  add to WORDLIST only for real domain terms you'll reuse.
+  - **When the offending token is a code identifier or a literal log/warning
+    message** (e.g. quoting `non-integer #successes in a binomial glm!` in a
+    NEWS entry, which tripped on `glm`), wrap it in backticks as inline code
+    instead — the spellcheck parses markdown and skips code spans, and
+    backticking a `pkg::fn()`/identifier/message is the correct markdown style
+    anyway. Cleaner than both rewording and a WORDLIST add. (ucdavis/ettbc#30.)
+- A `docs-check` / `R-check-docs` job runs `roxygenize()` then `git diff --exit-code
+  man/`, so a roxygen edit with a stale `man/*.Rd` fails. **When you can't run
+  `devtools::document()` (no R toolchain, e.g. a cloud/web session), you can still
+  edit roxygen docs**: hand-edit the matching `man/*.Rd` in lockstep, as long as the
+  change doesn't re-wrap lines — a **same-length word swap** (e.g. `biannual`→`biennial`,
+  both 8 chars) is ideal because roxygen copies description/param/return prose verbatim
+  into the `.Rd` and `roxygenize()` is deterministic, so an identical edit to both
+  reproduces exactly what `document()` would generate and `docs-check` passes. Watch
+  `@inheritParams`/`@inherit`: editing one function's roxygen also changes the `.Rd` of
+  every function that inherits that text, so grep `man/` for the changed sentence and
+  edit those `.Rd` files too. (Used on ucdavis/bcs#225 across 13 R files + ~18 man pages.)
+
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
   GitHub REST API reachable from a Bash/Monitor script. Use `mcp__github__*`
   tools for any API need.
+- **The proxy allows branch creation/push but BLOCKS branch deletion.** Pushing a
+  *new* branch (even one other than the harness-assigned `claude/...`) works, but a
+  delete push — `git push origin --delete <b>` or `git push origin :<b>` — is rejected.
+  Observed verbatim: "send-pack: unexpected disconnect" / "remote end hung up", then a
+  misleading "Everything up-to-date" (the proxy returns that no-op message instead of a
+  normal `failed to push some refs` error), but the command still exits non-zero. So a
+  throwaway branch (e.g. a push-capability probe) can't be cleaned up from the session;
+  delete it via the GitHub UI/API, or just leave it if it's identical to `main` and has
+  no PR. (Seen on ai-config, 2026-06-28.)
 - Consequence: you CANNOT poll PR review/CI state from a background Monitor.
   Rely on `mcp__github__subscribe_pr_activity`, which delivers review comments
   and CI *failures* — but NOT CI success, new pushes, or merge-conflict
@@ -270,6 +852,39 @@
   (separate findings). They can DISAGREE — one says clean while the other finds
   nits. Reconcile BOTH before calling a PR clean; the agent post-step tends to
   drip 1–2 pre-existing cosmetic nits per round (asymptotic).
+
+## WebFetch 403 on a rendered docs site -> raw.githubusercontent.com; WebSearch to find the exact source path
+- A GitHub-Pages/Quarto-rendered docs site (e.g. `jarl.etiennebacher.com`,
+  `ucd-serg.github.io/lab-manual/...`) can reject `WebFetch` outright (403 —
+  likely anti-scraping), even though the plain-text/markdown **source** it was
+  built from is a public file in a public repo and fetches fine via
+  `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>`. This
+  isn't `d-morrison/gha`-specific (that repo's own `CLAUDE.md` documents it
+  for the lab manual) — it generalizes to any Quarto/Docusaurus-style site,
+  including third-party tool docs with no relation to our own repos.
+- **When the exact source path isn't obvious** (unlike the lab-manual case
+  where `foo.html` predictably maps to `foo.qmd`), guessing candidate paths
+  one `curl -o /dev/null -w "%{http_code}"` at a time is slow and often wrong.
+  `WebSearch` for `<repo-or-tool-name> <topic> site:github.com` (or just
+  `<tool> <config-file> github`) surfaces the actual repo file path (e.g.
+  `jarl/docs/reference/config-file.md`) from its indexed GitHub listing —
+  faster than blind guessing, and the found path fetches cleanly via
+  `raw.githubusercontent.com` immediately after. (Confirmed on jarl's docs
+  site: `jarl.etiennebacher.com/reference/config-file` 403'd, but
+  `WebSearch` surfaced `docs/reference/config-file.md` as the underlying
+  file, which raw-fetched with the full field-by-field config reference.)
+
+## Claude Code on the web: CI monitoring toggles have no default setting
+- The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
+  **Auto-fix CI & address comments** and **Auto-merge when ready**. There is
+  **no account-, org-, repo-, or environment-level setting to default these on**
+  — confirmed against https://code.claude.com/docs/en/claude-code-on-the-web.
+  Each new PR/session starts with both off and they must be toggled manually.
+- Closest workaround: run `/autofix-pr` from the CLI on a PR's branch — it
+  spawns a web session with **Auto-fix CI & address comments** already on for
+  that PR. There's no CLI shortcut for **Auto-merge when ready**; that one
+  always needs a manual toggle. A true default would require a feature
+  request via `/feedback`.
 
 ## @claude CI action (d-morrison/gha `claude.yml`)
 - The reusable `claude.yml@v1` agent workflow restores config files (`CLAUDE.md`,
@@ -295,6 +910,37 @@
   (`git checkout <my-commit> -- CLAUDE.md`, commit), then before merging verify with
   `git diff origin/main -- CLAUDE.md` being **non-empty** (an empty diff means the
   payload was silently reverted to main), and merge promptly.
+- **The `@claude` agent can push a `main`-merge commit to your PR branch — not just
+  comment.** Triggered by PR activity, the `claude.yml` agent may merge `origin/main`
+  into the branch and push it (e.g. `claude[bot]` "Merge branch 'main' into <branch>").
+  **The same collision happens with a human's push, too** — e.g. the repo owner
+  clicking GitHub's "Update branch" button while you're mid-session on the same PR
+  produces an identical merge-main commit (authored by the human, committed by
+  `GitHub`) and the identical rejection; the recovery is the same regardless of who
+  pushed it. Two consequences: (1) your in-flight local push is rejected ("fetch
+  first" / RPC `HTTP 403` from the git backend — a non-fast-forward, **not** a
+  policy denial); (2) **bot-push only** — the `@claude` agent may resolve a
+  `DESCRIPTION` version conflict to `== main` when it merges, which then fails
+  `version-check`; a human's "Update branch" click doesn't do this — GitHub blocks
+  the merge on conflict instead of silently resolving it, so re-check versions only
+  applies after a bot merge. Recovery (either case): stash any uncommitted work
+  first (`git stash` — `reset --hard` discards it), then `git fetch origin <branch>`,
+  `git reset --hard origin/<branch>` onto the remote's merge commit (build on it —
+  don't force-push a competing parallel merge of your own), then re-bump the version
+  above main if needed and push.
+  (Hit on bcs#255: the bot pushed `4807f0c` and resolved the version to `.9062` == main,
+  failing version-check until I bumped to `.9063` on top.)
+- **Cherry-pick recovery when the bot and your session both merge main.** If the `@claude` agent pushes a merge-main commit to the PR branch while you have unpushed commits, your push will be rejected ("fetch first"). Don't open a competing parallel merge — cherry-pick instead: (1) note the SHA of your local fix commit(s), (2) `git reset --hard origin/<branch>` to build on the bot's merge, (3) `git cherry-pick <sha>`, (4) push. This lands your fix cleanly on top without creating a divergent history.
+- **The `@claude` agent can run a parallel session that posts a phantom commit SHA.**
+  While you ARDI a PR (pushing fixes + posting reply comments), the activity can trigger
+  the `claude.yml` agent to spin up its own run that attempts the *same* fixes, fails to
+  push (it collides with your pushes), then posts review comments crediting a commit SHA
+  that **never reached the remote** (e.g. it posts "Addressed in `a841fc7`", but that SHA
+  was never pushed and isn't on the remote). The fixes are really there via *your* pushed commit; the cited SHA
+  is a phantom. Don't chase it: verify the real branch head with `git ls-remote origin
+  <branch>` (or `git rev-parse HEAD` vs `origin/<branch>`), and if the cited SHA fails
+  `git cat-file -t <sha>` it never existed. Post a one-line clarification on the PR so the
+  phantom doesn't confuse later readers, and keep going. (Hit on ai-config#254.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's
@@ -321,6 +967,17 @@
   ~48 s without posting a verdict comment. This prevents 401 errors from the
   App-token exchange during workflow validation of a not-yet-merged workflow file
   (source: gha#70 PR body). Not a CI failure — check the job logs for the skip message.
+  **The self-mod skip is NOT the same signal as the quota-skip (gha#104) — the
+  `require-review` gate job does not catch it.** `require-review`'s `if:` only
+  goes gray when `claude-review`'s result is literally `skipped` or
+  `quota_exhausted=true`; a self-mod skip leaves individual *steps* conditioned
+  off (`steps.selfmod.outputs.self_mod != 'true'`) but the `claude-review` JOB
+  itself still reports `success`, so `require-review` passes trivially and the
+  PR shows all-green with no review having actually run. Don't read "CI green,
+  no `@claude` comment" as "review ran clean" on a PR that touches
+  `claude-code-review.yml` — check the `claude-review` job log for the
+  `self_mod=true` notice, and do a manual review in its place (same playbook as
+  the quota-skip case below). (d-morrison/altdoc#14.)
 - **`grep -qxF` for literal fixed-string line matching in workflow files.** Flags: `-q`
   = quiet, `-x` = full-line match, `-F` = treat pattern as a fixed string (not a
   regex). Omitting `-F` makes `.` in file paths (e.g.
@@ -328,24 +985,59 @@
   check would match any file with a similar path structure. Use `-qxF` whenever
   comparing file paths literally. The `selfmod` step in `claude-code-review.yml` uses
   `grep -qxF` for this reason.
-- **Spurious `is_error=true, subtype=success` review failure (intermittent upstream
-  bug).** The `claude-code-action` occasionally completes a review in a single turn and
-  exits with `is_error=true` + `subtype=success`. The "Fail the check" step in
-  `claude-code-review.yml` catches this and marks the `review / claude-review` job ❌.
-  The review comment may be missing or show only a placeholder ("I'll analyze this and
-  get back to you"). The session ran ~192 s; the prior clean review on the same diff
-  is still valid. Fix: push a trivial commit to trigger a fresh review. Not caused by
-  repo code — the upstream action exits with the wrong code. Observed on gha#92 run
-  #28034977099.
+- **`is_error=true, subtype=success` in review execution output — two distinct causes:**
+  - **Quota/auth exhaustion** (`total_cost_usd=0`, `num_turns=1`, `duration_ms` < 2000):
+    the API rejected the request before Claude did any work. Fixed in gha#102 (`@v1`):
+    the guard step exits 0 and posts a `[!WARNING]` PR comment naming `CLAUDE_CODE_OAUTH_TOKEN`
+    as the account whose quota is exhausted. Further fixed in gha#104: a second `require-review`
+    gate job (whose `if:` is false when `quota_exhausted=true`) shows as the gray **skipped**
+    icon rather than a misleading green checkmark. Consumers should add `require-review` (e.g.
+    `review / require-review`) to their branch protection required-checks.
+    Fix: wait for quota reset (or auth fix), then re-trigger. No need to push a commit.
+    ⚠️ **Verify the consumed guard actually warns — don't assume the fix is live.**
+    Observed 2026-06 on sparta#207 (consuming `d-morrison/gha@v1`) AND in `dem-extra1/gha`'s
+    own `claude-code-review.yml`: the guard still `exit 1`d on `is_error=true` (RED check, no
+    `[!WARNING]` comment) — gha#102's exit-0 behavior was not yet on the consumed `@v1` pin
+    there. Read the actual guard code on the pin you consume rather than trusting this note.
+    Note OAuth/subscription auth (`CLAUDE_CODE_OAUTH_TOKEN`) shows `total_cost_usd=0`
+    regardless, because it isn't metered per-call — so cost=0 + 1 turn + immediate `is_error`
+    points to a **subscription usage-limit**, not only API credits; confirm via the Anthropic
+    Console usage for that account.
+  - **Intermittent upstream bug** (`total_cost_usd > 0`, `duration_ms` ~192 s): the
+    `claude-code-action` completes a real review but exits with `is_error=true` anyway.
+    The guard step fails the check ❌. The prior clean review on the same diff is still
+    valid. Fix: push a trivial commit to trigger a fresh review. Observed on gha#92 run
+    #28034977099.
+- **A review job with `conclusion: success` but NO posted comment is NOT
+  automatically "unreviewed."** It is either (a) a quota/auth skip (see above:
+  `total_cost_usd=0`, `num_turns=1`) or (b) a genuinely **clean review that found
+  nothing to flag**. Tell them apart from the job log: a clean review shows a
+  full agent run (`"subtype":"success"`, `"is_error":false`, high `num_turns`,
+  `total_cost_usd` > 0) followed by `No buffered inline comments` in the
+  post-comments step — the bot reviewed and posted nothing because it had nothing
+  to say. Don't treat that as a missing review or re-trigger it. (macros#71:
+  `claude-review` ran 21 turns at $0.88 and buffered 0 comments = clean.)
+- **Reading the hidden error behind a failed `claude-code-review`.** The action prints
+  `Running Claude Code via SDK (full output hidden for security)…` and suppresses the real
+  API error. The reusable `claude-code-review.yml` now accepts a **`show-full-output`** input
+  (default false; added in dem-extra1/gha#1) that passes through to the action's
+  `show_full_output` — flip it to print the raw error in the job log. The live consumer pin
+  `d-morrison/gha@v1` may not carry it yet, so check the tag. You CANNOT side-channel the
+  error from a throwaway workflow on a feature branch: `claude-code-action` rejects `push`
+  events (`Unsupported event type: push`) and refuses to run unless the workflow file is
+  byte-identical to the default-branch copy (`Workflow validation failed … must … match the
+  default branch`) — both are deliberate guards, so a diagnostic workflow only works once
+  it's on `main`.
 - **`review / claude-review` fails with "no '### Verdict' heading" (gha#173,
-  closed/fixed).** Symptom: the job's SDK run reports `is_error: false` /
-  `subtype: success` (it genuinely completed, no crash), but a guard step
-  (`run-review-guard`) still fails the job because the review's final message
-  never emitted the mandated `### Verdict` heading or `Verdict:` line — the
-  review agent silently stubbed. `review / require-review` then fails too,
-  since it gates on this job. **This is the fix, not a bug**: gha#173 replaced
-  an earlier silent-green-stub failure mode with a loud one, so don't read the
-  red check as a content problem in your diff — check the job log
+  closed/fixed) — a DIFFERENT failure than the `is_error=true` cases above.**
+  Symptom: the job's SDK run reports `is_error: false` / `subtype: success` (it
+  genuinely completed, no crash), but a guard step (`run-review-guard`) still
+  fails the job because the review's final message never emitted the mandated
+  `### Verdict` heading or `Verdict:` line — the review agent silently
+  stubbed. `review / require-review` then fails too, since it gates on this
+  job. **This is the fix, not a bug**: gha#173 replaced an earlier
+  silent-green-stub failure mode with a loud one, so don't read the red check
+  as a content problem in your diff — check the job log
   (`mcp__github__get_job_logs`) for this exact error string before assuming
   otherwise. gha#173 traces the root cause to the review **agent** stalling on
   **push-triggered** runs specifically, and confirms `workflow_dispatch`
@@ -366,12 +1058,61 @@
   comment to say "workflow_dispatch is a manual re-review from the Actions UI" rather
   than citing `claude.yml`. The `PR_NUMBER` env comment (was "when claude.yml triggered
   us") should become "when a manual re-review is triggered." Fixed in rpt#153 and qbt#43.
+- **`@claude review` produced no review? Trace the whole dispatch chain — the
+  failure is usually in the *dispatched* review run, not the agent run.** An
+  `@claude review` *comment* fires the agent workflow `claude.yml` (issue_comment),
+  which **succeeds** and then, in a later step (a regular step after the Claude run —
+  not an Actions post-step), re-dispatches `claude-code-review.yml` via
+  `gh workflow run` (workflow_dispatch). So a green `claude.yml` run with no review
+  comment means the review died in the separately-dispatched run. Find it:
+  `actions_list` the runs of `claude-code-review.yml` filtered to
+  `event=workflow_dispatch` around the comment time, then read that run's failed
+  job logs. Don't stop at the agent run's green checkmark. (Diagnosed on rme#706:
+  agent run 28256515868 was green; the dispatched review run 28257175025 had failed.)
+- **`allowed_bots` actor gate: dispatched reviews fail in ~6 s with "Workflow
+  initiated by non-human actor: github-actions (type: Bot)".** `anthropics/claude-code-action`
+  has its **own** actor gate, separate from the workflow's job-level `if:`. Because
+  `claude.yml` re-dispatches as `github-actions[bot]`, the action aborts
+  ("Add bot to allowed_bots list or use '*'") unless the action step sets
+  `allowed_bots: "github-actions[bot]"` in its `with:` (underscore — the action's
+  own input name; the gha reusable exposes this as `allowed-bots` with a hyphen
+  and maps it through). A job `if:` that permits
+  `workflow_dispatch` is **not** enough — the run passes the `if:` then dies one layer
+  deeper in the action. The canonical gha reusable `claude-code-review.yml` already
+  sets this (via its `allowed-bots` input, default `github-actions[bot]`); a
+  standalone copy must add it. Fixed for rme in #945.
+- **Consumer repos may carry a standalone `claude-code-review.yml` that has drifted
+  from the gha reusable one — check gha first when debugging CI/infra bugs.** Not
+  every consumer calls `uses: d-morrison/gha/.github/workflows/claude-code-review.yml@v1`;
+  some (rme, pre-#948) kept a hand-maintained fork that missed fixes gha already
+  had — that drift is how the `allowed_bots` bug reached rme. When debugging a
+  CI/infra bug in a consumer repo, compare against the canonical gha `@v1` version;
+  the fix often already exists there. Preferred remedy: migrate the standalone file
+  to a thin reusable-workflow caller (gha ships example caller stubs in `examples/`)
+  so it can't drift again. Keep the workflow filename and the `pr_number`
+  workflow_dispatch input so `claude.yml`'s
+  `gh workflow run claude-code-review.yml -f pr_number=<N>` still works, mapping it
+  to the reusable's `pr-number` input; set `checkout-submodules: true` if the repo
+  has submodules the reviewer must read (e.g. rme's `latex-macros`). Done for rme
+  in #948.
+- **The `@claude` reviewer may re-raise a finding that was previously rebutted and
+  its thread resolved, if a new commit triggers a fresh review cycle.** Each review
+  run re-reads the diff from scratch; a rebuttal reply in the thread does not persist
+  into the next run's context. Keep the rebuttal text ready to post again. (Hit
+  repeatedly on ai-config#267 with the MD060/table-column-style finding.)
 
 ## AskUserQuestion (Claude Code harness tool)
 - Each entry in `questions[]` **requires a `question` field** (the full question
   text) — `header` + `options` alone fail with `InputValidationError: required
   parameter questions[0].question is missing`. Easy to omit when you build the
   call from options first; include the `question` string every time.
+- **`Tool permission request failed: Error: Tool permission stream closed before
+  response received`** is a **transient** harness glitch, not a user denial —
+  **retry the same call.** Hit AskUserQuestion twice and `ExitPlanMode` twice in
+  one web session; every retry went through. Applies to any permission-gated
+  harness tool (AskUserQuestion, ExitPlanMode, …), so don't abandon the
+  interactive flow or fall back to a workaround on the first failure. (A genuine
+  denial reads differently — the user declining the specific action.)
 
 ## Bash tool runs under zsh — avoid bash-isms & reserved variable names
 - The Bash tool's shell is zsh-initialized, where some names are **read-only
@@ -412,10 +1153,47 @@
   who copies the command without substituting the placeholder runs something wrong.
   Use `<path>`, `<url>`, `<target>` instead. (PR #99 fixed `test -e PATH` →
   `test -e <path>` and `curl … URL` → `curl … <url>` in purge-hallucinations.)
+- **A trailing `# TOKEN` annotation on a `\`-continued line swallows the
+  continuation.** When annotating a command with an inline marker comment
+  (e.g. the `tool-mappings.yml` abstract-operation-token pilot, #195/#415),
+  putting `# TOKEN` on a line that ends in a line-continuation `\` breaks the
+  command: bash's `#` starts a comment that runs to the end of the line,
+  consuming the `\` along with it, so the next line's flags are no longer
+  part of the same command. Put the annotation on the **last** line of a
+  multi-line command (after the final flag/filter), never on an intermediate
+  `\`-continued line. The `@claude` reviewer caught this on PR #415's first
+  pass (`skills/ardi/SKILL.md`'s `gh pr list \` / `--jq ...` block) — worth
+  checking for on every subsequent skill in #416's token-rollout.
+- **Verify a brand-new `tool-mappings.yml` `github_mcp` tool name with
+  `ToolSearch` before adding the operation, not after.** When #416's
+  token-rollout needs a new operation whose GitHub MCP form hasn't been used
+  in this repo yet, the tool name is easy to *guess* correctly by pattern
+  (e.g. `mcp__github__search_issues` from the existing
+  `mcp__github__search_pull_requests`) but still worth confirming live —
+  `ToolSearch({query: "select:mcp__github__<name>"})` returns the real schema
+  if it exists, or no match if it doesn't. Doing this before adding the row
+  avoids a review round-trip flagging the name as unverified (batch 2, PR
+  #419): the reviewer couldn't confirm the tool from a static read and had to
+  ask for a live check, which a rebuttal citing the schema then resolved
+  anyway. Front-load that ToolSearch call and note in the row's PR
+  description (or commit message) that it was verified, so the review can
+  skip straight past it.
+- **`PUSH` was an imperfect fit for remote ref/tag *deletion* — resolved.**
+  Flagged as a non-blocking observation by the `@claude` reviewer on batch 3
+  (PR #423, `skills/slide-tag/SKILL.md` and `skills/ts/SKILL.md`'s
+  `git push origin :refs/tags/<tag>`): the registry's `PUSH` operation is
+  documented as "push commits to a branch," and a colon-prefix ref-delete
+  pushes nothing and isn't a branch. Initially left as `PUSH` (two instances,
+  not the rollout's main surface) with a note to revisit if the pattern
+  recurred. It did, a third time, in batch 4 (`clean-branches`'s
+  `git push origin --delete <branch>`) — past the self-set threshold — so
+  batch 4 added a dedicated `DELETE_REF` operation to `tool-mappings.yml` and
+  retro-fitted all three sites (including the two already-merged ones) from
+  `PUSH` to `DELETE_REF`.
 
 ## ai-config memory file structure
 - Memory files (`memories/*.md`) **may** carry YAML frontmatter (`name`,
-  `description`, `metadata`) — e.g. `memories/repo/sparta.md` — while older ones
+  `description`, `metadata`) — while older ones
   start directly with a `#` heading. Don't assume either form: `grep -rn "^name:"
   memories/` finds the frontmatter'd files, and a file without it is still valid.
   Preserve whatever frontmatter a file already has rather than stripping it.
@@ -458,21 +1236,156 @@ any Quarto website (rme, psw, qwt, …).
   `/.quarto/` and `**/*.quarto_ipynb` to `.gitignore`. If `.quarto/` is already
   present, `/.quarto/` is redundant (the unanchored form already covers the root).
   Remove `/.quarto/` only when `.quarto/` is already present; keep `**/*.quarto_ipynb`.
+- **Manuscript projects do NOT support `repo-url` / `repo-actions` natively.**
+  `book` and `website` inherit `base-website` schema (which includes these keys);
+  `manuscript-schema` is `closed: true` with no `super`, so the keys are silently
+  ignored even when placed under `website:` or `format: html:` in `_quarto.yml`.
+  Workaround: a Lua filter that reads those keys from metadata and injects the links
+  via inline JS — see `d-morrison/qmt/_repo-links.lua` for a full implementation.
+  Upstream issue: quarto-dev/quarto-cli#14627.
+- **In Quarto Lua filters, use `quarto.doc.input_file` (not `PANDOC_STATE.input_files[1]`)
+  to get the real source path.** Quarto preprocesses `.qmd` files into temp files before
+  passing them to Pandoc; `PANDOC_STATE.input_files[1]` gives the temp path, not the
+  original `.qmd`. `quarto.doc.input_file` reads the `quarto-source` param and returns
+  the real path. To compute the repo-relative path: strip `os.getenv("QUARTO_PROJECT_DIR")`
+  from the front (`abs_input:sub(#project_root + 2)`). (Learned while writing `_repo-links.lua`
+  for d-morrison/qmt.)
+- **A plain project-wide `quarto render` (no `--to`) DOES render every format a
+  document's own front matter lists** — even formats the project's `_quarto.yml`
+  doesn't configure. Verified from a clean state (`rm -rf _site .quarto` first,
+  no priming single-file renders) on `d-morrison/macros`: `_quarto.yml` there
+  configures only `format: html:`, yet a bare `quarto render` still produced
+  `.pdf`, `.docx`, and reveal.js `.html` output for every doc whose own front
+  matter lists those formats — the project config sets the *default* for docs
+  with no local `format:` override, it doesn't cap docs that declare their own.
+  So a CI step that just runs `quarto render` **likely already exercises** the
+  PDF/other-format renders a `CONTRIBUTING.md` separately documents as
+  `quarto render <doc>.qmd --to pdf` — don't assume a bare project render is
+  HTML-only without checking. (Corrected in ai-config#408 after re-verifying
+  from a clean state; the empirical result contradicted both an earlier claim
+  logged here and a reviewer's proposed replacement.) The durable lesson
+  survives: don't write "CI covers this" in a PR description from assumption —
+  verify what CI *actually* does before asserting either that it does or
+  doesn't cover a given check.
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
 common patterns.
 
-- **`quarto-publish.yml@v1`** — sets up Quarto, renders, and deploys via the GitHub
-  Pages artifact approach (`actions/deploy-pages`). No `gh-pages` branch needed.
+- **`quarto-publish.yml`** — sets up Quarto, renders, and deploys the site.
   Caller stub is ~12 lines. See `examples/quarto-publish.yml` in the gha repo.
-  **One-time repo setup:** set GitHub Pages source to "GitHub Actions" before the
-  first deploy, or the deploy step fails with `HttpError: Not Found`. Do it via the
-  API: `gh api repos/<owner>/<repo>/pages --method POST -f build_type=workflow`
-  (use `PUT` if Pages already exists but is on branch mode).
+  **`@v1` vs `@v2` differ in HOW they deploy, and the two are mutually exclusive
+  at the repo-Pages-source level:**
+  - **`@v1`** deploys via the Pages **artifact** (`actions/upload-pages-artifact`
+    + `actions/deploy-pages`). Repo setup: Settings → Pages → Source = **"GitHub
+    Actions"**. No `gh-pages` branch served.
+  - **`@v2`** (gha#118) deploys to the **`gh-pages` branch** (`JamesIves/github-pages-deploy-action`,
+    `clean-exclude: pr-preview/`, plus a `.nojekyll`). Repo setup: Settings → Pages
+    → Source = **"Deploy from a branch", `gh-pages` / `(root)`**. Caller grants
+    `contents: write` (not `pages:write` + `id-token:write`), **even with
+    `deploy: false`** (see the reusable-workflow permission rule below).
+  - **WHY the switch:** the gha PR-preview family (`preview-deploy`,
+    `cleanup-pr-previews`) pushes previews to the `gh-pages` branch. A repo serves
+    Pages from **one** source, so Actions-artifact publish + branch-based previews
+    can't coexist — under Actions-source Pages, every `…/pr-preview/pr-N/` link
+    404s. `rossjrw/pr-preview-action` REQUIRES branch-based Pages. So a repo that
+    wants both a main site AND PR previews must use `@v2` + branch Pages.
+  - **Branch-served Quarto needs `.nojekyll`** at the gh-pages root, or Jekyll
+    strips Quarto's `_`-prefixed asset dirs. `quarto publish gh-pages` adds it
+    automatically; `JamesIves` does not, so `@v2` touches one in before deploy.
+  - **The repo's Pages *source* is a manual setting** — not changeable via the
+    MCP tools or (in scoped sessions) the API. Hand the flip to the user, and
+    order it safely: deploy to `gh-pages` FIRST (populates root; live site keeps
+    serving the old artifact), THEN flip the source, or the root 404s in between.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
+- **gha's major tag auto-slides on EVERY merge to main** (`slide-major-tag.yml`,
+  r-lib/actions style): it re-points the major derived from the latest `vX.Y.Z`
+  tag to HEAD. So a **breaking** change that merges to main **silently slides
+  `v1` onto the breaking commit** — `@v1` consumers get it on their next run.
+  Cutting a breaking release therefore needs TWO tag moves, run BEFORE the next
+  main merge (else the slide re-breaks v1): (1) force `v1` back to the last
+  non-breaking commit (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`),
+  and (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
+  semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
+  MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
+  Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
+- **Despite the auto-slide above, `@v1` can still trail `main` in practice —
+  verify against the TAGGED file, not `main` or `examples/`.** Observed:
+  `main`'s `claude.yml` / `claude-code-review.yml` both declare an
+  `ANTHROPIC_API_KEY` secret in their `workflow_call: secrets:` block, and
+  `examples/claude.yml` / `examples/claude-code-review.yml` (also on `main`)
+  show passing it — but the `@v1` tag's copy of both reusable workflows only
+  declares `CLAUDE_CODE_OAUTH_TOKEN`, `SUBMODULES_TOKEN`, and (for `claude.yml`)
+  `WORKFLOW_TOKEN`. A caller that copies the example verbatim and pins `@v1`
+  gets a `startup_failure`: `Invalid secret, ANTHROPIC_API_KEY is not defined
+  in the referenced workflow.` Before trusting an `examples/` template (or
+  `main`'s workflow file) for a `secrets:`/`with:` block passed to an `@v1`
+  call, fetch the actual `@v1`-tagged file
+  (`mcp__github__get_file_contents` with `ref: refs/tags/v1`, or
+  `git show v1:.github/workflows/<file>`) and diff its `workflow_call:`
+  section against what you're about to pass. Filed as gha#179; worked around
+  in `d-morrison/altdoc`#14 by omitting `ANTHROPIC_API_KEY` until `@v1` catches
+  up.
+- **A `workflow_call` reusable-workflow ref (`@v1`/`@v2`) resolves ONCE, at the
+  run's original creation time, and stays pinned to that SHA across every
+  re-run of that same run — even after the tag has since moved to a fix.** So
+  if a consumer PR's `claude-code-review.yml` run first ran while `@v2` still
+  pointed at a broken gha commit, re-running that same run (whether via the
+  Actions UI "Re-run failed jobs" or a bot re-dispatch that happens to target
+  the existing run rather than creating a new one) reproduces the identical
+  pre-fix failure forever, no matter how many times you retry or how long ago
+  the tag was fixed. **Diagnose by checking `run_attempt`** (> 1 means this is
+  a re-run, not a fresh dispatch) **and `created_at`** (`mcp__github__actions_get`,
+  `method: get_workflow_run` — compare against when the fix landed), then read
+  `referenced_workflows[].sha` in the same response — it shows the ACTUAL
+  resolved commit for that run, which you can diff against the tag's current
+  `get_tag` SHA to confirm staleness. **Only a
+  genuinely NEW run (a new `run_id`) re-resolves the tag fresh** — a new commit
+  (`pull_request: synchronize`) is the reliable trigger; an `@claude review`
+  comment sometimes causes the bot to re-run the existing stale run instead of
+  dispatching a new one (observed on UCD-SERG/serodynamics#193 — a direct
+  `workflow_dispatch` via `actions_run_trigger` would have sidestepped this,
+  but that call 403s in these sessions too, per the note above).
+- **`check-non-standard-chars` (the `chars` selftest job) scans only `.qmd` and
+  `.R` files.** Em dashes / smart quotes in workflow YAML comments, README, or
+  example stubs pass; the SAME character in a `.qmd` fails CI (`U+2014` etc.).
+  When editing gha docs, keep `.qmd` ASCII (`-`/`;`, not `—`).
+- **403 caveat — scoped sessions can push ONLY the assigned branch; tag pushes
+  are denied.** In remote/web sessions the proxy rejects any ref that isn't the
+  harness-assigned branch with `HTTP 403` — including `refs/tags/*`. **`git push
+  --dry-run` gives a FALSE POSITIVE here** (it prints `* [new tag] …` because the
+  negotiation succeeds, but the real push 403s on the ref update). So you cannot
+  cut tags from such a session — hand the exact `git tag` + `git push` commands to
+  the user instead. Don't retry the 403 (policy denial, not transient).
+- **A session can be fully READ-ONLY on a repo — even the harness-assigned
+  branch can be unwritable.** Beyond the tag-push case above, some sessions
+  403 on every write path to a given repo: `git push` to the assigned branch
+  itself (not just other branches — and `git ls-remote` may show the assigned
+  branch doesn't even exist on the remote yet, so the push 403s trying to
+  create it), plus every GitHub MCP write tool — `push_files`/branch creation,
+  `create_or_update_file` (contents API), and `add_issue_comment` — all
+  returning `403 Resource not accessible by integration`. Confirm this
+  conclusively by testing 2-3 *distinct* write endpoints (not just retrying the
+  same one) before concluding read-only, since a single 403 could be a
+  branch-scope issue (the case above) rather than a repo-wide one. Once
+  confirmed: don't keep retrying — package the diff as a patch
+  (`git format-patch`) and hand it to the user via `SendUserFile` instead of a
+  pasted diff, so it's directly `git am`-able. Because you can't push, watch
+  for the user (or another session) to land an independently-derived fix
+  rather than your literal patch — re-verify the actual merged diff before
+  reporting status rather than assuming your patch was applied as-is. (Hit on
+  ucdavis/fxtas#156: diagnosed a CI-breaking dependency issue, delivered the
+  fix as two patch files since every write 403'd; the user filed their own
+  issue/PR with a different fix for the same root cause and merged that
+  instead.)
+- **`mcp__github__actions_list` / `list_workflow_runs` returns HUGE objects**
+  (full repo metadata embedded per run, ~30-60KB even at `per_page: 1`), which
+  blows the tool-output cap and gets saved to a file. To read a run's
+  status/conclusion cheaply, prefer `actions_get` (`get_workflow_run`, single
+  object) or parse the saved file with `python3 -c "json.load(...)"`; don't keep
+  re-listing.
 - **Input-forwarding checklist when adding an input to a gha composite action.**
   Adding a new `inputs:` entry to `<name>/action.yml` requires four coordinated updates:
   1. Expose it in the wrapping reusable workflow (`.github/workflows/<name>.yml`) under
@@ -490,3 +1403,493 @@ common patterns.
   "Fail the workflow run …" not "Fail the action …". When copying an input description
   from `action.yml` into the wrapping `workflow_call` file, update "action" → "workflow
   run". (Fixed in gha#92: `fail-if-empty` description in `check-links.yml`.)
+- **GitHub Actions job conclusions: no "skipped" from a running job.** A job that has
+  started can only conclude `success` or `failure` — never `skipped`. The only way to get
+  the gray skip icon on a check is a false `if:` on an *unstarted* job. Pattern for
+  infrastructure conditions (quota exhaustion, pre-flight failures): have the main job
+  succeed (exit 0) and set an output flag, then add a second gate job whose `if:` is
+  false when the flag is set. The gate job is what consumers watch in branch protection;
+  it shows skipped (gray) on infra conditions and success on clean reviews. See gha#104
+  for the `require-review` job implementation.
+- **`mcp__github__get_job_logs` usage.** Two calling modes — use the right one:
+  - Single job: pass `job_id` (number) + `return_content: true`. Do NOT pass `run_id` alongside. Without `return_content: true` the tool returns only a `logs_url` download link and `"Job logs are available for download"` — no actual log text.
+  - All failed jobs in a run: pass `run_id` (number) + `failed_only: true` + `return_content: true`. Do NOT pass `job_id`.
+  The tool's error message ("job_id is required when failed_only is false") is misleading when you pass `failed_only: true` with `run_id`; the issue is actually conflicting parameters.
+- **A small `tail_lines` on `get_job_logs` can silently miss the real failure** when
+  the log contains a few enormous single-line entries (e.g. a base64-encoded
+  spinner GIF/PNG being curled and embedded in a PR comment) — the tool's "line"
+  budget gets consumed by those giant lines before reaching earlier real steps, so
+  `tail_lines: 60`/`120`/`300` can return only post-failure cleanup/reviewer-restore
+  steps with no trace of the actual error. Escalate `tail_lines` (e.g. to 2000) and,
+  once the result exceeds the token cap and gets saved to a file, grep/slice that
+  file with `python3` (byte-offset search, not line-based) rather than trusting a
+  small default tail. Cross-check with `mcp__github__actions_get`
+  (`method: "get_workflow_job"` — confirmed in the live schema alongside
+  `get_workflow_run`) for the per-step `conclusion` breakdown to know which step
+  actually failed and roughly where in the log to look. (ai-config#403.)
+- **`claude-review` failing with "Skipping action due to workflow validation…
+  must have identical content to the default branch" is NOT always the
+  documented self-mod-skip or stale-`@v1`-tag drift.** Before assuming either,
+  verify: diff the PR branch's own workflow files against current `origin/main`
+  (`git diff origin/<branch> origin/main -- .github/workflows/`) — if that's
+  empty, the branch has zero drift and neither known cause applies. The actual
+  failure can be a one-off transient GitHub API error unrelated to workflow
+  content at all, e.g. a `502` "Unicorn" error page from
+  `GET /repos/.../collaborators/<actor>/permission` during the action's
+  actor-permission check — visible only by reading the full job log (see the
+  `tail_lines` note above), not from the top-level check-run message. Re-running
+  (push a commit, since `actions:write` is usually unavailable — see above)
+  clears a transient 502 with no code change needed. (ai-config#403.)
+- **`update-snapshots.yml@v1`** — regenerates testthat snapshots, commits, and pushes.
+  Supports `workflow_dispatch`, `/update-snapshots` PR comment (`pr-mode: true`), and
+  auto-update before R-CMD-check (`ref: github.head_ref`). Pass system deps via
+  `apt-packages`. Added in gha#103; bcs#226 is the reference caller.
+
+## GitHub Actions — gathering prior review context in reusable workflows
+
+When a reusable workflow needs to fetch prior `claude[bot]` review comments for
+deduplication, two API endpoints carry different content:
+
+- **`/repos/{owner}/{repo}/issues/{n}/comments`** — top-level PR comments
+  (summary/tracking verdicts). Filter to review comments with
+  `select(.user.login == "claude[bot]" and (.body | test("### Code Review")))`.
+  This pattern discriminates review summaries from `@claude` task-handler responses
+  (which also post as `claude[bot]` but use "Claude finished…" / "Claude Code is
+  working…" headers, not the "### Code Review" heading the review workflow uses).
+  The ai-config `claude-review.yml` (#275) omits this content filter — it was
+  accepted, but task-handler responses can appear in the `prior-reviews` context.
+- **`/repos/{owner}/{repo}/pulls/{n}/comments`** — inline review findings posted
+  via the review API. These are already `claude[bot]`-only (the `@claude` task
+  handler posts to `/issues/`, not `/pulls/`), so no content filter is needed.
+  Fetch the most recent ~30, map to `"=== Inline finding on {path}:{line} ===\n{body}"`.
+
+Combine both (inline first, summary last) and cap at ~12000 chars with `head -c`.
+Require `pull-requests: read` permission in the job that fetches inline comments.
+
+**`GITHUB_OUTPUT` multiline heredoc — always use a random delimiter.**
+A static delimiter like `__EOF__` collides with content in prior review comments
+(e.g. a review suggestion showing a shell heredoc). Use:
+```bash
+DELIMITER="eof_$(openssl rand -hex 8)"
+{
+  echo "my-output<<${DELIMITER}"
+  printf '%s\n' "$VALUE"
+  echo "${DELIMITER}"
+} >> "$GITHUB_OUTPUT"
+```
+The ai-config `claude-review.yml` (merged in #275) uses a static
+`__REVIEWS_EOF__` delimiter instead — accepted by design but is a known
+divergence from this best practice.
+
+**`needs.X.result != 'cancelled'` vs `== 'success'`** — when the dependency job
+is non-critical (acceptable to proceed without its output), use
+`!= 'cancelled'` in the dependent job's `if:` so genuine failures fall through
+rather than blocking. When the dependency is truly required, use `== 'success'`
+(not `!= 'failure'` — that still runs when the dep was cancelled, which usually
+means its output was never produced). (gha#133: `gather-context` failure should
+not block `claude-review`.)
+
+## GitHub Actions workflow authoring gotchas
+
+- **Local composite refs (`./`) in reusable workflows resolve relative to the HOST repo.**
+  A `workflow_call` reusable workflow living in gha cannot call `./path/to/composite` from
+  a CALLER's repo — `./` always resolves to gha itself. Workaround: pass the data the
+  composite would have consumed as a plain input (e.g. an `apt-packages` string). Learned
+  while extracting `update-snapshots` (gha#103): bcs's `install-system-deps` composite
+  couldn't be called; the package list was passed as a string input instead.
+- **The inverse gotcha: `actions/checkout` (no explicit `repository:`) inside a
+  `workflow_call` reusable workflow checks out the CALLER's repo, not the reusable
+  workflow's own.** A `run:` step that then references a script by a
+  `GITHUB_WORKSPACE`-relative path (e.g.
+  `bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/foo.sh"`) silently assumes the
+  checked-out tree is the reusable workflow's own repo — true only when a repo calls its
+  own workflow (dogfooding), false for every other consumer, which gets
+  `No such file or directory`. A step inside `claude-code-review.yml` (the CALLEE) read
+  `${{ github.workflow_ref }}` and it evaluated to
+  `d-morrison/gha/.github/workflows/claude-review.yml@refs/pull/191/merge` — the
+  CALLER's stub file (`claude-review.yml`), not the callee's own
+  (`claude-code-review.yml`) — confirmed straight from the job's log output (gha#191,
+  run 28628848306, job 84901231352, the `selfmod` step's `WORKFLOW_REF` env dump). This
+  contradicts a naive reading of GitHub's docs (which describe `workflow_ref` simply as
+  "the ref path to the [running] workflow" without spelling out the reusable-workflow
+  case), so trust the log evidence over the doc summary if they seem to disagree.
+  (d-morrison/gha#190/#191: `claude-code-review.yml`'s fail-check guard broke
+  for every consumer after its logic was extracted from inline shell into a standalone
+  script, landing right after the last known-good run.)
+  **`github.job_workflow_ref` is NOT a reliable fix for this — correcting an earlier
+  entry here that claimed otherwise.** #191's fix resolved the callee's own repo/ref via
+  `github.job_workflow_ref`, parsed it, and checked that ref out into a side directory
+  before running the script; at the time this looked "empirically verified" because the
+  CI job went green afterward. It wasn't: on real consumer runs (a genuinely fresh
+  `pull_request: reopened` event on a cross-repo consumer, well after the tag moved to
+  the fix commit) `github.job_workflow_ref` evaluated to an **empty string** at that call
+  site, crashing the step with a bare `usage: ...` error (gha#196). The earlier "green CI
+  = confirmed working" inference was wrong — the green run just hadn't exercised the
+  cross-repo path yet. A second, independent investigation (gha#194, a same-repo
+  dogfooding failure on `d-morrison/gha` reviewing its own PR) found a documented
+  explanation: per [github/community discussions #31054](https://github.com/orgs/community/discussions/31054)
+  and [github/community discussions #45342](https://github.com/orgs/community/discussions/45342),
+  `github.job_workflow_ref` is a **known no-op for a SAME-repository**
+  reusable-workflow call — it only reliably populates for a genuine cross-repo
+  `owner/repo/...@ref` call. That explains the same-repo dogfooding failure cleanly, but
+  doesn't fully explain gha#196's original *cross-repo* failure (`Lacaedemon/sparta`
+  calling `d-morrison/gha`) — so treat "populates correctly for cross-repo, no-op for
+  same-repo" as the documented claim, not as fully reconciled with every observed
+  failure; don't re-litigate it, just don't rely on the value being non-empty in ANY
+  case. **The robust fix:** don't resolve-and-checkout at all — move the logic into a
+  composite action and reference its own files via `${{ github.action_path }}`. A
+  composite action's own files are always reachable through `github.action_path`
+  regardless of how the calling reusable workflow was invoked (`workflow_call`, a
+  re-dispatched `workflow_dispatch`, automatic `pull_request`, same-repo or cross-repo),
+  with no conditional branching on `job_workflow_ref` needed. (d-morrison/gha#197,
+  `.github/actions/run-review-guard/`.)
+- **A fix that's only unit-tested against the extracted logic in isolation, never against
+  the actual `uses:` invocation, can ship a broken integration point undetected.** #191's
+  own test (`parse-workflow-ref/tests/run-tests.sh`) fed hardcoded ref strings straight to
+  the sed-parsing script and proved the parsing logic correct — but never exercised
+  whether GitHub actually populates `github.job_workflow_ref` with a non-empty value at
+  the real call site, so the regression above (gha#196) shipped and went undetected until
+  a live consumer run hit it. The fix (gha#197) closed this gap by adding a selftest step
+  that invokes the new composite action itself via a real `uses: ./.github/actions/<name>`
+  step against a canned fixture — the same category of gap `sync-with-main.md`'s "derived
+  artifacts" and "extracted copy" entries describe, but for a composite action's runtime
+  resolution specifically rather than a checked-out script's content.
+- **An unrelated open PR can independently patch the same root cause as an incidental,
+  second commit — without ever linking the issue — surfacing only as a merge conflict
+  after your own fix lands.** `post-merge`'s cascade-conflict-scan step (1.5) is what
+  catches this, not `check-history` or issue cross-referencing: neither would have
+  flagged it, since the other PR (gha#194, primarily a `gh`-subcommand-allowlist fix)
+  never mentioned or linked the job_workflow_ref issue it happened to also patch as a
+  bundled "second, unrelated fix" commit. When resolving the resulting conflict, prefer
+  the more general/robust fix over a narrower band-aid patching the same symptom (here:
+  keep the composite-action fix, drop the other PR's `if: job_workflow_ref != ''`
+  same-repo-only conditional and its now-inaccurate changelog fragment describing a fix
+  that no longer ships) — and explain the resolution and why in a PR comment, since it's
+  discarding another author's already-committed work.
+- **`secrets: inherit` is NOT needed when the reusable workflow only uses `github.token`.**
+  `github.token` auto-injects the caller's token via `permissions:` — not via `secrets:`.
+  `secrets: inherit` is only needed for named secrets (`secrets.MY_PAT`, etc.). Automated
+  reviewers (claude-bot, Copilot) routinely flag this as a false positive — rebut it by
+  confirming the callee has no `secrets:` inputs.
+- **A reusable workflow's job permissions are checked against the caller's grant at
+  graph-build time — `if:`-skipped jobs are NOT exempt.** A called workflow's job that
+  declares `permissions: contents: write` makes the WHOLE call fail with
+  `startup_failure` (instant, <1s, no jobs created) if the caller grants only
+  `contents: read` — even when that job has `if: inputs.deploy` evaluating false and
+  never runs. Consequence: you canNOT offer a "deploy: false ⇒ caller needs only read"
+  optimization in a reusable workflow whose deploy job statically requests write; the
+  caller must grant write regardless. Keep the read-only work in a separate
+  `contents: read` build job (it downscopes its own token), but the caller still grants
+  the union (write). Cost me two red CI rounds on gha#118. To debug a `startup_failure`
+  with `total_jobs: 0`: it's a graph/permission/parse error, not a runtime one — check
+  the called workflow's permission ceilings first.
+- **An OMITTED key in a caller's explicit `permissions:` block defaults to `none`, not
+  "inherit" — so the caller must enumerate EVERY permission the callee's jobs request.**
+  Same `startup_failure` failure mode as above, but the trap is silence: gha's
+  `claude-code-review.yml@v1` job requests `actions: read` (for the `github_ci` MCP
+  server), and ai-config's caller granted `contents`/`pull-requests`/`issues`/`id-token`
+  but never listed `actions` — which then defaulted to `none`, so every review run died
+  at `startup_failure` (`The nested job is requesting actions: read, but is only allowed
+  actions: none`) and no review ever posted. When wiring a caller stub for a gha reusable
+  workflow, copy the `permissions:` block from the matching `examples/<name>.yml` verbatim
+  rather than hand-picking keys, and re-diff against it when the stub drifts. (ai-config#224.)
+- **Detached HEAD on `pull_request` events.** `actions/checkout` without an explicit `ref`
+  on a PR event checks out a synthetic merge commit in detached HEAD — `git push` then
+  fails. Fix: pass `ref: ${{ github.head_ref }}` so the branch name is checked out, not the
+  merge commit SHA. Required for any reusable workflow that needs to `git push` from a PR
+  caller.
+- **`always()` + optional upstream job needs an explicit result guard.** The pattern
+  `if: ${{ always() && !cancelled() && needs.X.result == 'success' }}` keeps the job
+  running when X is *skipped* (non-PR events), but also lets it run when X *fails* —
+  causing noise from a job that depended on work that didn't land. Full guard:
+  `(needs.X.result == 'success' || needs.X.result == 'skipped')`. (Fixed in bcs#226.)
+- **Canonical GitHub privacy-safe noreply email is `<numeric-id>+<username>@users.noreply.github.com`.**
+  The bare `<username>@users.noreply.github.com` is not privacy-safe and can match a real inbox.
+  For `issue_comment` events, the actor's numeric ID is in `github.event.comment.user.id`:
+  `committer-email: ${{ github.event.comment.user.id }}+${{ github.actor }}@users.noreply.github.com`.
+- **Both bcs PR gates have a label bypass for non-user-visible changes.** `version-check`
+  (`version-check.yaml`, derived from RMI-PACTA's R-semver-check) does a pure version
+  comparison and fails if the PR branch version ≤ main's, **but** it skips when the
+  `no version increment` label is present. The changelog check (`news.yaml` ->
+  gha `check-news.yml`) skips with the `no changelog` label. Both workflows trigger on
+  `labeled`/`unlabeled`, so adding the labels re-runs and clears them with no push. For a
+  CI-only / workflow-only PR (no user-visible R-package change), apply **both** labels
+  rather than bumping `DESCRIPTION` and editing `NEWS.md`. (Verified on ucdavis/bcs#236 —
+  corrects an earlier note that claimed `version-check` had no bypass.)
+- **bcs `docs` build (altdoc) EXECUTES the rendered man-page examples.** altdoc
+  renders each `man/*.Rd` to a `man/*.qmd` and runs the example chunk, so
+  `@examplesIf FALSE` does NOT protect an example — the code still runs and a
+  data-dependent call fails the `docs` job (`object 'pt_a' not found`). For any
+  example that needs the protected/real cohort, use `\dontrun{}` (altdoc renders
+  it without evaluating), matching the existing convention (e.g.
+  `R/calc_ip_weights.R`). Runnable examples with self-contained synthetic data
+  are fine and do execute. (Hit on ucdavis/bcs#238.)
+- **`NEWS.md` section headers need a blank line before them.** A bullet that ends
+  immediately before a `## Next-section` heading (no blank line) can cause
+  `utils::news()` to misparse adjacent sections. Always leave one blank line
+  between the last bullet of a section and the next `##` heading. (bcs#275:
+  `## Internal` bullet → `## Tests` with no blank line; bot caught it.)
+- **`merge_group:` trigger — guard PR-context workflows at the job level.**
+  When adding `merge_group:` to a workflow's `on:` block so the GitHub merge
+  queue fires CI checks, any job that uses `github.event.pull_request.*`
+  context needs `if: github.event_name == 'pull_request'` at the job level —
+  otherwise the job errors on merge-group commits where that context is absent.
+  A job with a false `if:` counts as skipped (passing) for branch-protection
+  purposes. Also update matrix-selection shell conditions that branch on
+  `pull_request` to cover `merge_group` too (use release-only matrix for both).
+  Affected jobs in bcs: `version-check`, `news`, `lint-changed-files`, and the
+  `R-CMD-check` matrix selector. (bcs#275.)
+- **bcs `test-coverage` (codecov) is NOT a required check.** A coverage drop
+  leaves the PR `mergeable_state: unstable` (not `blocked`) and does not block
+  the merge — `docs`, `version-check`, the R-CMD-check matrix, lint, and
+  spellcheck are the required ones. So a PR that adds integration code only
+  exercisable against protected data (which inherently lowers coverage) can
+  still merge once the required checks are green. (Verified merging #238.)
+- **During a long review, re-bump `DESCRIPTION` after every `main` merge.**
+  `version-check` compares the PR version to *current* main; if main advances
+  (another PR bumps `0.0.0.905x`) and you merge main in, the PR's version is no
+  longer strictly greater and version-check flips to failing even though it
+  passed before. Bump again (e.g. `9057` -> `9058`). (Hit on #238 after main
+  moved to 9057.)
+- **bcs object-name lint (`.lintr.R` custom `snake_case_ACROs1` rex regex)**
+  rejected study/protocol codes like `ab507bs` (a lowercase segment with letters
+  *after* digits) until the lowercase branch was widened to
+  `some_of(lower), zero_or_more(one_of(lower, digit))`. As of #238 such
+  alphanumeric codes are valid name components; before that they failed
+  `lint-changed-files` with `object_name_linter`.
+- **Sync vignette captions with R-source axis labels after a label fix.**
+  A `plot_*()` function's y-axis label and its vignette figure caption often
+  carry the same phrase. Changing the axis label in the R source without
+  updating the caption leaves a stale inconsistency that the next review round
+  will catch. After fixing an axis label, grep the vignette:
+  `grep -r "old phrase" vignettes/` to find and update matching captions.
+  (bcs#253 round 3.)
+- **Check the column's scale before writing an axis label.**
+  A `prep_*()` column computed as `mean(...) * 100` is a 0–100 percentage;
+  the axis label must say `%`, not `"Probability of …"` (which implies 0–1).
+  Inspect the prep function's body or roxygen `@returns` to confirm the scale.
+  (bcs#253: `pct_annual` was 0–100, not 0–1 — label was wrong.)
+- **Use `geom_point() + geom_errorbar()` for data with a meaningful non-zero minimum.**
+  `geom_col()` draws bars from 0; for enrollment-age data (40–70+) this wastes
+  most of the chart area and makes ±SD intervals visually tiny. Use
+  `geom_point(size = 3) + geom_errorbar(...)` when 0 is not a meaningful
+  reference point. (bcs#253: `plot_results_baseline` switch from `geom_col`.)
+- **Use `helper-*.R` for shared testthat setup.**
+  testthat 3 auto-sources `tests/testthat/helper-*.R` before any tests run.
+  Put shared setup (e.g. `make_pt_data()`) in a `helper-*.R` rather than
+  repeating it across test files. One test file per source file is the bcs
+  convention — `test-plot_fn.R` for `R/plot_fn.R`. (bcs#253.)
+- **A push can trigger ZERO check-runs on a `pull_request`-triggered workflow — not a
+  quota skip, not an error, just total silence.** Symptom: `gh pr checks <N>` shows
+  stale/old results or "no checks reported"; `gh api repos/<o>/<r>/commits/<sha>/check-runs`
+  (the new commit's SHA) returns an **empty** `check_runs` array — confirms literally
+  nothing was dispatched for that push, distinct from a job that ran and failed/skipped.
+  `gh run list --branch <branch>` likewise shows no new run after the push timestamp.
+  This hit on an otherwise-healthy repo (sparta) mid-ARDI: a normal `git push` to an
+  open PR's branch produced no CI activity for 15+ minutes. Recovery — manually dispatch
+  every required workflow rather than waiting longer or re-pushing (a re-push doesn't
+  reliably fix it either): for any `workflow_dispatch`-enabled workflow keyed off the
+  branch, `gh workflow run <file>.yml --ref <branch>`; for a PR-number-keyed review
+  workflow (e.g. `claude-code-review.yml` with a `pr_number` input — see the
+  `workflow_dispatch` re-trigger pattern above), `gh workflow run <file>.yml -f
+  pr_number=<N>`. Poll the dispatched run's own ID (`gh run view <id> --json
+  status,conclusion`), not the (still-empty) push-event check list. If a workflow has
+  no `workflow_dispatch` trigger, that one specific check stays stuck — note it and ask
+  the user rather than silently treating the PR as green without it.
+- **`workflow_call` input `default:` must be a static literal — it cannot reference
+  `${{ ... }}` expressions.** A reusable workflow's `inputs.<name>.default` is parsed
+  before any context is available, so an input can't default straight to
+  `${{ github.event_name == 'pull_request' && ... }}` (or any other expression) to
+  mirror an existing composite/job heuristic. Use a sentinel default instead (e.g.
+  `'auto'`) and resolve the real expression where the input is consumed (a `with:`/`env:`
+  value or a step), treating `'auto'` as "apply the heuristic" while `'true'`/`'false'`
+  are explicit overrides. (gha#148: `test-coverage.yml`'s `fail-ci-if-error` input.)
+
+## markdownlint / markdownlint-cli2
+- **MD060/table-column-style is a real rule, present in `markdownlint-cli2@0.22.1`**
+  (added in a recent markdownlint version; the `@claude` reviewer's rule list is
+  outdated — it claims rules "top out at MD058", but `MD060/table-column-style` is a
+  distinct real rule).
+  Under default config it fires ~330 times on the ai-config corpus (2026-06 snapshot;
+  count grows as files are added; every table with compact pipe style).
+  Reproduction (move aside `.markdownlint-cli2.jsonc` first):
+  `npx markdownlint-cli2@0.22.1 "**/*.md" "!codex-skills/**"`. The disable in
+  `.markdownlint-cli2.jsonc` is load-bearing; do not remove it on the reviewer's say-so
+  — rebut with the reproduction command. (Hit on ai-config#267.)
+- **Introducing markdownlint to a legacy corpus — baseline strategy.** Run with all
+  defaults first (no config): collect the full violation list. Disable every failing rule
+  to achieve a green baseline with zero corpus churn. Re-enable rules incrementally after
+  targeted fix passes. This prevents flooding CI with hundreds of pre-existing violations.
+
+## Custom subagents (`.claude/agents/*.md`) — Bash is a write-access loophole
+
+The `tools:` frontmatter field (comma-separated, e.g. `tools: Bash, Read,
+Grep, Glob`) is the correct, harness-enforced way to restrict a custom
+subagent — confirmed against the real docs
+(<https://code.claude.com/docs/en/sub-agents>). But blocking `Edit` and
+`Write` does **not** make an agent read-only if it still has `Bash`: shell
+commands (`sed -i`, `echo >`, `git commit`, `renv::update()` without
+`check = TRUE`) write to the filesystem regardless of which Claude tools are
+in the allowlist. Only an agent with *no* `Bash` (e.g. `WebSearch, WebFetch,
+Read, Grep, Glob`) gets a genuine harness-enforced read-only guarantee.
+When an agent needs `Bash` for read-only shell checks (`grep`, `gh api`,
+`git status`), describe the isolation honestly as "no Edit/Write tool use;
+avoiding write-capable shell commands is instruction-level discipline" —
+don't claim an unconditional "nothing can be modified" guarantee. (Caught
+across three review rounds on ai-config#341, `hallucination-detector` and
+`dependency-auditor`.)
+
+## Office Open XML (.docx / .xlsx) — editing committed content
+- `.docx`/`.xlsx` are zip archives. To strip or edit content (e.g. remove a sensitive
+  link from a committed Word doc): `unzip` the file, edit `word/document.xml` for body
+  text, and edit `word/_rels/document.xml.rels` for hyperlink **targets** — a clickable
+  URL's address lives in the `.rels` `Target`, not just the visible `<w:t>` text, so
+  delete both the `<w:hyperlink r:id="rIdN">...</w:hyperlink>` element and its matching
+  `<Relationship Id="rIdN" ... Target="...">` to remove link and address.
+- Re-zip from the extracted dir: `zip -r -X out.docx '[Content_Types].xml' _rels docProps word`
+  (plus `customXml` if present). Verify with `unzip -t out.docx` and re-extract + grep to
+  confirm the removed strings are gone before committing. (Done on ucdavis/bcs#237 to strip
+  an internal SharePoint URL and a server reference from a to-do doc.)
+
+## claude-code-action: tag mode vs agent mode and git write tools
+
+- **Tag mode (`track_progress: true`) hardcodes git write tools into `ALLOWED_TOOLS`
+  regardless of `--disallowedTools`.** The action's TypeScript sets the `ALLOWED_TOOLS`
+  env var at runtime, injecting `Bash(git add:*)`, `Bash(git commit:*)`,
+  `Bash(git rm:*)`, and `git-push.sh`. The `--disallowedTools` CLI flag cannot
+  override an env var set by the same process. Evidence: `d-morrison/gha` PR #134,
+  where a supposedly read-only `claude-code-review` run pushed commit `02af72b` to
+  UCD-SERG/serodynamics PR #175. Upstream fix tracked in
+  `anthropics/claude-code-action#1415` (draft PR #1433).
+- **Agent mode (`track_progress: false`) builds `ALLOWED_TOOLS` solely from
+  `claude_args` — no git write tools are injected.** This is the safe default for
+  a read-only reviewer. Trade-off: no live tracking comment, no inline-comment tool
+  (the inline-comment tool is only initialized in tag mode per `claude-code-action#635`);
+  reviews post as top-level PR comments instead.
+- **`inputs.dot-notation` vs `inputs['bracket-notation']` in GitHub Actions `if:`.**
+  Both work, but use dot notation (`inputs.track-progress`) for consistency — bracket
+  notation looks non-idiomatic next to the dot notation used everywhere else in the
+  same workflow. Caught in gha#134 review.
+- **A `claude-code-review`-style job that fails with "no verdict written" but `is_error: false` and real cost/turns can be root-caused by downloading the uploaded execution-transcript artifact, not just reading the summary `result` object.**
+  The `Run Claude Code Review` step's own JSON output only shows the final SDK
+  summary (`is_error`, `num_turns`, `total_cost_usd`, `permission_denials_count`)
+  — enough to confirm a stub occurred, not why. The workflow separately uploads
+  the full turn-by-turn transcript as a `claude-review-execution-<run>-<attempt>.zip`
+  artifact (the name is defined by `d-morrison/gha`'s reusable workflow, not a
+  Claude Code convention — a future rename there invalidates this; confirm via
+  `gh api repos/<owner>/<repo>/actions/runs/<run_id>/artifacts` rather than
+  assuming the name, then `curl -H "Authorization: token $(gh auth token)"
+  .../artifacts/<id>/zip` to fetch). It's a single pretty-printed JSON array of
+  Claude Code SDK message objects, not NDJSON — each element has a top-level
+  `type` (`"system"`/`"assistant"`/`"user"`/`"result"`) and, for `"assistant"`
+  elements, a `message.content` array of blocks (`{"type":"tool_use", "name":
+  ..., ...}`, `{"type":"text", "text": ...}`, etc.) — parse with
+  `jq '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name'`
+  for a tool-use histogram, or pull `is_error==true` tool_results for the actual
+  denial messages. This is how a "stub review" traced back to the model
+  fanning its own review out across background `Agent` calls and ending its turn
+  on "waiting for background agents" — a mechanism the summary object alone
+  can't show (`d-morrison/gha#185`, `Lacaedemon/sparta` PR #615, 2026-07-03).
+- **A `claude-code-review` false-positive "stub" is also possible on a review that actually completed and posted a real, correctly-formatted verdict — distinct from the gha#185 background-agent-fanout pattern above.** `check-review-execution.sh`'s stub-detector scans only `type=="text"` content blocks for a line matching `^[[:space:]>*_#-]*verdict\b` (grep, anchored to line-start) — it does not look inside `tool_use` block arguments. If the agent's final free-text message merely *narrates* what it posted ("Posted the inline finding and a summary comment ending in `### Verdict: Ready for merge`.") rather than repeating the verdict as its own standalone line, the word "verdict" only appears mid-sentence, so the anchored regex correctly does *not* match it — even though the actual GitHub comment (posted via a tool call earlier in the same transcript) has a perfectly-formed `### Verdict` heading. This false stub classification then triggers an unnecessary retry, and if THAT retry genuinely stubs (e.g. the gha#185 pattern), the overall check reports `failure` on a PR that already had a valid, complete review. Diagnose by downloading both attempts' execution-transcript artifacts (see the note above) and checking attempt 1's own posted PR comment directly, not just its final "result" text. Filed with full evidence as `d-morrison/gha#218` (`Lacaedemon/sparta` PR #615, 2026-07-03) rather than reopening #185, since the mechanism (a scanning gap, not a fanout-and-never-resume) is distinct.
+- **`gh pr checks <N>` can return a momentarily-stale check entry right after a
+  state-changing trigger (close/reopen, a push, `gh run rerun`).** Querying
+  immediately after triggering can show the check that was current a few
+  seconds ago — including a red/failed one from a run that already finished
+  hours earlier — rather than the freshly-queued run. Don't trust a `gh pr
+  checks` read taken within seconds of triggering; instead look up the actual
+  newest run for the branch and watch that specific run id:
+  `gh run list --workflow "<name>" --json databaseId,createdAt,headBranch --jq
+  'map(select(.headBranch=="<branch>")) | sort_by(.createdAt) | last | .databaseId'`,
+  then poll `gh run view <id> --json status,conclusion` directly. A poll loop
+  built on `gh pr checks`'s live state must also treat every non-`"completed"`
+  status (`queued`, `in_progress`, and any value not explicitly enumerated) as
+  still-running rather than allow-listing only `PENDING`/`IN_PROGRESS` —
+  `QUEUED` slipping through an allow-list caused a premature "settled" false
+  positive in one session (`Lacaedemon/sparta`, 2026-07-03).
+
+## Changelog section ordering in d-morrison/gha
+
+- **The established order in `CHANGELOG.md` is: Added → Changed → Fixed → Security.**
+  Match this when adding new `## [Unreleased]` entries or when resolving merge
+  conflicts in the changelog. Caught in gha#134 review (Fixed appeared before Changed).
+
+## ScheduleWakeup is scoped to `/loop` dynamic mode --- use `send_later` for ad-hoc waits
+
+`ScheduleWakeup` requires a `prompt` param and is meant to re-arm a `/loop`
+session's next firing (its own docs say to pass the same `/loop` input back,
+or the `<<autonomous-loop-dynamic>>` sentinel). Calling it outside a `/loop`
+context --- e.g. to arm a plain "check back on this PR in 5 minutes" wait ---
+throws `InputValidationError: prompt is missing`, since there's no `/loop`
+input to hand it. Use `mcp__Claude_Code_Remote__send_later` (or the harness's
+plain wakeup tool, if present) for a one-off self check-in instead; reserve
+`ScheduleWakeup` for actual `/loop` iterations. See `send_later` mid-session
+availability above for the fallback (`CronCreate`) if it disappears.
+(ai-config#455/gha#216, 2026-07-03.)
+
+## Evergreen-conditional citation phrasing can still regress in adjacent prose
+
+`shared/workflow/challenge-ambiguous-terminology.md`'s "cross-repo citations
+have a merge-order trap" note prescribes evergreen-conditional phrasing
+("proposed in `<repo>#<PR>` --- once merged, the fragment lives at `<path>`
+there") specifically so a citation never needs a follow-up edit. That
+phrasing held up correctly once applied --- but while writing the *PR
+description* for the companion PR, a draft sentence ("once this merges, that
+citation should be tightened to the standard present-tense form") reintroduced
+the same future-edit-fragility anti-pattern the citation fix had just avoided,
+one level up. Caught before pushing by re-reading against the fragment's own
+"never needs editing" design intent, not by a reviewer. When writing about an
+evergreen-conditional citation elsewhere (a PR description, a commit message),
+don't promise a future tightening --- the whole point of that phrasing is that
+none is needed. (ai-config#455, 2026-07-03.)
+
+## Windows/Git Bash: `core.fileMode=false` silently blocks executable-bit fixes
+
+On a Windows checkout with `core.fileMode=false` (common, since NTFS has no
+native Unix execute bit), a plain `chmod +x <file>` followed by `git add`
+does **not** register a mode change with git at all — `git diff --stat` shows
+nothing, and the file stays `100644` in the index/next commit, even though the
+filesystem-level chmod itself succeeded. Fix by writing directly to the index
+instead of relying on the stat-based diff: `git update-index --chmod=+x
+<file>`, then verify with `git ls-files -s <file>` (should read `100755`) or
+`git diff --cached` (shows `old mode 100644` / `new mode 100755` headers).
+
+**Why this matters beyond the mechanic:** a missing executable bit on a script
+a CI workflow invokes *directly* (not via `bash script.sh`) fails at runtime
+with `Permission denied` / exit 126 — a failure mode invisible to a normal
+content-diff code review, since reviewing a diff shows added/changed lines,
+not file-mode metadata. This let a broken script merge to `main` via a
+reviewed, "Ready for merge" PR (`d-morrison/gha`-reviewed
+`Lacaedemon/sparta` PR #634, 2026-07-03) and then break the `demo` CI job on
+every *other* open PR that subsequently merged `main` in. When a PR adds a new
+executable script (a `tools/ci/*.sh` invoked directly, not sourced), verify
+its committed mode explicitly (`git ls-tree HEAD -- <path>`, compare against
+an existing sibling script) rather than trusting the code review alone to
+catch it.
+
+## Two worktrees on the same branch name silently move a shared ref, not a conflict error
+
+Git *should* refuse `git checkout -B <branch>` (or checking that branch out)
+when another worktree already has it checked out — but in practice, creating
+a second worktree for a branch name a leftover worktree from earlier in the
+same session still holds (e.g. via `git worktree add <path> origin/<branch>`
+then `git checkout -B <branch>` inside it) can succeed without error and
+silently repoint the shared branch ref out from under the first worktree.
+That worktree's `git status` then shows a wall of spurious modified/deleted
+files — not real data loss, just its checked-out files diffing against the
+ref's new (moved) tip while its own index/working tree still reflect the old
+one. Confirm via that worktree's own reflog (`git -C <path> reflog show
+HEAD`) that its real last commit is still there and reachable — check with
+`git merge-base --is-ancestor <that-commit> <new-ref-tip>` — before concluding
+anything, but treat any push made under this collision as suspect until
+verified, since it may have been built from a different, wrong base than
+intended. **Prevention:** always `git worktree list | grep <branch>` before
+creating a new worktree for a PR branch, especially one worked earlier in the
+same session (a `wave-N-*`-style dispatch worktree is exactly the kind that
+lingers). If one already exists, reuse it (`git fetch` +
+`git reset --hard origin/<branch>`) instead of adding a second one on the same
+name — or use a distinct local branch name if reuse isn't feasible.
+(`Lacaedemon/sparta` PR #626, 2026-07-03 — recovered with no data loss, but
+required a `--force-with-lease` push to fix and explicit user sign-off given
+the ref-mutation risk.)
+
+**On Windows, `~/.claude`'s real-copy consumer directories can drift far more than a quick glance suggests — check the whole corpus, not just `CLAUDE.md`.** CLAUDE.md's own "Keep ai-config and repo checkouts fresh" step 2 already says a `git pull` on the ai-config checkout doesn't propagate to `~/.claude/{skills,shared,commands,memories}` on Windows (real copies, not symlinks). In practice the drift found there can be large even in an actively-used setup: one check found `CLAUDE.md` itself missing ~10 sections, `skills/` with 56 of ~90 files differing (plus 6 new skills never copied over), `shared/` with 5 differing/missing fragments, and `memories/` with 3 of 4 files differing — accumulated silently because the per-session refresh habit checks `CLAUDE.md` (loaded every turn, so staleness there is visible) but not the other three directories (loaded on-demand, so staleness there is invisible until a skill/memory is actually needed and reads wrong). Before trusting a sync is complete, `diff -rq` (or `cp -r` unconditionally, after checking for genuine un-upstreamed local edits per the existing before-overwriting caution) all four directories, not just the one that happens to render in every prompt. (`Lacaedemon/sparta`, 2026-07-04.)

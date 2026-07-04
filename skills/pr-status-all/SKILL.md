@@ -41,7 +41,7 @@ them into one "OK".
 
 ```bash
 gh pr list --state open --json number,title,headRefName,isDraft \
-  --jq '.[] | "\(.number)\t\(.headRefName)\t\(.isDraft)\t\(.title)"'
+  --jq '.[] | "\(.number)\t\(.headRefName)\t\(.isDraft)\t\(.title)"'   # LIST_PRS
 ```
 
 This is fast and sequential — a single call to get the work units.
@@ -67,7 +67,9 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 > return a single structured row. Do not push, merge, or modify anything.
 >
 > 1. **Latest review verdict** — read the *most recent* review comment and parse
->    it for findings. Run exactly:
+>    it for findings. Run exactly (`READ_PR_COMMENTS` — abstract operation
+>    token; resolve to your model's tool via
+>    [`tool-mappings.md`](../../tool-mappings.md)):
 >    ```bash
 >    gh pr view <N> --json comments \
 >      --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'
@@ -80,9 +82,10 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    The bar for `clean`: "Looks good" / "no findings" / "approved" with zero
 >    follow-on bullets under any heading. A rebuttal the reviewer still disputes
 >    is **open**, not clean.
-> 2. **CI state** — `gh pr checks <N>`; name any failing/pending check, don't
->    just say "red".
-> 3. **Unresolved threads** — count open inline review threads. Run exactly:
+> 2. **CI state** — `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
+>    check, don't just say "red".
+> 3. **Unresolved threads** — count open inline review threads
+>    (`READ_PR_REVIEW_COMMENTS`). Run exactly:
 >    ```bash
 >    gh api graphql -f query='query {
 >      repository(owner:"<owner>", name:"<repo>") {
@@ -131,7 +134,7 @@ each PR from step 1. The output is the same; it's just slower.
 
 ```bash
 gh pr view <N> --json comments \
-  --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'
+  --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
 ```
 
 `startswith("claude")` matches the @claude bot across both API modes

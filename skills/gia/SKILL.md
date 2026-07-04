@@ -24,6 +24,13 @@ PRs-first, then issues: clearing the existing review backlog first means new
 issue work lands on top of an already-clean queue (and may even unblock or
 close issues that the open PRs address).
 
+**The sweep runs to the end of the queue without pausing for merges.** Merging
+is human-gated — you don't self-merge — but that gates only the merge, not the
+run. A PR reaching clean-but-unmerged is not a stopping point in either phase;
+move to the next item, and when that item isn't naturally independent of a
+completed-but-unmerged PR, **stack** it on that PR's branch instead of waiting
+for a merge. See [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md).
+
 ## When this fires
 
 - "gia", "ardia+gii", "adria+gii", "gii+ardia", "gii+adria"
@@ -36,6 +43,12 @@ close issues that the open PRs address).
 
 Detect the forge (GitHub `gh` / GitLab `glab`) from `git remote get-url
 origin`. Note the default branch (`main` / `master`).
+
+**Confirm which repo first when several are in reach.** GIA (like `ardia` and
+`gii`) clears *one* repo's queue, but a session may start in a directory holding
+several repos (e.g. a web session scoped to multiple repos). If the working dir
+isn't itself a single repo, or more than one repo is in scope, ask which repo's
+queue to clear before surveying --- don't assume the first one found.
 
 ### Phase 1 — ARDIA (existing open PRs/MRs)
 
@@ -101,9 +114,22 @@ stacks on it.
   bare "clean up the PRs"), stop after Phase 1 and check in before starting
   Phase 2.
 - Honor GII's 5-issue checkpoint in Phase 2 (ask before continuing).
-- Stop if a PR or issue is blocked and surface it rather than spinning.
+- If a PR or issue is blocked or ambiguous, **bypass** it — surface it and move
+  on to the next item rather than halting the sweep. Stop only when every
+  remaining item depends on that blocked one, so no independent work is left
+  (see [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md)).
 - If Phase 1's reviewer keeps emitting new nits each round on the same PR
   (asymptotic noise after 3–4 rounds), surface it and ask whether to continue.
+
+## Orchestration
+
+Both GIA phases push commits that trigger shared review runners, so neither fans
+out freely --- the same constraint that makes `ardia` serial and caps `gip`. You
+may orchestrate the read-only parts (survey all open PRs' reviews, or triage the
+issue backlog) in parallel, but route the actual implement --- push --- review
+work through the serial or capped paths: `ardia` for the PR phase, `gip` for
+provably-independent issues. Consult `shared/workflow/when-to-orchestrate.md` (the
+shared-runner exception).
 
 ## Relationship to other skills
 

@@ -63,7 +63,7 @@ often pre-filed by an earlier session or the review bot and may already be
 misses:
 
 ```sh
-gh issue list --state all --search "<keywords>" --json number,title,state
+gh issue list --state all --search "<keywords>" --json number,title,state   # SEARCH_ISSUES
 # GitLab: glab issue list --all --search "<keywords>"   # --all (-A) = open + closed
 ```
 
@@ -110,7 +110,7 @@ gh issue create \
   --body "$(cat <<'EOF'
 ...
 EOF
-)"
+)"   # CREATE_ISSUE
 ```
 
 - Defaults to the current repo (whatever `gh` resolves from remotes /
