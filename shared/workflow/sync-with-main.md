@@ -2,6 +2,13 @@ Whenever `main` has moved ahead of a PR branch you're working on, **merge
 `main` into the PR branch** before the next push or review trigger. Don't wait
 for a conflict to surface or for someone to ask.
 
+This fragment covers the single-branch-vs-`main` case. When orchestrating a
+multi-agent `ultracode` session, merges can happen at more points than that —
+see [`ultracode-merge-conflicts`](ultracode-merge-conflicts.md) for the
+broader check (worktree-isolated agent branches, concurrent `parallel()`
+results) and the note on GitHub's mergeable indicator not evaluating custom
+`.gitattributes` merge drivers.
+
 **Always check for merge conflicts with main before pushing results to remote.**
 Run this before every push, not just before triggering a review:
 

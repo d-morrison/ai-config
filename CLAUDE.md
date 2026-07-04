@@ -281,6 +281,10 @@ The same opt-in gate still applies: propose with a cost estimate and wait unless
 <!-- Shared with the lab manual; edit shared/workflow/when-to-orchestrate.md, not here. -->
 @shared/workflow/when-to-orchestrate.md
 
+## Check for merge conflicts on every merge in an ultracode session
+
+@shared/workflow/ultracode-merge-conflicts.md
+
 ## Coding style: avoid nesting; follow the lab manual
 
 Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding and collaboration conventions.

@@ -92,3 +92,12 @@ attribute) and let a real conflict surface.
   `_extensions/` directories in consumer repos are natural
   `linguist-vendored` candidates; check whether the target repo already
   attributes them before adding a duplicate line.
+- **GitHub's own mergeable/conflict indicator doesn't evaluate a merge
+  driver configured here.** The PR page's conflict banner and the
+  `mergeable_state` API field reflect GitHub's own merge check, which does
+  not invoke `merge=<driver>` declarations. A merge GitHub reports as
+  conflicting can auto-resolve cleanly under a real local `git merge` that
+  honors `.gitattributes` (or the reverse). See
+  [`ultracode-merge-conflicts`](../../shared/workflow/ultracode-merge-conflicts.md)
+  for when this matters enough to verify with a real local merge instead of
+  trusting the platform's flag.
