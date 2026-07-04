@@ -80,3 +80,11 @@ Compare against `inst/WORDLIST`. Acronyms and possessives are the usual misses.
 
 This pattern applies to any R package using the `spelling` package's GitHub
 Actions workflow.
+
+This skill only spellchecks text that's already there. For the broader
+R-package release workflow it's one narrow slice of, see
+[`r-pkg-check`](../r-pkg-check/SKILL.md) (a full `devtools::check()`/
+`R CMD check` sweep), [`r-pkg-news`](../r-pkg-news/SKILL.md) (drafting a new
+NEWS.md entry, as opposed to spellchecking one already written), and
+[`r-pkg-cran-checklist`](../r-pkg-cran-checklist/SKILL.md) (the full CRAN
+submission checklist).
