@@ -1,6 +1,6 @@
 ---
 name: fix-forward-references
-description: "Detect and fix forward references in prose — a cross-reference or phrase (\"see below\", \"as discussed below\", \"in the following section\", \"we'll cover this later\") that points a reader ahead to content they haven't reached yet. Greps for the self-declaring signal of a reference cue paired with a directional word (below/later/following/subsequently), confirms each hit isn't an idiom or already-backward reference, then rearranges the document (moves the referenced content earlier) or rewords the reference to fix it. Use when asked to 'fix forward references', 'find forward references', 'check for forward references', 'remove forward references', 'fix-forward-references', 'ffr', 'this points ahead to something not written yet', or 'rearrange this so nothing references content below it'. Also runs proactively as part of any PR/MR review that touches narrative prose, alongside `definition-crossrefs.md`'s narrower formal-crossref-div check."
+description: "Detect and fix forward references in prose — a cross-reference or phrase (\"see below\", \"as discussed below\", \"in the following section\", \"we'll cover this later\") that points a reader ahead to content they haven't reached yet. Greps for the primary signal of a directional word (below/later/following/subsequently/further down/next/afterward), confirms each hit isn't an idiom or already-backward reference, then rearranges the document (moves the referenced content earlier) or rewords the reference to fix it. Use when asked to 'fix forward references', 'find forward references', 'check for forward references', 'remove forward references', 'fix-forward-references', 'ffr', 'this points ahead to something not written yet', or 'rearrange this so nothing references content below it'. Also runs proactively as part of any PR/MR review that touches narrative prose, alongside `definition-crossrefs.md`'s narrower formal-crossref-div check."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -38,9 +38,10 @@ read it before running this skill; the steps below are the short version.
 1. **Identify the target.** A file, a PR/MR diff, or pasted prose.
 2. **Grep for candidates** using the heuristic in
    [`forward-references.md`](../../shared/writing/forward-references.md#the-detection-heuristic) ---
-   a cross-reference or named-content mention (`@sec-x`, "Section 3", "the
-   table", "Figure 2") paired with a directional word (below, later,
-   following, subsequently, further down).
+   start with the bare directional word (below, later, following,
+   subsequently, further down, next, afterward); use the narrower
+   reference-cue-paired pattern as a higher-confidence secondary filter
+   when the primary grep returns too many idiom hits.
 3. **Confirm each hit.** Read the sentence: is it a genuine reference (not
    an idiom like "below average"), and does the target really come after
    the mention (not already earlier, just mis-worded)? Drop anything that
