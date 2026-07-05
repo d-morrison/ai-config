@@ -406,16 +406,13 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
-## Math derivations: include every step; flag gaps in review
+## Writing style: math derivations — include every step; flag gaps in review
 
 <!-- Shared with the lab manual; edit shared/writing/math-derivation-steps.md, not here. -->
 @shared/writing/math-derivation-steps.md
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches
 math, apply this in addition to the fact-check above.
-The fact-check verifies that stated steps are correct;
-this rule separately asks whether any step between two consecutive lines
-was left out entirely.
 
 ## Hyperlink technical terms and results; no forward references
 
