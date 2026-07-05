@@ -35,7 +35,10 @@ claims and reasoning that are resolved but wrong.
   that X implies Y, a causal claim, a justification for a design choice).
   Flag steps that don't follow, unstated assumptions load-bearing enough that
   the conclusion breaks without them, and conclusions the stated reasoning
-  doesn't actually support.
+  doesn't actually support. This checks whether each *stated* step is valid ---
+  for the complementary check (a step missing entirely, where the derivation
+  jumps from one line to a non-adjacent one), see
+  [`math-derivation-steps.md`](math-derivation-steps.md).
 - **Rendered/computed artifacts.** When the document references a computed
   value, a figure, or a numeric result (a fitted coefficient, a plotted
   curve, a table entry), don't take the source prose's word for it --- check it
