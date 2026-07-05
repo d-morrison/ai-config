@@ -1139,6 +1139,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   harness tool (AskUserQuestion, ExitPlanMode, …), so don't abandon the
   interactive flow or fall back to a workaround on the first failure. (A genuine
   denial reads differently — the user declining the specific action.)
+  **But don't retry indefinitely if it keeps failing.** In a different web
+  session, the same error hit AskUserQuestion twice in a row with no successful
+  retry in between. Rather than looping a third time, asking the same question
+  in plain chat text worked fine and got an answer. One or two retries is
+  reasonable; past that, fall back to a plain-text question rather than
+  blocking the turn on a tool that isn't recovering. (ai-config#493 fix-up
+  session, 2026-07-05.)
 
 ## Bash tool runs under zsh — avoid bash-isms & reserved variable names
 - The Bash tool's shell is zsh-initialized, where some names are **read-only
