@@ -14,20 +14,32 @@ definition), in any prose --- READMEs, docs, papers, PR descriptions.
 
 ## The detection heuristic
 
-The cheapest, most reliable signal: **a cross-reference or named-content
-mention paired with a directional word that means "later"** --- below,
-later, following, subsequently, further down, next (as in "the next
-section"), afterward. The author is self-declaring the direction, so a
-grep for the word near a reference cue finds most real instances without
-having to read the whole document first:
+The primary signal is the directional word itself --- below, later,
+following, subsequently, further down, next (as in "the next section"),
+afterward. Grep for these first; this is what actually catches the plain
+examples above ("see below", "as discussed below", "we'll cover this
+later", "in the following section") --- none of them name a section,
+figure, or table explicitly, so a pattern that *requires* a paired
+reference cue would miss all four:
 
 ```bash
-rg -niE '(@[a-z0-9_-]+|section|figure|table|chapter|the following|as (we|you)('"'"'ll| will) see)[^.]{0,60}\b(below|later|subsequently|further down)\b' <file>
-rg -niE '\b(below|later|subsequently|further down)\b[^.]{0,60}(@[a-z0-9_-]+|section|figure|table|chapter)' <file>
+rg -niE '\b(below|later|following|subsequently|further down|next|afterward)\b' <file>
 ```
 
-Treat every hit as a **candidate**, not a confirmed finding --- see the false
-positives below.
+A **stronger, higher-confidence subset**: a cross-reference or
+named-content mention (`@sec-x`, "section", "figure", "table", "chapter")
+paired with one of these words nearby is a self-declared forward
+reference --- the author is explicitly telling the reader the target comes
+later. Use this narrower pattern when the primary grep returns too many
+idiom hits to triage one by one:
+
+```bash
+rg -niE '(@[a-z0-9_-]+|section|figure|table|chapter)[^.]{0,60}\b(below|later|following|subsequently|further down|next|afterward)\b' <file>
+rg -niE '\b(below|later|following|subsequently|further down|next|afterward)\b[^.]{0,60}(@[a-z0-9_-]+|section|figure|table|chapter)' <file>
+```
+
+Treat every hit --- from either pattern --- as a **candidate**, not a
+confirmed finding --- see the false positives below.
 
 ## Confirming a hit
 

@@ -425,7 +425,7 @@ The same problem shows up more broadly as plain-text signposting — "as discuss
 
 @shared/writing/forward-references.md
 
-Unlike the fragment above, this one has a dedicated actionable skill: the `fix-forward-references` skill (alias `ffr`) detects these with a grep-for-directional-word heuristic and rearranges (or rewords) the prose to fix them.
+Unlike `definition-crossrefs.md` above, `forward-references.md` has a dedicated actionable skill: the `fix-forward-references` skill (alias `ffr`) detects these with a grep-for-directional-word heuristic and rearranges (or rewords) the prose to fix them.
 Run it — or apply its check inline — wherever `ard`/`ardi` reviews a prose diff, alongside the other prose-review rules in this file.
 
 ## Fact-check code logic and math in review
