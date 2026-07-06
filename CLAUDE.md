@@ -418,6 +418,16 @@ When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose
 
 Applies wherever `code-review`/`ard`/`ardi` already reviews a prose diff, alongside the fact-check and ambiguous-terminology checks above.
 
+## Remove forward-pointing phrases from prose, not just crossref divs
+
+The section above covers formal Quarto crossref-div ordering for term/result definitions specifically.
+The same problem shows up more broadly as plain-text signposting — "as discussed below", "in the following section", "we'll cover this later" — pointing at content the reader hasn't reached yet, in any prose (not just documents with crossref divs).
+
+@shared/writing/forward-references.md
+
+Unlike `definition-crossrefs.md` above, `forward-references.md` has a dedicated actionable skill: the `fix-forward-references` skill (alias `ffr`) detects these with a grep-for-directional-word heuristic and rearranges (or rewords) the prose to fix them.
+Run it — or apply its check inline — wherever `ard`/`ardi` reviews a prose diff, alongside the other prose-review rules in this file.
+
 ## Fact-check code logic and math in review
 
 <!-- Not yet shared with the lab manual; edit shared/coding/fact-check-code-logic.md, not here. -->
