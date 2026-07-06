@@ -12,7 +12,7 @@ allowed-tools:
 
 Claude Code auto-compacts long conversations on its own once the context
 window fills up (see [What survives
-compaction](https://code.claude.com/docs/en/context-window.md#what-survives-compaction)).
+compaction](https://code.claude.com/docs/en/context-window#what-survives-compaction)).
 The automatic pass guesses what to keep. This skill runs **before** that
 happens so a higher-fidelity, structured distillation — one the agent
 actually controls — is what carries forward, using two mechanisms Claude
@@ -81,12 +81,14 @@ relevant one past the 200-line/25KB cutoff.
 ### 2. Trigger a focused compact yourself, rather than waiting
 
 Once the distillation is written, you can additionally run `/compact focus
-on <what to keep>` right away instead of waiting for the automatic pass —
-per the docs, "the summary keeps what you choose instead of what the
-automatic pass guesses is important." This is optional (step 1 alone
-already protects the distillation), but worth doing when you know
-compaction is imminent and want the *conversation summary itself* — not
-just `MEMORY.md` — to reflect a deliberate choice.
+on <what to keep>` right away instead of waiting for the automatic pass.
+Per [context-window.md's "When your context fills up"
+section](https://code.claude.com/docs/en/context-window#when-your-context-fills-up):
+"The summary keeps what you choose instead of what the automatic pass
+guesses is important." This is optional (step 1 alone already protects the
+distillation), but worth doing when you know compaction is imminent and
+want the *conversation summary itself* — not just `MEMORY.md` — to reflect
+a deliberate choice.
 
 ### 3. Confirm briefly
 
