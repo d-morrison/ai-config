@@ -66,6 +66,8 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`record-learnings`](skills/record-learnings/SKILL.md) | | Structured post-mortem: extract lessons from a completed task |
 | [`consolidate-memory`](skills/consolidate-memory/SKILL.md) | | Merge or deduplicate memory files that have drifted |
 | [`skill-audit`](skills/skill-audit/SKILL.md) | | Report which skills actually fire (and how often) vs. dead weight, and recommend pruning candidates |
+| [`learn`](skills/learn/SKILL.md) | | Stage a candidate learning without yet deciding if it's durable enough to commit |
+| [`promote-memory`](skills/promote-memory/SKILL.md) | | Review staged learnings and promote the durable ones into committed memory |
 
 ### Writing and style
 
@@ -107,4 +109,4 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 ## Full skill list
 
-All 154+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 157+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.

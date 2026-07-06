@@ -156,6 +156,15 @@ at this checkpoint. `agent-builder` is the sibling construction step for the
 other checklist item above — a recurring fan-out worker persona rather than a
 new user-invocable skill.
 
+`learn`/`promote-memory` are a staged alternative for the uncertain case:
+`record-learnings` and this skill both write directly to committed memory
+the moment something looks worth remembering, which is right when you're
+confident. When you're not — a candidate whose generality or evidence isn't
+solid yet — `learn` stages it instead, and a `promote-memory` pass (which a
+`ums` run can fold in, or run standalone) reviews staged candidates before
+they land in committed memory. Neither replaces the direct-write path; they
+add a review gate for the cases that need one.
+
 ## Anti-patterns
 
 - ❌ Saying "I'll remember that" without actually writing it down
