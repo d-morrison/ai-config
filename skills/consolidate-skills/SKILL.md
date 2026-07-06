@@ -188,6 +188,9 @@ git push -u origin HEAD && gh pr create --fill
   other but stay separate, cross-link instead of merging.
 - **`tidy` / `simplify`** — the same "collapse near-duplicates over proliferating
   them" instinct, applied to code rather than the skill corpus.
+- **`decompose-skill`** — the mirror-image direction: this skill merges several
+  skills into one; `decompose-skill` splits one overly-broad skill into a
+  canonical skill plus extracted shared fragments or narrower siblings.
 
 ## Anti-patterns
 
