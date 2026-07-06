@@ -240,7 +240,7 @@ local-only. Commit via a **branch + PR** (not direct to main), request
 
 ```bash
 cd "$(git -C ~/.claude/skills/skill-builder rev-parse --show-toplevel)"   # ai-config root — NOTE: the MAIN checkout, NOT your worktree (see caveat above)
-git fetch origin main && git checkout -b add-<name>-skill origin/main
+git fetch origin main && git checkout -b add-<name>-skill origin/main   # FETCH, CREATE_BRANCH
 # write skills/<name>/SKILL.md (+ alias dir, + preferences/CLAUDE.md if it's a rule)
 python3 scripts/sync-codex-skill-wrappers.py   # regenerate codex-skills/ wrappers — REQUIRED for every new/renamed skill
 # The `validate` CI job runs these four — run all four locally before pushing:
@@ -256,8 +256,8 @@ git add skills/<name>/SKILL.md codex-skills/<name> \
                                                             # the alias dir if you made
                                                             # one) — NOT `-A`, which
                                                             # sweeps in unrelated edits
-git commit -m "skills: add <name> — <summary>"
-git push -u origin HEAD && gh pr create --fill
+git commit -m "skills: add <name> — <summary>"   # COMMIT
+git push -u origin HEAD && gh pr create --fill   # PUSH, CREATE_PR
 ```
 
 **Regenerate the Codex wrappers — every new or renamed skill needs them.**
@@ -279,7 +279,7 @@ lines around tables (MD058).
 
 Then, as their own explicit steps (don't leave them buried in a comment):
 
-1. **Request the reviewer:** `gh pr edit --add-reviewer d-morrison` (see
+1. **Request the reviewer:** `gh pr edit --add-reviewer d-morrison` (`EDIT_PR`; see
    `request-pr-review`).
 2. **Drive to clean:** run the `ardi` skill on the new PR until the verdict has
    zero findings.

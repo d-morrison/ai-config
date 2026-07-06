@@ -1,17 +1,17 @@
 ---
-name: "claude-agent-workflow"
-description: "Codex wrapper for the ai-config Claude skill `claude-agent-workflow`. Add or modify the `anthropics/claude-code-action` agent workflow (`.github/workflows/claude.yml`). Preserves the load-bearing patterns \u2014 bot-actor `if:` filter, per-PR concurrency, EPI202_TOKEN/submodules access, R+Quarto+renv setup, stats-allowlist build, late-comment polling prompt, and the post-Claude review re-dispatch. Use when Codex is asked to use `claude-agent-workflow`, `/claude-agent-workflow`, or the corresponding ai-config/Claude skill workflow."
+name: "permission-check"
+description: "Codex wrapper for the ai-config Claude skill `permission-check`. Read-only self-diagnostic for 'why is Claude Code prompting me for this' (or 'why isn't it'). Walks the permission config layers in resolution order (managed policy, CLI args, project-local, project-shared, user) and reports which layer's rule actually wins for a given tool/action pattern. Never edits config \u2014 see update-config for that. Use when asked to 'permission check', 'why does this keep prompting', 'why is this auto-allowed', 'check my permissions', 'diagnose permission prompt', or 'what rule controls this tool call'. Use when Codex is asked to use `permission-check`, `/permission-check`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# claude-agent-workflow (Codex wrapper)
+# permission-check (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/claude-agent-workflow/SKILL.md](../../skills/claude-agent-workflow/SKILL.md)
+Source: [skills/permission-check/SKILL.md](../../skills/permission-check/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/claude-agent-workflow/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/claude-agent-workflow`, resolve the symlink target for this wrapper directory first, then read `../../skills/claude-agent-workflow/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/permission-check/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/permission-check`, resolve the symlink target for this wrapper directory first, then read `../../skills/permission-check/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
@@ -37,7 +37,6 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `EDIT_PR` | Edit a pull request (reviewers, labels, base, etc.). | `gh pr edit <N>` | `mcp__github__update_pull_request` |
 | `MERGE_PR` | Merge a pull request. | `gh pr merge <N>` | `mcp__github__merge_pull_request` |
 | `MARK_PR_READY` | Flip a draft pull request to ready for review. | `gh pr ready <N>` | `mcp__github__update_pull_request (draft=false)` |
-| `REOPEN_PR` | Reopen a closed pull request. | `gh pr reopen <N>` | `mcp__github__update_pull_request (state=open)` |
 | `COMMENT_PR` | Post a top-level comment on a pull request. | `gh pr comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `REPLY_REVIEW_COMMENT` | Reply to an inline pull-request review comment. | `gh api (reply to review comment)` | `mcp__github__add_reply_to_pull_request_comment` |
 | `RESOLVE_REVIEW_THREAD` | Mark an inline pull-request review thread as resolved. | `gh api graphql (resolveReviewThread)` | `mcp__github__resolve_review_thread` |
@@ -50,7 +49,6 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `CREATE_ISSUE` | Open a new issue. | `gh issue create` | `mcp__github__issue_write (method=create)` |
 | `COMMENT_ISSUE` | Post a comment on an issue. | `gh issue comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `CLOSE_ISSUE` | Close an issue with a reason. | `gh issue close <N> --reason "..."` | `mcp__github__issue_write (method=update, state=closed, state_reason=...)` |
-| `REOPEN_ISSUE` | Reopen a closed issue. | `gh issue reopen <N> --comment "..."` | `mcp__github__issue_write (method=update, state=open)` |
 | `LIST_DISCUSSIONS` | List a repository's discussions. Discussions are GraphQL-only. | `gh api graphql (list discussions)` | (no GitHub MCP tool; use gh api graphql) |
 | `VIEW_DISCUSSION` | Read a discussion topic and its comment thread. | `gh api graphql (read discussion + comments)` | (no GitHub MCP tool; use gh api graphql) |
 | `COMMENT_DISCUSSION` | Post a reply on a discussion (top-level or threaded). | `gh api graphql (addDiscussionComment)` | (no GitHub MCP tool; use gh api graphql) |
