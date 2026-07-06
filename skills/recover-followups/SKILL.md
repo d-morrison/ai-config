@@ -56,16 +56,16 @@ thread; fetch all three.
 
 ```bash
 # Closed PRs and issues in the window
-gh pr list   --state closed --limit 30 --json number,title,url,closedAt,body
-gh issue list --state closed --limit 30 --json number,title,url,closedAt,body
+gh pr list   --state closed --limit 30 --json number,title,url,closedAt,body   # LIST_PRS
+gh issue list --state closed --limit 30 --json number,title,url,closedAt,body  # LIST_ISSUES
 
 # Per PR: top-level comments + review summaries ...
-gh pr view <N> --json number,title,url,body,comments,reviews
+gh pr view <N> --json number,title,url,body,comments,reviews   # VIEW_PR
 # ... and inline review-thread comments (NOT in `gh pr view`):
-gh api repos/{owner}/{repo}/pulls/<N>/comments --jq '.[] | {user: .user.login, body, url: .html_url}'
+gh api repos/{owner}/{repo}/pulls/<N>/comments --jq '.[] | {user: .user.login, body, url: .html_url}'   # READ_PR_REVIEW_COMMENTS
 
 # Per issue: body + comments
-gh issue view <N> --json number,title,url,body,comments
+gh issue view <N> --json number,title,url,body,comments   # VIEW_ISSUE
 ```
 
 GitLab equivalents (same shape):
@@ -105,7 +105,7 @@ grep; `TODO`/`FIXME` may over-match, which the false-positive cull below handles
 
 ```bash
 gh pr view <N> --json body,comments,reviews --jq '.body, (.comments[].body), (.reviews[].body)' \
-  | grep -inE "follow[- ]?up|defer|out of scope|separate (pr|issue)|future pr|another pr|for later|down the line|eventually|TODO|FIXME|we should|we'll need to|should probably|worth doing|let's revisit|i'll open an issue|leave .* later|for the next release|acknowledged"
+  | grep -inE "follow[- ]?up|defer|out of scope|separate (pr|issue)|future pr|another pr|for later|down the line|eventually|TODO|FIXME|we should|we'll need to|should probably|worth doing|let's revisit|i'll open an issue|leave .* later|for the next release|acknowledged"   # VIEW_PR
 ```
 
 Keep, for each hit: the **source** (PR/issue # + the comment's `html_url`), the
@@ -121,7 +121,7 @@ For each candidate decide whether it's **already tracked**:
    `.../issues/123` URL.) If so, check that issue — and, if closed, *why* it
    closed:
    ```bash
-   gh issue view 123 --json number,state,stateReason,title,closedByPullRequestsReferences
+   gh issue view 123 --json number,state,stateReason,title,closedByPullRequestsReferences   # VIEW_ISSUE
    ```
    - exists & open → **tracked** (drop it).
    - exists & closed **as completed** — `stateReason == "COMPLETED"`, or a
@@ -134,7 +134,7 @@ For each candidate decide whether it's **already tracked**:
 2. **No citation?** Search open issues for a match:
    ```bash
    gh issue list --state open --search "<keywords from the snippet>" \
-     --json number,title,url
+     --json number,title,url   # SEARCH_ISSUES
    ```
    - a plausible open issue exists → likely tracked, but **flag low-confidence
      matches** for the user rather than silently dropping.

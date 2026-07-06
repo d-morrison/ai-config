@@ -50,7 +50,7 @@ on.
 gh issue list --state closed --limit 100 \
   --json number,title,closedAt,stateReason,labels,url \
   --jq 'sort_by(.closedAt) | reverse
-        | .[] | "\(.stateReason // "?")\t#\(.number)\t\(.title)\t\(.url)"'
+        | .[] | "\(.stateReason // "?")\t#\(.number)\t\(.title)\t\(.url)"'   # LIST_ISSUES
 ```
 
 `NOT_PLANNED` means closed without being done — stale, dropped, or wontfix-for-now
@@ -63,7 +63,7 @@ usually leave those closed.
 gh pr list --state closed --limit 100 \
   --json number,title,closedAt,mergedAt,headRefName,labels,url \
   --jq 'map(select(.mergedAt == null)) | sort_by(.closedAt) | reverse
-        | .[] | "#\(.number)\t\(.headRefName)\t\(.title)\t\(.url)"'
+        | .[] | "#\(.number)\t\(.headRefName)\t\(.title)\t\(.url)"'   # LIST_PRS
 ```
 
 **GitLab equivalents:**
@@ -108,7 +108,7 @@ Before touching any item, **claim it** (`claim-pr`) so parallel sessions or the
 **Issue:**
 
 ```bash
-gh issue reopen <N> --comment "Reviving: <why it still matters>."
+gh issue reopen <N> --comment "Reviving: <why it still matters>."   # REOPEN_ISSUE
 ```
 
 If reopening is wrong — a messy thread, or scope has shifted — file a fresh issue
@@ -117,11 +117,11 @@ that links the old one, then hand off to `st` / `gi`.
 **PR — branch still exists:**
 
 ```bash
-gh pr reopen <N>
-git fetch origin
+gh pr reopen <N>                          # REOPEN_PR
+git fetch origin                          # FETCH
 git switch --track origin/<headRefName>   # explicit remote; on older Git:
                                           # checkout -b <headRefName> origin/<headRefName>
-git merge origin/main                     # resync onto current main; resolve, run checks
+git merge origin/main                     # resync onto current main; resolve, run checks  # MERGE_BRANCH
 ```
 
 **PR — branch still exists, but drifted far behind `main`:** when the branch is months stale,
@@ -133,8 +133,8 @@ history while dropping the branch's incidental churn (stale lockfiles, merge
 commits, "test" commits):
 
 ```bash
-gh pr reopen <N>
-git fetch origin
+gh pr reopen <N>                          # REOPEN_PR
+git fetch origin                          # FETCH
 git checkout -B rescue-<N> origin/main
 # re-apply only the intended change by hand (not the old branch's byproducts), commit
 git push --force-with-lease origin rescue-<N>:<headRefName>
@@ -151,7 +151,7 @@ superseding PR instead of the force-push.)
 that says "Revives #<N>":
 
 ```bash
-gh pr diff <N> > /tmp/pr-<N>.patch
+gh pr diff <N> > /tmp/pr-<N>.patch   # DIFF_PR
 git fetch origin main && git checkout -b revive-<N> origin/main
 git apply /tmp/pr-<N>.patch   # resolve any rejects, run the repo's checks
 ```
@@ -166,10 +166,10 @@ git apply /tmp/pr-<N>.patch   # resolve any rejects, run the repo's checks
 - **`check-history`** — read-only look back at merged + closed history before
   acting. `rescue-closed` is its action counterpart: it brings the worthwhile
   closed items back rather than just reading them.
-- **`recover-followups`** *(sibling skill — PR pending)* — the sweep that mines
-  closed items' *content* for untracked follow-up sub-tasks and files fresh
-  issues, instead of reopening the item itself. Use it when the value is a buried
-  promise, not the whole closed item.
+- **`recover-followups`** — the sweep that mines closed items' *content* for
+  untracked follow-up sub-tasks and files fresh issues, instead of reopening
+  the item itself. Use it when the value is a buried promise, not the whole
+  closed item.
 - **`gi` / `gii` / `st`** — implement a revived issue.
 - **`ardi`** — drive a reopened or recreated PR to clean.
 - **`claim-pr`** — claim the issue/PR before working it.

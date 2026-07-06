@@ -125,6 +125,14 @@ operations:
     description: Close an issue with a reason.
     cli: gh issue close <N> --reason "..."
     github_mcp: mcp__github__issue_write (method=update, state=closed, state_reason=...)
+  - id: REOPEN_ISSUE
+    description: Reopen a closed issue.
+    cli: gh issue reopen <N> --comment "..."
+    github_mcp: mcp__github__issue_write (method=update, state=open)
+  - id: REOPEN_PR
+    description: Reopen a closed pull request.
+    cli: gh pr reopen <N>
+    github_mcp: mcp__github__update_pull_request (state=open)
   - id: LIST_DISCUSSIONS
     description: List a repository's discussions. Discussions are GraphQL-only.
     cli: gh api graphql (list discussions)

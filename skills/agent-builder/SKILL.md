@@ -155,7 +155,7 @@ Branch + PR + ARDI, the same flow as `skill-builder`.
 
 ```bash
 cd "$(git -C ~/.claude/skills/agent-builder rev-parse --show-toplevel)"   # ai-config root — NOTE: the MAIN checkout, NOT your worktree (see caveat above)
-git fetch origin main && git checkout -b add-<name>-agent origin/main
+git fetch origin main && git checkout -b add-<name>-agent origin/main   # FETCH, CREATE_BRANCH
 # write .claude/agents/<name>.md, and update the one calling skill's SKILL.md
 # The `validate` CI job runs these four — run all four locally before pushing,
 # same as skill-builder — since this also touches the calling skill's SKILL.md:
@@ -164,13 +164,13 @@ python3 scripts/check-links.py       # relative links in the updated calling ski
 python3 scripts/check-vendored-drift.py
 npx --yes markdownlint-cli2@0.22.1   # markdown style on the updated skill's SKILL.md
 git add .claude/agents/<name>.md skills/<calling-skill>/SKILL.md   # stage only what you touched
-git commit -m "agents: add <name> — <summary>"
-git push -u origin HEAD && gh pr create --fill
+git commit -m "agents: add <name> — <summary>"   # COMMIT
+git push -u origin HEAD && gh pr create --fill   # PUSH, CREATE_PR
 ```
 
 Then, as explicit steps:
 
-1. **Request the reviewer:** `gh pr edit --add-reviewer d-morrison` (see
+1. **Request the reviewer:** `gh pr edit --add-reviewer d-morrison` (`EDIT_PR`; see
    `request-pr-review`).
 2. **Drive to clean:** run `ardi` on the new PR until the verdict has zero
    findings.
