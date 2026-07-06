@@ -52,8 +52,8 @@ risk doesn't apply, a backstop exists) and then discover through your own
 follow-up verification that it's false, post the correction with the actual
 evidence immediately, rather than leaving the stale claim standing until a
 review round re-raises it. This keeps the review loop converging instead of
-churning on a claim you already know is wrong. (`d-morrison/rme#989` /
-`ucdavis/epi204#363`: after telling both reviewers `references.bib` didn't
+churning on a claim you already know is wrong. ([d-morrison/rme#989](https://github.com/d-morrison/rme/pull/989) /
+[ucdavis/epi204#363](https://github.com/ucdavis/epi204/pull/363): after telling both reviewers `references.bib` didn't
 share `CLAUDE.md`'s union-merge corruption risk, a follow-up merge
 simulation showed it does --- posted the correction with repro steps on
 both PRs before either reviewer re-raised it.)

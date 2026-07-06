@@ -74,8 +74,8 @@ If a merge that used to need manual resolution now completes with
 "CI will catch a corrupted result," verify that claim against the actual
 workflow file — don't just assert it.** Check the claimed job's trigger
 `paths:` filter (or lack of one) actually covers the attributed file, and
-that the job runs *before* merge (`pull_request`), not only after
-(`push: branches: main`). A stated backstop that doesn't actually fire on
+that the job runs *before* merge (`on: pull_request`), not only after
+(`on: push` to `main`). A stated backstop that doesn't actually fire on
 the file in question is worse than no backstop claim at all — it creates
 false confidence. (`d-morrison/rme#989`: the `.gitattributes` comment
 claimed a Quarto render CI job would catch a malformed `references.bib`
