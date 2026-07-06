@@ -44,9 +44,9 @@ codex --version            # binary at ~/.local/bin/codex
 codex login status         # expect "Logged in using ChatGPT"
 ```
 
-Run agent-scale work on a compute node, not the cluster login node — see
-[[shiva-alloc-launchers]] (`codex-alloc`). If login fails or the account is out
-of quota, skip to step 4 (fall back to Claude).
+If your setup runs sessions under a cluster/HPC allocation, launch agent-scale
+codex work on a compute node or allocation, not a shared login node. If login
+fails or the account is out of quota, skip to step 4 (fall back to Claude).
 
 ### 2. Prepare prompts (and a schema for structured output)
 
@@ -77,6 +77,9 @@ codex exec -C <repo> -s read-only --skip-git-repo-check \
   explore); drop to a writable sandbox only for a task that must edit.
 - `-o <file>` captures the final message; `--output-schema <file>` forces JSON.
 - stdin `-` feeds a long prompt.
+
+Verify these flags against your installed `codex-cli` version (`codex exec
+--help`) — flag names can shift between releases.
 
 **codex takes ~2–4 min per task, which exceeds the foreground tool timeout** —
 so for multi-item or long work, run a **background orchestrator** and poll a
