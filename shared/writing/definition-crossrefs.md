@@ -49,6 +49,13 @@ one of:
 
 ## Relationship to other checks
 
+- **[`forward-references.md`](forward-references.md)** --- the general case
+  of this same problem: any plain-text forward-pointing phrase ("below",
+  "later", "in the following section") about any kind of content, not just
+  a formal definition/theorem div. That check's grep-for-directional-word
+  heuristic won't catch a bare `@def-x` crossref with no signpost word at
+  all --- this check's direct div-position comparison is what catches that
+  case. Run both on a diff that touches definitions.
 - **[`check-rendered-refs`](../../skills/check-rendered-refs/SKILL.md)**
   (`crr`) is a post-render check: does `@def-x` resolve at all, without
   leaking `?@def-x` or `**key?**` into the built HTML. This check runs

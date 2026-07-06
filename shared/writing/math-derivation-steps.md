@@ -1,47 +1,44 @@
-## Writing: include every step in derivations
+When writing or reviewing a mathematical derivation --- an algebraic
+manipulation, a proof, a statistical argument --- hold it to a stricter
+completeness bar than ordinary prose reasoning.
 
-When writing a mathematical derivation or proof,
-include every intermediate step —
-do not skip steps, even when they seem obvious.
-A derivation with a missing step forces every reader
-to reconstruct it independently;
-a derivation with an extra "obvious" step costs almost nothing.
+## Writing: don't skip steps
 
-Apply this to all derivation contexts:
-algebraic manipulation, probability calculations,
-statistical results, limit arguments,
-and the links between model assumptions and conclusions.
+Write out every intermediate step: every distribution, cancellation,
+substitution, application of a named identity or assumption, and change of
+notation. Don't combine two or more operations into a single displayed line.
+A reader should be able to get from one line to the next by checking a single
+mechanical operation, never by re-deriving an omitted one.
 
-## Review: flag missing steps and draft the fill-in
+This is stricter than ordinary prose, where combining a few closely related
+points in one sentence is fine --- a derivation's whole value is that each
+line is independently checkable, so skipping a step defeats the purpose even
+when the reader could reconstruct it themselves.
 
-When reviewing a derivation or proof,
-check not only that stated steps are correct
-but also that no step is missing.
-This is a distinct check from
-[`fact-check-prose.md`](fact-check-prose.md),
-which verifies whether stated steps follow from each other;
-this one asks whether any step between two consecutive lines
-has been left out entirely.
+## Reviewing: name the gap, don't just flag it
 
-For each gap found:
+[`fact-check-prose.md`](fact-check-prose.md)'s document-internal-reasoning
+check already covers whether each *stated* step is valid (verifying it
+follows from the last, checking dimensions/units, checking edge cases). This
+fragment is about a different failure mode: a step that isn't stated at
+all --- the derivation jumps from one line to a non-adjacent one.
 
-1. **Name the exact transition.**
-   Quote or reference the two consecutive lines
-   between which a step is missing
-   (e.g. "between equations (3) and (4)").
-2. **Name the missing operation.**
-   State what algebraic, probabilistic, or logical move
-   closes the gap
-   (e.g. "apply the chain rule",
-   "expand the expectation by linearity",
-   "substitute the definition of the likelihood").
-3. **Draft the missing line where feasible.**
-   Write out the intermediate expression
-   so the author can insert it verbatim or with minor edits,
-   rather than re-deriving it from scratch.
+When a derivation skips a step:
 
-Treat a missing step as a genuine finding,
-not a nit:
-a reviewer who reconstructs a gap silently
-does the reader's work for them
-without fixing the document for the next reader.
+1. **Point to the exact gap** --- the last line before the jump and the
+   first line after it, not just "this derivation skips steps" in general.
+2. **Name the missing operation** --- what specific move closes the gap
+   (which distribution, cancellation, substitution, identity, or
+   assumption). Don't leave it to the author to guess what you think is
+   missing.
+3. **Draft the missing line(s)** where feasible, so the author can drop them
+   in directly rather than re-deriving the gap themselves --- the same
+   spirit as proposing a concrete fix rather than only naming a problem
+   (see [`challenge-unnecessary-complexity.md`](../workflow/challenge-unnecessary-complexity.md)'s
+   "propose the fix, don't just name the issue" pattern).
+
+A derivation with a plausible-looking but unstated jump is exactly the kind
+of gap a reader skims past --- the same reason
+[`challenge-ambiguous-terminology.md`](../workflow/challenge-ambiguous-terminology.md)
+warns against accepting a plausible reading at face value instead of
+verifying it.

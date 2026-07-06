@@ -35,6 +35,7 @@ In every session — at session start, and again periodically during long sessio
    A pin more than a few weeks or dozens of commits stale is worth refreshing: file a tracking issue, bump it (`git submodule update --init --remote .ai-config` from the parent repo handles both init and fetch in one step; or, if already checked out, `git fetch origin` inside the submodule before `git checkout origin/main`), then `git add .ai-config` in the parent repo to record the new gitlink, verify the parent repo's own checks still pass, and open a PR.
    Before assuming this is risk-free, check whether the parent repo's CI actually reads the submodule's checked-out content (vs. treating it as inert until a dev runs `git submodule update --init` locally) — a pin bump is a pure pointer change with no functional surface only when nothing reads it. (First done on `Lacaedemon/sparta` [PR #651](https://github.com/Lacaedemon/sparta/pull/651): the pin was 325 commits (~9 days) stale, unreferenced by CI, and not checked out by default.)
    **When the current checkout isn't `main` itself** (a feature branch or a worktree), `HEAD:.ai-config` only reflects that branch's own pin — it can look badly stale purely because the branch was cut before a bump PR merged into `main`, not because the project's actual pin needs refreshing. Also check `origin/main:.ai-config` (the pin as recorded on the base branch) against ai-config's `origin/main`; if that one is already fresh, no bump PR is needed — the branch's own pin resolves itself on its next merge/rebase. On Windows Git Bash, that comparison command hits an MSYS gotcha — see `memories/tools.md`. (Re-discovered on `Lacaedemon/sparta`'s `claude/infallible-lewin-5841e9` branch, 2026-07-04: the branch's own pin read 344 commits stale while `main`'s was only 19 commits behind.)
+   **When *adding a new citation* to an ai-config shared fragment inside a submodule-consuming repo's own `CLAUDE.md`, verify — don't assume — that the citation already resolves.** It only does once BOTH (a) the source PR has merged into ai-config's `main`, and (b) that repo's own `.ai-config` pin has been bumped to a commit containing the path — the pin doesn't auto-follow `main`. Check with `git show <pin>:<path>` (or `ls` inside the checked-out submodule) before writing the citation in present tense; if either gate hasn't cleared, hedge to future/conditional tense instead of asserting settled fact — mirroring the "proposed in ai-config#N — once merged, the fragment lives at ..." convention `gha`'s own `CLAUDE.md` already uses for citing its still-open companion PRs. Once the citation does resolve, keep the local **restatement** of the rule's key points alongside the citation rather than trimming to a bare pointer — unlike a skill distributed via the Plugin Marketplace (point 4's own preamble), `.ai-config`'s `shared/`/`memories/` fragments aren't auto-loaded into agent context — they only enter it when a `CLAUDE.md` explicitly restates or `@`-references them — so a bare citation is invisible to an agent that doesn't take the extra step of reading the fragment on demand. (`rme`#988/`epi204`#362: both cited `shared/writing/math-derivation-steps.md` in present tense while `ai-config`#502 was still open and each repo's `.ai-config` pin predated it — flagged as a dangling reference by review in both, fixed by bumping the pin once #502 merged and hedging the still-open `gha`#228 half of the same citation.)
 
 ## Timestamp recaps in local time
 
@@ -151,8 +152,13 @@ Use the harness-specified branch only when starting work with no existing PR and
 
 **Exception --- the session can only push to its own branch.** Some web/remote sessions are scoped so the agent proxy allows pushing *only* to the harness-assigned branch; a push to any other branch (the existing PR's branch included) is rejected with `HTTP 403`.
 When that happens you cannot follow step 3.
-Fall back to: push the fix to the assigned branch, open a **new** PR off `main` that supersedes the original (say "Supersedes #N" in the body and rebuild as a single clean commit so no sensitive history leaks through), comment on the original PR pointing to the replacement, and close the original once the new PR merges.
 Don't retry the 403 --- it's a policy denial, not a transient error.
+
+**Prefer stacking the fix, not superseding the PR.** When the work is an incremental fix to an existing, still-open PR (a review finding, a small addition) rather than a full rebuild, push the fix to the assigned branch and open it as a PR **stacked on** the original --- `base` set to the original PR's own branch, per the [`stack-prs`](skills/stack-prs/SKILL.md) skill --- rather than superseding it. Comment on the original PR pointing to the stacked one, and note the dependency ("stacked on this branch — either merge #N into this branch first, or merge this PR and #N will retarget to `main`"). This keeps the diff to just the incremental change instead of re-litigating the whole original PR's content, and it composes correctly regardless of how the maintainer merges it: they can merge the stacked PR straight into the original's branch (folding the fix in before the original PR itself merges) or merge the original first and let the stacked PR retarget to `main` per that skill's step 4.
+Reserve the supersede path (below) for when stacking doesn't fit --- the original branch/PR is abandoned, or the fix amounts to a full rebuild rather than an incremental addition.
+(Corrected on ai-config#493 → #498, 2026-07-05: first reflex was to supersede per the fallback below; the user redirected to stacking, and the maintainer then merged the stacked PR directly into #493's branch, folding the fix in before #493 itself merged --- exactly the outcome stacking was meant to produce.)
+
+**Supersede fallback, when stacking doesn't apply:** push the fix to the assigned branch, open a **new** PR off `main` that supersedes the original (say "Supersedes #N" in the body and rebuild as a single clean commit so no sensitive history leaks through), comment on the original PR pointing to the replacement, and close the original once the new PR merges.
 
 **Rebuilding the single clean commit: diff against `main`, don't cherry-pick from the write-protected branch.** `main` usually doesn't yet contain the original PR's changes, so cherry-picking just your incremental fix commit conflicts --- it was written against the PR branch's state, not `main`'s.
 Instead, diff the whole file set and apply it fresh:
@@ -419,6 +425,16 @@ math, apply this in addition to the fact-check above.
 @shared/writing/definition-crossrefs.md
 
 Applies wherever `code-review`/`ard`/`ardi` already reviews a prose diff, alongside the fact-check and ambiguous-terminology checks above.
+
+## Remove forward-pointing phrases from prose, not just crossref divs
+
+The section above covers formal Quarto crossref-div ordering for term/result definitions specifically.
+The same problem shows up more broadly as plain-text signposting — "as discussed below", "in the following section", "we'll cover this later" — pointing at content the reader hasn't reached yet, in any prose (not just documents with crossref divs).
+
+@shared/writing/forward-references.md
+
+Unlike `definition-crossrefs.md` above, `forward-references.md` has a dedicated actionable skill: the `fix-forward-references` skill (alias `ffr`) detects these with a grep-for-directional-word heuristic and rearranges (or rewords) the prose to fix them.
+Run it — or apply its check inline — wherever `ard`/`ardi` reviews a prose diff, alongside the other prose-review rules in this file.
 
 ## Fact-check code logic and math in review
 
