@@ -44,3 +44,16 @@ duplication, an incomplete-coverage doc overclaim, a wrong changelog
 category, an uncited claim, and missing test coverage for new logic --- all
 catchable this way, since each was a direct match against gha's own
 `CLAUDE.md` conventions, not new information the review surfaced.)
+
+**Proactively self-correct a technical claim you already told a reviewer,
+the moment further testing shows it was wrong --- don't wait for the
+reviewer to catch it.** If you stated a rationale (an approach is safe, a
+risk doesn't apply, a backstop exists) and then discover through your own
+follow-up verification that it's false, post the correction with the actual
+evidence immediately, rather than leaving the stale claim standing until a
+review round re-raises it. This keeps the review loop converging instead of
+churning on a claim you already know is wrong. ([d-morrison/rme#989](https://github.com/d-morrison/rme/pull/989) /
+[ucdavis/epi204#363](https://github.com/ucdavis/epi204/pull/363): after telling both reviewers `references.bib` didn't
+share `CLAUDE.md`'s union-merge corruption risk, a follow-up merge
+simulation showed it does --- posted the correction with repro steps on
+both PRs before either reviewer re-raised it.)
