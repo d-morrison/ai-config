@@ -439,6 +439,23 @@ caught by the `@claude` review bot, not by me — mentally (or actually)
 running the example against its stated claim before publishing would have
 caught it first.
 
+## Delegate heavy work to codex first
+
+For heavy, parallelizable **read / draft / verify** work (deep multi-file
+reading, scoping a backlog, auditing many files, drafting N artifacts,
+adversarial verification), route it to the separately-billed **`codex` CLI**
+(ChatGPT plan) and spend its budget **before** Claude/Workflow tokens. Claude
+stays the orchestrator (writes prompts, assembles stages, integrates outputs)
+and is the fallback for any stage codex can't finish. Exhaust the *current
+~5-hour codex usage window*, then fall back to Claude until it resets — "codex
+first" means the current window, not abandoning Claude permanently. This is a
+standing default across all sessions, including ultracode/Workflow fan-outs, not
+occasional use. Stated 2026-07-02 ("exhaust its tokens before using our own")
+and reaffirmed 2026-07-06 ("always use codex first (until we hit the 5-hour
+limits) before using up claude quota"). The `delegate-to-codex` skill (alias
+`dtc`) operationalizes the mechanics (background runner + DONE-marker poll,
+`--output-schema`, exhaustion detection, Claude fallback).
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
