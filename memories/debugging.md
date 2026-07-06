@@ -264,6 +264,29 @@ Also from ettbc#13/#14:
   limit"). It's environmental, non-blocking, and unfixable from a content PR
   (the bot can't edit `.github/workflows`). Stand in with a manual self-review
   rather than chasing it.
+- **Adding a new hidden top-level dotfile/dir to an R package (a `.claude`
+  config dir, a `.ai-config` git submodule, any new `.<name>`) fails
+  `R CMD check` with `checking for hidden files and directories ... NOTE`
+  unless it's listed in `.Rbuildignore`.** A repo whose `R-CMD-check` job sets
+  `error_on = "note"` (common per this corpus's own review-guideline citations)
+  turns that NOTE into a hard CI failure on every platform the check runs —
+  it isn't Linux/macOS/Windows-specific, since the check runs identically on
+  all of them. Add an anchored entry (`^\.claude$`) matching the existing
+  `.Rbuildignore` style (e.g. the `^\.github$` line most repos already have)
+  proactively, in the same commit that adds the new dotfile/dir, rather than
+  waiting for CI to name it. A submodule whose content isn't checked out in CI
+  (the common case — `actions/checkout` doesn't init submodules by default)
+  can dodge the NOTE by luck — the CI build log's own `R CMD build` step
+  ("checking for empty or unneeded directories") reported
+  `Removed empty directory '<pkg>/.ai-config'`, so the uninitialized submodule
+  never reached `R CMD check` at all — but exclude it in `.Rbuildignore`
+  anyway rather than relying on that accident of checkout config.
+  (`UCD-SERG/serodynamics#265`: adding `.claude/settings.json` failed
+  `ubuntu-latest`/`macos-latest`/`windows-latest` (all `release`) plus
+  `ubuntu-latest (oldrel-1)` R-CMD-check
+  simultaneously with this exact NOTE; the sibling `.ai-config` submodule
+  added in the same PR happened not to trigger it, for the empty-dir reason
+  above.)
 
 ## R snapshot tests (snapr / testthat) — regenerating without collateral damage
 Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
