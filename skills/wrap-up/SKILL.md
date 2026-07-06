@@ -113,6 +113,10 @@ the user:**
   which this embeds as step 4) — `wrap-up` is their session-level bookend.
 - **`spot-skill-opportunities`** — step 4's UMS pass checks whether it flagged
   a recurring pattern during the session that's still unbuilt.
+- **`checkpoint`** / **`compress-session`** — narrower-scoped snapshots taken
+  *during* a session (a task-phase snapshot, a pre-compaction distillation);
+  `wrap-up` is the full session-level close-out these feed into, not a
+  replacement for them.
 
 ## Notes
 

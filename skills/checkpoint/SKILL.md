@@ -67,11 +67,17 @@ snapshot, not a transcript):
   timestamp), an assumption worth re-verifying if much time has passed before
   resuming.
 
-Save it as a project memory, the same convention `handoff` uses:
-`~/.claude/projects/<project-slug>/memory/checkpoint-<slug>.md`, frontmatter
-`type: project`. Reuse (update in place) an existing checkpoint file for the
-same task rather than piling up one file per checkpoint — a checkpoint
-supersedes the last one for the same task, it doesn't append to a log.
+Save it as a topic file in the project's auto-memory directory (the same
+one `handoff`/`memorize` write to, and Claude's own auto memory uses for
+`MEMORY.md`):
+`~/.claude/projects/<project-slug>/memory/checkpoint-<slug>.md`. Unlike
+`MEMORY.md` itself, a topic file isn't auto-reloaded after compaction (only
+`MEMORY.md`'s first 200 lines/25KB are) — that's fine here, since a
+checkpoint's job is resuming after a deliberate pause, not surviving
+mid-session compaction (that's `compress-session`'s job). Reuse (update in
+place) an existing checkpoint file for the same task rather than piling up
+one file per checkpoint — a checkpoint supersedes the last one for the same
+task, it doesn't append to a log.
 
 ### 2. Confirm briefly
 
