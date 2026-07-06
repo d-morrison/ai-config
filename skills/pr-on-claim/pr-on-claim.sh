@@ -24,7 +24,7 @@ PR_TITLE="${TITLE_OVERRIDE:-$ISSUE_TITLE}"
 
 echo "Creating branch: $BRANCH_NAME"
 git fetch origin main -q
-git checkout -b "$BRANCH_NAME" origin/main
+git checkout -B "$BRANCH_NAME" origin/main
 
 echo "Creating empty commit..."
 git commit --allow-empty -m "start: $ISSUE_TITLE (closes #$ISSUE_NUM)"
