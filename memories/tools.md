@@ -2095,10 +2095,12 @@ legitimately need to run more than once in a work session — once early,
 then again after a late-session `git merge origin/main` pulls in changes
 the generator's inputs depend on. If the sequence is `git add <file>` →
 run the generator → `git commit` (without re-running `git add` on what the
-generator just rewrote), the commit silently omits the regenerated content
-even though the working tree looks clean afterward — `git status` shows
-nothing to fix because the newer generated content was never staged in the
-first place, not because it matches what's committed. This surfaces later
+generator just rewrote), the commit omits the regenerated content even
+though the working tree still has the regenerated content — a `git status`
+*after* the commit would show the codex-skills files as unstaged
+modifications, but a developer who only checked `git diff --staged` or
+`git status` right after the earlier partial `git add` (and didn't look
+again after running the generator) would miss them. This surfaces later
 as a CI `validate` failure ("Codex skill wrappers are out of sync") on a
 commit that looks, from its own diff, like it shouldn't have touched
 `codex-skills/` at all. Always run the generator immediately before the
