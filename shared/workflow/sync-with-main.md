@@ -185,6 +185,26 @@ all appending after the same "PR #352's `check-info-quality`..." paragraph
 --- resolved, per the guidance above, by keeping all three rather than
 picking one.)
 
+**A `dirty` `mergeable_state` on a bot-opened PR can mean a sibling PR already
+closed the same issue, not just that `main` drifted.** An issue-triggered
+`@claude` workflow can fire twice on the same issue in quick succession
+(a duplicate dispatch, or two people independently routing the same request),
+producing two independent PRs that both fully resolve it --- including adding
+the identical new file. The second PR's merge conflict is an add/add on that
+new file, and it looks like ordinary main-drift, but treating it that way and
+mechanically resolving in favor of "ours" silently reintroduces a duplicate
+the other PR's merge already published. Before resolving, check the PR's
+linked issue for **other** cross-referenced PRs/closing events --- if one
+already merged and closed it, diff the conflicting file against `main`: if
+it's the sibling PR's already-published version, keep `main`'s content and
+keep only this PR's genuinely distinct remainder (a piece the sibling PR
+never did), rather than re-adding a second copy. (`ai-config#501`: issue #500
+was independently resolved twice --- `#502` merged first, adding
+`shared/writing/math-derivation-steps.md` and closing #500, but never wiring
+it into `CLAUDE.md`; `#501` added a second copy of the same fragment plus the
+missing `CLAUDE.md` wiring. Resolved by keeping `main`'s published fragment
+and `#501`'s wiring, turning a `dirty` merge into a clean `+8/-0` diff.)
+
 **A merge into a growing numbered list (e.g. `gha`'s `CLAUDE.md` "Code
 review guidelines" section) can produce zero blank lines between two
 adjacent headings
