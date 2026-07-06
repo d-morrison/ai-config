@@ -26,36 +26,52 @@ allow entry, moving a rule to a different layer), hand off to `update-config`.
 
 ## The resolution model
 
-Two independent things determine the outcome, and both matter:
+This is the part worth getting exactly right, because it's counterintuitive:
+**rule type beats layer.** All layers' matching rules are pooled into one
+set, then resolved by type — **deny, then ask, then allow** — the first
+match in that order wins, and neither pattern specificity nor which layer a
+rule came from changes that order. A `deny` in *any* layer blocks a matching
+`allow` in *any other* layer, including a higher-precedence one (a
+project-shared `deny` on `Bash(aws *)` still blocks a project-local `allow`
+on `Bash(aws s3 ls)`). The same holds one level down: a matching `ask` in any
+layer forces a prompt even when a more specific `allow` in a different layer
+also matches — a broad **user**-level `ask` can override a narrow
+**project-local** `allow` for the same call, which is easy to miss if you
+assume "more local wins."
 
-1. **Layer precedence** decides which layer's rule set is even in play.
-   Highest to lowest:
-   1. **Managed policy settings** (cannot be overridden by anything below) —
-      `/Library/Application Support/ClaudeCode/managed-settings.json` (+
-      `managed-settings.d/`) on macOS, `/etc/claude-code/managed-settings.json`
-      (+ `managed-settings.d/`) on Linux/WSL,
-      `C:\Program Files\ClaudeCode\managed-settings.json` (+
-      `managed-settings.d\`) on Windows.
-   2. **CLI arguments** for this invocation (`--allowedTools`,
-      `--disallowedTools`, `--permission-mode`).
-   3. **Project-local settings** — `.claude/settings.local.json` (gitignored,
-      personal).
-   4. **Project-shared settings** — `.claude/settings.json` (checked in).
-   5. **User settings** — `~/.claude/settings.json`.
-2. **Rule-type precedence**, evaluated across ALL layers at once: **deny,
-   then ask, then allow** — the first match in that order wins, and pattern
-   specificity does **not** change this order. A `deny` rule in a
-   *lower*-precedence layer still blocks a more specific `allow` rule in a
-   *higher*-precedence layer (e.g. a project-shared `deny` on `Bash(aws *)`
-   still blocks a project-local `allow` on `Bash(aws s3 ls)`). Managed-policy
-   `deny` rules can't be bypassed by any layer, CLI flag, or hook.
+Layer precedence still matters, but for a narrower thing than resolving
+individual rule conflicts — it decides which layers' rules are even in the
+pool at all:
 
-Within a single rule type, the most specific matching pattern wins.
+1. **Managed policy settings** — always in the pool, and can enforce two
+   absolute overrides nothing below can undo: its own `deny` rules, and (if
+   set) `allowManagedPermissionRulesOnly: true`, which excludes every other
+   layer's `allow`/`ask`/`deny` rules from the pool entirely (not just
+   overridden — genuinely not considered). File locations:
+   `/Library/Application Support/ClaudeCode/managed-settings.json` (+
+   `managed-settings.d/`) on macOS, `/etc/claude-code/managed-settings.json`
+   (+ `managed-settings.d/`) on Linux/WSL,
+   `C:\Program Files\ClaudeCode\managed-settings.json` (+
+   `managed-settings.d\`) on Windows.
+2. **CLI arguments** for this invocation (`--allowedTools`,
+   `--disallowedTools`, `--permission-mode`) — temporary session overrides.
+3. **Project-local settings** — `.claude/settings.local.json` (gitignored,
+   personal).
+4. **Project-shared settings** — `.claude/settings.json` (checked in).
+5. **User settings** — `~/.claude/settings.json`.
+
+Beyond the managed-settings special cases above, once a layer's rules are in
+the pool, its rank in this list does **not** break ties among rules of the
+*same* type — two matching `allow` rules from different layers both just
+mean "allowed;" there's no conflict to resolve. The list matters for step 2
+below (only a layer that's actually present contributes rules) and for
+knowing when managed settings might be excluding a layer altogether.
 
 **Hooks** (`PreToolUse`) run *before* the permission prompt but don't bypass
-this chain: a hook exiting with code 2 blocks before rule evaluation runs;
-deny/ask rules are still evaluated regardless of what a hook's own
-`"allow"` decision says.
+this chain: a matching `deny`/`ask` rule still applies regardless of what a
+hook itself returns. A hook that exits with code 2 is a separate, stronger
+mechanism — it blocks the call *before* permission rules are even evaluated,
+so it can stop a call an `allow` rule would otherwise have let through.
 
 Source: [Claude Code permissions
 docs](https://code.claude.com/docs/en/permissions.md) (rule evaluation order,
@@ -96,11 +112,11 @@ cat .claude/settings.json 2>/dev/null
 cat ~/.claude/settings.json 2>/dev/null
 ```
 
-**Privacy gate on layer 1 and layer 5.** The managed-policy file is
-host-global, outside this project and outside the user's own home-relative
-config — reading it can surface content unrelated to this session (org-wide
-policy meant for a different audience). Only read it after telling the user
-you're about to, and skip it if they'd rather not. The user-settings file
+**Privacy gate on layer 1.** The managed-policy file is host-global, outside
+this project and outside the user's own home-relative config — reading it
+can surface content unrelated to this session (org-wide policy meant for a
+different audience). Only read it after telling the user you're about to,
+and skip it if they'd rather not. The user-settings file
 (`~/.claude/settings.json`) is personal but not host-global; read it without
 asking, same as the project layers.
 
@@ -116,18 +132,21 @@ found; the analysis needs the *full* set to apply the resolution model.
 ### 4. Apply the resolution model and report
 
 1. Any `deny` hit, from any layer → **blocked**. Report that layer + rule as
-   the reason, and note that no `allow` anywhere can override it.
-2. Else any `ask` hit → **prompts** (with the layer + rule).
-3. Else any `allow` hit → **auto-allowed** (with the layer + rule).
+   the reason, and note that no `allow`/`ask` anywhere can override it.
+2. Else any `ask` hit, from any layer → **prompts** (with the layer + rule),
+   even if a more specific `allow` also matched in a different layer.
+3. Else any `allow` hit, from any layer → **auto-allowed** (with the layer +
+   rule).
 4. Else no hit anywhere → **prompts**, by Claude Code's own default (no rule
    means ask).
 
 If a step finds more than one matching rule of the *winning* type (e.g. two
-`allow` rules across different layers both match), name the most specific
-one as the actual reason and note the others as also-matching but
-non-deciding.
+`allow` rules across different layers both match), name any one of them as
+the reason — they agree on the outcome, so there's nothing to break a tie on
+— and list the others as also-matching.
 
-Report format:
+Report format — note the counterintuitive result: a broader user-level `ask`
+overrides a narrower project-local `allow`, because type beats layer:
 
 ```
 Pattern: Bash(git push:*)
@@ -138,10 +157,14 @@ Pattern: Bash(git push:*)
 | CLI args          | —         | (none passed)         | —        |
 | Project-local     | allow     | Bash(git push:*)      | yes      |
 | Project-shared    | —         | (no match)            | —        |
-| User              | ask       | Bash(git *)           | yes (specificity loses to project-local) |
+| User              | ask       | Bash(git *)           | yes      |
 
-Verdict: auto-allowed — project-local's `Bash(git push:*)` allow rule wins
-(no deny anywhere blocks it).
+Verdict: prompts — the user-level `ask` on `Bash(git *)` wins over
+project-local's more specific `Bash(git push:*)` allow rule, because ask
+beats allow regardless of layer or specificity. If the intent was to make
+this auto-allowed, the fix is to narrow or remove the user-level `ask` rule
+(via `update-config`), not to add a more specific project-local allow rule —
+that's already there and it isn't enough.
 ```
 
 ### 5. If nothing explains the observed behavior
