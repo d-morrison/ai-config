@@ -77,16 +77,14 @@ in reverse:
    separable *paragraphs* within one ask.
 
 If you can't name a distinct trigger phrase and a distinct outcome for the
-proposed second skill, it's bucket 1 or 2, not bucket 3. Over-splitting a
-thorough single-purpose skill into several thin ones hurts discoverability
-more than a long file ever does — this is the same tradeoff a prior
-proposal for this skill flagged when it asked whether the reference repo's
-`fix-forward-references`-vs-`definition-crossrefs.md` split (a dedicated
+proposed second skill, it's bucket 1 or 2, not bucket 3.
+Over-splitting a thorough single-purpose skill into several thin ones hurts
+discoverability more than a long file ever does.
+The `fix-forward-references`-vs-`definition-crossrefs.md` split (a dedicated
 skill for one direction, a fragment cross-linked from several review skills
-for the other) was itself the right precedent to generalize from — it is:
-that case is bucket 2 (the fragment) plus a bucket-3 judgment call (the
-dedicated skill), decided on the merits of each piece rather than reflexively
-splitting everything.
+for the other) is a useful precedent: the fragment is bucket 2 and the
+dedicated skill is a bucket-3 judgment call, decided on the merits of each
+piece rather than reflexively splitting everything.
 
 ## Procedure
 
