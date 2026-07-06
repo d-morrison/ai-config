@@ -41,11 +41,13 @@ So the per-issue order becomes: claim → branch → **open the draft PR now** �
 implement → mark ready-for-review → ARDI.
 
 **Working several issues in one session? Verify you actually switched branches
-before writing the second issue's code.** `git checkout -b <type>/<slug>
-origin/main` only creates and checks out a branch the *first* time; forgetting
-to check out a *new* branch before starting issue 2 leaves the working tree on
-issue 1's branch, so issue 2's edits land in the same commit/PR as issue 1's —
-silently, since nothing errors. Run `git branch --show-current` immediately
+before writing the second issue's code.** The `git checkout -b <type>/<slug>
+origin/main` you ran for issue 1 doesn't carry over to issue 2 --- you have to
+run it again with a new branch name for each new issue. Forgetting leaves the
+working tree on issue 1's branch, so issue 2's edits land in the same
+commit/PR as issue 1's --- silently, since nothing errors (there's no reused
+branch name here to trigger `git checkout -b`'s own "already exists" error).
+Run `git branch --show-current` immediately
 before the first edit for every new issue, not just the first one in the
 session, and confirm it matches the branch you just created for *this* issue.
 (ucdavis/bcs `gia` session, 2026-07-06: SLURM-hardening changes for issue #286
