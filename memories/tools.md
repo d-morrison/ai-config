@@ -537,6 +537,18 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
     `quarto render` to even start the knitr engine (`--no-execute` does NOT
     skip the engine check), so a full restore is the surest path when an edit
     needs a real render.
+  - **This isn't rme-specific — check any R-package repo's own CI YAML for a
+    `RENV_CONFIG_REPOS_OVERRIDE` / RSPM env var before running
+    `renv::restore()` interactively, and set the same one yourself.** The CI
+    workflow's `env:` block does NOT propagate to a bare `Rscript -e
+    'renv::restore(...)'` you launch by hand — it's just an unset env var in
+    your session — so skipping this replicates the "plain source-repo restore
+    times out" trap even on a repo whose own CI already solved it. Confirmed on
+    ucdavis/bcs: an interactive `renv::restore(prompt = FALSE)` with no P3M
+    override spent 40+ minutes compiling `arrow` from source alone (out of
+    267 packages), when `R-CMD-check.yaml`'s own
+    `RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/__linux__/noble/latest`
+    was sitting right there in the workflow file the whole time.
   - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
     has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
     anywhere reachable, so it blocks full renders of any chapter that does
@@ -589,12 +601,43 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   `LANG=C.UTF-8 LC_ALL=C.UTF-8 Rscript …` to read UTF-8 data files correctly.
   (CI runners are UTF-8, so this bites only locally.)
 - **renv activation failure when a GitHub remote is blocked**: if `DESCRIPTION`
-  lists a GitHub `Remotes:` entry the proxy can't reach (e.g. bcs's
-  `d-morrison/altdoc@recursive-qmd-search`), renv activation (via `.Rprofile`)
-  aborts on startup — every subsequent `R` call errors before loading any package.
-  Bypass: `R --no-save --no-restore --no-site-file --no-init-file` skips
-  `.Rprofile` entirely. Install needed packages from P3M into the user library
-  and proceed. (Observed on ucdavis/bcs cloud sessions.)
+  lists a GitHub `Remotes:` entry for a repo the session's git proxy hasn't
+  scoped in, renv activation (via `.Rprofile`) aborts on startup — every
+  subsequent `R` call errors before loading any package (e.g. bcs's
+  `d-morrison/altdoc@recursive-qmd-search`: a plain `curl` to
+  `api.github.com/repos/d-morrison/altdoc/...` 403'd with `"GitHub access to
+  this repository is not enabled for this session. Use add_repo to request
+  access."` — this is the *session repo-scope* check, not a general network
+  block; the same 403 hits `renv`/`pak`'s own `api.github.com` calls even
+  though they never go through an MCP tool).
+  Quick bypass (when you just need *a* working R session, not to fix the
+  remote): `R --no-save --no-restore --no-site-file --no-init-file` skips
+  `.Rprofile` entirely; install needed packages from P3M into the user
+  library and proceed.
+  **Real fix, when the remote itself is wrong or you need the full
+  dependency tree:** call `add_repo` for the blocked owner/repo — this
+  unblocks the proxy's direct HTTPS access (curl, `renv::restore()`,
+  `pak`), not just the GitHub MCP tools, so **no local clone is needed**
+  just to resolve dependencies (ignore `add_repo`'s "clone it now"
+  instructions unless you actually need the repo's file contents). Then
+  check whether the pinned non-default branch has already merged into the
+  remote repo's default branch — `curl .../compare/main...<branch>` and
+  read `ahead_by`/`behind_by`; `behind_by: N, ahead_by: 0` means the branch
+  is a fully-merged, stale ref — and if so, repoint `Remotes:` at the
+  default branch instead of leaving DESCRIPTION pinned to dead history.
+  **Grep the whole repo for other hardcoded copies of the same remote
+  spec** before considering the fix complete — a CI workflow's
+  `extra-packages:` list can duplicate the exact same `owner/repo@branch`
+  string outside DESCRIPTION, and fixing only DESCRIPTION leaves pak's
+  dependency solver seeing two conflicting specs for the same package
+  (`Conflicts with <old-spec>`). If nothing else needs that duplicate
+  pin (e.g. `r-lib/actions/setup-r-dependencies`'s `needs: check` /
+  `local::.` already resolves the package from DESCRIPTION's own
+  `Remotes:`), just delete the redundant `extra-packages` line rather than
+  updating it in two places. (ucdavis/bcs#310, 2026-07-06: this exact
+  chain — `add_repo` unblock, `compare` showing the branch fully merged,
+  then two more hardcoded copies of the same stale ref found in
+  `docs.yaml` and `copilot-setup-steps.yml`.)
 - **A stale `00LOCK-*` directory silently blocks every subsequent
   `install.packages()` call**, left behind when an earlier install was
   interrupted (killed mid-run, or two `install.packages()` calls racing —

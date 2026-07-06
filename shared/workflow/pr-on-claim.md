@@ -39,3 +39,16 @@ Marking it ready is what kicks off ARDI.
 
 So the per-issue order becomes: claim → branch → **open the draft PR now** →
 implement → mark ready-for-review → ARDI.
+
+**Working several issues in one session? Verify you actually switched branches
+before writing the second issue's code.** `git checkout -b <type>/<slug>
+origin/main` only creates and checks out a branch the *first* time; forgetting
+to check out a *new* branch before starting issue 2 leaves the working tree on
+issue 1's branch, so issue 2's edits land in the same commit/PR as issue 1's —
+silently, since nothing errors. Run `git branch --show-current` immediately
+before the first edit for every new issue, not just the first one in the
+session, and confirm it matches the branch you just created for *this* issue.
+(ucdavis/bcs `gia` session, 2026-07-06: SLURM-hardening changes for issue #286
+were written while still on issue #281's `chore/renv-explicit-snapshot`
+branch — caught before pushing, but only by re-checking `git status`/`git
+diff --stat` against expectations, not because anything failed.)
