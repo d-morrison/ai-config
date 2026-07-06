@@ -37,6 +37,7 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `EDIT_PR` | Edit a pull request (reviewers, labels, base, etc.). | `gh pr edit <N>` | `mcp__github__update_pull_request` |
 | `MERGE_PR` | Merge a pull request. | `gh pr merge <N>` | `mcp__github__merge_pull_request` |
 | `MARK_PR_READY` | Flip a draft pull request to ready for review. | `gh pr ready <N>` | `mcp__github__update_pull_request (draft=false)` |
+| `REOPEN_PR` | Reopen a closed pull request. | `gh pr reopen <N>` | `mcp__github__update_pull_request (state=open)` |
 | `COMMENT_PR` | Post a top-level comment on a pull request. | `gh pr comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `REPLY_REVIEW_COMMENT` | Reply to an inline pull-request review comment. | `gh api (reply to review comment)` | `mcp__github__add_reply_to_pull_request_comment` |
 | `RESOLVE_REVIEW_THREAD` | Mark an inline pull-request review thread as resolved. | `gh api graphql (resolveReviewThread)` | `mcp__github__resolve_review_thread` |
@@ -49,6 +50,7 @@ run the CLI command. Full per-model reference: [tool-mappings.md](../../tool-map
 | `CREATE_ISSUE` | Open a new issue. | `gh issue create` | `mcp__github__issue_write (method=create)` |
 | `COMMENT_ISSUE` | Post a comment on an issue. | `gh issue comment <N> --body "..."` | `mcp__github__add_issue_comment` |
 | `CLOSE_ISSUE` | Close an issue with a reason. | `gh issue close <N> --reason "..."` | `mcp__github__issue_write (method=update, state=closed, state_reason=...)` |
+| `REOPEN_ISSUE` | Reopen a closed issue. | `gh issue reopen <N> --comment "..."` | `mcp__github__issue_write (method=update, state=open)` |
 | `LIST_DISCUSSIONS` | List a repository's discussions. Discussions are GraphQL-only. | `gh api graphql (list discussions)` | (no GitHub MCP tool; use gh api graphql) |
 | `VIEW_DISCUSSION` | Read a discussion topic and its comment thread. | `gh api graphql (read discussion + comments)` | (no GitHub MCP tool; use gh api graphql) |
 | `COMMENT_DISCUSSION` | Post a reply on a discussion (top-level or threaded). | `gh api graphql (addDiscussionComment)` | (no GitHub MCP tool; use gh api graphql) |
