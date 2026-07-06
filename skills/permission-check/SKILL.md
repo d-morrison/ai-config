@@ -122,9 +122,17 @@ asking, same as the project layers.
 
 ### 3. Extract every matching rule
 
-For each layer that exists, pull its `permissions.allow` / `permissions.ask`
-/ `permissions.deny` arrays and check each entry against the target pattern —
-an exact match, a wildcard match (`Bash(git *)` matches
+**Preflight: check for `allowManagedPermissionRulesOnly` first.** If the
+managed-policy file (layer 1) sets `"allowManagedPermissionRulesOnly": true`,
+every other layer's `allow`/`ask`/`deny` rules are excluded from the pool
+entirely — not overridden, genuinely not considered. When this is set, skip
+layers 2–5 for this step and apply step 4 only to managed-policy rules; note
+in the report that the flag is active and why non-managed rules were
+excluded.
+
+Otherwise, for each layer that exists, pull its `permissions.allow` /
+`permissions.ask` / `permissions.deny` arrays and check each entry against
+the target pattern — an exact match, a wildcard match (`Bash(git *)` matches
 `Bash(git push:*)`), or a bare tool name (`Edit` matches any `Edit` call).
 Record every hit with its layer and rule type; don't stop at the first one
 found; the analysis needs the *full* set to apply the resolution model.
