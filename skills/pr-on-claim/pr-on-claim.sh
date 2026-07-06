@@ -9,9 +9,8 @@ TITLE_OVERRIDE="${2:-}"
 
 # Fetch issue details
 echo "Fetching issue #${ISSUE_NUM}..."
-ISSUE_DATA=$(gh issue view "$ISSUE_NUM" --json number,title,body)
-ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
-BRANCH_SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-+/-/g' | sed 's/-$//')
+ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title')
+BRANCH_SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
 
 # Infer type from title (fix vs feat)
 if [[ "$ISSUE_TITLE" =~ ^[Ff]ix|^[Bb]ug ]]; then
@@ -31,7 +30,7 @@ echo "Creating empty commit..."
 git commit --allow-empty -m "start: $ISSUE_TITLE (closes #$ISSUE_NUM)"
 
 echo "Pushing branch..."
-git push -u origin "$BRANCH_NAME"
+git push -u origin HEAD
 
 echo "Opening draft PR..."
 gh pr create \
@@ -42,7 +41,7 @@ WIP — opened up front to claim the issue; implementing now." \
     --draft
 
 echo "Posting claim comment on issue..."
-gh issue comment "$ISSUE_NUM" --body "Working on this — paws off until I'm done."
+gh issue comment "$ISSUE_NUM" --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
 
 echo "✓ PR opened and issue claimed."
 git log --oneline -1
