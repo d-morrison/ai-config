@@ -74,10 +74,11 @@ For every staged entry, check:
 ### 3. Decide: promote, discard, or hold
 
 - **Promote** — write it to the right destination, using
-  `record-learnings`' own routing table (user-wide `/memories/`,
-  repo-specific project memory, a shared skill, or `CLAUDE.md`) and its
-  same conventions (check existing notes first, bullet form, the *why* not
-  just the *what*, register a new `/memories/` file in `MEMORY.md`).
+  [`record-learnings`' own routing table](../record-learnings/SKILL.md)
+  (user-wide `/memories/`, repo-specific project memory, a shared skill, or
+  `CLAUDE.md`) and its same conventions (check existing notes first, bullet
+  form, the *why* not just the *what*, register a new `/memories/` file in
+  `MEMORY.md`).
 - **Discard** — remove the entry from `learn-staging.md`. Too narrow,
   contradicted, or already covered elsewhere. No need to explain a discard
   at length; one line is enough if a rationale is worth keeping at all.

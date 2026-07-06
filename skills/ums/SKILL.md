@@ -126,6 +126,8 @@ committed pass.
   rather than just a new skill? → run `agent-builder` to scaffold
   `.claude/agents/<name>.md`
 - [ ] Are there existing skills that reference outdated info? → Fix them
+- [ ] Has `learn-staging.md` accumulated entries since the last
+  `promote-memory` run? → fold in a `promote-memory` pass now.
 - [ ] Did I edit one step's scope without updating sibling steps in the same file? →
   Search the file for all enumerations of the changed category and make them consistent.
 - [ ] Did I add a shared-procedure step to one skill but not to sibling skills? →
@@ -140,7 +142,7 @@ committed pass.
   explicit ... counterpart" was missed until review flagged it as a
   follow-on.)
 
-## Relationship to record-learnings
+## Relationship to record-learnings and staged capture
 
 - `record-learnings` = records individual facts in place, in the moment they arise
 - `ums` = a reflective, full-context sweep — survey what accumulated, categorize it, and persist it all in one committed pass

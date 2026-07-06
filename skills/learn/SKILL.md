@@ -46,7 +46,7 @@ making it under time pressure mid-task.
 
 Append (never overwrite) an entry to the staging file:
 `~/.claude/projects/<project-slug>/memory/learn-staging.md`. This is the
-same auto-memory directory `handoff`/`checkpoint`/`record-learnings` already
+same auto-memory directory `handoff`/`record-learnings`/`memorize` already
 use — it's local to this machine and was never going to be committed
 regardless, so it's a natural staging area distinct from the ai-config
 repo's actual committed corpus (`CLAUDE.md`, `memories/*.md`).
