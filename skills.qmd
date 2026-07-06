@@ -100,12 +100,15 @@ Most skills also respond to plain-English triggers listed in their `description`
 | Skill | Aliases | What it does |
 |-------|---------|--------------|
 | [`session-lock`](skills/session-lock/SKILL.md) | `deconflict-sessions` | Register/deregister this session to prevent parallel clobbering |
-| [`handoff`](skills/handoff/SKILL.md) | `wrap-up` | Summarize context and open items so another session can pick up |
+| [`handoff`](skills/handoff/SKILL.md) | | Snapshot work state (branch, jobs, open decisions) so the next session can resume cleanly |
+| [`wrap-up`](skills/wrap-up/SKILL.md) | `done`, `merged` | Verify true PR/issue/branch state, report a linked summary, then run UMS |
 | [`select-model`](skills/select-model/SKILL.md) | `model-fit`, `assess-model-fit` | Choose the right Claude model for the task at hand |
 | [`prompt-me`](skills/prompt-me/SKILL.md) | `pm` | Surface the single most pressing open question (or top N) waiting on user input |
 | [`prompt-me-all`](skills/prompt-me-all/SKILL.md) | `pma` | Restate every open question still waiting on user input, uncapped |
+| [`checkpoint`](skills/checkpoint/SKILL.md) | | Save a deliberate mid-task snapshot without ending the session |
+| [`compress-session`](skills/compress-session/SKILL.md) | | Distill the session into auto memory before context fills up |
 | [`permission-check`](skills/permission-check/SKILL.md) | | Diagnose why Claude Code is (or isn't) prompting for permission on an action |
 
 ## Full skill list
 
-All 156+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 158+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.

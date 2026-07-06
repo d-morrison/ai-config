@@ -1,17 +1,17 @@
 ---
-name: "permission-check"
-description: "Codex wrapper for the ai-config Claude skill `permission-check`. Read-only self-diagnostic for 'why is Claude Code prompting me for this' (or 'why isn't it'). Walks the permission config layers in resolution order (managed policy, CLI args, project-local, project-shared, user) and reports which layer's rule actually wins for a given tool/action pattern. Never edits config \u2014 see update-config for that. Use when asked to 'permission check', 'why does this keep prompting', 'why is this auto-allowed', 'check my permissions', 'diagnose permission prompt', or 'what rule controls this tool call'. Use when Codex is asked to use `permission-check`, `/permission-check`, or the corresponding ai-config/Claude skill workflow."
+name: "compress-session"
+description: "Codex wrapper for the ai-config Claude skill `compress-session`. Distill the conversation into a structured note in auto memory (MEMORY.md) before context fills up, and/or trigger a focused /compact yourself instead of waiting for the automatic pass to guess what matters. Use when asked to 'compress the session', 'distill context before compacting', 'summarize before compaction', or proactively when the conversation is getting long and approaching an auto-compact boundary. Use when Codex is asked to use `compress-session`, `/compress-session`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# permission-check (Codex wrapper)
+# compress-session (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/permission-check/SKILL.md](../../skills/permission-check/SKILL.md)
+Source: [skills/compress-session/SKILL.md](../../skills/compress-session/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/permission-check/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/permission-check`, resolve the symlink target for this wrapper directory first, then read `../../skills/permission-check/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/compress-session/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/compress-session`, resolve the symlink target for this wrapper directory first, then read `../../skills/compress-session/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
