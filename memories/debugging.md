@@ -276,11 +276,14 @@ Also from ettbc#13/#14:
   proactively, in the same commit that adds the new dotfile/dir, rather than
   waiting for CI to name it. A submodule whose content isn't checked out in CI
   (the common case — `actions/checkout` doesn't init submodules by default)
-  can dodge the NOTE by luck, since `R CMD build` auto-removes the resulting
-  empty directory before `check` ever sees it — but exclude it in
-  `.Rbuildignore` anyway rather than relying on that accident of checkout
-  config. (`UCD-SERG/serodynamics#265`: adding `.claude/settings.json` failed
-  `ubuntu-latest`/`macos-latest`/`windows-latest`/`oldrel-1` R-CMD-check
+  can dodge the NOTE by luck — the CI build log's own `R CMD build` step
+  ("checking for empty or unneeded directories") reported
+  `Removed empty directory '<pkg>/.ai-config'`, so the uninitialized submodule
+  never reached `R CMD check` at all — but exclude it in `.Rbuildignore`
+  anyway rather than relying on that accident of checkout config.
+  (`UCD-SERG/serodynamics#265`: adding `.claude/settings.json` failed
+  `ubuntu-latest`/`macos-latest`/`windows-latest` (all `release`) plus
+  `ubuntu-latest (oldrel-1)` R-CMD-check
   simultaneously with this exact NOTE; the sibling `.ai-config` submodule
   added in the same PR happened not to trigger it, for the empty-dir reason
   above.)
