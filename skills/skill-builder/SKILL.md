@@ -305,6 +305,9 @@ Then, as their own explicit steps (don't leave them buried in a comment):
 - **`consolidate-skills`** — when you discover a near-duplicate that already
   shipped (two real skills for one workflow), hand the cleanup there: it merges
   them into one canonical skill plus alias stubs.
+- **`decompose-skill`** — when Step 0 finds the closest existing skill to
+  extend is actually two concerns wearing one name, hand the cleanup there
+  instead of bolting a third concern on.
 - **`heal-skill`** — the repair counterpart: this skill authors a skill,
   `heal-skill` fixes one that misfired after it shipped.
 - **`agent-builder`** — the subagent-file counterpart: this skill authors
