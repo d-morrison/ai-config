@@ -159,6 +159,19 @@ allowed-tools:               # real skill: list its tools. alias: mirror the can
   both: a `CLAUDE.md` section citation that didn't exist, and a claimed
   "blocking/nit/optional" severity scale the cited doc never defined — both
   caught by the `@claude` reviewer, not by the skill's author.)
+- **Test any regex/grep detection heuristic against the skill's own cited
+  canonical examples before shipping — don't just reason about it
+  abstractly.** When a skill's description or fragment names specific
+  example phrases it's supposed to catch, actually run the pattern against
+  those exact strings. A heuristic that doesn't match its own advertised
+  examples is broken, not just incomplete, and a reviewer checking prose
+  for accuracy (`fact-check-prose`) will catch the mismatch even if you
+  don't. (`fix-forward-references` / ai-config#507: the first version of
+  `forward-references.md`'s heuristic required a paired reference-cue
+  alongside the directional word, but every one of its own cited examples
+  — "see below", "as discussed below", "we'll cover this later" — has no
+  such cue, so none of them actually matched; caught in review, not before
+  pushing.)
 - **Use `<angle-bracket>` placeholders in command blocks — never bare ALLCAPS.**
   Identifiers like `PATH`, `URL`, `TARGET` look like shell env vars; bare `PATH`
   looks like the `$PATH` env var, and `path` is a zsh special that mirrors

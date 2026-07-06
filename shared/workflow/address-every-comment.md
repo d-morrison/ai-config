@@ -56,3 +56,17 @@ prose but leaving the paraphrase stale reintroduces the same wording issue
 one file over. Grep the diff for the flagged phrase before considering the
 finding closed. (ai-config#373: fixed "routing/dispatch site" in the skill
 per review, but the CHANGELOG entry still said it until a follow-up commit.)
+
+**This generalizes to a skill's own inline restatement of a fragment it
+links to.** A `SKILL.md` that links a backing `shared/` fragment for the
+full detail often *also* restates the fragment's approach or word list
+inline (in its `description` field, or a short procedure-step summary) so
+a reader doesn't have to open the linked file. Fixing a bug in the
+fragment doesn't automatically fix these inline restatements --- they're a
+second, independent copy of the same claim, and a review round after the
+fragment fix can catch them going stale exactly like a CHANGELOG paraphrase
+does. Grep the whole PR diff for the fixed phrase/word-list, not just the
+fragment file, before considering a fragment fix complete. (`ai-config#507`:
+fixing `forward-references.md`'s regex left `fix-forward-references/SKILL.md`'s
+own `description` field and Step 2 summary describing the old, already-fixed
+approach --- caught in a second review round.)
