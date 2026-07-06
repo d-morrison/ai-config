@@ -70,6 +70,18 @@ git merge origin/main      # MERGE_BRANCH — should now auto-resolve where it p
 If a merge that used to need manual resolution now completes with
 `Auto-merging <file>` and no conflict markers, the driver is working.
 
+**If the PR's rationale for keeping a risky `merge=union` attribute leans on
+"CI will catch a corrupted result," verify that claim against the actual
+workflow file — don't just assert it.** Check the claimed job's trigger
+`paths:` filter (or lack of one) actually covers the attributed file, and
+that the job runs *before* merge (`pull_request`), not only after
+(`push: branches: main`). A stated backstop that doesn't actually fire on
+the file in question is worse than no backstop claim at all — it creates
+false confidence. (`d-morrison/rme#989`: the `.gitattributes` comment
+claimed a Quarto render CI job would catch a malformed `references.bib`
+before merge, but `preview.yml`'s `paths:` filter excluded `.bib` entirely
+— caught by review, fixed by adding the path.)
+
 ### 4. Don't over-apply union merge
 
 `merge=union` is a good default **specifically for append-only log-style
