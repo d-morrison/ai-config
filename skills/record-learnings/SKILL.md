@@ -132,6 +132,11 @@ After adding or updating any skill file, always commit and push to origin:
 - **`ums`** — the reflective, full-context-sweep counterpart to this skill's
   in-place, fact-at-a-time recording. Both fire proactively, as the learning
   or fact arises; `ums` additionally runs as a backstop before `/clear`.
+- **`learn`** — the lower-friction sibling for a candidate you're not yet
+  confident enough to commit directly: stage it there instead, and let
+  `promote-memory` review it later. Use this skill (or `memorize`) when
+  you're already confident the fact belongs in committed memory; use `learn`
+  for the genuinely uncertain middle ground.
 
 ## Anti-patterns
 
