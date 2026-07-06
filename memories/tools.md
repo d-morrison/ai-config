@@ -2064,3 +2064,48 @@ same session, either prefix every command with an explicit `cd
 checks — don't rely on remembering which directory the last call left you
 in. (Session sliding the `macros` submodule pin in `d-morrison/rme` and
 `ucdavis/epi204`, 2026-07-04.)
+
+## Working several PRs in one session shares ONE working tree — commit before switching branches
+
+Without explicit worktree isolation, `git checkout <other-branch>` in the
+same session reuses the single physical working directory — there's no
+per-branch sandbox. Writing a new file (e.g. a new skill's `SKILL.md`) and
+then switching to a different branch *before committing* leaves that file
+sitting in the working tree as an **untracked** file; git doesn't error or
+warn, since nothing conflicts. If a later branch's cleanup step does
+`rm -rf` on what looks like a stray generated artifact from a previous
+context, it can silently delete that still-uncommitted work with no
+recovery path (unlike a committed file, which survives in git history
+regardless of which branch is checked out). When working multiple
+issues/PRs in one session on a harness with a single shared working tree,
+commit each new file immediately after writing it — before running any
+cleanup command or switching to the next branch — rather than batching
+several files' worth of edits before the first commit. (`ai-config` `gia`
+session, 2026-07-06: a freshly-written `skills/checkpoint/SKILL.md` was
+lost this way when a same-session cleanup `rm -rf` on a different branch's
+leaked untracked directory swept it up too; recovered by rewriting the file
+from the still-visible conversation content, but a git-invisible loss like
+this can go unnoticed without that fallback.)
+
+## Regenerate derived files BEFORE the final `git add`, not after
+
+A generator script (e.g. `scripts/sync-codex-skill-wrappers.py`, which
+rewrites every file under `codex-skills/` from `tool-mappings.yml`) can
+legitimately need to run more than once in a work session — once early,
+then again after a late-session `git merge origin/main` pulls in changes
+the generator's inputs depend on. If the sequence is `git add <file>` →
+run the generator → `git commit` (without re-running `git add` on what the
+generator just rewrote), the commit omits the regenerated content even
+though the working tree still has the regenerated content — a `git status`
+*after* the commit would show the codex-skills files as unstaged
+modifications, but a developer who only checked `git diff --staged` or
+`git status` right after the earlier partial `git add` (and didn't look
+again after running the generator) would miss them. This surfaces later
+as a CI `validate` failure ("Codex skill wrappers are out of sync") on a
+commit that looks, from its own diff, like it shouldn't have touched
+`codex-skills/` at all. Always run the generator immediately before the
+final `git add -A` (or explicit paths covering its output directory), not
+between an earlier partial `git add` and the commit. (`ai-config` `gia`
+session, 2026-07-06: this exact ordering, done on two sibling PR branches
+right after merging `main` in, produced a `validate` failure on one of them
+that had to be fixed with a follow-up commit.)
