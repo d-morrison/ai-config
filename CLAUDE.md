@@ -447,6 +447,16 @@ A distinct, easy-to-miss gap: a concept stated with full definitional precision 
 Like `forward-references.md`, this has a dedicated actionable skill: `detect-informal-definitions`.
 Run it — or apply its check inline — wherever `ard`/`ardi` reviews a diff that introduces new technical content, alongside the other prose-review rules in this file. (Found by hand on `d-morrison/rme#706`: a "conditional predicted risk" quantity introduced only as plain prose right before two definitions that depended on it, and a "collapsibility bias" concept defined in one sentence crammed inside a *different* concept's definition div.)
 
+## Detect hypothetical examples where real data is already available
+
+A worked example can be a perfectly well-formed `{#exm-...}` div and still reach for invented, round-number quantities --- "suppose 20% of the exposed group..." --- when the document already loads a real dataset it uses elsewhere.
+That's a distinct gap from the informal-definitions check above: it isn't a missing div, it's a missed chance to ground the illustration in real data that was already available.
+
+@shared/writing/hypothetical-examples.md
+
+This has a dedicated actionable skill: `detect-hypothetical-examples`.
+Run it — or apply its check inline — wherever `ard`/`ardi` reviews a diff that introduces or edits a worked example, alongside the other prose-review rules in this file. Fixing isn't mechanical substitution: a real dataset's effect size is often much less dramatic than an invented one, so weigh whether the real numbers still make the teaching point before publishing them. (Found by hand on `d-morrison/rme#706`: a logistic-regression chapter's worked examples used invented covariate-specific risks and made-up exposure proportions throughout, even though the chapter already loads and fits models on its real running WCGS dataset elsewhere.)
+
 ## Fact-check code logic and math in review
 
 <!-- Not yet shared with the lab manual; edit shared/coding/fact-check-code-logic.md, not here. -->
