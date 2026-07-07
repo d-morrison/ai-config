@@ -1,6 +1,6 @@
 ---
 name: delegate-to-codex
-description: "Delegate heavy read/draft/verify work to the `codex` CLI (a separately-billed ChatGPT-plan subagent) before spending Claude quota — build the prompts, run codex read-only, orchestrate multi-item work via a background runner + DONE-marker poll with a `--output-schema`, detect 5-hour usage-limit exhaustion, and fall back to Claude only for what codex can't finish. Use when asked to 'delegate to codex', 'use codex', 'run this on codex', 'dtc', 'codex-first', 'do this with codex', 'offload to codex', or before a heavy fan-out read/analysis/verify pass that would otherwise burn Claude/Workflow tokens."
+description: "Delegate heavy read/draft/verify work to the `codex` CLI (a separately-billed ChatGPT-plan subagent) before spending Claude quota — build the prompts, run codex read-only, orchestrate multi-item work via a background runner + DONE-marker poll with a `--output-schema`, detect codex exhaustion (rolling 5-hour usage limit OR a hard spend cap), and fall back to Claude only for what codex can't finish. Use when asked to 'delegate to codex', 'use codex', 'run this on codex', 'dtc', 'codex-first', 'do this with codex', 'offload to codex', or before a heavy fan-out read/analysis/verify pass that would otherwise burn Claude/Workflow tokens."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -98,7 +98,7 @@ run_one() {
     -o "$WORK/out/$id.json" --output-schema "$WORK/schema.json" \
     - < "$WORK/prompt_$id.txt" > "$WORK/out/$id.codexlog" 2>&1
   rc=$?; sz=$(wc -c < "$WORK/out/$id.json" 2>/dev/null || echo 0)
-  grep -qiE "rate limit|quota|usage limit|429|too many requests" "$WORK/out/$id.codexlog" && flag="RATELIMIT"
+  grep -qiE "rate limit|quota|usage limit|spend cap|429|too many requests" "$WORK/out/$id.codexlog" && flag="EXHAUSTED"
   echo "$id rc=$rc bytes=$sz $flag" >> "$WORK/status.log"
 }
 for id in <ids…>; do
@@ -113,15 +113,25 @@ nohup bash "$WORK/run.sh" > "$WORK/runner.log" 2>&1 &
 
 Then poll for `$WORK/DONE` in a **background Bash task** (so the wait itself
 doesn't hit the foreground timeout), reading `$WORK/status.log` for per-item
-exit code / byte count / `RATELIMIT` flags.
+exit code / byte count / `EXHAUSTED` flags.
 
 ### 4. Detect exhaustion and fall back to Claude
 
 Treat an item as codex-failed when its `status.log` line shows a non-zero `rc`,
-`bytes=0` (empty `-o`), or a `RATELIMIT` flag. For **only those** items, redo
-the stage with a Claude `Agent` / `Workflow` — don't re-route the ones codex
-already finished. If the whole window is rate-limited, fall back to Claude for
-the remainder and note it; resume on codex after the window resets.
+`bytes=0` (empty `-o`), or an `EXHAUSTED` flag. Codex exhaustion comes in **two
+distinct forms**, both worth grepping for (step 3 does):
+
+- a **rolling ~5-hour usage/rate limit** (`rate limit`, `usage limit`, `429`) —
+  transient; resume on codex once the window resets;
+- a **hard spend cap** set by the workspace owner (`spend cap`) — does NOT reset
+  on its own; codex stays blocked until the owner raises the cap, so flag it to
+  the user and stay on Claude for the rest of the run.
+
+The grep must catch **both** — an earlier version keyed only on rate-limit
+phrasing and silently missed a `spend cap` block, so the runner didn't flag it
+and only reading the raw log surfaced it. For **only** the failed items, redo the
+stage with a Claude `Agent` / `Workflow` — don't re-route the ones codex already
+finished.
 
 ### 5. Collect and synthesize
 
