@@ -73,6 +73,11 @@ read it before running this skill; the steps below are the short version.
   first mention directly, so it catches a bare `@def-x` crossref with no
   directional word at all --- something this skill's grep heuristic misses.
   Run both on a diff that touches definitions.
+- **`detect-informal-definitions`** --- a concept with no formal
+  definition div of its own can't be crossref'd, which is exactly what
+  pushes an author toward a forward-pointing phrase in the first place.
+  Run it alongside this skill on a diff that introduces new technical
+  content; fixing its findings often removes a forward reference for free.
 - **`check-rendered-refs` / `crr`** --- checks whether a crossref *resolved*
   at render time; this skill checks whether it points in the right
   *direction*, on the source prose, before render.

@@ -94,6 +94,11 @@ structure.
   without ever using the word "below" (a bare `@def-x` crossref with no
   signpost at all), which only `definition-crossrefs.md`'s ordering check
   catches.
+- **[`informal-definitions.md`](informal-definitions.md)** --- a concept
+  with no formal div of its own can't be crossref'd, which is exactly what
+  pushes an author toward a forward-pointing phrase ("the definition
+  below") instead of a working link in the first place. Fixing that
+  check's findings often removes a forward reference for free.
 - **[`challenge-ambiguous-terminology.md`](../workflow/challenge-ambiguous-terminology.md)**
   --- catches unclear terms; this check assumes the term is clear and
   instead verifies the reader has already been given whatever it's

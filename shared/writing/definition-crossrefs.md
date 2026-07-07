@@ -32,7 +32,10 @@ diff.
   or a crossref used elsewhere in the same document.
 - A term or result mentioned but never defined anywhere in the document is
   a separate gap from ordering: flag it as missing a definition entirely,
-  not just as a forward reference.
+  not just as a forward reference. If the term actually *was* stated with
+  definitional precision somewhere in the prose --- just not inside a
+  formal div --- that's [`informal-definitions.md`](informal-definitions.md)'s
+  case specifically, not this one.
 
 ## What to report
 
@@ -49,6 +52,12 @@ one of:
 
 ## Relationship to other checks
 
+- **[`informal-definitions.md`](informal-definitions.md)** --- runs before
+  this check, conceptually: it catches a concept stated with definitional
+  precision that never became a formal div at all (or rides along inside a
+  *different* concept's div), which is exactly the "undefined term" case
+  above when the "definition" is sitting in plain prose rather than
+  missing outright.
 - **[`forward-references.md`](forward-references.md)** --- the general case
   of this same problem: any plain-text forward-pointing phrase ("below",
   "later", "in the following section") about any kind of content, not just

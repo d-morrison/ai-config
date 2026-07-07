@@ -28,17 +28,27 @@ clean-but-unmerged PR is not a stop; move to the next item, and stack it when it
 isn't naturally independent of that PR. See
 [`stack-dont-pause`](stack-dont-pause.md).
 
-**Self-review against the project's own stated conventions before the first
-push.** Don't treat the review bot as the mechanism that discovers a
-project's documented conventions --- self-apply them first. When a project's
-own `CLAUDE.md` (or equivalent agent doc) already states specific criteria
---- a DRY/no-duplication rule, a doc-sync checklist for a new input, a
-changelog-category rule, a citation requirement, a "new logic needs test
-coverage" norm --- a first-pass implementation checked only against feature
-correctness forces the review loop to spend a round re-deriving what the
-project's own docs already said. Before the first push, re-read the
-project's own stated review criteria and check the diff against each one
-directly, instead of waiting for the bot to enumerate them one per round.
+**Self-review against the project's own stated conventions before every
+push, not just the first --- and don't just re-read the criteria, actually
+run the applicable review skills against your own diff and iterate on
+what they find, the same ARD cycle you'd run against an external
+reviewer's findings.** Don't treat the review bot as the mechanism that
+discovers a project's documented conventions --- self-apply them first.
+When a project's own `CLAUDE.md` (or equivalent agent doc) already states
+specific criteria --- a DRY/no-duplication rule, a doc-sync checklist for a
+new input, a changelog-category rule, a citation requirement, a "new logic
+needs test coverage" norm, a prose-quality check like `fact-check-prose`,
+`fix-forward-references`, or `detect-informal-definitions` --- a first-pass
+implementation checked only against feature correctness forces the review
+loop to spend a round re-deriving what the project's own docs already
+said. Before every push, re-read the project's own stated review criteria
+and actually invoke the review skills/checks it names against the diff
+(not just recall them from memory), the same way an external reviewer
+would apply them. Address every finding your own self-review surfaces ---
+fix, rebut, or defer, exactly like the ARD step above --- before the push
+goes out; a self-review that finds issues and pushes anyway has only
+moved the round to the external reviewer instead of skipping it. Repeat
+until your own self-review pass is clean, then push.
 ([gha#219](https://github.com/d-morrison/gha/issues/219)/[#220](https://github.com/d-morrison/gha/pull/220): one review round surfaced five findings --- a DRY
 duplication, an incomplete-coverage doc overclaim, a wrong changelog
 category, an uncited claim, and missing test coverage for new logic --- all
