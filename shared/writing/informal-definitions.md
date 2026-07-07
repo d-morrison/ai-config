@@ -19,18 +19,33 @@ comparison never sees it as a definition to track in the first place.
 
 ## The detection heuristic
 
-Scan prose for a bolded or otherwise emphasized term, immediately followed
-by language that states a precise meaning --- "is", "is defined as",
-`\eqdef`, an equation --- and check whether that sentence sits inside the
-project's formal definition construct:
+Two independent patterns, each catching phrasing the other misses --- run
+both:
 
-```bash
-rg -n '\*\*[A-Z][a-zA-Z .-]{2,60}\*\*[^.]*(\\eqdef|is (defined|the)\b|=)' <file>
-```
+1. **A bolded or otherwise emphasized term, immediately followed by
+   language that states a precise meaning** --- "is", "is defined as",
+   `\eqdef`, an equation:
 
-For each hit, find its enclosing div (search backward for the nearest
-`:::{#...}` opener and forward for the matching closer). Treat it as a
-**candidate** if:
+   ```bash
+   rg -n '\*\*[A-Za-z][a-zA-Z .-]{2,60}\*\*[^.]*(\\eqdef|is (defined|the)\b|=)' <file>
+   ```
+
+2. **A naming sentence ending "is:"/"are:" immediately before a display
+   equation** --- catches a concept named in plain prose with no bold at
+   all, which pattern 1 misses entirely:
+
+   ```bash
+   rg -n '\bis:\s*$|\bare:\s*$' <file>
+   ```
+
+   Treat a hit as a real candidate only when the very next non-blank line
+   opens a display-math block (`$$`) or contains `\eqdef` --- a line
+   ending "is:" that instead introduces a list or a code block isn't a
+   definitional naming sentence.
+
+For each hit from either pattern, find its enclosing div (search backward
+for the nearest `:::{#...}` opener and forward for the matching closer).
+Treat it as a **candidate** if:
 
 - it is **not** inside any `{#def-...}`/`{#thm-...}`/`{#lem-...}`/
   `{#cor-...}` div at all (plain prose), **or**
