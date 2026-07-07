@@ -172,6 +172,17 @@ allowed-tools:               # real skill: list its tools. alias: mirror the can
   — "see below", "as discussed below", "we'll cover this later" — has no
   such cue, so none of them actually matched; caught in review, not before
   pushing.)
+- **After testing a heuristic against multiple canonical examples, verify
+  every pattern you tested actually landed in the shipped fragment —
+  passing the test isn't the same as writing the result down.** Testing
+  two patterns and confirming each catches a different example, then only
+  transcribing one of them into the file, ships a fragment that
+  contradicts its own skill's procedure description (which still says "use
+  the two patterns"). `diff` or re-read the fragment against your test
+  notes before committing, not just your terminal scrollback. (`ai-config#524`:
+  both regexes were verified working in a scratch test file, but only the
+  first was written into `informal-definitions.md` — caught by the
+  `@claude` reviewer, not before pushing.)
 - **Use `<angle-bracket>` placeholders in command blocks — never bare ALLCAPS.**
   Identifiers like `PATH`, `URL`, `TARGET` look like shell env vars; bare `PATH`
   looks like the `$PATH` env var, and `path` is a zsh special that mirrors
