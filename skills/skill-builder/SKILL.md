@@ -177,8 +177,8 @@ allowed-tools:               # real skill: list its tools. alias: mirror the can
   passing the test isn't the same as writing the result down.** Testing
   two patterns and confirming each catches a different example, then only
   transcribing one of them into the file, ships a fragment that
-  contradicts its own skill's procedure description (which still says "use
-  the two patterns"). `diff` or re-read the fragment against your test
+  contradicts its own skill's procedure description (which still says to
+  run both). `diff` or re-read the fragment against your test
   notes before committing, not just your terminal scrollback. (`ai-config#524`:
   both regexes were verified working in a scratch test file, but only the
   first was written into `informal-definitions.md` — caught by the
