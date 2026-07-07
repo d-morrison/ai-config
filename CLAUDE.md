@@ -437,6 +437,16 @@ The same problem shows up more broadly as plain-text signposting — "as discuss
 Unlike `definition-crossrefs.md` above, `forward-references.md` has a dedicated actionable skill: the `fix-forward-references` skill (alias `ffr`) detects these with a grep-for-directional-word heuristic and rearranges (or rewords) the prose to fix them.
 Run it — or apply its check inline — wherever `ard`/`ardi` reviews a prose diff, alongside the other prose-review rules in this file.
 
+## Detect concepts defined only in prose, never formalized
+
+`definition-crossrefs.md` above assumes a formal-definition div already exists and checks that mentions link to it in the right order.
+A distinct, easy-to-miss gap: a concept stated with full definitional precision --- a bolded name, an equation, an `\eqdef` --- that never became a formal div at all, so it has no stable id and nothing downstream can cite it (or the concept rides along inside a *different* definition's div instead of getting its own).
+
+@shared/writing/informal-definitions.md
+
+Like `forward-references.md`, this has a dedicated actionable skill: `detect-informal-definitions`.
+Run it — or apply its check inline — wherever `ard`/`ardi` reviews a diff that introduces new technical content, alongside the other prose-review rules in this file. (Found by hand on `d-morrison/rme#706`: a "conditional predicted risk" quantity introduced only as plain prose right before two definitions that depended on it, and a "collapsibility bias" concept defined in one sentence crammed inside a *different* concept's definition div.)
+
 ## Fact-check code logic and math in review
 
 <!-- Not yet shared with the lab manual; edit shared/coding/fact-check-code-logic.md, not here. -->
