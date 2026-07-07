@@ -19,11 +19,16 @@ rg -n '\b(hypothetical|[Ss]uppose a\b|[Ss]uppose the\b|[Ss]uppose only\b|[Ii]n a
 ```
 
 Also grep for a made-up round-number proportion or rate sitting inside an
-`#exm-`/`#def-` div --- `\b\d+%\b` for a round percentage, or
-`\b0\.[1-9]0?\b` for a one- or two-digit decimal (a suspiciously round
-value such as `0.1`, `0.3`, `0.20` is a stronger signal than an irregular
-one like `0.112`, which reads as computed rather than chosen for the
-example).
+`#exm-`/`#def-` div --- `\b\d+%` for a round percentage (no trailing `\b`:
+`%` isn't a word character, so a boundary right after it never matches
+ordinary prose like "20% of"), or `\b0\.[1-9]0?\b` for a one- or two-digit
+decimal (a suspiciously round value such as `0.1`, `0.3`, `0.20` is a
+stronger signal than an irregular one like `0.112`, which reads as computed
+rather than chosen for the example):
+
+```bash
+rg -n '\b\d+%|\b0\.[1-9]0?\b' <file>
+```
 
 For each hit, check whether the same document (or project) already loads a
 real dataset earlier in execution order --- a `read.csv`/`read_csv`/
