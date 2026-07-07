@@ -78,6 +78,7 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`fact-check-prose`](skills/fact-check-prose/SKILL.md) | `fcp` | Check prose claims, reasoning, and computed values against sources and rendered output |
 | [`fix-forward-references`](skills/fix-forward-references/SKILL.md) | `ffr` | Detect and rearrange/reword forward-pointing references ("see below") in prose |
 | [`detect-informal-definitions`](skills/detect-informal-definitions/SKILL.md) | | Find concepts defined with definitional precision that never got wrapped in a formal definition div |
+| [`detect-hypothetical-examples`](skills/detect-hypothetical-examples/SKILL.md) | | Find worked examples using invented numbers when a real dataset is already available |
 | [`use-math-macros`](skills/use-math-macros/SKILL.md) | `macroize` | Rewrite manuscript math onto the shared d-morrison/macros submodule |
 | [`tidy`](skills/tidy/SKILL.md) | | Clean up code or prose without changing behavior |
 | [`simplify`](skills/simplify/SKILL.md) | | Reduce a file or function to its essential parts |
@@ -115,4 +116,4 @@ Most skills also respond to plain-English triggers listed in their `description`
 
 ## Full skill list
 
-All 164+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 165+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
