@@ -613,30 +613,39 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   worktree's absolute path** (`/root/.cache/R/renv/library/<repo>-<worktree-dirname>-<hash>/...`),
   separate from the main checkout's already-populated cache. Its own
   `renv::restore()` can fail to bootstrap for the same reasons as a fresh
-  session (missing `RENV_CONFIG_INSTALL_REMOTES=false`, a renamed GitHub repo
-  in `Remotes:`, P3M binaries not yet built for a brand-new R release — see
-  the bullets above and below), so `quarto render` inside the worktree errors
+  session — a renamed GitHub repo in `Remotes:`, P3M binaries not yet built
+  for a brand-new R release (see the bullets above and below), or renv's own
+  live GitHub-API resolution of `Remotes:` (unset `RENV_CONFIG_INSTALL_REMOTES`
+  defaults to `TRUE`, so `renv::restore()`/activation hits `api.github.com`
+  even though the actual package versions installed come entirely from
+  `renv.lock`'s pinned SHAs; set `RENV_CONFIG_INSTALL_REMOTES=false` to skip
+  that network dependency) — so `quarto render` inside the worktree errors
   with "the knitr package is not available" even though the SAME package is
   installed and working in the main checkout. **Don't force the local render
   through this** — push, let CI's `build`/`quarto render` job do the real
   render (it already has the right env vars and a working cache), then verify
   the rendered output by fetching the PR-preview HTML straight from the
   `gh-pages` branch: `mcp__github__get_file_contents` with
-  `path: pr-preview/pr-<N>/<chapter>.html`, `ref: refs/heads/gh-pages` returns
-  the file **base64-decoded already** (not raw base64) as a
-  `[{type,text}, {type,text}]` array — the second element is the actual HTML;
-  write it to a scratch file (Python `json.load` + write `data[1]['text']`)
-  and `grep`/`Read` it to confirm cross-refs resolved (no literal `?@id` or
-  `**id?**` text), computed values match your derivation, and new
-  callout/div structure rendered as intended. This is strictly more reliable
-  than fighting the worktree's renv bootstrap, and it's what actually caught
-  a real structural bug (a stray `---` producing a spurious `<hr>` — see the
-  slidebreak bullet in the Quarto section) that a purely-local read of the
-  `.qmd` source wouldn't have surfaced. (`d-morrison/rme#1009`, several
-  rounds: a background `renv::restore()` in `/tmp/rme-<issue>-worktree` sat
-  at "renv installed, nothing else" after the worktree was removed and
-  re-created at the same path — verified the actual chapter content instead
-  via this gh-pages fetch, twice, once per structural fix.)
+  `path: pr-preview/pr-<N>/<chapter>.html`, `ref: refs/heads/gh-pages` returned
+  the file, in one observed session, **base64-decoded already** (not raw
+  base64) as a `[{type,text}, {type,text}]` array with the actual HTML in the
+  second element — write it to a scratch file (Python `json.load` + write
+  `data[1]['text']`) and `grep`/`Read` it to confirm cross-refs resolved (no
+  literal `?@id` or `**id?**` text), computed values match your derivation,
+  and new callout/div structure rendered as intended. This exact array shape
+  is an observed harness behavior, not a documented contract — if
+  `data[1]['text']` is missing or isn't HTML, `cat`/`head` the saved file to
+  see its actual structure (try `data[0]['text']` next) rather than assuming
+  the recipe is wrong. This is strictly more reliable than fighting the
+  worktree's renv bootstrap, and it's what actually caught a real structural
+  bug — a stray `---` left next to a `{{< slidebreak >}}` rendering a
+  spurious `<hr>` in every non-`revealjs` Quarto profile, invisible from
+  reading the `.qmd` source alone — that a purely-local read wouldn't have
+  surfaced. (`d-morrison/rme#1009`, several rounds: a background
+  `renv::restore()` in `/tmp/rme-<issue>-worktree` sat at "renv installed,
+  nothing else" after the worktree was removed and re-created at the same
+  path — verified the actual chapter content instead via this gh-pages
+  fetch, twice, once per structural fix.)
 - **R in these containers defaults to the `C` locale**, so
   `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
   chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
