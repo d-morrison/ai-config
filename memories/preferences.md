@@ -456,6 +456,22 @@ limits) before using up claude quota"). The `delegate-to-codex` skill (alias
 `dtc`) operationalizes the mechanics (background runner + DONE-marker poll,
 `--output-schema`, exhaustion detection, Claude fallback).
 
+## Ephemeral-session commit tension
+
+- **In an ephemeral remote/web session, a repo's "commit only after render/lint/spell
+  pass" rule can conflict with a session-end stop-hook that demands uncommitted work
+  be committed+pushed immediately** (the container gets reclaimed, so leaving edits
+  uncommitted risks losing them entirely — a worse outcome than an unverified commit).
+  When verification is genuinely still in flight (e.g. blocked on a slow package
+  install) and the hook fires, commit+push now with a commit message that doesn't
+  claim verification passed, then keep verifying and push a follow-up fixup commit if
+  anything turns up. Git history is cheap; lost work in a reclaimed container is not.
+  Don't let this become an excuse to skip verification when there's no actual
+  time-pressure — only use it when a stop-hook or session-end signal is the forcing
+  function. (Learned on d-morrison/rme#772: render was blocked on a ~1hr renv package
+  install; committed the reorg + merge-conflict resolution before the render finished
+  to satisfy the stop hook, then continued verifying.)
+
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
