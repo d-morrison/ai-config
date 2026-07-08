@@ -157,6 +157,22 @@
   (Hit during the ai-config #275 GII session — `get_status` showed
   `total_count: 0` / `pending` while `get_check_runs` correctly showed all 5
   checks `success`.)
+- **`mcp__github__push_files` strips executable bits** — files pushed via this
+  tool always land with mode `100644`, regardless of their original mode. Scripts
+  that were `100755` become non-executable. This is harmless when the workflow
+  invokes them via `bash <script>` (not directly), but creates cosmetic
+  inconsistency with sibling scripts. Workaround: fix the bit locally after
+  merge with `chmod +x <script> && git commit`. Track the deferred fix as a
+  follow-up issue; don't block the PR on it. (Hit on `ucdavis/rampp#130` —
+  both `reassign-reviewers.sh` and `stash-reviewers.sh` lost `100755`; tracked
+  as `ucdavis/rampp#131`.)
+- **When rewriting a file's full content via `push_files`, read the current
+  file first and diff mentally.** Constructing the content from memory risks
+  introducing typos or omitting lines — e.g. accidentally re-adding a
+  previously-removed entry (`estiamnd` was re-introduced into `inst/WORDLIST`
+  after being removed, requiring a correction commit). Always use
+  `get_file_contents` to get the exact current content, then make the minimal
+  targeted change before pushing.
 - `mcp__github__pull_request_read` parameter names are **camelCase** — use
   `pullNumber`, NOT `pull_number`. Snake_case fails silently or errors.
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
