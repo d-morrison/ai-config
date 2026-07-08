@@ -227,7 +227,7 @@
   previously-pinned commit SHA outright (a real 404, not a rate limit or
   blip). Fix by repointing the `Remotes:`/lockfile entry at the NEW org and a
   current commit there, not by re-snapshotting blindly (see the
-  `renv::snapshot()` destructive-mistake entry above for why not) or assuming
+  `renv::snapshot()` destructive-mistake entry below for why not) or assuming
   a simple re-pin to the old repo's `main` will work.
   (`d-morrison/rme#1017`: `insightsengineering/cards` had moved to
   `pharmaverse/cards`; the old repo was reduced to a redirect-only stub with
@@ -941,10 +941,11 @@ package set first. It went unnoticed at push time (the diff just looked like
 (`lint-changed-files`) failed on a missing `gh` R package that the lockfile
 no longer had — prompting a diff review that revealed the near-total
 truncation. **Before trusting any regenerated lockfile, diff old-vs-new
-package *counts*** (e.g. `jq -r '.Packages|keys[]' old.json new.json | sort`
-+ `comm`) and treat a dramatic shrink as a red flag requiring revert, not a
-"cleanup." (`d-morrison/rme#1017`: reverted via `git revert`, then fixed the
-actual root cause — see the repo-move 404 entry below — with a minimal
+package *counts*** (e.g. `jq -r '.Packages|keys[]' old.json | sort >
+/tmp/old.txt`, same for `new.json`, then `comm -23 /tmp/old.txt
+/tmp/new.txt` to list dropped packages) and treat a dramatic shrink as a red
+flag requiring revert, not a "cleanup." (`d-morrison/rme#1017`: reverted via `git revert`, then fixed the
+actual root cause — see the repo-move 404 entry above — with a minimal
 hand-edit instead.)
 
 The safe fix is a **surgical hand-edit of the lockfile JSON**: install the
