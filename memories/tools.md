@@ -140,11 +140,20 @@
   run_workflow` (a fresh `workflow_dispatch`, not a rerun) 403s the same way** —
   the token lacks `actions: write` for dispatch too, not just for reruns, so
   don't expect a direct-dispatch workaround to succeed where rerun failed
-  (confirmed on UCD-SERG/serodynamics#193). Prefer folding
+  (confirmed on UCD-SERG/serodynamics#193, and again on `d-morrison/rme#1017`
+  trying to dispatch `publish.yml` — same `403 Resource not accessible by
+  integration`). Prefer folding
   the retry into a real, already-pending fix (e.g. a reviewer's requested
   wording tweak) over pushing a bare `--allow-empty` commit — same retrigger,
   no throwaway commit in history. Only use an empty commit when no real fix is
-  pending. (ai-config#403.)
+  pending. (ai-config#403.) **When the failing workflow only triggers on
+  `push: main` / `workflow_dispatch` (no `pull_request` trigger), there's no
+  "push a commit to re-trigger" fallback either** — nothing exercises the
+  actual failing job pre-merge. Ask the user to dispatch it manually from the
+  Actions UI (share the exact workflow filename + branch), and get their
+  explicit go-ahead first if the workflow has a real side effect (e.g. a
+  gh-pages deploy step not gated to `main`) — dispatching isn't just a status
+  check in that case, it's a live action.
 - `mcp__github__pull_request_read` `method:` enum: `get` · `get_diff` (PR
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
@@ -203,6 +212,39 @@
   Fix: re-read to get the new repo + number, then comment/close *there*. Don't
   misdiagnose it as a missing `Issues:write` token scope. (Caught closing
   `gha#75`, transferred to `rme#941`.)
+- **A pinned upstream commit SHA that 404s on the GitHub API can mean the
+  whole repo moved orgs, not just a stale/rewritten pin.** `renv::restore()`
+  (or any tool resolving a `Remotes:`-style GitHub pin) failing with a plain
+  network-looking error (curl "error code 22" wrapping an HTTP error) on a
+  commit-metadata fetch is easy to read as "transient" or "just re-pin to
+  latest `main`." Before assuming that, check whether the source repo itself
+  still exists at that path: fetch its `github.com` root page (not
+  `api.github.com`, which a sandbox proxy may block for out-of-scope repos —
+  use `WebFetch` on the plain `github.com/<owner>/<repo>` URL instead) and
+  look for a "this repo has moved to `<new-owner>/<repo>`" redirect notice —
+  some orgs (e.g. `insightsengineering`) replace a migrated repo's content
+  entirely with a redirect stub and drop its git history, which orphans every
+  previously-pinned commit SHA outright (a real 404, not a rate limit or
+  blip). Fix by repointing the `Remotes:`/lockfile entry at the NEW org and a
+  current commit there, not by re-snapshotting blindly (see the
+  `renv::snapshot()` destructive-mistake entry below for why not) or assuming
+  a simple re-pin to the old repo's `main` will work.
+  (`d-morrison/rme#1017`: `insightsengineering/cards` had moved to
+  `pharmaverse/cards`; the old repo was reduced to a redirect-only stub with
+  history removed, orphaning the pinned SHA.)
+- **WebFetch summarizes rendered page text through a small model, which can
+  garble a long hex string (e.g. a 40-char git SHA) even when the source page
+  is fetched correctly.** Don't trust a SHA read back from prose/rendered
+  text alone — cross-check by asking WebFetch specifically for an anchor
+  `href` containing the SHA as a URL path segment (e.g.
+  `/owner/repo/commit/<sha>`), which is far less prone to transcription
+  errors than reading digits out of rendered commit-page text, and repeat the
+  fetch 2-3× to confirm the same value comes back consistently before using
+  it in a commit/config change. (`d-morrison/rme#1017`: eyeballing a
+  WebFetch-rendered SHA left doubt about its exact length at a glance; an
+  href-based cross-check against the commit permalink URL, repeated across
+  three independent fetches, confirmed the same 40-char value each time
+  before it was used in the fix.)
 - **In a fresh web/remote container, local `origin/*` refs can be stale or
   phantom — verify true remote state via MCP, not local refs.** The clone's
   `remotes/origin/main` may lag the real default branch by already-merged
@@ -885,6 +927,26 @@ is active**, because renv's autoloader shims `install.packages()` to route
 through `renv::install()` internally (confirmed by the traceback: a plain
 `install.packages("cyclocomp")` call showed `renv::install("cyclocomp")` as
 a parent frame) — so avoid both, not just the namespaced call.
+
+**A second, more severe occurrence: a full, unscoped `renv::snapshot()` (no
+`packages =` arg) in a Claude Code Bash sandbox that had NO project R packages
+installed at all (only base R) truncated a real `renv.lock` from ~300 package
+entries down to ~6 base-R packages** — not a partial prune, essentially the
+whole lockfile. The mistake was made trying to "refresh" a lockfile that
+looked stale (a pinned GitHub remote's commit SHA 404'd); running
+`renv::snapshot()` felt like the obvious fix but, per the rule above, is
+never safe unless the environment can actually restore the full existing
+package set first. It went unnoticed at push time (the diff just looked like
+"a smaller lockfile") and was only caught because a *downstream* CI job
+(`lint-changed-files`) failed on a missing `gh` R package that the lockfile
+no longer had — prompting a diff review that revealed the near-total
+truncation. **Before trusting any regenerated lockfile, diff old-vs-new
+package *counts*** (e.g. `jq -r '.Packages|keys[]' old.json | sort >
+/tmp/old.txt`, same for `new.json`, then `comm -23 /tmp/old.txt
+/tmp/new.txt` to list dropped packages) and treat a dramatic shrink as a red
+flag requiring revert, not a "cleanup." (`d-morrison/rme#1017`: reverted via `git revert`, then fixed the
+actual root cause — see the repo-move 404 entry above — with a minimal
+hand-edit instead.)
 
 The safe fix is a **surgical hand-edit of the lockfile JSON**: install the
 missing package locally just to read its DESCRIPTION metadata (e.g.
