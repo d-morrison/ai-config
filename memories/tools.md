@@ -646,6 +646,19 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   nothing else" after the worktree was removed and re-created at the same
   path — verified the actual chapter content instead via this gh-pages
   fetch, twice, once per structural fix.)
+- **A `renv::restore()` failure downloading `https://api.github.com/repos/<owner>/<repo>/...`
+  with `error code 22` can mean the GitHub-pinned `Remotes:` package was
+  **renamed/transferred**, not a transient network blip.** `insightsengineering/cardx`
+  moved to `pharmaverse/cardx`; GitHub's rename redirect doesn't reliably resolve
+  for the specific REST endpoints `renv::restore()` hits, so every restore under
+  the old owner fails identically and repeatedly — check actual job logs each
+  time rather than assuming "the same infra flakiness as before" (a failure that
+  looks recurring can still be worth re-diagnosing once; this one turned out to
+  have a real, fixable root cause). `RENV_CONFIG_INSTALL_REMOTES=false` (see the
+  worktree bullet above) sidesteps it entirely, since the actual installed
+  versions come from `renv.lock`'s pinned SHAs regardless of where `Remotes:`
+  points. (`d-morrison/rme#772`, tracked in rme#994/#996 and fixed centrally in
+  `d-morrison/gha#241`.)
 - **R in these containers defaults to the `C` locale**, so
   `read.delim(..., fileEncoding="UTF-8")` (or any read) of a file with multibyte
   chars (π, μ, ℓ, …) **silently truncates at the first non-ASCII byte**, emitting
