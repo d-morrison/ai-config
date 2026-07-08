@@ -718,6 +718,67 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
 - Chapters that `{{< include r-config.qmd >}}` pull the full ~40-pkg set
   (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
   light (math-prereqs needs just plotly).
+- **A sandbox with no R at all: `apt-get install r-cran-*` binaries can be ABI-
+  incompatible with the installed R version.** A fresh container with R 4.6.1
+  and no packages hit pervasive `undefined symbol: SETLENGTH` / `SET_FORMALS` /
+  `R_nchar` / `SET_GROWABLE_BIT` errors across dplyr, vctrs, fansi, tibble,
+  testthat, pkgload, roxygen2, readr, and their transitive deps — apt's
+  prebuilt `r-cran-*` .debs were built against a different R ABI than the one
+  actually installed. Fix: reinstall every affected package from source,
+  `install.packages(pkgs, type = "source")`, resolving each new transitive
+  failure iteratively (plus any system libs a source build needs, e.g.
+  `libudunits2-dev` for the `units` package's C bindings). Slow but gets a
+  real, verifiable R toolchain instead of guessing at doc/roxygen output.
+  (serocalculator PR-393-extraction session, 2026-07-08.)
+- **`testthat::test_dir()` run without every snapshot-consuming package
+  installed can DELETE committed snapshot files.** testthat's own end-of-run
+  "Deleting unused snapshots" cleanup treats any snapshot it didn't see
+  exercised (e.g. an `expect_snapshot_file()` an `svglite`/`vdiffr`-dependent
+  test skipped because `vdiffr` wasn't installed in a stripped-down sandbox)
+  as orphaned and removes it from `tests/testthat/_snaps/` — silently, with no
+  confirmation prompt. Caught only via `git status --short` before staging
+  anything (21 legitimate `.svg` snapshots had vanished from the working
+  tree); restored with `git checkout -- <paths>`. Prefer
+  `testthat::test_file()` on individual files in this kind of sandbox — it
+  doesn't run the whole-suite cleanup pass — and always `git status` before
+  committing after any `test_dir()` run.
+- **`if (cond) "name" = value` inside `c(...)` is parsed as an assignment
+  expression, not a named `c()` element.** R's argument-tag recognition
+  requires the tag to be the direct head of the argument passed to `c()` — a
+  bare `"name" = value` — not one produced by evaluating a nested `if()`
+  expression. `c("a", if (cond) "name" = value)` silently creates/evaluates a
+  local variable named `name` and splices in the *unnamed* string `value`
+  instead of a `name = value` pair, with no warning or error. This breaks a
+  `dplyr::*_join(by = c(...))` call the moment the conditional branch fires
+  (a "Join columns in x must be present in the data" error, since the
+  intended named join key was silently dropped). Fix: wrap the whole
+  conditional element in its own `c()` — `c("a", if (cond) c("name" = value))`
+  — so the name attaches to the inner `c()` call's result, which is what gets
+  spliced into the outer one. Verify with a direct R repro
+  (`names(c("a", if (TRUE) "name" = "value"))` vs the wrapped form) before
+  trusting either reading. (serocalculator#552 review round 1: found in
+  `sim_pop_data_2()`'s `left_join(by = ...)`.)
+- **`rngtools::RNGseq(n, seed)` returns an unwrapped single state vector
+  (not a list-of-one) when `n == 1`**, unlike `n > 1` which returns a proper
+  `list` of 7-integer L'Ecuyer-CMRG state vectors. Code that assumes a list
+  regardless of `n` — e.g. `rngtools::RNGseq(n, seed) |> array(dim = c(1,1,1),
+  ...)` — silently truncates the 7-integer vector to its first element when
+  `array()` reshapes it, corrupting the RNG state fed to `rngtools::setRNG()`
+  downstream. Symptom: genuinely non-reproducible results (different values
+  across separate R sessions with the identical seed) specifically when a
+  parallel/foreach-driven simulation call reduces to a single
+  lambda/sample_size/cluster (or equivalent single-task) combination — every
+  other combination stays reproducible, which makes this easy to miss until
+  someone writes a test for exactly the single-task case. Diagnose by
+  comparing `class(rngtools::RNGseq(1, seed))` (`"integer"`) against
+  `class(rngtools::RNGseq(2, seed))` (`"list"`), and by checking
+  `array(rngtools::RNGseq(1, seed), dim = c(1,1,1))` for silent truncation.
+  Workaround at the call site: avoid the single-task case (e.g. bump a
+  `nclus`-style parameter to 2+) until the root function is fixed to
+  `list()`-wrap the `n == 1` case explicitly. (serocalculator#554, found
+  while adding test coverage for `sim_pop_data_multi()`'s `sim_function`
+  dispatch parameter — the natural minimal test used a single lambda/
+  sample_size/`nclus = 1`, which happened to hit exactly this bug.)
 
 ## renv.lock — adding a package that's only referenced via another package's Suggests
 

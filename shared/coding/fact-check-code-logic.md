@@ -24,6 +24,18 @@ written in prose; this one fact-checks the logic embedded in code itself.
   a paper or spec, mismatched units or dimensions, incorrect edge-case or
   boundary handling, numerical instability (catastrophic cancellation,
   overflow/underflow).
+  **A unit/scale conversion fix applied on the way into a computation needs
+  the same check on the way out.** When a function rescales an input (e.g.
+  years → days) so it's dimensionally consistent with some internal
+  computation, any of that rescaled value that gets returned or reused
+  downstream needs converting back — otherwise fixing the input-side mismatch
+  just moves the same bug to the output side. Check every quantity the
+  rescaling touches, not just the one the original bug report named.
+  (serocalculator#552: fixing a day/year mismatch on a function's *input*
+  correctly rescaled an `age_range` parameter before use, but the resulting
+  `age` column — derived from that same rescaled range — was returned
+  unconverted, so it shipped ~365× too large; caught by a follow-up review
+  round, not the same pass that fixed the input side.)
 - **Math and statistics embedded in code.** When code implements a formula,
   statistical test, or model, verify it against its source (a paper, a
   textbook, a package's reference implementation, a spec) with the same
