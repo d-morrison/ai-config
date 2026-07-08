@@ -23,7 +23,9 @@ committed pass.
   new preference, a tool quirk, a workflow gap. This is the primary trigger:
   run UMS right then, interleaved with the main work, instead of batching
   learnings for a wrap-up step at the end. Don't wait for the task to finish
-  or for `/clear` to accumulate a backlog.
+  or for `/clear` to accumulate a backlog — and don't gate it on approval or
+  on a PR merging: capture the learning the moment it appears, even while the
+  PR that taught it is still open and unreviewed.
 - User says "ums", "update memories and skills", "record what we learned"
 - **At the start of `/clear`** — a backstop, not the primary trigger: catch
   anything accumulated since the last proactive pass before context is lost
