@@ -162,7 +162,7 @@
   that were `100755` become non-executable. This is harmless when the workflow
   invokes them via `bash <script>` (not directly), but creates cosmetic
   inconsistency with sibling scripts. Workaround: fix the bit locally after
-  merge with `chmod +x <script> && git commit`. Track the deferred fix as a
+  merge with `chmod +x <script> && git add <script> && git commit -m "Restore executable bit"`. Track the deferred fix as a
   follow-up issue; don't block the PR on it. (Hit on `ucdavis/rampp#130` —
   both `reassign-reviewers.sh` and `stash-reviewers.sh` lost `100755`; tracked
   as `ucdavis/rampp#131`.)
