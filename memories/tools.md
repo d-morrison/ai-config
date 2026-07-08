@@ -779,6 +779,32 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   while adding test coverage for `sim_pop_data_multi()`'s `sim_function`
   dispatch parameter — the natural minimal test used a single lambda/
   sample_size/`nclus = 1`, which happened to hit exactly this bug.)
+- **Provisioning packages already tracked in `renv.lock` but missing from the
+  library (an incomplete restore, not a new-package addition) hits the same
+  `Remotes:`-resolution failure documented below** ("renv.lock — adding a
+  package…") — `install.packages()`/`renv::install()` both route through
+  renv/pak and abort the whole call if any `Remotes:` entry can't be resolved
+  (blocked `api.github.com`), even for unrelated CRAN packages. For this
+  simpler case (no lockfile edit needed, just get already-tracked packages
+  installed), bypass `.Rprofile` entirely instead of hand-editing the
+  lockfile: `Rscript --no-init-file -e '.libPaths("<renv-project-lib-path>");
+  options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c(...))'`.
+  (Try the P3M binary-repo approach above first; reach for this bypass only
+  if that's also unavailable.)
+- **Don't pass `dependencies=TRUE` when filling small gaps in an existing renv
+  library.** It recurses into `Suggests` too, not just `Depends`/`Imports`, and
+  can drag in huge unrelated compiled packages (hit `OpenMx`, `rsvg`, `Rfast` —
+  Suggests-of-Suggests of `parameters`/`broom.helpers`) that add 30+ minutes of
+  compilation and aren't needed to render. Use `dependencies=NA` (the default:
+  `Depends`+`Imports`+`LinkingTo` only) — it's what's actually needed to
+  `library()` and render, and installs in a fraction of the time.
+- To find exactly which packages are missing (including transitively, without
+  over-installing): `tools::package_dependencies(top_pkgs, db=available.packages(),
+  which=c("Depends","Imports","LinkingTo"), recursive=TRUE)`, then filter with
+  `requireNamespace(..., quietly=TRUE)` against the **full** `.libPaths()`
+  search (not `installed.packages(lib.loc=<one dir>)`, which misses base/recommended
+  packages and anything already installed in a different lib on the path and
+  falsely reports them as missing).
 
 ## renv.lock — adding a package that's only referenced via another package's Suggests
 
@@ -914,32 +940,6 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   (`d-morrison/altdoc#7`: `continue-on-error: true` masked a `.jarlignore`
   that did nothing; removing the flag immediately reproduced the
   `unused_function` failure it was supposed to prevent.)
-- **Provisioning packages already tracked in `renv.lock` but missing from the
-  library (an incomplete restore, not a new-package addition) hits the same
-  `Remotes:`-resolution failure documented above** ("renv.lock — adding a
-  package…") — `install.packages()`/`renv::install()` both route through
-  renv/pak and abort the whole call if any `Remotes:` entry can't be resolved
-  (blocked `api.github.com`), even for unrelated CRAN packages. For this
-  simpler case (no lockfile edit needed, just get already-tracked packages
-  installed), bypass `.Rprofile` entirely instead of hand-editing the
-  lockfile: `Rscript --no-init-file -e '.libPaths("<renv-project-lib-path>");
-  options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c(...))'`.
-  (Try the P3M binary-repo approach above first; reach for this bypass only
-  if that's also unavailable.)
-- **Don't pass `dependencies=TRUE` when filling small gaps in an existing renv
-  library.** It recurses into `Suggests` too, not just `Depends`/`Imports`, and
-  can drag in huge unrelated compiled packages (hit `OpenMx`, `rsvg`, `Rfast` —
-  Suggests-of-Suggests of `parameters`/`broom.helpers`) that add 30+ minutes of
-  compilation and aren't needed to render. Use `dependencies=NA` (the default:
-  `Depends`+`Imports`+`LinkingTo` only) — it's what's actually needed to
-  `library()` and render, and installs in a fraction of the time.
-- To find exactly which packages are missing (including transitively, without
-  over-installing): `tools::package_dependencies(top_pkgs, db=available.packages(),
-  which=c("Depends","Imports","LinkingTo"), recursive=TRUE)`, then filter with
-  `requireNamespace(..., quietly=TRUE)` against the **full** `.libPaths()`
-  search (not `installed.packages(lib.loc=<one dir>)`, which misses base/recommended
-  packages and anything already installed in a different lib on the path and
-  falsely reports them as missing).
 
 ## R-package PR CI gates (d-morrison / UCD-SERG R packages, e.g. `bcs`)
 - These repos gate PRs on a **changelog check** (`news.yaml` / "Check Changelog
