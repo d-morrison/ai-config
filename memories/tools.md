@@ -916,7 +916,7 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   `unused_function` failure it was supposed to prevent.)
 - **Provisioning packages already tracked in `renv.lock` but missing from the
   library (an incomplete restore, not a new-package addition) hits the same
-  `Remotes:`-resolution failure documented below** ("renv.lock — adding a
+  `Remotes:`-resolution failure documented above** ("renv.lock — adding a
   package…") — `install.packages()`/`renv::install()` both route through
   renv/pak and abort the whole call if any `Remotes:` entry can't be resolved
   (blocked `api.github.com`), even for unrelated CRAN packages. For this
