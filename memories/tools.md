@@ -779,6 +779,32 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   while adding test coverage for `sim_pop_data_multi()`'s `sim_function`
   dispatch parameter — the natural minimal test used a single lambda/
   sample_size/`nclus = 1`, which happened to hit exactly this bug.)
+- **Provisioning packages already tracked in `renv.lock` but missing from the
+  library (an incomplete restore, not a new-package addition) hits the same
+  `Remotes:`-resolution failure documented below** ("renv.lock — adding a
+  package…") — `install.packages()`/`renv::install()` both route through
+  renv/pak and abort the whole call if any `Remotes:` entry can't be resolved
+  (blocked `api.github.com`), even for unrelated CRAN packages. For this
+  simpler case (no lockfile edit needed, just get already-tracked packages
+  installed), bypass `.Rprofile` entirely instead of hand-editing the
+  lockfile: `Rscript --no-init-file -e '.libPaths("<renv-project-lib-path>");
+  options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c(...))'`.
+  (Try the P3M binary-repo approach above first; reach for this bypass only
+  if that's also unavailable.)
+- **Don't pass `dependencies=TRUE` when filling small gaps in an existing renv
+  library.** It recurses into `Suggests` too, not just `Depends`/`Imports`, and
+  can drag in huge unrelated compiled packages (hit `OpenMx`, `rsvg`, `Rfast` —
+  Suggests-of-Suggests of `parameters`/`broom.helpers`) that add 30+ minutes of
+  compilation and aren't needed to render. Use `dependencies=NA` (the default:
+  `Depends`+`Imports`+`LinkingTo` only) — it's what's actually needed to
+  `library()` and render, and installs in a fraction of the time.
+- To find exactly which packages are missing (including transitively, without
+  over-installing): `tools::package_dependencies(top_pkgs, db=available.packages(),
+  which=c("Depends","Imports","LinkingTo"), recursive=TRUE)`, then filter with
+  `requireNamespace(..., quietly=TRUE)` against the **full** `.libPaths()`
+  search (not `installed.packages(lib.loc=<one dir>)`, which misses base/recommended
+  packages and anything already installed in a different lib on the path and
+  falsely reports them as missing).
 
 ## renv.lock — adding a package that's only referenced via another package's Suggests
 
@@ -959,6 +985,15 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   throwaway branch (e.g. a push-capability probe) can't be cleaned up from the session;
   delete it via the GitHub UI/API, or just leave it if it's identical to `main` and has
   no PR. (Seen on ai-config, 2026-06-28.)
+- **GitHub Pages sites (`<owner>.github.io`, incl. `rossjrw/pr-preview-action`
+  PR-preview links) are policy-blocked in at least some sandboxes** — both
+  WebFetch and a direct `curl`/CONNECT through the agent proxy get a `403`
+  (`gateway answered 403 to CONNECT (policy denial)`, confirmed via
+  `curl -sS "$HTTPS_PROXY/__agentproxy/status"`). Don't retry or assume it's
+  transient — treat it the same as an unavailable preview and fall back to
+  rendering the chapter locally (rme's own CLAUDE.md already names this
+  fallback for "no preview has deployed yet"; it also applies when the
+  preview exists but the sandbox can't reach it).
 - Consequence: you CANNOT poll PR review/CI state from a background Monitor.
   Rely on `mcp__github__subscribe_pr_activity`, which delivers review comments
   and CI *failures* — but NOT CI success, new pushes, or merge-conflict
