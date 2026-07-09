@@ -1,6 +1,6 @@
 When adding a new function to a codebase, give it its own file rather than
 bundling it into a file that already holds other functions --- unless the
-function is a two-liner (a trivial wrapper, a one-line helper), in which case
+function is a two-liner (a trivial wrapper or short helper), in which case
 grouping it with closely related functions in a shared file is fine.
 
 This applies per-language, following that language's file-naming convention
@@ -12,8 +12,9 @@ for the mapping between a function and its file:
   single caller (and itself more than a two-liner) still gets its own file,
   named after the helper.
 - Other languages: follow the same principle using that ecosystem's own
-  convention (e.g. one class/component per file in Java/TypeScript, one
-  module per file in Python when the function is substantial).
+  convention (e.g. one class/component per file in Java/TypeScript; in
+  Python, give a substantial function its own module file rather than
+  bundling it into one that already holds unrelated functions).
 
 **Why:** a file with one function per unit of functionality is easier to
 find, easier to diff (a change to one function doesn't sit inside an unrelated
