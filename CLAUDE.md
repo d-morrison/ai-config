@@ -13,6 +13,7 @@ passes. See README.md, "Shared content".
 
 Don't wait for `/clear` or the end of a task to run `ums` (Update Memories and Skills).
 As soon as a learning worth saving shows up during a session — a corrected mistake, a new preference, a tool quirk, a workflow gap — run UMS right then, interleaved with the main work, rather than batching it for a wrap-up step at the end.
+Don't gate it on approval or on a PR merging either: capture the learning the moment it appears, even while the PR that taught it is still open and unreviewed.
 
 Still run UMS before `/clear` too, as a final catch-all for anything accumulated since the last proactive pass — but treat that as a backstop, not the trigger to wait for.
 
