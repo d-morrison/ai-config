@@ -336,6 +336,15 @@ persistent `group_by()` that `.by` would replace.
 <!-- Not yet shared with the lab manual; edit shared/coding/reuse-docs-and-args.md, not here. -->
 @shared/coding/reuse-docs-and-args.md
 
+## Coding: one function per file
+
+<!-- Not yet shared with the lab manual; edit shared/coding/one-function-per-file.md, not here. -->
+@shared/coding/one-function-per-file.md
+
+Apply this both when writing new code and when reviewing it — a new function
+added inline to an existing multi-function file is a review finding, the
+same weight as the other modularity checks above.
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
