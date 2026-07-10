@@ -80,16 +80,18 @@ fix for free.
    then come back to it. Report which PRs needed real resolution versus
    which were a clean fast-forward-style merge with nothing to resolve.
 
-5. **A push can still 403 in a session scoped to only its own
-   harness-assigned branch** (see `ai-config`'s own "Use the existing PR
-   branch, not the harness-specified branch" note). When that happens, don't
-   retry the plain push — it's a policy denial, not a transient failure.
-   Verify the local merge is a strict superset of the diverged remote (same
-   check `sync-pr-branch` implies by construction: local already contains
-   `origin/<branch>`'s tip via the merge in step 3) and use
-   `git push --force-with-lease` instead. If that also needs destructive
-   confirmation beyond what's already been granted, surface it rather than
-   guessing.
+5. **A push can 403 in a session scoped to only its own harness-assigned
+   branch** (see `ai-config`'s own "Use the existing PR branch, not the
+   harness-specified branch" note). When that happens, don't retry the plain
+   push — it's a policy denial, not a transient failure. That same note's
+   default fallback is to stack the merge as its own PR against the
+   original branch, or ask the user directly — **not** to reach for
+   `git push --force-with-lease` as a routine step. A force-push is
+   destructive and needs the user's own live, per-instance authorization
+   (see the top-level git-safety rules); don't bake it into this skill's
+   default path even when a past session found the proxy permitted it —
+   that was an environment-specific exception, not a standing grant.
+   Surface the blocked PRs to the user rather than guessing at a workaround.
 
 6. **Report a per-PR summary** at the end: which PRs were already up to
    date, which merged clean and pushed, which needed conflict resolution
