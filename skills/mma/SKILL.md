@@ -41,9 +41,9 @@ fix for free.
    ```bash
    git fetch origin main
    ```
-   For a PR whose branch tip is already an ancestor of `origin/main`'s new
-   position (rare, but possible right after a squash-merge cleanup), skip it
-   — nothing to merge.
+   For a PR whose `origin/main` is already an ancestor of the branch tip
+   (`git merge-base --is-ancestor origin/main <branch-tip>` returns true),
+   skip it — main is already incorporated; nothing to merge.
 
 3. **Resync each PR branch, one at a time — do not parallelize the push
    step.** This is the
@@ -58,11 +58,16 @@ fix for free.
 
    For each PR branch, in its own worktree (never the shared main checkout —
    see the per-repo memory file for this repo's worktree conventions if it
-   has one):
+   has one). Pass `-b <branch>` so the worktree gets a real local branch
+   instead of detached HEAD — `sync-pr-branch`'s own step 1 checks
+   `git branch --show-current` and halts if that's empty:
    ```bash
-   git worktree add .claude/worktrees/pr-<N> origin/<branch>
-   cd .claude/worktrees/pr-<N>
+   git worktree add -b <branch> .claude/worktrees/pr-<N> origin/<branch>
    ```
+   `cd` doesn't persist across separate tool calls — run subsequent commands
+   with that path (`(cd .claude/worktrees/pr-<N> && git ...)`, or an
+   absolute path) rather than assuming a prior `cd` carried over.
+
    Then run **exactly** the [`sync-pr-branch`](../sync-pr-branch/SKILL.md)
    procedure against that branch: fetch, merge `origin/main`, merge
    `origin/<branch>`, resolve any conflicts (see `resolve-conflicts` / `rc`),
@@ -71,6 +76,11 @@ fix for free.
    **Only merge `origin/main` and the PR's own `origin/<branch>`** — never
    another open PR's branch. Cross-PR changes stay out of scope here, same
    as `sync-pr-branch`'s own note.
+
+   **Remove the worktree once that branch is done** —
+   `git worktree remove .claude/worktrees/pr-<N>` — so they don't pile up
+   across runs. Leave it in place only when step 4 left a real conflict
+   unresolved and the PR needs a later resume.
 
 4. **A real conflict blocks that one PR, not the sweep.** If a merge needs
    real conflict resolution beyond a mechanical pick, resolve it inline when
@@ -101,11 +111,14 @@ fix for free.
 
 ## Notes
 
-- Use the `Agent` tool to dispatch one background agent per PR when the
-  queue is large (roughly 4+ branches) and each branch's resync is
-  genuinely independent — but keep the **push** itself serial/capped per
-  step 3's shared-runner reasoning; parallelize the fetch-and-merge
-  groundwork, not the push.
+- You *can* parallelize the local fetch-and-merge groundwork (step 3's setup,
+  before any push) within a single agent loop when the queue is large —
+  but keep the pushes themselves sequential per step 3's shared-runner
+  reasoning. This skill doesn't define a cross-agent coordination
+  mechanism, so don't dispatch one background agent per PR and assume
+  they'll serialize their pushes on their own; either push from a single
+  loop, or add an explicit handoff (a queue, a lock file) before fanning
+  the push step out across agents.
 - This skill only touches branches with an **open** PR. A stale local
   worktree left over from a merged PR isn't in scope — that's the
   `post-merge` skill's job.
