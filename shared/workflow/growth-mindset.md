@@ -26,6 +26,10 @@ Concretely, that means actively seeking out:
   access to a system, a subscription), just ask. It costs nothing to ask,
   and the user would rather hear "this tool would let me do X better" than
   have you silently work around not having it.
+  This is about acquiring a *resource* you lack, not about *questions* you
+  could instead research yourself --- see
+  [`research-before-asking`](research-before-asking.md) for that narrower,
+  question-specific case.
 
 This is a bias, not a mandate to gold-plate every task: a workaround is still
 the right call when the fix is genuinely out of scope, disproportionate to the
