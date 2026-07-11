@@ -70,8 +70,9 @@ for everything still to come.
   authority specifically — see Relationship to other skills. Combine both
   explicitly ("away, and mwc") when the user wants full unattended PR
   throughput, not just decision-making latitude.
-- **Revocable immediately.** An explicit "stop", "ask me from now on", or
-  the session ending revokes the grant right away.
+- **Revocable immediately.** An explicit "stop", "ask me from now on", the
+  named counterpart `back` (see Relationship to other skills), or the
+  session ending revokes the grant right away.
 - **Applies session-wide unless the user narrows it.** Honor an explicit
   scope ("away, but still ask about anything touching the release
   branch") over the default full-session grant.
@@ -122,6 +123,11 @@ for everything still to come.
 
 ## Relationship to other skills
 
+- **`back`** — the named counterpart that revokes this grant and surfaces
+  the decision log described in Procedure step 4, so the user has a
+  reviewable record of what was decided (and skipped) while they were
+  away. Any of the phrasings in Scope and limits' revocation bullet also
+  end the grant, but `back` is the one worth invoking by name.
 - **`mwc`** (merge-when-confident) — the sibling session-scoped grant for
   merge authority specifically. `away` covers decision-making latitude
   (don't block on judgment calls); `mwc` covers the one destructive action
