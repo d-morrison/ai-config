@@ -502,6 +502,11 @@ When *I* iterate a PR, the ARDI loop above is the mechanism — it already addre
 <!-- Edit shared/workflow/growth-mindset.md, not here. -->
 @shared/workflow/growth-mindset.md
 
+## Research before asking a human
+
+<!-- Edit shared/workflow/research-before-asking.md, not here. -->
+@shared/workflow/research-before-asking.md
+
 ## Encoding reusable feedback into ai-config
 
 When the user gives feedback, corrections, or guidance that applies beyond the current session (a standing rule, style preference, workflow change, or behavioral note), decide on your own how to encode it --- don't ask.
