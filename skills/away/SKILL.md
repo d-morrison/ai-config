@@ -17,10 +17,10 @@ allowed-tools:
 
 By default, a genuinely ambiguous decision (which of several plausible
 approaches to take, which issue to pick up next, whether a finding is worth
-fixing) is a reason to stop and ask — see the harness's own "Auto Mode"
-default, which still asks when "genuinely blocked". `away` is a stronger,
-deliberately-invoked escalation past that default for a stretch where the
-user won't be there to answer: for the rest of the session, don't surface a
+fixing) is a reason to stop and ask — a blocking question pauses the
+session until the user answers it. `away` is a stronger, deliberately-
+invoked escalation past that default for a stretch where the user won't be
+there to answer: for the rest of the session, don't surface a
 blocking question for a **judgment call** — reason it through as far as
 possible, consult a stronger model when one is available (see Procedure),
 and otherwise make the more conservative, most-reversible choice and record
@@ -96,16 +96,19 @@ for everything still to come.
 3. **Hitting a judgment call mid-task:** before treating it as blocking,
    check whether a **stronger model than the one currently running this
    session** is available. In this harness that means a higher tier than
-   your current one (Fable → Haiku → Sonnet → Opus) — `select-model`'s
-   tier table has the ordering. If a stronger tier exists, spawn a
-   foreground `Agent` call with `model` set to that tier, hand it the
-   specific decision (not the whole task — just enough context to weigh in:
-   the options, the constraints, why it's ambiguous), and use its answer
-   to proceed. Note in your recap that you consulted it and what it said.
-   If you're already running the top available tier (no stronger model to
-   ask), or the question is the information/authorization kind from Scope
-   and limits above, don't fabricate certainty — make the most
-   conservative, easiest-to-reverse choice, and flag the assumption
+   your current one (Fable < Haiku < Sonnet < Opus, per `select-model`'s
+   tier table) — prefer the **highest** available tier, not just the next
+   step up, since the whole point is the best perspective available, and a
+   mid-tier consult that still can't resolve the ambiguity just wastes a
+   round-trip. If a stronger tier exists, spawn a foreground `Agent` call
+   with `model` set to that tier, hand it the specific decision (not the
+   whole task — just enough context to weigh in: the options, the
+   constraints, why it's ambiguous), and use its answer to proceed. Note in
+   your recap that you consulted it and what it said. If you're already
+   running the top available tier (no stronger model to ask), or the
+   question is the information/authorization kind from Scope and limits
+   above, don't fabricate certainty — make the most conservative,
+   easiest-to-reverse choice, and flag the assumption
    clearly in your recap rather than silently picking one.
 4. **Keep a running log of judgment calls made**, not just a final summary
    — each time you resolve something you'd normally have asked about, add
