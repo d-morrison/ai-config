@@ -2,7 +2,7 @@ When babysitting a PR (subscribed to its activity, driving ARDI, watching CI), d
 
 **Batch related changes into one push, not several trickled commits.** A code fix, its test, a demo/doc update, and a memory note are all part of the same round --- push them together.
 Each separate push re-triggers CI and the review bot from scratch, and two pushes close together race each other's review runs (see [`fully-clean`](fully-clean.md) and gha's own `CLAUDE.md` "canceled review" section for the concrete failure mode this causes).
-Fewer, complete pushes means fewer wasted CI minutes and fewer webhook events to triage.
+Fewer, complete pushes mean fewer wasted CI minutes and fewer webhook events to triage.
 
 **When CI already reports the specific gap, work from that report instead of re-deriving it locally.** A codecov comment naming the exact missing file/line, or a benchmark comment giving exact before/after numbers, already answers "what's wrong and by how much" --- don't re-run the equivalent check locally (a full coverage-instrumented test suite, a full benchmark sweep) just to rediscover the same fact.
 Reserve a local re-run for **verifying a fix**, once you've already decided what to change from CI's own report. (A local re-run is still the right move when you need an apples-to-apples comparison CI's own baseline can't give you --- e.g. confirming a benchmark regression's true magnitude on the same hardware, since CI's baseline was recorded on a different/differently-loaded runner.)
