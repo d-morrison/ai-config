@@ -166,6 +166,15 @@
   (Hit during the ai-config #275 GII session — `get_status` showed
   `total_count: 0` / `pending` while `get_check_runs` correctly showed all 5
   checks `success`.)
+  **Given this, don't call `get_status` at all when checking CI state** —
+  go straight to `get_check_runs`; calling both in parallel "to be safe"
+  just spends a call on a field you already know not to trust. (Repeated
+  on `Lacaedemon/sparta` PR #780, 2026-07-12: called both in parallel to
+  confirm a canceled-review race, when `get_check_runs` alone — or, when
+  the incoming webhook event already names the failing commit's SHA, a
+  single `pull_request_read` `get` compared against that SHA — would have
+  settled it in one call. See
+  [`efficient-pr-babysitting`](../shared/workflow/efficient-pr-babysitting.md).)
 - **`mcp__github__push_files` strips executable bits** — files pushed via this
   tool always land with mode `100644`, regardless of their original mode. Scripts
   that were `100755` become non-executable. This is harmless when the workflow
