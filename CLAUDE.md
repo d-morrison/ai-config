@@ -251,6 +251,15 @@ Only post the mention when a round pushed no code (all Rebut/Defer). (Hit on ai-
 Surface to me only when an item is ambiguous, architecturally significant, or deadlocked (the escalation rule above still applies), or when the PR is clean.
 Stop watching only when the PR merges or closes, or I tell you to back off.
 
+## Babysit PRs efficiently — batch pushes, trust CI's own reports, skip redundant lookups
+
+@shared/workflow/efficient-pr-babysitting.md
+
+A long babysitting session accumulates avoidable tool calls and CI runs otherwise:
+trickled single-item pushes each re-trigger CI and race each other's reviews,
+a local re-run can rediscover a gap CI's own comment already named,
+and a pure re-post webhook event doesn't need fresh analysis.
+
 ## Address every in-scope review comment, even non-blockers
 
 <!-- Shared with the lab manual; edit shared/workflow/address-every-comment.md, not here. -->
