@@ -101,6 +101,11 @@ branch + PR is a standing yes (`preferences.md`).
 ## Anti-patterns
 
 - ❌ Asking "want me to run UMS / wrap up?" after merging — it's automatic.
+- ❌ Reporting the merge as done and moving on (including to other things the
+  user said while the merge was in flight) without actually running step 4 —
+  a busy, multi-threaded conversation makes this easy to drop, but the chain
+  isn't optional follow-up; it's part of the merge action itself. See `mwc`'s
+  own anti-pattern entry for the concrete case this happened in.
 - ❌ Merging a PR that isn't fully clean (red CI or open findings) without the
   user explicitly saying so.
 - ❌ Letting the squash commit inherit a stale PR description — pass an accurate
