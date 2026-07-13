@@ -21,7 +21,7 @@ Still run UMS before `/clear` too, as a final catch-all for anything accumulated
 Proactively tell me — don't wait to be asked — when a session has grown long and hits a natural stopping point: a multi-step task or loop (GII/ARDIA/GIP, a research pass) just checkpointed or fully wrapped, a PR merged with no other in-flight work riding on this conversation, or an open question just got answered with nothing left pending.
 Use the `⚠️ FLAG` tag from this file's chat-output-tagging convention, one line, at the natural end of that turn's recap — don't interrupt mid-task to say it.
 
-Don't suggest it when there's still live state only this conversation holds: a background agent or CI run still in flight that I'm tracking, a PR awaiting review/merge, an unanswered question, or a mid-investigation train of thought that would be expensive to reconstruct.
+Don't suggest it when there's still live state only this conversation holds: a background agent or CI run still in flight that I'm tracking, a PR I'm actively babysitting this session (waiting on CI, a review round, or a pending push), an unanswered question, or a mid-investigation train of thought that would be expensive to reconstruct.
 `/clear` wipes conversation state outright (unlike compaction, which summarizes) — anything not already durable (in `CLAUDE.md`, a memory file, or a tracked issue/PR) is gone.
 If UMS hasn't run recently, say so in the same flag rather than assuming it's safe.
 
