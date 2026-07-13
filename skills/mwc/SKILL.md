@@ -40,6 +40,8 @@ Distinguish from `merge-it`: `merge-it` means "merge THIS PR now"; `mwc` means "
 
 1. Acknowledge the grant in one sentence so the user knows it's active for the session, and what it does and doesn't cover.
 2. For the rest of the session, when a PR I'm driving (via `ardi` or otherwise) reaches fully-clean, run `merge-it`'s merge + verify + post-merge chain directly instead of stopping to report "ready, merge it?" and waiting.
+   **The chain is not optional follow-up — it's part of the merge action itself.** The instant the merge tool call reports success, treat `post-merge` (verify → tidy → UMS) as still in flight, the same as if the merge and the wrap-up were one atomic step. Reporting "merged!" and moving on to the next thing — including responding to other things the user said in the meantime — without having run it is the exact gap this bullet exists to close.
+   **This is easiest to drop in a busy, multi-threaded conversation** — the user firing off several observations/questions right as the merge lands makes it natural to context-switch to answering those and let the merge's own follow-through quietly slide. It doesn't: finish the chain (or at least kick off UMS) before or alongside answering the other threads, not deferred until "things calm down." A user having to explicitly say "ums first" after a merge already happened is this failure mode, not a normal request.
 3. Because the grant is a live, explicit user instruction rather than a self-authored one, it's safe to bake a self-merge step into a `ScheduleWakeup`/`/loop` prompt while `mwc` is active for that session — this is the one case where `ardi.md`'s "never bake a self-merge directive into a wakeup prompt" caveat doesn't apply, because the merge authorization already came from the human, not from a prior Claude turn.
 
 ## Relationship to other skills
@@ -55,3 +57,4 @@ Distinguish from `merge-it`: `merge-it` means "merge THIS PR now"; `mwc` means "
 - Treating `mwc` as a standing preference and writing it into `preferences.md` — it's granted per session by the user, not banked as a default.
 - Assuming `mwc` survives past the session it was granted in.
 - Merging through genuine ambiguity (a branch-protection block, unclear CI, a deadlocked review) just because asking first is now optional.
+- Reporting a merge as done and stopping there — via a summary, or by moving on to other conversation threads — without having run (or at least started) the post-merge → UMS chain. (Sparta `#818`, 2026-07-13: merged via `mwc`, reported a summary, then answered a stream of concurrent follow-up questions instead of chaining into UMS — the user had to explicitly ask for it.)
