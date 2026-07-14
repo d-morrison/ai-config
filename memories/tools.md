@@ -2155,16 +2155,18 @@ best-effort. (Sparta gii-ffdb93 session, 2026-07-14.)
 
 ## Monitor scripts: don't pipe a `grep -q` into another `grep` -- `-q` suppresses stdout too
 
-`grep -q` (or `-l`/`-c` for that matter) is silent by design -- it exits 0/1 and prints nothing,
-even on a match. Piping its (empty) stdout into a second `grep -qi "..."` therefore ALWAYS sees an
-empty input and ALWAYS fails to match, regardless of the actual content -- e.g.
+`grep -q` is silent by design -- it exits 0/1 and prints nothing, even on a match (unlike `-l`,
+which prints the matched filename, or `-c`, which prints a count -- only `-q` produces zero
+stdout). Piping its (empty) stdout into a second `grep -qi "..."` therefore ALWAYS sees an empty
+input and ALWAYS fails to match, regardless of the actual content -- e.g.
 `gh pr checks N | grep -qv "pending" | grep -qi "^check-name.*(pass|fail)"` silently never fires,
 looping until the `Monitor` call's own timeout kills it, with no error to signal the mistake (the
 loop just runs quietly and "times out" looking like slow CI rather than a broken filter). Test the
 condition directly against the ORIGINAL command's output instead of chaining greps:
 `line=$(gh pr checks N | grep "^check-name"); ! echo "$line" | grep -qi pending && echo "$line"`.
 More generally: before arming a `Monitor` loop, mentally trace what each pipe stage's STDOUT
-actually contains -- a `-q`/`-l`/`-c` flag anywhere upstream of a later stage that reads stdout is
+actually contains -- a `-q` flag upstream of a later stage that reads stdout (or `-l`/`-c`
+replacing the original content with just a filename or count) is
 the tell. (Sparta gii-ffdb93 session, 2026-07-14: caught only by comparing the monitor's silence
 against a manual `gh pr checks` call showing the check had already resolved.)
 
