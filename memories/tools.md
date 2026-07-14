@@ -2135,6 +2135,41 @@ plain wakeup tool, if present) for a one-off self check-in instead; reserve
 availability above for the fallback (`CronCreate`) if it disappears.
 (ai-config#455/gha#216, 2026-07-03.)
 
+## In a plain local Claude Code session, `ScheduleWakeup` can accept an ad-hoc call but silently fail to fire
+
+This is a DIFFERENT harness/observation from the entry above (that one is the `Claude Code Remote`
+MCP server's `ScheduleWakeup`, which rejects a non-`/loop` call outright with a validation error).
+In a plain local Claude Code CLI session, `ScheduleWakeup` accepted an arbitrary one-off
+`{delaySeconds, prompt, reason}` call with no error and returned a confirmed clock time (e.g.
+"Next wakeup scheduled for 08:27:00") -- but the scheduled re-invocation never actually fired.
+Observed twice in a row in the same session: the user had to send a message directly each time
+before work resumed, well past the confirmed time. Root cause unconfirmed from inside the
+conversation (no introspection into harness wakeup-delivery internals) -- plausible candidates are
+a genuine at-least-once delivery gap for ad-hoc (non-`/loop`) wakeups in this session type, or the
+pending wakeup being silently superseded/dropped when a real user message arrives first rather than
+double-delivering. Either way: don't treat a confirmed `ScheduleWakeup` result as a guarantee of
+resumption in a plain local session -- prefer a `Monitor`/background-Bash wait (which reports back
+via the harness's own task-completion notification, not a separately-scheduled wakeup) when the
+condition being waited on is itself observable via a command, and treat `ScheduleWakeup` as
+best-effort. (Sparta gii-ffdb93 session, 2026-07-14.)
+
+## Monitor scripts: don't pipe a `grep -q` into another `grep` -- `-q` suppresses stdout too
+
+`grep -q` is silent by design -- it exits 0/1 and prints nothing, even on a match (unlike `-l`,
+which prints the matched filename, or `-c`, which prints a count -- only `-q` produces zero
+stdout). Piping its (empty) stdout into a second `grep -qi "..."` therefore ALWAYS sees an empty
+input and ALWAYS fails to match, regardless of the actual content -- e.g.
+`gh pr checks N | grep -qv "pending" | grep -qi "^check-name.*(pass|fail)"` silently never fires,
+looping until the `Monitor` call's own timeout kills it, with no error to signal the mistake (the
+loop just runs quietly and "times out" looking like slow CI rather than a broken filter). Test the
+condition directly against the ORIGINAL command's output instead of chaining greps:
+`line=$(gh pr checks N | grep "^check-name"); ! echo "$line" | grep -qi pending && echo "$line"`.
+More generally: before arming a `Monitor` loop, mentally trace what each pipe stage's STDOUT
+actually contains -- a `-q` flag upstream of a later stage that reads stdout (or `-l`/`-c`
+replacing the original content with just a filename or count) is
+the tell. (Sparta gii-ffdb93 session, 2026-07-14: caught only by comparing the monitor's silence
+against a manual `gh pr checks` call showing the check had already resolved.)
+
 ## Evergreen-conditional citation phrasing can still regress in adjacent prose
 
 `shared/workflow/challenge-ambiguous-terminology.md`'s "cross-repo citations
@@ -2342,3 +2377,53 @@ between an earlier partial `git add` and the commit. (`ai-config` `gia`
 session, 2026-07-06: this exact ordering, done on two sibling PR branches
 right after merging `main` in, produced a `validate` failure on one of them
 that had to be fixed with a follow-up commit.)
+## Workflow `agent()` — schema validates shape, not substance
+
+A `Workflow`-tool agent can pass its `schema` validation while returning
+content that's substantively worthless — schema validation only checks
+shape (does the JSON have the right fields/types), never substance (is
+the content real analysis or a placeholder).
+Don't trust a synthesis-stage `agent()` result at face value just because
+it validated — skim the actual content before building on it, the same as
+any other agent's report. If it looks wrong or too trivial for the input
+it was given, read `<transcriptDir>/journal.jsonl` (each earlier agent's
+real return value is recorded there — a directly-observed path from the
+transcript directory during the incident below, and the primary artifact
+per the Workflow tool's own spec; `agent-<id>.jsonl` files are that spec's
+documented fallback for when no journal is available, not a competing
+name for the same file) and redo the synthesis by hand from those results
+rather than trusting the degenerate output.
+(Learned on `ai-config#554`, 2026-07-14: a Design-phase agent, handed
+genuine, detailed findings from four parallel survey agents, returned
+`{"summary":"test","changes":[{"gap":"test",...}]}` — a literal
+placeholder that still matched the schema. Caught before treating it as
+"no changes needed"; the actual gap analysis and PR content were
+synthesized by hand from the survey agents' real `journal.jsonl` results
+instead. This is also why `shared/workflow/when-to-orchestrate.md` now
+carries a "schema checks shape, not substance" reminder in its
+model/effort-routing section — this incident is the concrete case behind
+that addition.)
+
+## Edit two-step move — delete-only silently drops content
+
+Relocating a block of text with `Edit` (an `old_string` that spans the
+block plus its surroundings, a `new_string` that omits the block,
+intending to re-insert it via a *second*, separate `Edit` at the new
+location) silently drops the content if that second `Edit` never actually
+gets issued — the diff then shows a pure deletion, and nothing errors to
+flag the gap.
+This is a different failure from the "restoring/reconstructing a full
+file's content" bullet in `preferences.md` (that one is about transcription
+fidelity — accidentally omitting, altering, or inventing content while
+intending a faithful reproduction from memory); here the exact right
+content is known throughout, but a two-step move degrades to a one-step
+delete when the second step is skipped. The same fix applies either way —
+diff the result against the base branch — but check specifically that the
+moved content is **present** at its new location, not just that the old
+location no longer has it.
+(Learned on `ai-config#554`, 2026-07-14: a fix instructed as "move this
+3-line bullet to after paragraph Y" was executed as delete-the-bullet
+only, leaving the file's net diff against `origin/main` empty for that
+bullet entirely. Caught by a bot review reading the actual diff, then
+independently reconfirmed with `git diff origin/main -- <path>` before
+trusting the follow-up fix.)
