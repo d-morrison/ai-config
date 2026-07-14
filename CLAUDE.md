@@ -300,7 +300,7 @@ The `sync-pr-branch` / `merge-main` skill runs this.)
 
 ## Move referenced assets along with content that migrates or gets removed
 
-<!-- Edit shared/workflow/migrate-referenced-assets.md, not here. -->
+<!-- Not yet shared with the lab manual; edit shared/workflow/migrate-referenced-assets.md, not here. -->
 @shared/workflow/migrate-referenced-assets.md
 
 ## Prioritize internal infrastructure work slightly over feature work
