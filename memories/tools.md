@@ -2377,3 +2377,53 @@ between an earlier partial `git add` and the commit. (`ai-config` `gia`
 session, 2026-07-06: this exact ordering, done on two sibling PR branches
 right after merging `main` in, produced a `validate` failure on one of them
 that had to be fixed with a follow-up commit.)
+## Workflow `agent()` — schema validates shape, not substance
+
+A `Workflow`-tool agent can pass its `schema` validation while returning
+content that's substantively worthless — schema validation only checks
+shape (does the JSON have the right fields/types), never substance (is
+the content real analysis or a placeholder).
+Don't trust a synthesis-stage `agent()` result at face value just because
+it validated — skim the actual content before building on it, the same as
+any other agent's report. If it looks wrong or too trivial for the input
+it was given, read `<transcriptDir>/journal.jsonl` (each earlier agent's
+real return value is recorded there — a directly-observed path from the
+transcript directory during the incident below, and the primary artifact
+per the Workflow tool's own spec; `agent-<id>.jsonl` files are that spec's
+documented fallback for when no journal is available, not a competing
+name for the same file) and redo the synthesis by hand from those results
+rather than trusting the degenerate output.
+(Learned on `ai-config#554`, 2026-07-14: a Design-phase agent, handed
+genuine, detailed findings from four parallel survey agents, returned
+`{"summary":"test","changes":[{"gap":"test",...}]}` — a literal
+placeholder that still matched the schema. Caught before treating it as
+"no changes needed"; the actual gap analysis and PR content were
+synthesized by hand from the survey agents' real `journal.jsonl` results
+instead. This is also why `shared/workflow/when-to-orchestrate.md` now
+carries a "schema checks shape, not substance" reminder in its
+model/effort-routing section — this incident is the concrete case behind
+that addition.)
+
+## Edit two-step move — delete-only silently drops content
+
+Relocating a block of text with `Edit` (an `old_string` that spans the
+block plus its surroundings, a `new_string` that omits the block,
+intending to re-insert it via a *second*, separate `Edit` at the new
+location) silently drops the content if that second `Edit` never actually
+gets issued — the diff then shows a pure deletion, and nothing errors to
+flag the gap.
+This is a different failure from the "restoring/reconstructing a full
+file's content" bullet in `preferences.md` (that one is about transcription
+fidelity — accidentally omitting, altering, or inventing content while
+intending a faithful reproduction from memory); here the exact right
+content is known throughout, but a two-step move degrades to a one-step
+delete when the second step is skipped. The same fix applies either way —
+diff the result against the base branch — but check specifically that the
+moved content is **present** at its new location, not just that the old
+location no longer has it.
+(Learned on `ai-config#554`, 2026-07-14: a fix instructed as "move this
+3-line bullet to after paragraph Y" was executed as delete-the-bullet
+only, leaving the file's net diff against `origin/main` empty for that
+bullet entirely. Caught by a bot review reading the actual diff, then
+independently reconfirmed with `git diff origin/main -- <path>` before
+trusting the follow-up fix.)
