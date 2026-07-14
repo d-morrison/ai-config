@@ -65,6 +65,12 @@ If the suffix isn't PDT/PST, fall back to plain `date` when the machine's system
 Otherwise use PowerShell: `[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow, 'Pacific Standard Time')`.
 Note the output format differs from the bash command — it's a raw `DateTime` with no timezone-abbreviation field, so format it yourself if you need the `PDT`/`PST` suffix or a compact form.
 
+## State the actual time when reporting a scheduled check-in
+
+When telling the user I've scheduled a wakeup or check-in (`ScheduleWakeup`, or an equivalent poll-later mechanism), state the clock time it fires at, not just the relative delay or a bare "I scheduled a check-in."
+The tool result already returns a clock time (e.g. "Next wakeup scheduled for 08:22:00") — surface that time in the chat reply instead of dropping it, converting to Pacific local time per the "Timestamp recaps in local time" section above if the returned time is in a different zone.
+"Scheduled a check-in to continue monitoring both" leaves the user unable to tell whether that's one minute away or twenty; "I'll check back at 08:22 PT (~4 min)" does not.
+
 ## Bare queue-command keywords
 
 I maintain a family of slash skills for managing the task queue and amending requests: `/also`, `/first`, `/next`, `/before`, `/last`, `/and`, `/remember`, and `/always`.
