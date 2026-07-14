@@ -137,6 +137,12 @@ this synthesis step — codex produced the parts, Claude assembles the whole.
   subagents. Prefer this skill's codex path first for the read/verify stages to
   conserve Claude budget; reserve `Workflow` for stages codex can't do or once
   its window is exhausted.
+- **`agent-builder`'s "paranoid reviewer" archetype** — a codex verify pass
+  (step 3 above, `-s read-only`) is the cross-model-family instance of that
+  role: a different model family reviewing Claude's own prior output.
+  When a Claude-authored finding needs adversarial scrutiny from a different
+  model perspective, route the verify stage here rather than to another Claude
+  agent.
 - **`ums` / `record-learnings`** — capture any new codex mechanics learned into
   the backing memory so this skill stays current.
 

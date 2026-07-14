@@ -108,6 +108,54 @@ and structure of the three existing agents — they read almost as a template.
   YAML list), and `description` states the role, its tool limits, and the
   calling skill.
 
+## Worker-role archetypes
+
+All three existing agents are **read-only scouts** --- audit/detect/mine passes
+that must not mutate anything.
+That is a good default, but not the only valid archetype.
+When a skill's fan-out step needs a different role, name it explicitly in the
+agent definition so the purpose and tool scope are unambiguous.
+
+The four archetypes, in order of increasing authority:
+
+1. **Scout (read-only)** --- the existing default.
+   Audits, detects, or mines data.
+   Omit `Edit` and `Write`; omit `Bash` when shell isn't needed (e.g.
+   `community-demand-scout`).
+   Most fan-out workers belong here.
+
+2. **Critic** --- reviews *another agent's output* rather than the raw
+   codebase.
+   Still read-only (`Edit`/`Write` absent); the input is an artifact
+   (a JSON result, a diff, a draft) passed in the prompt, not a file to open.
+   Use for a second-opinion pass after a first-pass scout has already gathered
+   its findings.
+
+3. **Paranoid reviewer** --- an adversarial critic whose explicit job is to
+   *refute* a claim or finding.
+   Prompt it to default to "refuted" unless it finds decisive evidence the
+   claim holds.
+   Still read-only; the distinction from "critic" is the default stance
+   (skeptical / refute-biased) rather than neutral evaluation.
+   See the `delegate-to-codex` skill: its codex verify pass already covers
+   this role across model families (having a different model review Claude's
+   own output).
+
+4. **Bounded worker** --- a mutating agent (`Edit`/`Write` in scope) that
+   implements a narrowly-specified change.
+   Reserve this for fan-out steps where each item's edit is well-defined and
+   unlikely to have side effects on items other agents are touching in parallel;
+   use `isolation: 'worktree'` on the `agent()` call to keep concurrent writers
+   from clobbering each other.
+   This is the rarest archetype --- most implementation work happens inline or
+   via an inline `Agent()` call in the calling skill, not a persistent agent
+   file.
+
+When the archetype is a scout, critic, or paranoid reviewer,
+you can usually skip a persistent agent file altogether and use an inline
+`agent()` prompt --- the persistent file only earns its keep
+when the read-only tool boundary itself is load-bearing (see Step 0).
+
 ## Can an agent build another agent?
 
 Mechanically, yes: any subagent granted `Edit`/`Write` (the default

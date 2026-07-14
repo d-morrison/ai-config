@@ -59,3 +59,25 @@ inline alternative, and let the user choose. If they decline, do the work inline
 Scale the harness to the ask: a quick "find any bugs" wants a few finders and a
 single verify; "thoroughly audit this" wants a larger finder pool, a 3--5 vote
 adversarial pass, and a synthesis stage.
+
+## Route each agent's model/effort
+
+When writing an `agent()` or `Agent()` call with a model or effort override,
+consult `select-model`'s decision tree --- don't default to the session tier
+for every subagent, but don't escalate blindly either.
+
+Two buckets cover most cases:
+
+- **Mechanical / bounded work** (a read pass, a grep, a checklist, a single-file
+  fix against a clear spec) → a cheaper tier: `haiku` for focused single-step
+  tasks, `fable` for high-volume throughput with minimal reasoning.
+  Omit `model:` when the task is trivial enough that inheriting the session tier
+  is fine.
+- **Judgment-heavy work** (cross-file reasoning, architectural critique,
+  adversarial verify meant to catch subtle errors) → inherit the session model,
+  or set `opus` explicitly when the work warrants it.
+
+Schema output (`schema:` option) validates structure only --- it guarantees
+the result is well-formed JSON matching the declared shape,
+not that the content is correct.
+A schema-gated agent still needs substantive review for its findings.
