@@ -2135,6 +2135,39 @@ plain wakeup tool, if present) for a one-off self check-in instead; reserve
 availability above for the fallback (`CronCreate`) if it disappears.
 (ai-config#455/gha#216, 2026-07-03.)
 
+## In a plain local Claude Code session, `ScheduleWakeup` can accept an ad-hoc call but silently fail to fire
+
+This is a DIFFERENT harness/observation from the entry above (that one is the `Claude Code Remote`
+MCP server's `ScheduleWakeup`, which rejects a non-`/loop` call outright with a validation error).
+In a plain local Claude Code CLI session, `ScheduleWakeup` accepted an arbitrary one-off
+`{delaySeconds, prompt, reason}` call with no error and returned a confirmed clock time (e.g.
+"Next wakeup scheduled for 08:27:00") -- but the scheduled re-invocation never actually fired.
+Observed twice in a row in the same session: the user had to send a message directly each time
+before work resumed, well past the confirmed time. Root cause unconfirmed from inside the
+conversation (no introspection into harness wakeup-delivery internals) -- plausible candidates are
+a genuine at-least-once delivery gap for ad-hoc (non-`/loop`) wakeups in this session type, or the
+pending wakeup being silently superseded/dropped when a real user message arrives first rather than
+double-delivering. Either way: don't treat a confirmed `ScheduleWakeup` result as a guarantee of
+resumption in a plain local session -- prefer a `Monitor`/background-Bash wait (which reports back
+via the harness's own task-completion notification, not a separately-scheduled wakeup) when the
+condition being waited on is itself observable via a command, and treat `ScheduleWakeup` as
+best-effort. (Sparta gii-ffdb93 session, 2026-07-14.)
+
+## Monitor scripts: don't pipe a `grep -q` into another `grep` -- `-q` suppresses stdout too
+
+`grep -q` (or `-l`/`-c` for that matter) is silent by design -- it exits 0/1 and prints nothing,
+even on a match. Piping its (empty) stdout into a second `grep -qi "..."` therefore ALWAYS sees an
+empty input and ALWAYS fails to match, regardless of the actual content -- e.g.
+`gh pr checks N | grep -qv "pending" | grep -qi "^check-name.*(pass|fail)"` silently never fires,
+looping until the `Monitor` call's own timeout kills it, with no error to signal the mistake (the
+loop just runs quietly and "times out" looking like slow CI rather than a broken filter). Test the
+condition directly against the ORIGINAL command's output instead of chaining greps:
+`line=$(gh pr checks N | grep "^check-name"); ! echo "$line" | grep -qi pending && echo "$line"`.
+More generally: before arming a `Monitor` loop, mentally trace what each pipe stage's STDOUT
+actually contains -- a `-q`/`-l`/`-c` flag anywhere upstream of a later stage that reads stdout is
+the tell. (Sparta gii-ffdb93 session, 2026-07-14: caught only by comparing the monitor's silence
+against a manual `gh pr checks` call showing the check had already resolved.)
+
 ## Evergreen-conditional citation phrasing can still regress in adjacent prose
 
 `shared/workflow/challenge-ambiguous-terminology.md`'s "cross-repo citations
