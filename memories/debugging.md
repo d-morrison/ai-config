@@ -254,6 +254,17 @@ Also from ettbc#13/#14:
   `R CMD INSTALL .` before `lint_package`, so cross-file *internal* functions
   (e.g. a helper defined in another `R/` file) resolve — a single-file
   `lintr::lint()` can't see them and will false-flag them.
+- **`lintr::object_usage_linter` can't see a variable used only inside a
+  formula** — including every `~` in `dplyr::case_when()` / `case_match()`.
+  `codetools` doesn't walk formula bodies, so
+  `x <- f(y); dplyr::case_when(x %in% c(...) ~ "1", ...)` reports
+  `local variable 'x' assigned but may not be used` even though `x` is plainly
+  used. It fires in CI's `lint_package` (which installs the package first) while
+  a local single-file `lintr::lint()` can miss it, so it shows up as a
+  CI-only failure. Don't suppress it: rewrite so the variable is referenced
+  outside a formula — a named lookup vector indexed by the variable
+  (`bins[x]`) replaces a `case_when` chain cleanly, and usually reads better
+  anyway. (ucdavis/bcs#351.)
 - **`spelling::spell_check_package()` locally over-reports vs CI** on accented
   hyphenated names: line-wrapped `García-Albéniz`/`Hernán` in `.Rd` files
   tokenize as `Garc`/`niz`/`Hern`, which the CI spellcheck action does not flag
@@ -381,3 +392,58 @@ html both write `<stem>.html`) in seconds. When a full render/build is too heavy
 to run in the sandbox, strip the failing behavior down to the smallest project
 that still triggers it — it confirms both the diagnosis and the fix far faster
 than the real pipeline, and becomes the negative test for the guard.
+
+## R: `glm()`'s default `na.action = na.omit` silently MISALIGNS `fitted()`
+
+`stats::glm()` defaults to `na.action = na.omit`, which **drops** rows with any
+missing predictor. `stats::fitted()` then returns a vector **shorter than the
+data frame**. So the natural-looking
+
+```r
+data <- dplyr::mutate(data, p = stats::fitted(fit))   # WRONG when any NA
+```
+
+either errors on a length mismatch or — worse, in a pipeline that recycles or
+joins afterward — assigns each fitted value to the **wrong row**, shifting every
+prediction after the first dropped row onto a different subject. It is a silent
+wrong-answer bug, not a crash.
+
+Fix: `na.action = stats::na.exclude`, which pads `fitted()`/`residuals()` back
+out to the full row count with `NA` at the dropped positions, preserving
+alignment.
+
+```r
+fit <- stats::glm(f, data = data, family = binomial(), na.action = stats::na.exclude)
+data <- dplyr::mutate(data, p = stats::fitted(fit))   # aligned; dropped rows are NA
+```
+
+**This is a latent landmine, not a hypothetical.** Code that has always been fed
+fully-imputed (NA-free) data works perfectly and hides the bug — it only fires
+the day a covariate with real missingness is added. If you see
+`mutate(... = fitted(fit))` anywhere, check the `na.action`, even if the code
+currently "works". (Found on ucdavis/bcs#349, where adding a covariate that SAS
+deliberately leaves unimputed would have activated it.)
+
+## R: `mice` silently DROPS collinear columns instead of imputing them
+
+`mice::mice()` runs a collinearity check and quietly removes offending
+predictors — the evidence is only in `mi_result$loggedEvents`
+(`meth = "collinear"`), not in a warning you'd notice. The completed dataset
+then still has `NA` in the "imputed" column, and an
+`expect_false(anyNA(x))` test fails with no obvious cause.
+
+The usual trigger in a **test fixture**: covariates derived deterministically
+from the row index (`race = k %% 2`, `bmi = 22 + k %% 11`, ...). That makes
+every covariate an exact function of every other, so `mice` flags most of them
+collinear and imputes nothing. The fixture *looks* rich and is actually rank-1.
+
+Fixes:
+- Build the fixture by **sampling under a fixed seed** (`withr::with_seed()`),
+  not by deriving from the index — reproducible *and* genuinely varied.
+- When `mice` doesn't impute something, `print(mi_result$loggedEvents)` first.
+  It names the variable and the reason and saves a long hunt.
+
+Note the same index-derived-fixture degeneracy also makes GLM coefficients
+alias (NA coefficients) — which can be harmless if the test only asserts on
+*fitted values* — so it can lurk in a fixture for a long time before `mice`
+finally trips over it. (ucdavis/bcs#349.)
