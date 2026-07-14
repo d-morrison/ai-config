@@ -133,6 +133,11 @@ this synthesis step — codex produced the parts, Claude assembles the whole.
 - **`select-model`** — picks *which Claude model* for a task; this skill picks
   *whether to run it on codex at all* first. Complementary: decide codex-vs-Claude
   here, then model tier there.
+- **`agent-builder`**'s worker-role archetypes — this skill's "verify" work
+  (step 5, or a dedicated verify-only prompt) is the concrete mechanism for
+  that taxonomy's "paranoid reviewer, cross-model-family" case: point codex at
+  Claude's own prior output ("does this design/diff hold up?") instead of only
+  ever handing codex fresh investigation. Same procedure, different prompt.
 - **Workflow orchestration** (the `Workflow` tool) — runs fan-out on **Claude**
   subagents. Prefer this skill's codex path first for the read/verify stages to
   conserve Claude budget; reserve `Workflow` for stages codex can't do or once

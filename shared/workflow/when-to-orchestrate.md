@@ -59,3 +59,28 @@ inline alternative, and let the user choose. If they decline, do the work inline
 Scale the harness to the ask: a quick "find any bugs" wants a few finders and a
 single verify; "thoroughly audit this" wants a larger finder pool, a 3--5 vote
 adversarial pass, and a synthesis stage.
+
+## Route each agent's model/effort, don't default every call to the same tier
+
+`agent()`'s own guidance says to omit `model`/`effort` unless "highly
+confident" a different tier fits. Use [`select-model`](../../skills/select-model/SKILL.md)'s
+decision tree to make that call concretely, instead of defaulting to inherit
+out of caution on every single call:
+
+- **Mechanical, bounded work** --- a single-file edit, a doc/changelog sync, a
+  formatting sweep, a read-only survey/grep pass, the same verification check
+  repeated across many targets --- clears the confidence bar for a cheaper
+  tier (Haiku, sometimes Fable) and/or `effort: 'low'`. This is most of a
+  Survey phase and most Verify passes in a `pipeline()`.
+- **Judgment-heavy work** --- architecture, a subtle-bug hunt, security
+  review, synthesizing several agents' findings into a design --- inherit the
+  session model (the default) or set `effort: 'high'`/`'xhigh'` explicitly.
+  This is almost always a Design/Synthesize phase, not a Survey/Verify one.
+
+Don't build a per-task-type routing matrix beyond this two-bucket split ---
+`select-model`'s own decision tree already exists for the finer-grained calls;
+point at it rather than re-deriving new criteria inline. And don't trust a
+single synthesis-stage agent's output at face value just because it validated
+against its schema --- a schema only checks shape, not substance; skim a
+judgment-heavy agent's actual result before building on it, the same way a
+Verify pass would.
