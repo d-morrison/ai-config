@@ -134,7 +134,7 @@ this synthesis step — codex produced the parts, Claude assembles the whole.
   *whether to run it on codex at all* first. Complementary: decide codex-vs-Claude
   here, then model tier there.
 - **`agent-builder`**'s worker-role archetypes — this skill's "verify" work
-  (step 5, or a dedicated verify-only prompt) is the concrete mechanism for
+  (via a verify-only prompt, same steps 2–5) is the concrete mechanism for
   that taxonomy's "paranoid reviewer, cross-model-family" case: point codex at
   Claude's own prior output ("does this design/diff hold up?") instead of only
   ever handing codex fresh investigation. Same procedure, different prompt.
