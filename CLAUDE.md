@@ -518,7 +518,7 @@ When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-st
 
 ## Useful prompt formats for coding agents
 
-<!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
+<!-- Vendored from d-morrison/wai; edit there, not here. See README, "Shared content". -->
 @shared/vendored/prompt-formats.md
 
 ## Review with Copilot before requesting human review
@@ -526,7 +526,7 @@ When running `code-review`, `ard`/`ardi`, or any prose review (`use-preferred-st
 This is shared lab guidance on getting an automated review before asking a human reviewer.
 When *I* iterate a PR, the ARDI loop above is the mechanism — it already addresses whatever the `@claude` or Copilot reviewer flags — so read this as the lab-member-facing statement of the same principle, not a second loop to run.
 
-<!-- Vendored from UCD-SERG/lab-manual; edit there, not here. See README, "Shared content". -->
+<!-- Vendored from d-morrison/wai; edit there, not here. See README, "Shared content". -->
 @shared/vendored/copilot-review-before-human.md
 
 ## Growth mindset: seek resources rather than accept limitations

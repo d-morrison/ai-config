@@ -240,19 +240,21 @@ Conventions for fragments:
 resolve in local CLI sessions; the `@claude` CI bot reads `shared/` from the
 repo root.
 
-### Vendored from the lab manual (`shared/vendored/`)
+### Vendored from wai (`shared/vendored/`)
 
-A few fragments are authored in the **lab manual** instead (prompt formats, the
-Copilot-review workflow). This repo can't add the manual as a submodule — the
-manual already submodules this repo, and a mutual submodule would recurse — so
+A few fragments are authored in **[d-morrison/wai](https://github.com/d-morrison/wai)**
+instead (prompt formats, the Copilot-review workflow) — that repo hosts the
+UCD-SERG lab's "Working with AI" notes, migrated out of the lab manual once
+they outgrew a single chapter. This repo can't add wai as a submodule — wai
+already submodules this repo, and a mutual submodule would recurse — so
 it keeps a pinned **copy** under `shared/vendored/`, recorded in
 `shared/vendored/MANIFEST.json` (source repo, per-file commit, and content
 `sha256`). `CLAUDE.md` `@`-imports the copies the same way as any other fragment.
 
-Don't edit the vendored copies here — edit them in the lab manual.
+Don't edit the vendored copies here — edit them in wai.
 `scripts/check-vendored-drift.py` (run by `validate.yml`) recomputes each copy's
-hash and fails CI if it stops matching the manifest. The `Sync from lab-manual`
-workflow (`.github/workflows/sync-from-lab-manual.yml`) refreshes them weekly —
+hash and fails CI if it stops matching the manifest. The `Sync from wai`
+workflow (`.github/workflows/sync-from-wai.yml`) refreshes them weekly —
 via `d-morrison/gha`'s `sync-shared-fragments` — and opens a PR when the upstream
 files change.
 

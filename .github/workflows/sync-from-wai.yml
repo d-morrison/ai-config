@@ -1,10 +1,10 @@
-# Refresh the vendored lab-manual fragments under shared/vendored/ and open a PR
+# Refresh the vendored wai fragments under shared/vendored/ and open a PR
 # when they change. Calls d-morrison/gha's reusable sync-shared-fragments workflow.
 #
-# lab-manual is public, so no SOURCE_TOKEN is needed, and the PR is opened in this
+# wai is public, so no SOURCE_TOKEN is needed, and the PR is opened in this
 # repo with the integrated GITHUB_TOKEN -- which requires Settings -> Actions ->
 # General -> "Allow GitHub Actions to create and approve pull requests".
-name: Sync from lab-manual
+name: Sync from wai
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
       pull-requests: write
     uses: d-morrison/gha/.github/workflows/sync-shared-fragments.yml@v1
     with:
-      source-repo: UCD-SERG/lab-manual
+      source-repo: d-morrison/wai
       source-paths: |
         shared/prompt-formats.md
         shared/copilot-review-before-human.md
