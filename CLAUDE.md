@@ -298,6 +298,11 @@ If you and the reviewer reach an impasse on a single item (your rebuttal didn't 
 (Another instance of **never assume; always verify** — `git fetch` to check main's actual position instead of assuming the branch is current.
 The `sync-pr-branch` / `merge-main` skill runs this.)
 
+## Move referenced assets along with content that migrates or gets removed
+
+<!-- Not yet shared with the lab manual; edit shared/workflow/migrate-referenced-assets.md, not here. -->
+@shared/workflow/migrate-referenced-assets.md
+
 ## Prioritize internal infrastructure work slightly over feature work
 
 <!-- Shared with the lab manual; edit shared/workflow/pr-prioritization.md, not here. -->
