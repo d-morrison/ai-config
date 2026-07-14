@@ -108,6 +108,41 @@ and structure of the three existing agents — they read almost as a template.
   YAML list), and `description` states the role, its tool limits, and the
   calling skill.
 
+## Worker-role archetypes (beyond the read-only default)
+
+The six existing agents are all one archetype — a **scout**: read-only,
+reports back to the calling session, no authority to act on its own
+findings. That's still the right default (see Conventions above), but three
+other roles are legitimate reasons to deviate from it:
+
+- **Bounded worker** — granted `Edit`/`Write` to perform one scoped
+  implementation task, not just an investigation. Still rare (see
+  Conventions), but when a task genuinely needs it: name the exact file(s) or
+  path glob it may touch in the `description`, state what it must NOT touch,
+  and have it report back what it changed — the same output-shape discipline
+  a scout uses for findings.
+- **Critic** — reviews another agent's (or the coordinator's own) output
+  instead of investigating the repo fresh. No existing agent does this yet; a
+  `Workflow` script's `pipeline()`/`parallel()` verify stage (see
+  [`when-to-orchestrate.md`](../../shared/workflow/when-to-orchestrate.md))
+  is currently how this repo gets adversarial review — an inline prompt, not
+  a named persona. Promote it to a `.claude/agents/*.md` file only once more
+  than one skill wants the same critic behavior — Step 0's reuse-first rule
+  applies here too.
+- **Paranoid reviewer** — a critic deliberately run at higher cost/effort
+  (see `select-model` and `when-to-orchestrate.md`'s model/effort routing
+  section) for consequential or subtle work, where a same-family second pass
+  risks repeating the first pass's own blind spot. For the highest-stakes
+  case, run the critic on a genuinely different model family via
+  [`delegate-to-codex`](../delegate-to-codex/SKILL.md) instead of another
+  Claude subagent — that skill's "verify" step already covers reviewing
+  Claude's own prior output, not just fresh investigation.
+
+None of this changes the `tools:` frontmatter schema (there is no
+`model`/`effort` field there, and there shouldn't be — pin the model/effort
+choice in the *calling* skill's `agent()`/`Agent()` invocation instead, so
+the same persona file stays reusable across tiers).
+
 ## Can an agent build another agent?
 
 Mechanically, yes: any subagent granted `Edit`/`Write` (the default
