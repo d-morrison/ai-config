@@ -259,12 +259,15 @@ Also from ettbc#13/#14:
   `codetools` doesn't walk formula bodies, so
   `x <- f(y); dplyr::case_when(x %in% c(...) ~ "1", ...)` reports
   `local variable 'x' assigned but may not be used` even though `x` is plainly
-  used. It fires in CI's `lint_package` (which installs the package first) while
-  a local single-file `lintr::lint()` can miss it, so it shows up as a
-  CI-only failure. Don't suppress it: rewrite so the variable is referenced
-  outside a formula — a named lookup vector indexed by the variable
-  (`bins[x]`) replaces a `case_when` chain cleanly, and usually reads better
-  anyway. (ucdavis/bcs#351.)
+  used. Don't suppress it: rewrite so the variable is referenced outside a
+  formula — a named lookup vector indexed by the variable (`bins[x]`) replaces
+  a `case_when` chain cleanly, and usually reads better anyway.
+  This is **not** a CI-only lint (verified: a plain single-file
+  `lintr::lint(f, linters = lintr::object_usage_linter())` reproduces it) — but
+  it is easy to *believe* it is, because an intervening local run can come back
+  clean off a stale loaded namespace and then CI flags it again. If a lint
+  disappears without you changing the thing it flagged, distrust the clean run.
+  (ucdavis/bcs#351.)
 - **`spelling::spell_check_package()` locally over-reports vs CI** on accented
   hyphenated names: line-wrapped `García-Albéniz`/`Hernán` in `.Rd` files
   tokenize as `Garc`/`niz`/`Hern`, which the CI spellcheck action does not flag
@@ -397,16 +400,22 @@ than the real pipeline, and becomes the negative test for the guard.
 
 `stats::glm()` defaults to `na.action = na.omit`, which **drops** rows with any
 missing predictor. `stats::fitted()` then returns a vector **shorter than the
-data frame**. So the natural-looking
+data frame**, so writing it back onto the full frame is wrong. How it fails
+depends on how you write it back — and only one of the two is loud:
 
 ```r
-data <- dplyr::mutate(data, p = stats::fitted(fit))   # WRONG when any NA
+data <- dplyr::mutate(data, p = stats::fitted(fit))  # ERRORS (size N vs size k)
+data$p <- stats::fitted(fit)                         # SILENT when k divides N:
+                                                     # base R recycles -> wrong rows
 ```
 
-either errors on a length mismatch or — worse, in a pipeline that recycles or
-joins afterward — assigns each fitted value to the **wrong row**, shifting every
-prediction after the first dropped row onto a different subject. It is a silent
-wrong-answer bug, not a crash.
+Verified on R 4.5 / dplyr 1.2 with `nrow = 100` and 50 complete cases:
+`dplyr::mutate()` aborts with a size mismatch, while base `$<-` **silently
+recycles** the 50 fitted values twice, assigning each prediction to two
+different subjects. (Base `$<-` errors instead when `k` does *not* divide `N` —
+so the same code is loud or silent depending on the data, which is worse than
+either.) The same silent misalignment reaches you through any downstream
+join/index pattern where the short vector escapes undetected.
 
 Fix: `na.action = stats::na.exclude`, which pads `fitted()`/`residuals()` back
 out to the full row count with `NA` at the dropped positions, preserving
@@ -420,9 +429,10 @@ data <- dplyr::mutate(data, p = stats::fitted(fit))   # aligned; dropped rows ar
 **This is a latent landmine, not a hypothetical.** Code that has always been fed
 fully-imputed (NA-free) data works perfectly and hides the bug — it only fires
 the day a covariate with real missingness is added. If you see
-`mutate(... = fitted(fit))` anywhere, check the `na.action`, even if the code
-currently "works". (Found on ucdavis/bcs#349, where adding a covariate that SAS
-deliberately leaves unimputed would have activated it.)
+`fitted(fit)`/`residuals(fit)` written back onto a data frame anywhere, check
+the `na.action`, even if the code currently "works". (Found on ucdavis/bcs#349,
+where adding a covariate that SAS deliberately leaves unimputed would have
+activated it.)
 
 ## R: `mice` silently DROPS collinear columns instead of imputing them
 
