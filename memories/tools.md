@@ -492,7 +492,7 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   (`error: cannot delete branch '…' used by worktree at '…'`), so remove the
   worktree **first**, then `git branch -D <branch>`.
 
-## Git — `worktree remove` on your own cwd can partially fail, leaving an orphaned unregistered directory that silently falls through to the parent repo
+## Git (Windows) — `worktree remove` on your own cwd partially fails, leaving an orphaned unregistered directory that silently falls through to the parent repo
 - `git worktree remove <path>` on a `<path>` that is the **current process's cwd**
   fails on Windows with `error: failed to delete '<path>': Permission denied` —
   Windows won't let you delete a directory a running process has open as its
