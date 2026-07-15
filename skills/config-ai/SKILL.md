@@ -65,6 +65,22 @@ tool boundary is load-bearing — see `agent-builder`'s step 2), and a shared
 fragment over a new skill when the content already lives inside another
 skill's procedure and a new skill would just duplicate it.
 
+**The "Skill" row's `ai-config skills/<name>/` home assumes the capability is
+reusable *across* repos.** When the capability only makes sense for one
+project's own domain (game-specific terminology, a codebase's own internal
+tooling) — especially when that project already has a precedent skill of its
+own under its `.claude/skills/` — extend or add to *that project's* skill
+directory via a PR in that repo instead, the same way a project-specific
+memory goes in the project's own docs rather than `ai-config`'s `memories/`.
+`skill-builder`'s own Step 0 reuse-check is scoped to the `ai-config` repo
+only, so run an equivalent check against the *project's* own `skills/` dir
+by hand first — don't rely on `skill-builder` to catch this case for you.
+(`Lacaedemon/sparta`, 2026-07-14: a request to check every demo for specific
+simulation-defect patterns — terminology with no meaning outside that one
+game — extended the project's existing
+`.claude/skills/verify-via-state-dump/SKILL.md` rather than creating a new
+`ai-config` skill.)
+
 ## Step 2 — Reuse-check before building anything
 
 Every mechanism above already has its own extend-first check; run it rather
