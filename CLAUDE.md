@@ -388,6 +388,10 @@ Apply this both when writing new code and when reviewing it — a new function
 added inline to an existing multi-function file is a review finding, the
 same weight as the other modularity checks above.
 
+## Coding: no em-dashes or non-ASCII punctuation in source files
+
+@shared/coding/ascii-punctuation-in-source.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
