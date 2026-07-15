@@ -392,6 +392,10 @@ same weight as the other modularity checks above.
 
 @shared/coding/ascii-punctuation-in-source.md
 
+## Coding: decompose complex code into functions, not .qmd chunks
+
+@shared/coding/decompose-to-functions.md
+
 ## Writing style: plain, direct prose
 
 <!-- Shared with the lab manual; edit shared/writing/plain-prose.md, not here. -->
