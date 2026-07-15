@@ -492,6 +492,38 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   (`error: cannot delete branch '…' used by worktree at '…'`), so remove the
   worktree **first**, then `git branch -D <branch>`.
 
+## Git (Windows) — `worktree remove` on your own cwd partially fails, leaving an orphaned unregistered directory that silently falls through to the parent repo
+- `git worktree remove <path>` on a `<path>` that is the **current process's cwd**
+  fails on Windows with `error: failed to delete '<path>': Permission denied` —
+  Windows won't let you delete a directory a running process has open as its
+  working directory. That failure is not clean/atomic: git had already
+  unregistered the worktree (removed it from `git worktree list` and deleted
+  the checked-out files) before the final `rmdir` step failed, so the
+  directory is left **empty and unregistered** rather than restored to its
+  prior working state.
+- **The dangerous part:** an empty, unregistered directory nested under the
+  main repo (e.g. `.claude/worktrees/<name>/`) is not an error state as far as
+  git commands are concerned — `git status`/`git log`/`git pull` etc. run from
+  inside it just walk up to the parent directory, find `../../.git` there, and
+  silently operate on the **main repo's checkout and branch** instead of
+  erroring. Nothing points out that you're no longer in an isolated worktree;
+  a `git pull --ff-only` there quietly fast-forwards the main checkout instead
+  of failing.
+- **Detect it** with `git rev-parse --show-toplevel` (or `--git-dir`) — if the
+  path it prints is the **parent** repo rather than the worktree path itself,
+  you've hit this. `git worktree list` run from the parent repo also won't
+  list the directory. (Same failure signature as a worktree that was simply
+  never registered in the first place, e.g. because a harness only prepared
+  the directory but never actually ran `git worktree add` — check this first
+  before assuming any work was corrupted.)
+- **Fix** by re-registering in place: `git -C <parent-repo> worktree add
+  <same-path> [-b <branch>] <base-ref>` — safe to run even though the
+  directory already exists, as long as it's empty (which it will be, since
+  the failed removal already deleted its contents).
+- Avoid triggering this at all: don't call `git worktree remove` on a path
+  that's your own cwd. `cd` out to the parent repo (or a sibling worktree)
+  first, *then* remove.
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
