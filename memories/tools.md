@@ -2460,3 +2460,47 @@ only, leaving the file's net diff against `origin/main` empty for that
 bullet entirely. Caught by a bot review reading the actual diff, then
 independently reconfirmed with `git diff origin/main -- <path>` before
 trusting the follow-up fix.)
+
+## `codex exec`: the auto-mode classifier denies `--sandbox danger-full-access`
+
+Claude Code's auto-mode permission classifier **denies** a `codex exec` invoked
+with `--sandbox danger-full-access` (reason: "[Create Unsafe Agents] ... runs an
+autonomous agent with sandbox isolation and approval gates disabled", plus
+"[Safety Bypass Flag]"). A user grant to *use* codex — even a standing one, e.g.
+"use codex whenever examining the actual data" — does **not** extend to running
+it with the sandbox disabled; that's a separate permission the user never named.
+
+Use `--sandbox workspace-write` instead. It reads/writes inside the repo and
+runs local interpreters, which covers essentially every delegation case
+(inspecting a large data file, running an `Rscript`/`python` analysis, drafting
+into a scratch file). Don't reach for full-access as the reflex — reach for it
+never, and re-scope the task if it seems to need it.
+
+`--sandbox read-only` also exists but blocks writing the temp script most
+analysis delegations need, so `workspace-write` is the practical default.
+
+## `codex` can report "logged in" while every `codex exec` fails on auth
+
+`codex login status` prints "Logged in using ChatGPT" and yet `codex exec` dies
+with:
+
+> Your access token could not be refreshed because your refresh token was
+> already used.
+
+The status check reads the stored credential; it does not exercise the refresh.
+So a stale/consumed refresh token looks healthy right up until you actually run
+something. Re-running `codex exec` just reproduces it — this does not
+self-resolve.
+
+Fix: a **full re-login**, which is interactive and therefore the user's to run:
+
+```
+codex logout && codex login
+```
+
+Ask the user to run it with the `! ` prefix so the output lands in the session.
+Verify with a real round-trip (`codex exec --skip-git-repo-check "Reply with
+exactly: CODEX_OK"`), **not** with `codex login status` — which is what misled
+you in the first place. (Hit on `ucdavis/bcs`, 2026-07-13: the auth failure
+blocked a data-examination step for an entire session under the user's standing
+"use codex whenever examining the actual data" rule, until they reset it.)
