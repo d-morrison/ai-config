@@ -146,6 +146,10 @@ Skip trivial acknowledgments or conversational exchanges with nothing to act on.
 
 This makes context visible to future @claude sessions, other reviewers, and contributors who only see the PR thread.
 
+## Subscribe to PR updates automatically
+
+When opening or taking over a PR in any repo, subscribe/watch that PR's activity immediately using the available GitHub notification/subscription mechanism. If the current session's tools cannot subscribe, say so explicitly and fall back to active polling for reviews, comments, and checks during the session.
+
 ## Claim a GitHub PR/issue before working on it
 
 <!-- Shared with the lab manual; edit shared/workflow/claim-pr.md, not here. -->
