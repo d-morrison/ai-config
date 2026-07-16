@@ -1,5 +1,3 @@
-# Prefer per-operation grouping over persistent grouping (dplyr)
-
 When reviewing or writing `dplyr` code, prefer **per-operation
 grouping** (the `.by` argument) over persistent `group_by()` / `ungroup()`
 pairs. Apply it when the grouping is only needed for one operation.
