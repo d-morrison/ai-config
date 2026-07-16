@@ -470,6 +470,26 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   number with identical commits, and comment on the closed PR linking the
   replacement.
 
+## Git — renaming an open PR's *head* branch closes the PR (no reopen)
+
+`gh api -X POST repos/{owner}/{repo}/branches/{branch}/rename` (or the web UI
+"Rename branch") on a branch that is the **head** of an open PR **closes** that
+PR. GitHub sets up a name redirect (`gh api repos/.../branches/<old-name>`
+resolves to the new name), but the PR cannot be reopened — `gh pr reopen` fails
+with `GraphQL: Could not open the pull request. (reopenPullRequest)`, because
+the head ref it pointed at no longer exists under that name.
+
+Branch-rename **does** retarget PRs whose **base** is the renamed branch; head
+refs are not covered.
+
+**How to apply:** don't rename a branch backing an open PR just to fix a
+misleading name. Live with the name (explain it in the PR body), or accept
+you'll open a replacement PR — rename, immediately open a new PR from the new
+branch, say "Supersedes #N", and comment on the closed PR pointing forward.
+(Hit on `ucdavis/bcs` 2026-07-09: renaming `fix/msm-competing-risks-324` to a
+name that no longer asserted a refuted diagnosis closed PR #326, replaced by
+#328.)
+
 ## Git — `worktree add` does not cd into the new worktree
 - `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
   shell in the **original** checkout. Subsequent bare git commands (`git checkout`,
@@ -2479,6 +2499,27 @@ never, and re-scope the task if it seems to need it.
 `--sandbox read-only` also exists but blocks writing the temp script most
 analysis delegations need, so `workspace-write` is the practical default.
 
+## `codex` is NOT a read-only tool — `-s read-only` still executes commands
+
+`codex exec -s <mode>` (long form `--sandbox`) takes `read-only`,
+`workspace-write`, or `danger-full-access`. "Read-only" is a sandbox flag you
+choose, not a property of codex — so don't treat codex as a read/analyze-only
+delegate:
+
+- **codex can write and execute.** `-s workspace-write` lets it create files and
+  run builds, so it can take execution-heavy implementation work, not just
+  reading and analysis.
+- **Even `-s read-only` runs model-generated shell commands** — the mode
+  restricts *filesystem writes*, not command execution. A `-s read-only` codex
+  can still invoke `Rscript`, run a test, and read the result; it just can't
+  modify files. (This is why the `workspace-write` default in the section above
+  matters for *writing* a temp script, not for running one.)
+
+So when deciding whether codex can take a task, ask what sandbox mode it needs,
+not whether codex "can write." (Corrected on `ucdavis/bcs`, 2026-07-09:
+over-generalized a "`-s read-only` for read/analyze" default into a capability
+limit when asked why a delegation wasn't happening.)
+
 ## `codex` can report "logged in" while every `codex exec` fails on auth
 
 `codex login status` prints "Logged in using ChatGPT" and yet `codex exec` dies
@@ -2528,3 +2569,45 @@ Lacaedemon/sparta #883→#884, 2026-07-15):
   head (`gh pr view N --json headRefOid`) and comparing to the local SHA —
   then `git fetch` + retry the push if it didn't. Don't diagnose PR state
   until the head matches.
+
+## Personal machine setup (shiva cluster — not shared in project repos)
+
+Personal, machine-specific tooling on the user's shiva login node (UCD PHS HPC),
+deliberately NOT documented in shared project repos — collaborators don't have
+these.
+
+- **GitHub PAT stored encrypted, never as plaintext.** The user won't keep auth
+  credentials as plaintext on this shared cluster (no keyring daemon available,
+  no sudo to install one).
+  - **At rest:** `~/.gh-token.gpg` (GPG symmetric, AES256, mode 600), created via
+    `~/.local/bin/encrypt-gh-token.sh`.
+  - **Unlock for a session:** `gh-unlock` (a zsh function) decrypts and exports
+    `GH_TOKEN`; `gh-lock` clears it. `gh` then picks `GH_TOKEN` up from the env.
+  - **Never run `gh auth login`** — it re-writes plaintext to
+    `~/.config/gh/hosts.yml`. If asked to authenticate `gh` on this machine,
+    remind the user to run `gh-unlock` instead.
+  - **Git-over-HTTPS fallback** when `gh-unlock` can't run (an expired gpg-agent
+    passphrase cache needs an interactive pinentry a non-interactive Bash tool
+    can't supply): if `gh auth status` already shows a token from `hosts.yml`,
+    route git through gh's credential helper inline —
+    `git -c credential.helper='!gh auth git-credential' fetch/push ...` — putting
+    the `-c` directly on the git command (don't pass it via a shell variable; zsh
+    mangles the quoting).
+  - SLURM jobs don't need the PAT; it's only for interactive `gh` / Claude Code.
+- **`claude-alloc` / `codex-alloc` run agent sessions in a SLURM slice**, never
+  compute on the login node directly (`claude-alloc` = Claude Code, `codex-alloc`
+  = Codex CLI). Both wrap `~/bin/tui-alloc` (`~/bin` is on PATH via `~/.zshrc`).
+  - Defaults: 8 hwthreads (4 physical cores), `--mem=32G`, `--time=12:00:00`,
+    `--exclude=c1` (the GPU node). Override per-launch with `ALLOC_CPUS`,
+    `ALLOC_MEM`, `ALLOC_TIME`.
+  - **Always set `--mem`** (the launchers do): the `normal` partition uses
+    `CR_CORE_MEMORY` with `DefMemPerNode=UNLIMITED`, so omitting `--mem` grabs the
+    node's whole ~772G and locks everyone else out.
+  - **Name the conda env for bcs work:** `ALLOC_CONDA_ENV=bcs claude-alloc`. A
+    `chpwd` hook sets it automatically inside `~/Projects/bcs*` checkouts. The
+    launchers are otherwise project-agnostic — they only read `ALLOC_CONDA_ENV`.
+  - **Exit takes two steps** (salloc -> srun --pty zsh -> agent): quit the agent
+    (`/exit`) to drop to the allocation shell (slice still held), then `exit` the
+    shell to release the slice. Force-release with `scancel $SLURM_JOB_ID`; check
+    for a forgotten slice with `squeue -u $USER` (job name `claude`/`codex`).
+  - Full usage/exit doc: `~/.config/tui-alloc/README.md`.
