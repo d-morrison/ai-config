@@ -470,17 +470,19 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   number with identical commits, and comment on the closed PR linking the
   replacement.
 
-## Git — renaming an open PR's *head* branch closes the PR (no reopen)
+## Git — renaming an open PR's *head* branch can close the PR (no reopen)
 
 `gh api -X POST repos/{owner}/{repo}/branches/{branch}/rename` (or the web UI
-"Rename branch") on a branch that is the **head** of an open PR **closes** that
-PR. GitHub sets up a name redirect (`gh api repos/.../branches/<old-name>`
-resolves to the new name), but the PR cannot be reopened — `gh pr reopen` fails
-with `GraphQL: Could not open the pull request. (reopenPullRequest)`, because
-the head ref it pointed at no longer exists under that name.
+"Rename branch") on a branch that is the **head** of an open PR **can close**
+that PR. GitHub's documented behavior is to auto-update a PR's head ref when its
+branch is renamed and keep the PR open, but this has been observed to fail: the
+PR closed and could not be reopened — `gh pr reopen` returns `GraphQL: Could not
+open the pull request. (reopenPullRequest)`. Whether that's an edge case
+(timing, an older API, an Enterprise instance) or the head ref not surviving the
+rename, treat a head-branch rename as something that **may** close the PR.
 
-Branch-rename **does** retarget PRs whose **base** is the renamed branch; head
-refs are not covered.
+Branch-rename **does** reliably retarget PRs whose **base** is the renamed
+branch; the head-branch case is the risky one.
 
 **How to apply:** don't rename a branch backing an open PR just to fix a
 misleading name. Live with the name (explain it in the PR body), or accept

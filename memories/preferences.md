@@ -276,7 +276,7 @@
   See the `handoff` and `wait-for-results` skills.
 - Cancel superseded or stale SLURM jobs proactively — don't let a job that's been replaced keep running unused.
   When a job is superseded (a job-array approach replaces a single-node run, or a resubmit makes an earlier job redundant), `scancel <jobid>` the old one immediately rather than waiting for it to finish on its own.
-  Whenever submitting a replacement or successor job, check `squeue -u demorrison` for older runs covering the same workload and cancel them. (Learned on ucdavis/bcs: an old single-node true-effects run sat running 2+ hours unused before the user asked to cancel it.)
+  Whenever submitting a replacement or successor job, check `squeue -u $USER` for older runs covering the same workload and cancel them. (Learned on ucdavis/bcs: an old single-node true-effects run sat running 2+ hours unused before the user asked to cancel it.)
 - Always look for opportunities to create new reusable skills from multi-step processes.
   When a workflow emerges that could be codified, proactively suggest creating a skill for it. (see the `spot-skill-opportunities` skill — the continuous recognition step that hands off to `skill-builder`.)
 - When asked to build/create a new skill, FIRST check whether an existing skill should be extended instead — search `skills/` for an adjacent one AND scan ALL branches (`git ls-tree` over every remote branch) for in-flight similar work — before scaffolding a new one.
