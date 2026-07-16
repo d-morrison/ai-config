@@ -487,8 +487,8 @@ misleading name. Live with the name (explain it in the PR body), or accept
 you'll open a replacement PR — rename, immediately open a new PR from the new
 branch, say "Supersedes #N", and comment on the closed PR pointing forward.
 (Hit on `ucdavis/bcs` 2026-07-09: renaming `fix/msm-competing-risks-324` to a
-name that no longer asserted a refuted diagnosis closed PR #326, replaced by
-#328.)
+name that no longer asserted a refuted diagnosis closed PR #326, replaced
+by #328.)
 
 ## Git — `worktree add` does not cd into the new worktree
 - `git worktree add <path> <ref>` creates the worktree at `<path>` but leaves the
