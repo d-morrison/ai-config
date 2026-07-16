@@ -1,6 +1,6 @@
 ---
 name: stack-prs
-description: "Branch new work off an existing, unmerged PR instead of `main`, open the dependent PR with its `base` set to that PR's branch, and keep it in sync as the base branch moves (or re-point it to `main` once the base merges). Use when asked to 'stack this PR on #N', 'branch off that PR', 'stack-prs', or whenever new work genuinely depends on an open, unmerged PR's code."
+description: "Stack a PR on another open PR only when verifiably necessary — first run the decision gate (does solving this issue depend on solving the other? will both PRs heavily modify the same code passages?), and branch from `main` when neither holds. When stacking is warranted: branch off the base PR's tip, open the dependent PR with its `base` set to that PR's branch, and keep it in sync as the base branch moves (or re-point it to `main` once the base merges). Use when asked to 'stack this PR on #N', 'branch off that PR', 'stack-prs', 'should I stack this?', 'does this need to stack on #N?', or whenever new work may depend on an open, unmerged PR's code."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -22,23 +22,67 @@ does it directly when you already know you want to branch off another PR.
 
 - "stack this on #N", "stack-prs", "branch off that PR", "make this depend on
   PR #N".
-- New work genuinely needs another open PR's code, or would conflict with it
-  if branched from `main` in parallel.
+- The decision question itself — "should I stack this?", "does this need to
+  stack on #N?" — routes here too: the gate below is the answer.
+- New work may need another open PR's code, or might conflict with it
+  if branched from `main` in parallel — the gate below determines which.
 
 It does **not** fire when the work is independent of every open PR — branch
 from `main` as usual. Don't stack just because two PRs happen to be open at
 the same time.
 
-## When to stack vs. branch from `main`
+## When to stack vs. branch from `main` — the decision gate
 
-Stack only when the new work **depends** on the base PR:
+Branching from `main` is the default; stacking needs **positive, verified
+evidence**. A stack adds a real ordering constraint (the base PR must merge
+first, or the stack must be re-pointed around it) and a per-push sync burden
+(step 3 below), so run this gate before step 1, every time — including when
+the instruction was "stack this on #N": confirm the dependency is real
+rather than assumed. Stack only when at least one of the two tests passes.
 
-- It needs code the base PR adds that isn't on `main` yet.
-- It would otherwise touch the same files as the base PR, guaranteeing a
-  conflict if developed in parallel from `main`.
+### Test A — dependency: solving this issue depends on solving the other
 
-Branch from `main` when the two are merely concurrent but independent — that
-is the default, and stacking should not be reached for out of caution. See
+Either kind of evidence counts, but check it — don't infer it from titles:
+
+- **The issues declare it.** The new work's issue is marked blocked-by /
+  "depends on" the base PR's issue, or the two are ordered sub-issues of one
+  parent. Read the issue and its linked PRs
+  (`gh issue view <N>` — VIEW_ISSUE; `ISSUE_LINKED_PRS` for the timeline).
+- **The code requires it.** A function, file, or config key the new work
+  must call or edit is added by the base PR and absent from `main`. Confirm
+  both halves:
+
+  ```bash
+  gh pr diff <base-N> | grep -n "^+.*<needed-symbol-or-path>"   # DIFF_PR — the base PR adds it...
+  git fetch origin main -q                                  # FETCH
+  git grep -n "<needed-symbol-or-path>" origin/main         # ...and main does NOT already have it
+  ```
+
+  If the second grep finds it on `origin/main`, the dependency is on
+  already-merged code — branch from `main`.
+
+### Test B — overlap: both PRs will heavily modify the same passages
+
+File-list overlap alone is **not** enough — two PRs editing disjoint regions
+of the same file usually merge cleanly, and
+[`sync-with-main`](../../shared/workflow/sync-with-main.md) absorbs that
+drift. Check overlap at the passage level:
+
+```bash
+gh pr diff <base-N> --name-only        # DIFF_PR — the base PR's changed files
+gh pr diff <base-N>                    # then read its hunks in any file you'll also touch
+```
+
+Stack when the planned work would rewrite the same function, block, or
+section the base PR's hunks change — or append at the same insertion point
+(e.g. the end of a growing numbered list, the append-collision case
+`sync-with-main` documents). Branch from `main` when the shared file's edits
+land in different regions.
+
+### Neither test passes → branch from `main`
+
+Merely concurrent PRs stay independent; stacking should not be reached for
+out of caution. See
 [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md) for the same
 decision made inline inside a sweep loop.
 
@@ -156,6 +200,14 @@ discards the abandoned base PR's commits from a published branch.
   `headRefName` — a mismatch silently branches from the wrong ref.
 - ❌ Stacking two PRs that are merely concurrent but not actually dependent —
   branch from `main` instead; stacking adds a real ordering constraint.
+- ❌ Skipping the decision gate because the instruction already said "stack
+  this" — the gate confirms the dependency is real; an assumed dependency
+  that fails both tests should be surfaced back, not silently stacked.
+- ❌ Treating file-list overlap alone as proof of a conflict (Test B) —
+  disjoint regions of the same file merge cleanly from `main`; only
+  same-passage edits (or a shared insertion point) justify the stack.
+- ❌ Claiming a code dependency without checking `origin/main` — a symbol the
+  base PR touches may already be merged, making the dependency moot.
 - ❌ Letting the dependent branch drift after the base branch gets new commits
   — sync it before every push, not just once at creation.
 - ❌ Leaving the dependent PR targeting the base branch after the base PR
