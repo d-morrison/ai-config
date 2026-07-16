@@ -390,10 +390,12 @@ same weight as the other modularity checks above.
 
 ## Coding: no em-dashes or non-ASCII punctuation in source files
 
+<!-- Not yet shared with the lab manual; edit shared/coding/ascii-punctuation-in-source.md, not here. -->
 @shared/coding/ascii-punctuation-in-source.md
 
 ## Coding: decompose complex code into functions, not .qmd chunks
 
+<!-- Not yet shared with the lab manual; edit shared/coding/decompose-to-functions.md, not here. -->
 @shared/coding/decompose-to-functions.md
 
 ## Writing style: plain, direct prose
