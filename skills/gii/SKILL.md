@@ -167,7 +167,9 @@ If the user says "just go", "do all", "work through everything", or similar:
 - ❌ Continuing after a blocked issue without telling the user
 - ❌ Forgetting to note stack dependencies in MR descriptions
 - ❌ Basing on main when the previous MR hasn't merged yet and the next issue
-  touches the same files (creates guaranteed conflicts)
+  would edit the same passages it changes — that guarantees a conflict; run
+  `stack-prs`'s decision gate (same file but different regions usually merges
+  cleanly from main and doesn't need the stack)
 - ❌ Pausing after a clean-but-unmerged MR to wait for a human merge — you don't
   self-merge, but that's no reason to stop; keep going and stack the next issue
 - ❌ Running unbounded without a checkpoint — always pause at 5
