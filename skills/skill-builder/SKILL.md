@@ -1,6 +1,6 @@
 ---
 name: skill-builder
-description: "Build a new skill for the ai-config repo the right way — FIRST check whether an existing skill should be extended instead (search skills/, scan every branch for in-flight similar work, AND check open PRs for in-progress drafts to redirect to instead of duplicating), and only then scaffold skills/<name>/SKILL.md with proper frontmatter, a discoverable trigger-rich description, a spelled-out/short alias as appropriate, cross-links, and (if it encodes a standing rule) matching preferences.md / CLAUDE.md updates — shipped via branch + PR, reviewer requested, ARDI'd to clean. Use when asked to 'build a skill', 'create a skill', 'make a new skill', 'add a skill', or 'skill-builder'."
+description: "Build a new skill for the ai-config repo the right way — FIRST check whether an existing skill should be extended instead (search skills/, scan every branch for in-flight similar work, AND check open PRs for in-progress drafts to redirect to instead of duplicating), and only then scaffold skills/<name>/SKILL.md with proper frontmatter, a discoverable trigger-rich description, a spelled-out/short alias as appropriate, cross-links, and (if it encodes a standing rule) matching preferences.md / CLAUDE.md updates — shipped via branch + PR, reviewer requested, ARDI'd to clean. Use when asked to 'build a skill', 'create a skill', 'make a new skill', 'add a skill', 'add an alias for X', 'make X an alias for Y', 'should this be an alias', or 'skill-builder' — creating an alias stub routes here too, so the codex wrapper gets regenerated and the stub is self-reviewed."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -20,6 +20,14 @@ branch is already building it.
 
 - "build a skill", "create a skill", "make a new skill", "add a skill",
   "skill-builder"
+- Creating an **alias** for an existing skill — "add an alias for X", "make X
+  an alias for Y", "should this be an alias for Y" — is a skill-builder task
+  too, not a raw `Write` of a stub file. Hand-writing an alias `SKILL.md`
+  skips the codex-wrapper regeneration (the required step below) and trips the
+  `validate` CI check, and skips the self-review pass that catches errors in
+  the stub's own prose. (ai-config#569: a hand-written `giardia`→`gia` alias
+  stub failed `validate` on the missing wrapper and needed a review round to
+  fix a reversed phase-order description — both avoidable by routing here.)
 - Any time a repeatable multi-step workflow emerges that's worth codifying —
   proactively suggest capturing it as a skill.
 
