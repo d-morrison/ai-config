@@ -53,7 +53,9 @@ most reliable first. An item can hit more than one signal; that's fine, dedupe
 in Step 3.
 
 1. **Explicit review-request escalation** — `search_issues` with
-   `repo:<owner>/<repo> is:open review-requested:d-morrison`. This is exactly
+   `repo:<owner>/<repo> is:open review-requested:@me` (GitHub resolves `@me`
+   to the authenticated user — more portable than hardcoding a username).
+   This is exactly
    the deadlock-escalation mechanism `ardi`/`fully-clean`/
    `address-every-comment` already use ("request a human reviewer... surface
    the open item to me") — a hit here is unambiguous: something is genuinely
@@ -74,7 +76,7 @@ in Step 3.
      **QUESTION**/🛑 **BLOCKER** marker, "your call", "which of these", "need
      your input", explicit deadlock/escalation language, or a plain question
      ending in `?`;
-   - no reply from the repo owner has landed since.
+   - no reply from the user has landed since.
 
    This is a judgment call, not a regex — when it's unclear whether a comment
    is still live or was already resolved by later activity, read the
@@ -85,11 +87,18 @@ in Step 3.
 ## Step 3 — Dedupe and rank
 
 Collect every candidate across repos and signals into one list, dedupe by
-issue/PR number, and rank most-pressing first:
+issue/PR number (an item hitting more than one signal ranks by its
+**strongest** signal), and rank most-pressing first, three tiers:
 
-1. **Blocking** first — a `review-requested` escalation (Signal 1) is always
-   blocking; something is already stalled.
-2. Within a tier, **more recently updated** beats older.
+1. **Signal 1** (explicit review-request escalation) — always first;
+   something is already stalled.
+2. **Signal 2** (a human-applied decision label) — a confirmed signal, but
+   one rung below an explicit escalation.
+3. **Signal 3** (an inferred, judgment-call candidate) — least certain, so
+   lowest tier regardless of recency; a fresher guess still doesn't outrank a
+   labeled item.
+
+Within each tier, **more recently updated** beats older.
 
 (Same ordering `prompt-me`/`prompt-me-all` use for conversation-scoped
 questions — reused here rather than re-derived.)
