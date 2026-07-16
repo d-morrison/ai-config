@@ -191,6 +191,16 @@ allowed-tools:               # real skill: list its tools. alias: mirror the can
   both regexes were verified working in a scratch test file, but only the
   first was written into `informal-definitions.md` — caught by the
   `@claude` reviewer, not before pushing.)
+- **Write example commands and claims so a literal, mechanical reader gets
+  the right answer — intent-correct isn't enough.** A verification command
+  whose comment says "the base PR *adds* it" must actually constrain to
+  added lines (`grep "^+.*<symbol>"` on a diff — unanchored, it also matches
+  deletions and context, inverting the answer), and an absolute claim
+  ("guarantees a conflict") is a review finding when a plain counterexample
+  exists (identical edits to the same passage merge cleanly — write "almost
+  always conflicts"). (`stack-prs` #577: two of the review round's three
+  findings were this one class, both caught by the reviewer rather than the
+  author's own self-review.)
 - **Use `<angle-bracket>` placeholders in command blocks — never bare ALLCAPS.**
   Identifiers like `PATH`, `URL`, `TARGET` look like shell env vars; bare `PATH`
   looks like the `$PATH` env var, and `path` is a zsh special that mirrors
