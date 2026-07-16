@@ -25,9 +25,12 @@ source on an ASCII-only check that a plain Markdown doc is exempt from:
 
 So this is a source-code hygiene rule, not a general writing-style
 preference: ordinary `.md` docs and chat prose are not the target. When the
-glyph must appear in rendered output (a `×` in a message, an en-dash in a
-plot label), use the `\uXXXX` escape so the source stays ASCII while the
-output keeps the character.
+glyph must appear in rendered output, keep the source ASCII in a
+context-appropriate way. In an R or Python string literal (a `cli` message,
+a plot label), use the `\uXXXX` escape, which the language decodes to the
+character. In `.qmd` prose, `\uXXXX` is not interpreted by Pandoc and renders
+literally: use a math span (`$\times$`), an HTML entity (`&times;`), or reword
+to avoid the glyph.
 
 Apply it when writing code and when reviewing a diff: a raw em-dash in a
 roxygen block or a `.qmd` is a review finding, the same weight as any other
