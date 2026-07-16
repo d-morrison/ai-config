@@ -17,6 +17,19 @@ observation", or "could improve" sections. "Looks good" / "no findings" /
 "approved" with no follow-on bullets is the bar. Resolve every inline review
 thread along the way, leaving only the final all-clear exchange.
 
+**Always resolve an inline thread the moment its comment is successfully
+addressed** --- the fix pushed and a reply posted naming it --- in the same
+pass, whatever workflow you're in: a formal `ard`/`ardi` round, a CI-monitor
+nudge, or a one-off fix outside any loop. Addressing without resolving leaves
+a thread that reads as outstanding work to every later reviewer, blocks
+[`fully-clean`](fully-clean.md)'s every-inline-thread-resolved criterion, and
+drags stale noise into the next review round. The per-disposition settlement
+rules in `ard` step 4b still govern the exceptions: a **Rebut** stays open
+until the reviewer drops it, and an **Address** you're not confident fully
+settles the concern gets a reply asking for confirmation instead of a
+resolve. The `resolve-pr-threads` skill sweeps any stragglers, but it's a
+backstop --- resolve-on-address is the default, not a cleanup step.
+
 Do **not** report "ready to merge with one minor nit noted" / "harmless as-is" /
 "can address if you want" --- that hedging just pushes triage back to the
 requester. If after 3--4 rounds the reviewer keeps generating new nits each
