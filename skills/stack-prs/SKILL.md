@@ -24,8 +24,8 @@ does it directly when you already know you want to branch off another PR.
   PR #N".
 - The decision question itself — "should I stack this?", "does this need to
   stack on #N?" — routes here too: the gate below is the answer.
-- New work genuinely needs another open PR's code, or would conflict with it
-  if branched from `main` in parallel.
+- New work may need another open PR's code, or might conflict with it
+  if branched from `main` in parallel — the gate below determines which.
 
 It does **not** fire when the work is independent of every open PR — branch
 from `main` as usual. Don't stack just because two PRs happen to be open at
@@ -53,7 +53,7 @@ Either kind of evidence counts, but check it — don't infer it from titles:
   both halves:
 
   ```bash
-  gh pr diff <base-N> | grep -n "<needed-symbol-or-path>"   # DIFF_PR — the base PR adds it...
+  gh pr diff <base-N> | grep -n "^+.*<needed-symbol-or-path>"   # DIFF_PR — the base PR adds it...
   git fetch origin main -q                                  # FETCH
   git grep -n "<needed-symbol-or-path>" origin/main         # ...and main does NOT already have it
   ```
