@@ -19,7 +19,9 @@ Read and follow the canonical skill:
 
 → **[gia](../gia/SKILL.md)**
 
-> The name is apt, not just a pun: **giardia** reads as **`gi` + `ardia`** —
-> [`gi`](../gi/SKILL.md) (grab-issue) followed by
-> [`ardia`](../ardia/SKILL.md) (ARD-iterate-all) — which is exactly the pair of
-> skills `gia` composes (grab every issue, then drive every PR to clean).
+> The name is apt, not just a pun: **giardia** splits into **`gi` + `ardia`**,
+> the two halves `gia` composes — grabbing issues
+> ([`gii`](../gii/SKILL.md), the whole backlog) and
+> [`ardia`](../ardia/SKILL.md) (ARD-iterate-all). `gia` runs them PRs-first
+> (`ardia`, then `gii`), the reverse of the order the letters fall in — the
+> mnemonic is for the pairing, not the sequence.
