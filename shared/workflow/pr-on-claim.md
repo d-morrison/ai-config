@@ -37,6 +37,25 @@ complete and the repo's checks pass, mark the PR **ready for review**
 (`gh pr ready <N>`, or `mcp__github__update_pull_request` with `draft: false`).
 Marking it ready is what kicks off ARDI.
 
+**Don't mark ready within seconds of the final push — the two review runs race
+and the WRONG one can get cancelled.** On repos whose review workflow runs on
+`pull_request` (`synchronize`, `ready_for_review`) with `concurrency:
+cancel-in-progress`, a push followed immediately by `gh pr ready` fires two
+runs a second apart: the ready-event run (recorded against the pre-push head)
+and the push's synchronize run (recorded against the new head). The
+cancellation can land on the **newer** run, leaving the current head with a
+cancelled review job and a red require-review check — while the surviving
+older run can still post a genuine, current verdict: a reviewer that fetches
+the PR's diff at review time (sparta's does, via `gh pr diff` per its own run
+transcript) sees the pushed code even though the run is nominally tied to the
+pre-push head. Read the posted review and confirm it actually discusses the
+current head's changes before trusting it. If this happens, don't push or
+re-mention: `gh run rerun <cancelled-run-id>` re-reviews the same head and
+turns the head's own checks green. Prevention: push the implementation first,
+wait until the synchronize-triggered review run appears in GitHub Actions,
+then mark ready as its own later step.
+(Hit on `Lacaedemon/sparta#898`, 2026-07-15.)
+
 So the per-issue order becomes: claim → branch → **open the draft PR now** →
 implement → mark ready-for-review → ARDI.
 

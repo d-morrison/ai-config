@@ -1,17 +1,17 @@
 ---
-name: "skill-builder"
-description: "Codex wrapper for the ai-config Claude skill `skill-builder`. Build a new skill for the ai-config repo the right way \u2014 FIRST check whether an existing skill should be extended instead (search skills/, scan every branch for in-flight similar work, AND check open PRs for in-progress drafts to redirect to instead of duplicating), and only then scaffold skills/<name>/SKILL.md with proper frontmatter, a discoverable trigger-rich description, a spelled-out/short alias as appropriate, cross-links, and (if it encodes a standing rule) matching preferences.md / CLAUDE.md updates \u2014 shipped via branch + PR, reviewer requested, ARDI'd to clean. Use when asked to 'build a skill', 'create a skill', 'make a new skill', 'add a skill', 'add an alias for X', 'make X an alias for Y', 'should this be an alias for Y', or 'skill-builder' \u2014 creating an alias stub routes here too, so the codex wrapper gets regenerated and the stub is self-reviewed. Use when Codex is asked to use `skill-builder`, `/skill-builder`, or the corresponding ai-config/Claude skill workflow."
+name: "giardia"
+description: "Codex wrapper for the ai-config Claude skill `giardia`. Alias for `gia` (Grab Issues + iterate-All). Clear the repo's entire work queue: drive every open PR/MR to a clean review verdict with green CI, then open a PR for every open issue that lacks one (each new PR is itself driven to clean). Use when asked to 'giardia'. Use when Codex is asked to use `giardia`, `/giardia`, or the corresponding ai-config/Claude skill workflow."
 ---
 
-# skill-builder (Codex wrapper)
+# giardia (Codex wrapper)
 
 This is a generated Codex wrapper around the canonical ai-config Claude skill.
 
-Source: [skills/skill-builder/SKILL.md](../../skills/skill-builder/SKILL.md)
+Source: [skills/giardia/SKILL.md](../../skills/giardia/SKILL.md)
 
 Before acting, read the source skill completely and follow its workflow, adapting it to Codex.
 
-The source lives at `skills/skill-builder/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/skill-builder`, resolve the symlink target for this wrapper directory first, then read `../../skills/skill-builder/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
+The source lives at `skills/giardia/SKILL.md` in the same ai-config checkout as this wrapper. If this wrapper was loaded through `${CODEX_HOME:-$HOME/.codex}/skills/giardia`, resolve the symlink target for this wrapper directory first, then read `../../skills/giardia/SKILL.md` relative to that real directory. Do not resolve that relative path from inside `${CODEX_HOME:-$HOME/.codex}/skills`, because it points back at the wrapper tree.
 
 - Treat `user-invocable` and `allowed-tools` as Claude metadata, not Codex permissions.
 - Use the tools available in this Codex session for equivalent operations.
