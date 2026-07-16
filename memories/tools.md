@@ -2504,3 +2504,27 @@ exactly: CODEX_OK"`), **not** with `codex login status` — which is what misled
 you in the first place. (Hit on `ucdavis/bcs`, 2026-07-13: the auth failure
 blocked a data-examination step for an entire session under the user's standing
 "use codex whenever examining the actual data" rule, until they reset it.)
+
+## Stacked PRs across a squash-merge: rebuild via cherry-pick, and verify force-pushes actually landed
+
+Two git/GitHub behaviors that compose on stacked PRs (learned on
+Lacaedemon/sparta #883→#884, 2026-07-15):
+
+- When the base PR of a stack merges (with branch auto-delete), GitHub
+  auto-retargets the stacked PR to the new base — no manual retarget needed,
+  and a manual `gh api ... -f base=main` after the fact 422s (something to
+  the effect of "already exists") precisely because it already happened.
+  But if the base was **squash-merged**, the stacked branch still carries
+  the base's original commits, which are no longer ancestors of main —
+  `git merge origin/main` conflicts on the very content that already landed.
+  Rebuild instead:
+  `git checkout -B <branch> origin/main && git cherry-pick <own-commits...>
+  && git push --force-with-lease`.
+- **A rejected `git push --force-with-lease` is easy to miss in a compound
+  command** — after `checkout -B`, the remote-tracking ref can be stale, the
+  push's rejection prints to stderr but scrolls past in long output, and the
+  PR keeps serving the old head (showing merge conflicts that look
+  unexplainable). Verify a force-push actually landed by re-reading the PR
+  head (`gh pr view N --json headRefOid`) and comparing to the local SHA —
+  then `git fetch` + retry the push if it didn't. Don't diagnose PR state
+  until the head matches.

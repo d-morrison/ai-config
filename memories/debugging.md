@@ -457,3 +457,35 @@ Note the same index-derived-fixture degeneracy also makes GLM coefficients
 alias (NA coefficients) — which can be harmless if the test only asserts on
 *fitted values* — so it can lurk in a fixture for a long time before `mice`
 finally trips over it. (ucdavis/bcs#349.)
+
+## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
+
+The standard "prove the new fixture catches the regression" step (temporarily
+revert the fix, confirm the test fails, restore) has a destructive failure
+mode when the fix is still uncommitted: `git checkout <file>` / `git restore
+<file>` restores from HEAD, which silently discards the whole uncommitted fix
+along with the temporary revert — there is nothing to restore back to.
+Sequence it as: **commit the fix**, then revert temporarily (`git stash push
+<file>`, or a scripted counter-edit), prove the failure, then `git stash pop`
+/ re-checkout the committed state. If a counter-edit was applied with
+sed/perl instead of stash, restoring via `git checkout` is only safe because
+the fix is already in HEAD. (Self-hit on Lacaedemon/sparta PR #870,
+2026-07-15: proved the overlap test failed against the density-blind layout
+via a perl counter-edit, then `git checkout scripts/SelectionManager.gd` to
+"restore" — which discarded four uncommitted fix edits; all were re-applied
+from conversation context, but only because they were small and recent.)
+
+## A delegated fix must be verified against the issue body before merging
+
+A triage summary (yours or a scout agent's) describes what the issue
+*probably* means; the implementing agent then fixes the surface the SUMMARY
+names, which can be adjacent to — not the same as — the surface the issue's
+own words describe. Before merging a delegated fix, re-read the actual issue
+body and check the diff touches the thing IT names. (Lacaedemon/sparta #863,
+2026-07-15: issue said "the click and drag line doesn't match the current
+unit width" — the delegated fix corrected the flank-grip RESIZE preview,
+while the form-up click-and-drag one function over had the identical
+density-blind bug plus a real deployment-overlap consequence; caught only
+when the user asked which surface the PR targeted. The same bug pattern
+recurring in the same file also means the pattern rule applied: fix every
+occurrence, not the flagged one.)
