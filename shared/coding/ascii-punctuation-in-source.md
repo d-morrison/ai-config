@@ -8,8 +8,8 @@ hyphen (`-`) for a compound.
 The same rule extends to the other non-ASCII punctuation that slips in from
 the same source (copy-paste from rendered text, an editor's smart-quote
 autocorrect): en-dashes (`–`), curly quotes (`“ ” ‘ ’` -> `" '`), and stray
-symbols like the multiplication sign (`×` -> `x`, or the `\uXXXX` escape when
-the glyph must survive in output).
+symbols like the multiplication sign (`×` -> `x`, or a context-appropriate
+escape when the glyph must survive in output; see the last paragraph).
 
 **Why source files specifically, not all prose.** Repositories commonly gate
 source on an ASCII-only check that a plain Markdown doc is exempt from:
