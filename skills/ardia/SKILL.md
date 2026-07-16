@@ -73,6 +73,23 @@ each to a clean review verdict in series.
    [`stack-prs`](../stack-prs/SKILL.md) for the branch/PR mechanics when the
    next item needs to stack on a clean-but-unmerged PR.
 
+   **Cascading the stack is part of ARDIA, not separate side work.** Every time
+   a base advances — it merges into `main`, *or* its own head moves (a review
+   fix, a main-sync commit) — every PR stacked above it goes `BEHIND`/`DIRTY`
+   and must be re-synced: merge the base's new head into the child, resolve
+   conflicts (keeping *both* the base's changes and the child's own — e.g. a
+   rename in the base and a new parameter in the child both survive), re-verify
+   (run the repo's own checks — build/lint/tests, plus any doc regeneration or
+   character check), bump the child's version above the base where the repo
+   requires it, and push. This ripples:
+   a single review-fix commit to a mid-stack PR puts every descendant behind,
+   so one ARDIA pass may sync the same branch more than once as fixes land
+   below it. When the user says "cascade" or "keep driving all these to clean,"
+   that includes this conflict-resolution/re-sync loop up the whole stack —
+   don't treat "resolve merge conflicts" or "sync the stack" as out-of-scope.
+   Process bottom-up: sync the lowest `BEHIND`/`DIRTY` PR first, then its
+   children, since each sync advances a head the next child needs.
+
    Drive each to a terminal state:
    - **Clean** — zero flagged items under any heading; post the unclaim
      comment, record the round count.
