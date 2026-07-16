@@ -78,9 +78,10 @@ each to a clean review verdict in series.
    fix, a main-sync commit) — every PR stacked above it goes `BEHIND`/`DIRTY`
    and must be re-synced: merge the base's new head into the child, resolve
    conflicts (keeping *both* the base's changes and the child's own — e.g. a
-   base that added a function collapse plus a child that added a new covariate
-   both survive), re-verify (`document`/`load_all`/lint/tests/any repo char
-   check), bump the child's version above the base, and push. This ripples:
+   rename in the base and a new parameter in the child both survive), re-verify
+   (run the repo's own checks — build/lint/tests, plus any doc regeneration or
+   character check), bump the child's version above the base where the repo
+   requires it, and push. This ripples:
    a single review-fix commit to a mid-stack PR puts every descendant behind,
    so one ARDIA pass may sync the same branch more than once as fixes land
    below it. When the user says "cascade" or "keep driving all these to clean,"
