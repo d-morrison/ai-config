@@ -126,7 +126,7 @@ Mechanics:
 - Fold each answer into the framing of the next question, and silently drop any queued question the answer mooted.
 - Keep working on whatever the pending decision doesn't block while waiting.
 
-This changes how decisions are *posed*, not whether to ask at all: `research-before-asking` still gates each question, and an `away` grant still means don't ask.
+This changes how decisions are *posed*, not whether to ask at all: `research-before-asking` still gates each question, and an `away` grant still means don't block on questions — resolve them by judgment, or skip-and-note, per that skill's scope.
 And it yields to an explicit request for the full backlog — `prompt-me-all` / "ask me everything at once" is the user opting into a batch view.
 
 ## Title Claude sessions with the PR/issue number
