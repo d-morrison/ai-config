@@ -458,7 +458,7 @@ alias (NA coefficients) — which can be harmless if the test only asserts on
 *fitted values* — so it can lurk in a fixture for a long time before `mice`
 finally trips over it. (ucdavis/bcs#349.)
 
-## Prove-the-test-fails reverts: commit the fix FIRST, never revert uncommitted work
+## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
 
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has a destructive failure
@@ -475,7 +475,7 @@ via a perl counter-edit, then `git checkout scripts/SelectionManager.gd` to
 "restore" — which discarded four uncommitted fix edits; all were re-applied
 from conversation context, but only because they were small and recent.)
 
-## A delegated fix must be verified against the ISSUE'S OWN BODY before merging
+## A delegated fix must be verified against the issue body before merging
 
 A triage summary (yours or a scout agent's) describes what the issue
 *probably* means; the implementing agent then fixes the surface the SUMMARY

@@ -2512,18 +2512,19 @@ Lacaedemon/sparta #883→#884, 2026-07-15):
 
 - When the base PR of a stack merges (with branch auto-delete), GitHub
   auto-retargets the stacked PR to the new base — no manual retarget needed,
-  and a manual `gh api ... -f base=main` after the fact 422s ("already
-  exists") precisely because it already happened. But if the base was
-  **squash-merged**, the stacked branch still carries the base's original
-  commits, which are no longer ancestors of main — `git merge origin/main`
-  conflicts on the very content that already landed. Rebuild instead:
+  and a manual `gh api ... -f base=main` after the fact 422s (something to
+  the effect of "already exists") precisely because it already happened.
+  But if the base was **squash-merged**, the stacked branch still carries
+  the base's original commits, which are no longer ancestors of main —
+  `git merge origin/main` conflicts on the very content that already landed.
+  Rebuild instead:
   `git checkout -B <branch> origin/main && git cherry-pick <own-commits...>
   && git push --force-with-lease`.
-- **`git push --force-with-lease` can be refused silently in a compound
+- **A rejected `git push --force-with-lease` is easy to miss in a compound
   command** — after `checkout -B`, the remote-tracking ref can be stale, the
-  push prints an error that scrolls past, and the PR keeps serving the old
-  head (showing merge conflicts that look unexplainable). Verify a
-  force-push actually landed by re-reading the PR head
-  (`gh pr view N --json headRefOid`) and comparing to the local SHA — then
-  `git fetch` + retry the push if it didn't. Don't diagnose PR state until
-  the head matches.
+  push's rejection prints to stderr but scrolls past in long output, and the
+  PR keeps serving the old head (showing merge conflicts that look
+  unexplainable). Verify a force-push actually landed by re-reading the PR
+  head (`gh pr view N --json headRefOid`) and comparing to the local SHA —
+  then `git fetch` + retry the push if it didn't. Don't diagnose PR state
+  until the head matches.
