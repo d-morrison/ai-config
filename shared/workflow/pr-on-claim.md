@@ -45,11 +45,15 @@ runs a second apart: the ready-event run (recorded against the pre-push head)
 and the push's synchronize run (recorded against the new head). The
 cancellation can land on the **newer** run, leaving the current head with a
 cancelled review job and a red require-review check — while the surviving
-older run posts a genuine, current verdict anyway (it reads the live diff via
-`gh pr diff`, not the event snapshot). If this happens, don't push or
+older run can still post a genuine, current verdict: a reviewer that fetches
+the PR's diff at review time (sparta's does, via `gh pr diff` per its own run
+transcript) sees the pushed code even though the run is nominally tied to the
+pre-push head. Read the posted review and confirm it actually discusses the
+current head's changes before trusting it. If this happens, don't push or
 re-mention: `gh run rerun <cancelled-run-id>` re-reviews the same head and
 turns the head's own checks green. Prevention: push the implementation first,
-let CI register the sync run, then mark ready as its own later step.
+wait until the synchronize-triggered review run appears in GitHub Actions,
+then mark ready as its own later step.
 (Hit on `Lacaedemon/sparta#898`, 2026-07-15.)
 
 So the per-issue order becomes: claim → branch → **open the draft PR now** →
