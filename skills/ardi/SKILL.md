@@ -138,6 +138,11 @@ finding → push → post summary → re-request review → repeat until clean.
      GitHub MCP workflow-dispatch tool). Closing+reopening the PR also works
      (fires `reopened`) but adds timeline noise. See
      [`memories/tools.md`](../../memories/tools.md).
+   - **Marking a draft ready seconds after its final push is another
+     cancel-in-progress race** — the ready-event and synchronize runs fire a
+     second apart and the cancellation can land on the newer (current-head)
+     run; see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md) for the
+     diagnosis and the `gh run rerun` remedy.
    - **A review ends up canceled with no comment:** trigger one cleanly via
      `gh workflow run claude-review.yml -f pr_number=<N>` (input is
      `pr_number`) and don't push/comment again until it posts. Note: a review
