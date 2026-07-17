@@ -359,6 +359,18 @@ The same opt-in gate still applies: propose with a cost estimate and wait unless
 <!-- Shared with the lab manual; edit shared/workflow/when-to-orchestrate.md, not here. -->
 @shared/workflow/when-to-orchestrate.md
 
+## Algorithmatize checks: instruments over LLM reasoning
+
+Never spend LLM reasoning on a check a deterministic algorithm can decide:
+build or run the instrument (a repo script, a CI step, a state dump plus a
+threshold) and consume its verdicts, reserving model judgment for the
+genuinely semantic remainder.
+When you catch yourself (or a reviewer) re-deriving numbers by hand, or
+eyeballing an artifact for a property with a numeric definition, that check
+wants to be an instrument --- see the fragment for the procedure and tells.
+
+@shared/workflow/algorithmatize-checks.md
+
 ## Check for merge conflicts on every merge in an ultracode session
 
 @shared/workflow/ultracode-merge-conflicts.md
