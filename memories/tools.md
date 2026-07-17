@@ -2307,7 +2307,9 @@ with a custom prompt worked immediately both times it was tried as a fallback.)
 ## In a plain local Claude Code session, `ScheduleWakeup` can accept an ad-hoc call but silently fail to fire
 
 This is a DIFFERENT harness/observation from the entry above (that one is the `Claude Code Remote`
-MCP server's `ScheduleWakeup`, which rejects a non-`/loop` call outright with a validation error).
+MCP server's `ScheduleWakeup`; the "rejects non-`/loop` calls with a validation error" characterization
+was corrected by the block above it --- the error is about a missing `prompt`, not the non-`/loop`
+context, and a supplied `prompt` works fine there).
 In a plain local Claude Code CLI session, `ScheduleWakeup` accepted an arbitrary one-off
 `{delaySeconds, prompt, reason}` call with no error and returned a confirmed clock time (e.g.
 "Next wakeup scheduled for 08:27:00") -- but the scheduled re-invocation never actually fired.
