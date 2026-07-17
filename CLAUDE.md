@@ -397,6 +397,7 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 
 ## Coding: single-indent multi-line function signatures
 
+<!-- Not yet shared with the lab manual; edit shared/coding/function-signature-style.md, not here. -->
 @shared/coding/function-signature-style.md
 
 ## Coding: prefer existing packaged functions over rolling your own

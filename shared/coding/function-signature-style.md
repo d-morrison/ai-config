@@ -30,14 +30,15 @@ Why single-indent over hanging indent:
   stay confined to the argument that actually changed.
 - Adding or removing an argument is a one-line diff, like a trailing-comma
   list.
-- It matches the tidyverse style guide's current recommendation (lintr
-  3.4.0's `indentation_linter` enforces exactly this shape for
-  double-indented signatures, and accepts single-indent everywhere).
+- It matches the tidyverse style guide's current recommendation.
 
-lintr accepts hanging-aligned indent too, so this is a review-level
-preference, not a CI-enforced one: flag hanging-indent signatures in review
-the same way as other formatting findings, and convert them when touching a
-file for other reasons.
+lintr's `indentation_linter` doesn't settle this choice: as of lintr 3.4.0
+it rejects a third style — the old *double-indent* form (arguments at +4
+with `) {` attached; r-lib/lintr#2830) — but accepts both single-indent and
+hanging-aligned indent. Choosing single-indent over hanging-aligned is
+therefore a review-level preference, not a CI-enforced one: flag
+hanging-indent signatures in review the same way as other formatting
+findings, and convert them when touching a file for other reasons.
 
 (Encoded from review feedback on `ucdavis/rampp#137`, 2026-07-17; the
 repo-wide conversion of pre-existing hanging signatures there is tracked in
