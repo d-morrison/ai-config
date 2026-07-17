@@ -1,0 +1,58 @@
+Never spend LLM reasoning on a check a deterministic algorithm can decide.
+Whenever a verification, measurement, or classification step is decidable by
+computation over data that is available (or cheaply instrumentable), build or
+run the instrument and let the model consume its verdicts --- reserve model
+judgment for the genuinely semantic remainder.
+
+An LLM eyeballing a log, a diff, a state dump, or a rendered frame for a
+property that has a numeric definition is the tell. The model's judgment on
+such a check is slower, costlier, and less reliable than the two lines of
+arithmetic that decide it exactly --- and unlike the model's read, the
+instrument's verdict is reproducible, diffable across revisions, and wireable
+into CI so the check runs on every change instead of only when someone thinks
+to look.
+
+## The procedure
+
+1. **Name the property being checked.** If it has (or can be given) a precise
+   definition over available data --- a threshold, an invariant, an expected
+   state at a time, a comparison against a reference --- it is algorithmatizable.
+2. **Check the data already exists** (a log, a transcript, an API field, a
+   debug dump). If not, ask whether the system can be cheaply instrumented to
+   emit it --- adding a machine-readable dump of internal state is usually a
+   small, safe, render-only change, and it pays off on every future check.
+3. **Write the instrument once, as a tool** (a script in the repo, a CI step),
+   not as an inline throwaway --- the second use is where the payoff is.
+   Thresholds come from the system's own constants, not magic numbers.
+4. **Wire it to where the change happens** (CI on every PR, a pre-push check)
+   so the check runs without anyone --- human or model --- remembering to run it.
+5. **Let the model consume verdicts, not raw data.** The LLM's role shrinks to
+   the semantic residue: is this legible, is the intent right, does the prose
+   match --- plus deciding what new instruments are worth building.
+
+## Tells that a check you're doing manually should be an instrument
+
+- You (or a reviewer) re-derive the same numbers by hand on more than one
+  occasion --- spacing, speeds, timings, counts, deltas.
+- A review checklist item has words like "within", "never exceeds", "stays
+  constant", "by tick/step/line N", "matches the reference".
+- You compare two versions of an artifact and classify the differences by
+  reading both --- when a metric computed on each side would classify most of
+  them mechanically.
+- A defect was caught by eye that a threshold over dumped state would have
+  caught earlier and every time thereafter.
+
+## Limits
+
+The rule targets *decidable* checks. Judgments of legibility, intent,
+aesthetics, and prose accuracy stay with a human or model reviewer --- but even
+these often decompose into a decidable core plus a smaller judgment (declare
+the intended outcome as data, assert it mechanically, and review only the
+framing). Prefer shrinking the judgment surface over automating a judgment
+badly: an instrument with a mushy threshold that misfires trains everyone to
+ignore it.
+
+This generalizes the "always seek workflow automation" preference (turn
+repeated manual verifications into CI checks): that is the CI-shaped instance;
+this rule also covers one-off investigations, review procedures, and any place
+model reasoning substitutes for arithmetic.
