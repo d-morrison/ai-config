@@ -395,6 +395,10 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 <!-- Shared with the lab manual; edit shared/coding/avoid-nesting.md, not here. -->
 @shared/coding/avoid-nesting.md
 
+## Coding: single-indent multi-line function signatures
+
+@shared/coding/function-signature-style.md
+
 ## Coding: prefer existing packaged functions over rolling your own
 
 <!-- Shared with the lab manual; edit shared/coding/prefer-packaged-functions.md, not here. -->
