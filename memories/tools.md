@@ -1631,6 +1631,44 @@ any Quarto website (rme, psw, qwt, …).
   survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
+- **Large site renders crash Deno's default 8 GB V8 heap — deterministically,
+  not flakily.** Quarto's launcher script hardcodes
+  `--max-old-space-size=8192,--max-heap-size=8192` and *prepends* those
+  defaults before any user-supplied `$QUARTO_DENO_V8_OPTIONS` inside one
+  `--v8-flags=` argument; V8 lets the last occurrence of a flag win, so
+  setting `QUARTO_DENO_V8_OPTIONS=--max-old-space-size=12288,--max-heap-size=12288`
+  in the environment is the supported override. The crash signature: all
+  chapters render fine individually, then `Fatal JavaScript out of memory:
+  Ineffective mark-compacts near heap limit` late in the ~35-40-file site
+  render (cumulative heap, worst in finalization/search-indexing), exit code
+  133, reproducible on every re-run. Fixed fleet-wide in gha#263 (the
+  `preview`/`quarto-publish` composites export the 12 GB override; standard
+  runners have 16 GB). To validate a heap-flag change without a 20-minute
+  render: run Quarto's own bundled deno
+  (`/opt/quarto/bin/tools/x86_64/deno eval` with the launcher-composed flag
+  string) against a >8 GB JS-heap allocation loop — crashes under the
+  default string, survives with the override appended, minutes instead of
+  hours. (rme #1040/#1042, 2026-07-17: four identical CI OOMs across two
+  PRs; not a Quarto version change — v1.9.38 predated both green and red
+  runs.)
+
+## renv — each git worktree gets its own (empty) project library
+
+renv keys the project library path on the project directory name
+(`~/.cache/R/renv/library/<dirname>-<hash>/…`), so a fresh `git worktree` of
+an renv project starts with an EMPTY library even though the main checkout's
+is fully restored — the first render fails with "package not available"
+(rmarkdown, etc.). Fastest fix when the worktree is same-machine and
+same-lockfile: symlink the worktree's hashed library dir to the main
+checkout's (`ln -s …/library/<main-hash> …/library/<wt-hash>` after removing
+the empty one) instead of re-running `renv::restore()`. Note
+`RENV_PATHS_LIBRARY` did NOT take effect for this (renv still bootstrapped
+its own path); the symlink did. Also: renv intercepts `install.packages` and
+resolves ALL of `DESCRIPTION`'s GitHub remotes first — in a proxy-restricted
+session that 403s on out-of-scope `api.github.com` calls, even a plain CRAN
+install fails; bypass with `R_PROFILE_USER=/dev/null Rscript -e
+'.libPaths("<lib>"); install.packages(...)'`. (rme OOM investigation,
+2026-07-17.)
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
