@@ -73,8 +73,8 @@ The tool result already returns a clock time (e.g. "Next wakeup scheduled for 08
 
 ## Bare queue-command keywords
 
-I maintain a family of slash skills for managing the task queue and amending requests: `/also`, `/first`, `/next`, `/before`, `/last`, `/and`, `/remember`, and `/always`.
-When I write one of these keywords **without the leading slash** as a directive — e.g. "also fix the test", "remember that ...", "always link PRs in tables", "and bold it", "next, run the spellcheck", "first, revert that" — interpret it using the corresponding skill's semantics rather than as ordinary prose. (`/remember` and `/always` both route to the `memorize` skill.)
+I maintain a family of slash skills for managing the task queue and amending requests: `/also`, `/first`, `/next`, `/before`, `/last`, `/and`, `/remember`, `/always`, and `/cascade`.
+When I write one of these keywords **without the leading slash** as a directive — e.g. "also fix the test", "remember that ...", "always link PRs in tables", "and bold it", "next, run the spellcheck", "first, revert that" — interpret it using the corresponding skill's semantics rather than as ordinary prose. (`/remember` and `/always` both route to the `memorize` skill; "cascade" means merge stacked PRs' base branches into the PRs stacked on top of them — including main into unstacked PRs — never the PRs into main; see the `cascade` skill.)
 When the word is genuinely just part of a sentence (ambiguous), fall back to the plain reading.
 
 ## Link PRs in tables
