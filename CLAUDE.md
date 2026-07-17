@@ -375,6 +375,19 @@ wants to be an instrument --- see the fragment for the procedure and tells.
 
 @shared/workflow/ultracode-merge-conflicts.md
 
+## Coding: KISS is the umbrella principle
+
+Follow the KISS principle (keep it simple, stupid) in code and prose alike:
+prefer the simplest construct that does the job, and treat added complexity
+as a cost that needs justification.
+The specific coding rules below (avoid nesting, no map-site lambdas, prefer
+packaged functions, per-operation grouping, tidy code, one function per
+file, decompose to functions) and the review-side
+`challenge-unnecessary-complexity` policy are special cases of this
+principle — they exist because a bare "keep it simple" isn't concretely
+reviewable, but when a case arises that none of them covers, apply KISS
+directly rather than treating the enumerated rules as exhaustive.
+
 ## Coding style: avoid nesting; follow the lab manual
 
 Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding and collaboration conventions.
