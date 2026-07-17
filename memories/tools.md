@@ -547,6 +547,44 @@ by #328.)
   that's your own cwd. `cd` out to the parent repo (or a sibling worktree)
   first, *then* remove.
 
+## Git — `checkout -B` in a linked worktree silently bypasses the already-checked-out guard
+- Plain `git checkout main` in a linked worktree correctly refuses when `main`
+  is checked out in the primary (or any other) worktree: `fatal: 'main' is
+  already used by worktree at …`. `git checkout -B main origin/main` does
+  **not** refuse — the reset-and-checkout form re-points the shared branch ref
+  and checks it out in the current worktree anyway, leaving **two** worktrees
+  both claiming `[main]` in `git worktree list`.
+- The damage lands one command later: a `git pull` in the second worktree moves
+  the shared ref out from under the first worktree's working tree — HEAD
+  advances while that worktree's index and files stay at the old commit, so
+  `git status` there shows index-vs-HEAD as phantom **staged** diffs, with no
+  error anywhere. In the primary worktree this reads as the just-merged PR's
+  changes staged in reverse, as if about to commit a full revert of it.
+- The scripted fallback is how it happens in practice:
+  `git checkout -q main 2>/dev/null || git checkout -qB main origin/main` —
+  the plain form refuses (silenced by `-q`/`2>/dev/null`), the fallback
+  "succeeds".
+- **Recovery:** move the offending worktree onto a new branch
+  (`git switch -c <next-branch>` — frees the ref), then in the other worktree
+  restore **only** the phantom-diff files
+  (`git restore --staged --worktree <files>`) — not a blanket `reset --hard`,
+  which clobbers unrelated local state (e.g. a dirty submodule pointer).
+- **Prevention:** in a session/linked worktree, never "return to main" after a
+  merge — branch the next task directly off the remote
+  (`git switch -c <branch> origin/main`) and leave `main` itself to the
+  primary checkout. To advance the local `main` ref without checking it out
+  (CLAUDE.md § "Keep ai-config and repo checkouts fresh" recommends this when
+  a single checkout sits on a feature branch), `git branch -f main
+  origin/main` is the safe form to *attempt* — not because the guard never
+  fires, but because it **fails closed**: when any worktree holds `main` it
+  hard-refuses (`fatal: cannot force update the branch 'main' checked out
+  at …`, verified empirically) instead of silently double-checking-out the
+  way `checkout -B` does; in that multi-worktree case, leave updating `main`
+  to the worktree that holds it. (Hit on `Lacaedemon/sparta`, 2026-07-16: a
+  post-merge tidy ran the fallback form inside a session worktree; the
+  primary showed nine phantom staged reversals of the just-merged PR until
+  restored.)
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
@@ -1631,6 +1669,57 @@ any Quarto website (rme, psw, qwt, …).
   survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
+- **Large site renders crash Deno's default 8 GB V8 heap — deterministically,
+  not flakily.** Quarto's launcher script hardcodes
+  `--max-old-space-size=8192,--max-heap-size=8192` and *prepends* those
+  defaults before any user-supplied `$QUARTO_DENO_V8_OPTIONS` inside one
+  `--v8-flags=` argument; V8 lets the last occurrence of a flag win, so
+  setting `QUARTO_DENO_V8_OPTIONS=--max-old-space-size=12288,--max-heap-size=12288`
+  in the environment is the supported override. The crash signature: all
+  chapters render fine individually, then `Fatal JavaScript out of memory:
+  Ineffective mark-compacts near heap limit` late in the ~35-40-file site
+  render (cumulative heap, worst in finalization/search-indexing), exit code
+  133 — SIGTRAP, not the SIGABRT (134) a classic `abort()` would give:
+  V8's fatal-error handler dies on a trap instruction, and the launcher's
+  own log line confirms it (`Trace/breakpoint trap (core dumped)` followed
+  by `Process completed with exit code 133`, observed identically in both
+  failing runs). Reproducible on every re-run. Fixed fleet-wide in gha#263 (the
+  `preview`/`quarto-publish` composites export the 12 GB override; standard
+  runners have 16 GB). To validate a heap-flag change without a 20-minute
+  render: run Quarto's own bundled deno
+  (`/opt/quarto/bin/tools/x86_64/deno eval` with the launcher-composed flag
+  string) against a >8 GB JS-heap allocation loop — crashes under the
+  default string, survives with the override appended, minutes instead of
+  hours. (rme #1040/#1042, 2026-07-17: four identical CI OOMs across two
+  PRs; not a Quarto version change — v1.9.38 predated both green and red
+  runs.)
+
+## renv — each git worktree gets its own (empty) project library
+
+renv keys the project library path on the project directory name, so a
+fresh `git worktree` of an renv project starts with an EMPTY library even
+though the main checkout's is fully restored — the first render fails with
+"package not available" (rmarkdown, etc.). In the Claude Code cloud
+containers this lands at `~/.cache/R/renv/library/<dirname>-<hash>/…`
+(renv 1.2.2, with NO `RENV_PATHS_*` env vars set — verified); the exact
+root is version/config-dependent, so locate it portably with
+`Rscript -e 'renv::paths$library()'` from each checkout rather than
+assuming the pattern. Fastest fix when the worktree is same-machine and
+same-lockfile: symlink the worktree's hashed library dir to the main
+checkout's (`ln -s <main-lib-parent> <wt-lib-parent>` after removing the
+empty one) instead of re-running `renv::restore()`. Note `RENV_PATHS_LIBRARY`
+did NOT take effect for this (renv still bootstrapped its own path); the
+symlink did. Also: renv intercepts `install.packages` and resolves ALL of
+`DESCRIPTION`'s GitHub remotes first — in a proxy-restricted session that
+403s on out-of-scope `api.github.com` calls, even a plain CRAN install
+fails; bypass with `R_PROFILE_USER=/dev/null Rscript -e
+'.libPaths("<lib>"); install.packages(...)'`. That bypass works even from
+inside the project directory — R's user-profile search checks the CURRENT
+directory for `.Rprofile` before the home directory (see `?Startup`), so
+the project `.Rprofile` occupies the user-profile slot and
+`R_PROFILE_USER` overrides it (verified empirically: renv unloaded with
+the override, loaded without). `Rscript --no-init-file` is an equivalent
+alternative. (rme OOM investigation, 2026-07-17.)
 
 ## d-morrison/gha reusable workflows
 Check `d-morrison/gha` before writing bespoke CI — it has reusable workflows for
