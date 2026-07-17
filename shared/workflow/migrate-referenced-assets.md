@@ -51,4 +51,7 @@ copied the `assets/images/` directory itself. HTML rendering silently
 degraded to missing-image placeholders and every other CI check passed, so
 the gap wasn't caught until the PDF render --- part of the same "render all
 formats" publish job, just slower to reach --- hard-failed with a LaTeX
-"file not found" error. Fixed as a follow-up, wai#13.)
+"file not found" error. Two follow-up fixes put the images at plausible but
+wrong locations --- wai#13 at the project root, wai#15 next to the fragments
+--- and each merged green because the PR checks render HTML only; the
+correct, master-file-relative fix landed in wai#16.)
