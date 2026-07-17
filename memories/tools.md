@@ -909,6 +909,26 @@ by #328.)
   checks LaTeX/markdown/cross-refs for edits that don't touch R chunks without
   provisioning the whole dep tree. Grep the rendered HTML for `?@` / `>??<` to
   catch broken cross-refs.
+- **Asset paths in `{{< include >}}`-ed fragments resolve against the
+  master/including file's directory** in the outputs that matter (observed on
+  wai, Quarto 1.9.38, `type: website`; distinct from *include-path*
+  resolution in the bullet above --- that one is about where a nested
+  `{{< include >}}` directive finds its target file, this one is about where
+  a relative image/asset path inside a fragment resolves at render time): the rendered master HTML page emits
+  the `img src` as written, relative to the master page's output location,
+  and the lualatex PDF pass compiles from the master file's directory. So an
+  image referenced as `assets/images/x.png` inside
+  `chapters/ai-tools/fragment.qmd`, included by `chapters/master.qmd`, must
+  live at `chapters/assets/images/x.png` — project root and fragment-dir
+  placements both fail (HTML silently as a placeholder; PDF hard with
+  lualatex `file not found`). Verify empirically: check where `quarto render`
+  copies the asset under `_site/`, and read the failing `.log`'s own path
+  (`chapters/master.log` ⇒ compile cwd was `chapters/`). Related trap that
+  let a wrong fix merge green: wai's PR `preview` job renders HTML only,
+  while `publish.yml` on main renders all formats — the PR's checks never
+  exercised the PDF pass, so main stayed red after merge. Identify which CI
+  job actually runs the failing format before trusting a green PR.
+  (wai#13 → #15 → #16, 2026-07-16.)
 - Chapters that `{{< include r-config.qmd >}}` pull the full ~40-pkg set
   (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
   light (math-prereqs needs just plotly).
