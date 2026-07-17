@@ -33,13 +33,25 @@ this skill exists to pin the meaning.)
    Order the work from the base outward:
    `main` → first-level branches → branches stacked on those, and so on.
 
-2. **For each branch, in that order,** working in an isolated worktree:
+2. **For each branch, in that order.**
+   Set up one isolated worktree for the whole cascade
+   (so the repo's primary checkout is never disturbed),
+   then switch it from branch to branch as you work down the stack:
 
    ```bash
+   # once, from the repo's primary checkout:
+   git worktree add --detach <dir> && cd <dir>
+
+   # then, per branch:
    git fetch origin <branch> <base> -q
    git checkout -B <branch> origin/<branch>
    git merge origin/<base>
    ```
+
+   (`checkout -B` inside the worktree resets to the remote tip even when a
+   stale local branch of that name exists; a branch already checked out in
+   another worktree can't be checked out here — reuse that worktree for it
+   instead.)
 
 3. **Resolve squash-stack conflicts to the branch side.**
    When the base advanced by squash-merging PRs whose commits the branch
@@ -49,7 +61,8 @@ this skill exists to pin the meaning.)
    The branch side already contains the base's content, so:
 
    ```bash
-   for f in $(git diff --name-only --diff-filter=U); do git checkout --ours "$f"; done
+   while IFS= read -r -d '' f; do git checkout --ours "$f"; done \
+     < <(git diff --name-only --diff-filter=U -z)
    git add -A
    ```
 
@@ -57,26 +70,40 @@ this skill exists to pin the meaning.)
    The merged tree should be byte-identical to the pre-merge branch tree:
 
    ```bash
-   git diff HEAD --stat        # staged resolution vs pre-merge tip: expect empty
+   git diff --cached HEAD --stat   # staged resolution vs pre-merge tip: expect empty
    # or, after an auto-committed merge:
    git diff 'HEAD~1' HEAD --stat   # vs first parent: expect empty
    ```
 
    An **empty** diff means the reviewed, render-verified tree is unchanged —
-   commit (noting "content-neutral sync" and the verification in the message)
-   and skip re-running the repo's pre-commit render/lint/test gates.
+   finalize the merge, noting the verification in the message
+   (the auto-committed case is already final):
+
+   ```bash
+   git commit -m "Merge <base> into <branch> (content-neutral sync)"
+   ```
+
+   Then skip re-running the repo's pre-commit render/lint/test gates.
    A **non-empty** diff means the base carried changes the branch lacks
    (someone else's PR merged, a hotfix on `main`):
    stop treating it as mechanical —
    review the delta and run the repo's full pre-commit checks before pushing.
 
-5. **Push, minding CI.**
+5. **Push, minding CI and the remote branch.**
    Each push triggers a fresh review/build round on that PR,
    and review/preview workflows commonly run under
    `concurrency: cancel-in-progress` —
    so batch each branch's cascade into one push,
    and don't push a branch again while its round is in flight
    (see `sync-with-main`'s and gha's cancellation-race notes).
+   Step 2's `checkout -B <branch> origin/<branch>` starts from the
+   just-fetched remote tip, so unlike `sync-pr-branch`'s local-branch flow
+   there's usually nothing to reconcile —
+   but `origin/<branch>` can still move in the window before the push
+   (an `@claude` bot commit, another session).
+   If the push is rejected as non-fast-forward,
+   `git fetch origin <branch>` and `git merge origin/<branch>`,
+   then push again — never force-push.
 
 6. **Repeat down the stack** —
    after a first-level branch is synced and pushed,
