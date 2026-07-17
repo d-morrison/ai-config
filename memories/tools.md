@@ -547,6 +547,34 @@ by #328.)
   that's your own cwd. `cd` out to the parent repo (or a sibling worktree)
   first, *then* remove.
 
+## Git — `checkout -B` in a linked worktree silently bypasses the already-checked-out guard
+- Plain `git checkout main` in a linked worktree correctly refuses when `main`
+  is checked out in the primary (or any other) worktree: `fatal: 'main' is
+  already used by worktree at …`. `git checkout -B main origin/main` does
+  **not** refuse — the reset-and-checkout form re-points the shared branch ref
+  and checks it out in the current worktree anyway, leaving **two** worktrees
+  both claiming `[main]` in `git worktree list`.
+- The damage lands one command later: a `git pull` in the second worktree moves
+  the shared ref out from under the first worktree's working tree, which then
+  shows a wall of phantom **staged** diffs (the ref moved; its checked-out
+  files didn't) with no error anywhere. On a primary checkout this reads as
+  the just-merged PR's changes, reversed.
+- The scripted fallback is how it happens in practice:
+  `git checkout -q main 2>/dev/null || git checkout -qB main origin/main` —
+  the plain form refuses (silenced by `-q`/`2>/dev/null`), the fallback
+  "succeeds".
+- **Recovery:** move the offending worktree onto a new branch
+  (`git switch -c <next-branch>` — frees the ref), then in the other worktree
+  restore **only** the phantom-diff files
+  (`git restore --staged --worktree <files>`) — not a blanket `reset --hard`,
+  which clobbers unrelated local state (e.g. a dirty submodule pointer).
+- **Prevention:** in a session/linked worktree, never "return to main" after a
+  merge — branch the next task directly off the remote
+  (`git switch -c <branch> origin/main`) and leave `main` itself to the
+  primary checkout. (Hit on `Lacaedemon/sparta`, 2026-07-16: a post-merge tidy
+  ran the fallback form inside a session worktree; the primary showed nine
+  phantom staged reversals of the just-merged PR until restored.)
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.
