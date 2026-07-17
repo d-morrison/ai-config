@@ -911,7 +911,10 @@ by #328.)
   catch broken cross-refs.
 - **Asset paths in `{{< include >}}`-ed fragments resolve against the
   master/including file's directory** in the outputs that matter (observed on
-  wai, Quarto 1.9.38, `type: website`): the rendered master HTML page emits
+  wai, Quarto 1.9.38, `type: website`; distinct from *include-path*
+  resolution in the bullet above --- that one is about where a nested
+  `{{< include >}}` directive finds its target file, this one is about where
+  a relative image/asset path inside a fragment resolves at render time): the rendered master HTML page emits
   the `img src` as written, relative to the master page's output location,
   and the lualatex PDF pass compiles from the master file's directory. So an
   image referenced as `assets/images/x.png` inside
