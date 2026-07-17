@@ -52,7 +52,11 @@ framing). Prefer shrinking the judgment surface over automating a judgment
 badly: an instrument with a mushy threshold that misfires trains everyone to
 ignore it.
 
-This generalizes the "always seek workflow automation" preference (turn
-repeated manual verifications into CI checks): that is the CI-shaped instance;
-this rule also covers one-off investigations, review procedures, and any place
-model reasoning substitutes for arithmetic.
+This generalizes the narrower habit of turning repeated manual verifications
+into CI checks: that is the CI-shaped instance; this rule also covers one-off
+investigations, review procedures, and any place model reasoning substitutes
+for arithmetic. It is a different axis from multi-agent orchestration
+([`when-to-orchestrate`](when-to-orchestrate.md)): orchestration parallelizes
+model reasoning across subagents, while this rule removes model reasoning from
+checks that never needed it --- apply this rule first, then orchestrate
+whatever judgment remains.
