@@ -33,8 +33,9 @@ purrr::map2_dbl(df$hr, df$power, function(h, p) {
 })
 ```
 
-purrr's own documentation (since 1.0) mildly recommends the opposite ---
-shorthand lambdas over `...`-passing --- for readability. This preference
+purrr's own documentation (since 1.0; see the "Extra arguments" note in
+[`?map`](https://purrr.tidyverse.org/reference/map.html)) mildly recommends
+the opposite --- shorthand lambdas over `...`-passing. This preference
 deliberately overrides that: when the mapped elements line up with the
 callee's leading parameters, use `...` and skip the wrapper. Don't relitigate
 this in review rounds; cite this fragment instead.
