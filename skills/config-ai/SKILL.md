@@ -65,6 +65,25 @@ tool boundary is load-bearing — see `agent-builder`'s step 2), and a shared
 fragment over a new skill when the content already lives inside another
 skill's procedure and a new skill would just duplicate it.
 
+**"Least mechanism" is a tiebreaker between two forms that would produce the
+*same behavior*, not a default toward the cheaper form when the request's own
+phrasing signals something more active.** A request built around a verb —
+"go through X", "trigger Y", "sweep Z for W", "check for V" — is naming a
+repeatable, on-demand *action*, which is what a Skill is for; reading it as a
+passive standing preference just because memory is the lighter mechanism
+produces an artifact that does something different from what was asked, not
+a cheaper version of the same thing. When it's genuinely unclear which the
+user means, and the two readings would build materially different artifacts
+(not just the same content in a different location), ask before committing —
+one clarifying question costs far less than a full build-and-PR cycle spent
+on the wrong mechanism. (ai-config#583 vs. #585, 2026-07-16: "go through the
+decisions you need from me one at a time" was built as a `CLAUDE.md` standing
+rule about presentation — least mechanism, but the wrong reading. The user
+meant a skill that actively sweeps GitHub issues/PRs for decisions waiting on
+them; the `CLAUDE.md` rule turned out to be a useful, real, but *different*
+capability from the one asked for, requiring a second full issue → PR cycle
+to build the one actually requested.)
+
 **The "Skill" row's `ai-config skills/<name>/` home assumes the capability is
 reusable *across* repos.** When the capability only makes sense for one
 project's own domain (game-specific terminology, a codebase's own internal
@@ -171,6 +190,11 @@ to lack push access to the target repo — one of these three always applies.
   doesn't get an exemption.
 - ❌ Reaching for a hook when a `CLAUDE.md` memory would do — a hook adds
   harness-config surface area a memory doesn't need.
+- ❌ Applying "least mechanism" to a verb-first request ("go through X",
+  "trigger Y", "sweep Z") and building a passive memory rule when the phrasing
+  named a repeatable on-demand action — that's a Skill, not a cheaper
+  restatement of one. Ask first when the two readings would build genuinely
+  different artifacts.
 - ❌ Building a `gha` capability as an `ai-config` skill (or vice versa)
   because it's the repo the session happens to be in — the mechanism's home
   is fixed by what it serves (Claude/Codex behavior vs. other repos' CI), not
