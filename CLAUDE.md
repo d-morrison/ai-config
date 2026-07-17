@@ -109,6 +109,26 @@ Keep the markers stable so they become muscle memory.
 The set-apart ❓ **QUESTION** format also gives the `prompt-me` / `prompt-me-all` skills a reliable signal to key off when they sweep the transcript for unanswered questions later.
 The user may tune the emoji set; the full taxonomy and rationale live in `memories/preferences.md`.
 
+## Present decisions one at a time
+
+When more than one decision needs my input, go through them one at a time:
+pose the single most pressing question, wait for my answer, then pose the next.
+Don't batch several decisions into one message or one multi-question `AskUserQuestion` call.
+
+Two reasons.
+The answer to the first question often changes or moots the later ones, so a batch makes me answer against stale premises.
+And a wall of questions invites a partial reply that leaves the rest silently unanswered — the exact failure mode `prompt-me` / `prompt-me-all` exist to recover from.
+
+Mechanics:
+
+- Rank by how blocking each decision is, most pressing first (the same ranking `prompt-me` uses), and pose only the top one — via a single-question `AskUserQuestion` call for a real either/or, or one boxed ❓ **QUESTION** otherwise.
+- Say how many more are queued behind it ("2 more decisions after this one"), so the backlog is visible without being posed.
+- Fold each answer into the framing of the next question, and silently drop any queued question the answer mooted.
+- Keep working on whatever the pending decision doesn't block while waiting.
+
+This changes how decisions are *posed*, not whether to ask at all: `research-before-asking` still gates each question, and an `away` grant still means don't block on questions — resolve them by judgment, or skip-and-note, per that skill's scope.
+And it yields to an explicit request for the full backlog — `prompt-me-all` / "ask me everything at once" is the user opting into a batch view.
+
 ## Title Claude sessions with the PR/issue number
 
 Name each Claude Code session (the title shown in the web/app session sidebar) `#NNN brief description` — the number of the PR or issue the session is working, then a short description.
