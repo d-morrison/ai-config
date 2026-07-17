@@ -155,6 +155,18 @@
   explicit go-ahead first if the workflow has a real side effect (e.g. a
   gh-pages deploy step not gated to `main`) — dispatching isn't just a status
   check in that case, it's a live action.
+- **A sustained run of `503` responses across every endpoint (not just PR
+  reads) is a GitHub-side outage, not a per-call glitch — confirm with the
+  cheapest possible probe, then stop retrying and back off.** When
+  `pull_request_read`/`list_pull_requests` both 503, don't keep hammering the
+  same call — call `mcp__github__get_me` (no arguments, smallest possible
+  request) once: if that 503s too, it's a broad outage rather than something
+  scoped to one repo, PR, or endpoint, and no amount of retrying the original
+  call will help. Report the outage plainly, use whatever was last confirmed
+  before it started, and re-check later rather than looping. (ai-config#583/
+  #585 session, 2026-07-16: `pull_request_read`, `list_pull_requests`, and
+  `get_me` all 503'd for roughly an hour across several separate check-ins;
+  confirmed via `get_me` that it wasn't scoped to the two PRs being watched.)
 - `mcp__github__pull_request_read` `method:` enum: `get` · `get_diff` (PR
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
@@ -2299,10 +2311,25 @@ plain wakeup tool, if present) for a one-off self check-in instead; reserve
 availability above for the fallback (`CronCreate`) if it disappears.
 (ai-config#455/gha#216, 2026-07-03.)
 
+**Correction: the validation error is about a missing `prompt`, not about
+being outside `/loop` per se.** In a remote/web session, calling
+`ScheduleWakeup` with an explicit, self-written `prompt` string (not the
+`/loop` sentinel) for a plain ad-hoc check-in did **not** throw
+`InputValidationError` --- it accepted the call, returned a confirmed clock
+time, and the wakeup fired as scheduled. This is a workable fallback when
+`send_later` itself is unavailable or repeatedly failing (e.g. an MCP server
+mid-reconnect) --- supply your own full prompt text rather than assuming the
+tool rejects non-`/loop` calls outright. (ai-config#583/#585 session,
+2026-07-16: `mcp__Claude_Code_Remote__send_later` failed three times in a row
+with "Tool permission stream closed before response received"; `ScheduleWakeup`
+with a custom prompt worked immediately both times it was tried as a fallback.)
+
 ## In a plain local Claude Code session, `ScheduleWakeup` can accept an ad-hoc call but silently fail to fire
 
 This is a DIFFERENT harness/observation from the entry above (that one is the `Claude Code Remote`
-MCP server's `ScheduleWakeup`, which rejects a non-`/loop` call outright with a validation error).
+MCP server's `ScheduleWakeup`; the "rejects non-`/loop` calls with a validation error" characterization
+was corrected by the block above it --- the error is about a missing `prompt`, not the non-`/loop`
+context, and a supplied `prompt` works fine there).
 In a plain local Claude Code CLI session, `ScheduleWakeup` accepted an arbitrary one-off
 `{delaySeconds, prompt, reason}` call with no error and returned a confirmed clock time (e.g.
 "Next wakeup scheduled for 08:27:00") -- but the scheduled re-invocation never actually fired.
