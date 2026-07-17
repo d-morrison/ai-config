@@ -555,10 +555,11 @@ by #328.)
   and checks it out in the current worktree anyway, leaving **two** worktrees
   both claiming `[main]` in `git worktree list`.
 - The damage lands one command later: a `git pull` in the second worktree moves
-  the shared ref out from under the first worktree's working tree, which then
-  shows a wall of phantom **staged** diffs (the ref moved; its checked-out
-  files didn't) with no error anywhere. On a primary checkout this reads as
-  the just-merged PR's changes, reversed.
+  the shared ref out from under the first worktree's working tree — HEAD
+  advances while that worktree's index and files stay at the old commit, so
+  `git status` there shows index-vs-HEAD as phantom **staged** diffs, with no
+  error anywhere. In the primary worktree this reads as the just-merged PR's
+  changes staged in reverse, as if about to commit a full revert of it.
 - The scripted fallback is how it happens in practice:
   `git checkout -q main 2>/dev/null || git checkout -qB main origin/main` —
   the plain form refuses (silenced by `-q`/`2>/dev/null`), the fallback
@@ -571,9 +572,18 @@ by #328.)
 - **Prevention:** in a session/linked worktree, never "return to main" after a
   merge — branch the next task directly off the remote
   (`git switch -c <branch> origin/main`) and leave `main` itself to the
-  primary checkout. (Hit on `Lacaedemon/sparta`, 2026-07-16: a post-merge tidy
-  ran the fallback form inside a session worktree; the primary showed nine
-  phantom staged reversals of the just-merged PR until restored.)
+  primary checkout. To advance the local `main` ref without checking it out
+  (CLAUDE.md § "Keep ai-config and repo checkouts fresh" recommends this when
+  a single checkout sits on a feature branch), `git branch -f main
+  origin/main` is the safe form to *attempt* — not because the guard never
+  fires, but because it **fails closed**: when any worktree holds `main` it
+  hard-refuses (`fatal: cannot force update the branch 'main' checked out
+  at …`, verified empirically) instead of silently double-checking-out the
+  way `checkout -B` does; in that multi-worktree case, leave updating `main`
+  to the worktree that holds it. (Hit on `Lacaedemon/sparta`, 2026-07-16: a
+  post-merge tidy ran the fallback form inside a session worktree; the
+  primary showed nine phantom staged reversals of the just-merged PR until
+  restored.)
 
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
