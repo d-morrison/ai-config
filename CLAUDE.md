@@ -375,9 +375,9 @@ wants to be an instrument --- see the fragment for the procedure and tells.
 
 @shared/workflow/ultracode-merge-conflicts.md
 
-## Big-picture principles: KISS, DRY, DRW, modularity
+## Big-picture principles: KISS, DRY, DRW, modularity, and friends
 
-Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, highly functional, reliable, efficient, maintainable, extensible, human- and AI-readable, and reusable), each principle's statement, the specific rules and skills that operationalize it, and how the principles relate and trade off.
+Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, reproducible, highly functional, reliable, secure, efficient, maintainable, extensible, human- and AI-readable, and reusable), each principle's statement (KISS, YAGNI, DRY, DRW, modularity, least astonishment, purity, self-documenting code, fail fast, algorithmatize checks — plus the reduce/reuse/recycle lens over them), the specific rules and skills that operationalize each, and how the principles relate and trade off.
 When encoding a new coding/review rule, file it under the principle it serves (and add a new principle to the catalog when one emerges) rather than leaving either the rule or the principle floating free.
 
 @shared/principles/README.md
@@ -391,6 +391,13 @@ Apply this in review too: a hand-rolled equivalent of functionality that already
 @shared/principles/dont-reinvent-wheel.md
 
 The `prefer-upstream` skill runs the search; the `prefer-packaged-functions` fragment below is the R-function special case; the `scout-peers` skill gates borrowed code by license.
+
+## Fail fast — no silent failures
+
+Detect bad state early and stop with a clear error rather than proceeding on it; never swallow an error into a silent fallback (a bare `except:`, a `tryCatch` returning `NULL`, a shell `|| true`), and make any genuinely wanted fallback explicit, bounded, and observable.
+Apply this in review too: error handling that hides failure is a review finding, the same weight as any other standing review check.
+
+@shared/principles/fail-fast.md
 
 ## Coding: KISS is the umbrella principle
 
