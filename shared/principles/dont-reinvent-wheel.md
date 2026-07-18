@@ -68,8 +68,8 @@ For each new function or feature a diff adds, ask whether that
 functionality already exists in our own repos or a trustworthy
 dependency.
 A hand-rolled equivalent of something a maintained package (or our own
-code) already provides is a review finding, the same weight as the
-other modularity findings: name the existing implementation, and
+code) already provides is a review finding, the same weight as any
+other standing review check: name the existing implementation, and
 propose depending on, forking, or contributing to it instead.
 Accept the custom version when one of the escape hatches above
 genuinely applies — and ask for the "checked, nothing fit" note when

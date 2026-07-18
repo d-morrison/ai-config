@@ -95,7 +95,10 @@ Operationalized by:
 [`one-function-per-file`](../coding/one-function-per-file.md),
 [`decompose-to-functions`](../coding/decompose-to-functions.md), and the
 "highly modular and idiomatic" review priorities in
-[`gha`'s `CLAUDE.md`](https://github.com/d-morrison/gha/blob/main/CLAUDE.md).
+[`gha`'s `CLAUDE.md`](https://github.com/d-morrison/gha/blob/main/CLAUDE.md)
+(favor small, single-purpose functions over long monolithic blocks;
+flag duplicated logic, functions that do too much, and steps that
+should be extracted and named).
 
 ## How the principles relate — and where they pull against each other
 
