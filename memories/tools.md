@@ -2860,3 +2860,73 @@ a whole-file `sort -f -c` false-fails at the block boundary even when the
 file is correctly formatted), and rebut Copilot citing the
 tool's own emitted order — the rebuttal stuck (Copilot dropped it on
 subsequent rounds; ucdavis/win#69, 2026-07-16).
+
+## Remote-session push proxy: branch DELETION silently no-ops
+
+The Claude Code web/remote push proxy accepts branch pushes but silently
+refuses branch deletions: `git push origin --delete <branch>` (and the
+`:refs/heads/<branch>` refspec form) reports `Everything up-to-date` (or
+`fatal: the remote end hung up unexpectedly` followed by up-to-date) while
+`git ls-remote` confirms the remote branch still exists. There is no error
+that says "deletion not allowed" — the success-looking output is the trap.
+Verify with `git ls-remote --heads origin <branch>` after any deletion
+attempt, and when it survives, hand the deletion to the user (GitHub UI
+Branches page) instead of retrying. (ucdavis/rampp, 2026-07-17: deleting the
+orphaned `claude/split-survival` stack branch per its tracking issue no-op'd
+twice; delegated to d-morrison in the issue-close comment.)
+
+## Stacked-PR series: a closed base PR strands the whole downstream stack silently
+
+When PRs are stacked A <- B <- C and the PR for A is closed unmerged (even
+accidentally — check `closed_by`/`closed_at` via the API rather than
+inferring a mechanism), B and C keep "working": their reviews run, they go
+clean, and they MERGE — but into A's head branch, which no longer has any
+open PR to main. Nothing errors; the reviewed content is simply stranded on
+an orphaned branch. Detection: (1) closed-unmerged PRs whose head branches
+still exist with commits not on main (`git rev-list --count
+origin/main..origin/<branch>`), (2) branches with substantial unmerged
+content and no PR at all (never-PR'd forgotten work is found the same way).
+Recovery that worked well: **re-cut the stranded reviewed content from the
+stack's tip** (it embodies every review round's refinements — taking the
+older pre-review copies from elsewhere re-litigates settled findings), layer
+any later improvements from other branches on top, and verify per function
+that the re-cut supersedes the stranded branch before deleting it
+(`git grep -E '^[\w.]+ <- function'` on both refs, set-difference the
+names). Also verify the close reason from the API record: the earlier
+"auto-closed when its base branch was deleted" explanation was disproven by
+`closed_at` predating the base's merge by 8 days — `closed_by: <user>` with
+no comment was the actual record. (ucdavis/rampp #127 closed 2026-07-05;
+#128/#129 merged into the orphaned `claude/split-survival`; re-cut as
+#136–#138, 2026-07-16..17.)
+
+## CI failure on untouched files: diff the installed-package line between last-green and first-red logs
+
+When a CI job fails on files the PR never touched, suspect toolchain drift
+and make the version comparison the FIRST diagnostic: fetch the last
+passing run's job log and the failing run's, and grep each for the suspect
+package's sessioninfo line. A dev-tracking install (`extra-packages:
+r-lib/lintr` in r-lib/actions) makes this a recurring class, and the log
+line pins it exactly. Two 2026-07 instances in ucdavis/rampp: (1) `lint`
+red on 31 untouched files — `lintr 3.3.0.9000 Github(@4579471)` green on
+07-13 vs `3.4.0.9000 Github(@178882f)` red on 07-16 (lintr 3.4.0 dropped
+double-indent formals, r-lib/lintr#2830); fixed by restyling, since the new
+style is valid under both versions. (2) `macos-latest` R CMD check red
+repo-wide — flextable 0.10.0 hit CRAN with no macOS binary yet, forcing a
+source build that needs XQuartz libs the runner lacks; self-healed when the
+binary appeared ~7h later, so the right move was retry-later
+(`rerun_failed_jobs`), not a code change.
+
+## Fact-check code comments' factual claims — a false one can survive many review rounds
+
+A code comment asserting a checkable fact ("grepl() returns NA for NA
+input") is prose the review bots tend to accept as given, especially when
+it justifies adjacent defensive code: this one survived ~10 independent
+review passes across two PRs before being caught — and only because a
+WRONG Copilot finding on a third PR prompted an empirical check
+(`grepl("a", NA)` is FALSE; it's `sub()`/`gsub()` that propagate NA — and
+the guard it justified was load-bearing for a different reason:
+`NA != ""` yields NA). When writing or reviewing a comment that states a
+language/library behavior, run the one-liner that checks it instead of
+trusting plausibility; when a reviewer finding is wrong, check whether the
+code's own documentation made the same wrong claim — the finding often
+mirrors prose it read in-context. (ucdavis/rampp #138/#111, 2026-07-17.)
