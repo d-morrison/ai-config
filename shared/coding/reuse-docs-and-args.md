@@ -73,8 +73,9 @@ references intact.
 
 ## In review
 
-Flag both as review findings, the same weight as other idiomatic-code
+Flag all three as review findings, the same weight as other idiomatic-code
 findings: a `@param` description or prose section that's copy-pasted from
-another function's docs instead of inherited, and a wrapper function that
+another function's docs instead of inherited, a wrapper function that
 manually re-declares and relays arguments it never touches itself instead of
-using `...`/`**kwargs`/rest-parameter passthrough.
+using `...`/`**kwargs`/rest-parameter passthrough, and an internal function
+marked `@noRd` instead of `@keywords internal`.
