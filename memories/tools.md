@@ -1303,6 +1303,24 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   site: `jarl.etiennebacher.com/reference/config-file` 403'd, but
   `WebSearch` surfaced `docs/reference/config-file.md` as the underlying
   file, which raw-fetched with the full field-by-field config reference.)
+- **`docs.github.com` itself can be blocked outright by a remote session's
+  network policy** (proxy 403 on every page, and `api.github.com` too —
+  both at the curl/WebFetch level; the GitHub MCP tools route through
+  their own server and keep working), not
+  just anti-scraping — but `raw.githubusercontent.com` stays reachable, and
+  GitHub's docs are built from the public `github/docs` repo. Verify a docs
+  claim or URL against that source instead: page content lives under
+  `content/<area>/.../<slug>.md`, but live-URL paths do NOT map 1:1 to
+  source paths (the docs get reorganized; e.g.
+  `/billing/managing-billing-for-your-products/...` now lives at
+  `content/billing/concepts/product-billing/github-actions.md`). If a page
+  was moved, its frontmatter carries a `redirect_from:` list — an old URL
+  appearing there means it still works for readers via redirect — and
+  shared text is factored into `data/reusables/<area>/<name>.md` includes,
+  so grep for a `{% data reusables.<area>.<name> %}` tag and fetch that
+  file when a section's body looks like one include line. (Used on
+  ai-config#601 to verify the GitHub Actions billing and `jobs.<job_id>.if`
+  citations offline.)
 
 ## Claude Code on the web: CI monitoring toggles have no default setting
 - The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
