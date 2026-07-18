@@ -2749,3 +2749,50 @@ these.
     shell to release the slice. Force-release with `scancel $SLURM_JOB_ID`; check
     for a forgotten slice with `squeue -u $USER` (job name `claude`/`codex`).
   - Full usage/exit doc: `~/.config/tui-alloc/README.md`.
+
+## quarto-actions/setup with tinytex — two shared-runner failure signatures (win, 2026-07)
+
+- **`ERROR: Unable to determine latest release for rstudio/tinytex-releases / 403 - Forbidden`**
+  during "Set up Quarto": `quarto install tinytex`'s latest-release lookup is an
+  unauthenticated GitHub API call, and shared runners intermittently rate-limit it.
+  Fix: `env: GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` (or `${{ github.token }}`) on the
+  setup step. gha's `preview` composite already does this; `quarto-publish` gap filed
+  as gha#270. (Broke ucdavis/win's preview/publish repeatedly; fixed in win PR #69.)
+- **`renv::restore()` fails compiling `curl` ("libcurl was not found")** on
+  current ubuntu runner images: the R build libs are no longer preinstalled, so any
+  renv repo needs an explicit apt step. Working set for a typical
+  curl/openssl/xml2/gert/V8/igraph/ragg/textshaping lockfile:
+  `libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libnode-dev libglpk-dev
+  libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev
+  libtiff5-dev libjpeg-dev` (gha's `preview` reusable workflow's default
+  `apt-packages` list is the fuller reference).
+- Diagnostic order matters: the TinyTeX 403 masks the renv gap — fixing the first
+  failure surfaces the second on the next run, so read each new failed run's log
+  fresh instead of assuming the prior diagnosis still applies.
+
+## gha claude-code-review — self-modification skip guard (not a stub)
+
+A PR that **edits `.github/workflows/claude-code-review.yml` itself** gets a
+fast (~9s) green `review / claude-review` job that posts **no review**: the
+reusable workflow detects the self-edit and deliberately skips
+("PR #N edits .github/workflows/claude-code-review.yml — skipping self-review
+(the action 401s on workflow validation until merged; it runs after merge)"),
+and `require-review` tolerates the skip. Don't treat this as a stub review or
+re-trigger it — read the job log for the `::notice::` line to confirm, post a
+manual self-review with a verdict instead (per the do-the-review-yourself
+rule), and note the first genuine end-to-end run happens on the next PR after
+merge. (ucdavis/win#75, 2026-07-16 — the migration PR itself could never be
+bot-reviewed; win#69's post-merge sync then ran the migrated workflow live and
+it worked, including `check-latex-macros` and the cost report.)
+
+## WORDLIST alphabetization — Copilot vs claude reviewer collation conflict
+
+`spelling`-package WORDLISTs sort in **two case-grouped blocks**
+(uppercase-leading then lowercase-leading), each **case-insensitively** sorted
+within the block — the order `spelling::update_wordlist()` emits under a UTF-8
+locale. The claude reviewer enforces that order; Copilot sometimes flags the
+same lines wanting ASCII/byte order (e.g. claiming `PP` must precede
+`Positivity`). Don't flip-flop between the two: keep the case-insensitive
+convention, verify each block with `sort -f -c`, and rebut Copilot citing the
+tool's own emitted order — the rebuttal stuck (Copilot dropped it on
+subsequent rounds; ucdavis/win#69, 2026-07-16).
