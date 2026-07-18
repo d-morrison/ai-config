@@ -1320,8 +1320,10 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   so grep for a `{% data reusables.<area>.<name> %}` tag and fetch that
   file when a section's body looks like one include line. Version-gated
   (`{% ifversion <flag> %}`) passages resolve via `data/features/<flag>.yml`:
-  its `versions:` block (e.g. `fpt: '*'`) says whether the gated text is live
-  on github.com or only on GHES/GHEC. (Used on
+  its `versions:` block (e.g. `fpt: '*'`) says which plans the gated text
+  applies to: `fpt` = Free/Pro/Team on github.com, `ghec` = GitHub Enterprise
+  Cloud (also github.com-hosted), `ghes` = GitHub Enterprise Server
+  (self-hosted). (Used on
   ai-config#601 to verify the GitHub Actions billing and `jobs.<job_id>.if`
   citations offline, and on gha#272 to confirm the approval-required
   `pull_request`-runs exception applies to github.com.)
