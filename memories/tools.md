@@ -2064,7 +2064,8 @@ not block `claude-review`.)
   branch still triggers nothing. (Verified via the `github/docs` source:
   `data/reusables/actions/actions-do-not-trigger-workflows.md`, gated by
   `data/features/actions-github-token-pull-request-approval.yml` with
-  `fpt: '*'`. Used on gha#272's update-snapshots reference page.)
+  `fpt: '*'` and `ghec: '*'` (GHES commented out). Used on gha#272's
+  update-snapshots reference page.)
 - **Local composite refs (`./`) in reusable workflows resolve relative to the HOST repo.**
   A `workflow_call` reusable workflow living in gha cannot call `./path/to/composite` from
   a CALLER's repo — `./` always resolves to gha itself. Workaround: pass the data the
