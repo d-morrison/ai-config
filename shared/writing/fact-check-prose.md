@@ -17,13 +17,15 @@ claims and reasoning that are resolved but wrong.
   author wrote it while proposing, usually without checking the mechanism.
   Before restating such a claim in a code comment, changelog entry, or doc,
   verify it against the mechanism's own documentation the same way you would
-  a fresh claim; inheriting it verbatim launders it into text reviewers then
+  a fresh claim; inheriting it verbatim launders it into text reviewers
   trust. (gha#259/#260: the issue body claimed an untrusted `@claude` mention
   "burns runner minutes"; the implementing session propagated that phrase
   into two workflow comments and a changelog fragment, and it survived two
-  review rounds before a fact-check pass caught that a job skipped by a
-  job-level `if:` never gets a runner assigned --- GitHub bills only actual
-  execution time on a runner --- so the pre-fix gap cost zero minutes.)
+  review rounds before a fact-check pass caught that a job whose
+  [job-level `if:`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idif)
+  is unmet never runs (it's marked *skipped*), and GitHub Actions
+  [bills only minutes actually used on a runner](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+  --- so the pre-fix gap cost zero minutes.)
 - **Undefended claims.** Separately from accuracy, check that each factual
   claim is *defended* --- either by reasoning laid out in the surrounding
   text, or by a citation to an external source. Flag a bare assertion that
