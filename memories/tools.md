@@ -2793,6 +2793,9 @@ within the block — the order `spelling::update_wordlist()` emits under a UTF-8
 locale. The claude reviewer enforces that order; Copilot sometimes flags the
 same lines wanting ASCII/byte order (e.g. claiming `PP` must precede
 `Positivity`). Don't flip-flop between the two: keep the case-insensitive
-convention, verify each block with `sort -f -c`, and rebut Copilot citing the
+convention, verify each block **separately** with `sort -f -c`
+(e.g. `grep '^[A-Z]' inst/WORDLIST | sort -f -c` for the uppercase block —
+a whole-file `sort -f -c` false-fails at the block boundary even when the
+file is correctly formatted), and rebut Copilot citing the
 tool's own emitted order — the rebuttal stuck (Copilot dropped it on
 subsequent rounds; ucdavis/win#69, 2026-07-16).
