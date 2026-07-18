@@ -722,9 +722,13 @@ by #328.)
     `RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/__linux__/noble/latest`
     was sitting right there in the workflow file the whole time.
   - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
-    has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
-    anywhere reachable, so it blocks full renders of any chapter that does
-    `rmb::hers` / `library(rmb)`.
+    has `dobson`, `regress3d` (and more), but NOT `rmb` — and `rmb`'s standard
+    install channels (tarball/clone via `github.com`/`codeload`, plus
+    `api.github.com` for renv/pak) are proxy-blocked when the repo isn't in
+    session scope. That no longer blocks renders of chapters that do
+    `rmb::hers` / `library(rmb)`: see the "Scope-blocked GitHub repo, but you
+    only need its *datasets*" bullet in this file for the data-only rebuild
+    from `raw.githubusercontent.com` (which stays reachable).
   - `igraph` needs system lib `libglpk.so.40` → `apt-get install -y libglpk40`
     (you're root in these containers). Needed to run `data-raw/callout-graph.R`.
   - The install routes through **pak** (renv's pak backend), which is ATOMIC:
