@@ -156,10 +156,9 @@ of global state and no I/O buried inside computation.
 Isolate the side effects a program genuinely needs (file writes,
 network, RNG, options) at its edges, and restore any temporarily
 changed state rather than leaking it — e.g. `withr::with_seed()`
-restores the RNG stream and `withr::local_options()` restores session
-options (see
-[`prefer-packaged-functions`](../coding/prefer-packaged-functions.md)'s
-`withr` example).
+restores the RNG stream (the example in
+[`prefer-packaged-functions`](../coding/prefer-packaged-functions.md))
+and `withr::local_options()` restores session options.
 
 In review: flag `<<-`, functions that read or write globals they don't
 own, and computation interleaved with I/O that a pure core plus a thin
