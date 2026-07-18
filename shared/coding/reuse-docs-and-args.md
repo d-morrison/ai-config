@@ -45,10 +45,37 @@ This is a default, not an absolute rule — name an argument explicitly (instead
 of leaving it inside `...`) when the wrapper needs to inspect, validate, or
 transform that specific value before forwarding it.
 
+## In R, never use `@noRd`; use `@keywords internal`
+
+Document **every** function with a generated `.Rd` page, internal ones
+included. For a function that shouldn't appear in the manual index or the
+rendered reference site, use `@keywords internal` — **never `@noRd`**.
+
+The reasoning: every internal function is reachable through `:::`, so its
+documentation should be available to anyone who calls it that way.
+`@keywords internal` still generates the `.Rd` page (so `?pkg:::helper`
+works and cross-references resolve), it just omits the page from the manual
+index and the pkgdown/altdoc reference listing. `@noRd` suppresses the page
+entirely, which hides documentation from a reachable function for no benefit.
+
+This also keeps doc-reuse working. When a wrapper's roxygen references a
+helper — via `@inheritParams`, `@inheritDotParams`, or a `[helper()]`
+cross-reference link — that reference only resolves if the helper has a
+generated `.Rd` page. A helper marked `@noRd` has none, so R CMD check fails:
+`@inheritParams`/`@inheritDotParams` error that they can't find the target,
+and a `[helper()]` link becomes a "missing link in Rd file" WARNING (which
+fails CI under `error_on = "note"`). The fix is **not** to strip the doc-reuse
+syntax (retyping the `@param` descriptions, spelling out the `...` forwards,
+or downgrading the link to plain code font) — that reintroduces exactly the
+duplication this fragment exists to prevent. Use `@keywords internal` on the
+helper and keep the `@inheritDotParams`/`@inheritParams`/`[helper()]`
+references intact.
+
 ## In review
 
-Flag both as review findings, the same weight as other idiomatic-code
+Flag all three as review findings, the same weight as other idiomatic-code
 findings: a `@param` description or prose section that's copy-pasted from
-another function's docs instead of inherited, and a wrapper function that
+another function's docs instead of inherited, a wrapper function that
 manually re-declares and relays arguments it never touches itself instead of
-using `...`/`**kwargs`/rest-parameter passthrough.
+using `...`/`**kwargs`/rest-parameter passthrough, and an internal function
+marked `@noRd` instead of `@keywords internal`.
