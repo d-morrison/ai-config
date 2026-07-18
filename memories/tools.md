@@ -2896,8 +2896,8 @@ names). Also verify the close reason from the API record: the earlier
 "auto-closed when its base branch was deleted" explanation was disproven by
 `closed_at` predating the base's merge by 8 days — `closed_by: <user>` with
 no comment was the actual record. (ucdavis/rampp #127 closed 2026-07-05;
-#128/#129 merged into the orphaned `claude/split-survival`; re-cut as
-#136–#138, 2026-07-16..17.)
+PRs #128/#129 merged into the orphaned `claude/split-survival`; re-cut
+as #136–#138, 2026-07-16..17.)
 
 ## CI failure on untouched files: diff the installed-package line between last-green and first-red logs
 
