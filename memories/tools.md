@@ -1206,6 +1206,14 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
     instead — the spellcheck parses markdown and skips code spans, and
     backticking a `pkg::fn()`/identifier/message is the correct markdown style
     anyway. Cleaner than both rewording and a WORDLIST add. (ucdavis/ettbc#30.)
+  - **Cross-repo issue refs and bare domain names are spellable-token sources
+    too, not just code identifiers.** The checker splits on punctuation, so an
+    unbackticked `d-morrison/altdoc#26` flags `morrison`, and `rdrr.io` flags
+    both `rdrr` and `io`. Backtick them (existing NEWS entries already backtick
+    cross-repo refs, so this matches convention), and reword genuinely-prose
+    words instead of listing them (`undiscoverable` → "cannot discover").
+    (ucdavis/bcs#375: four tokens flagged from one NEWS entry, fixed with zero
+    WORDLIST additions.)
 - A `docs-check` / `R-check-docs` job runs `roxygenize()` then `git diff --exit-code
   man/`, so a roxygen edit with a stale `man/*.Rd` fails. **When you can't run
   `devtools::document()` (no R toolchain, e.g. a cloud/web session), you can still
