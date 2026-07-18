@@ -860,6 +860,23 @@ by #328.)
   chain — `add_repo` unblock, `compare` showing the branch fully merged,
   then two more hardcoded copies of the same stale ref found in
   `docs.yaml` and `copilot-setup-steps.yml`.)
+- **Scope-blocked GitHub repo, but you only need its *datasets* (an R data
+  package like `rmb`): rebuild a minimal data-only package from
+  `raw.githubusercontent.com`.** The proxy's repo-scope check blocks
+  `github.com`/`codeload.github.com` tarball downloads and `git clone` for
+  out-of-scope repos (the same 403 as the renv bullet above), and `add_repo`
+  needs an explicit user request — but `raw.githubusercontent.com` serves the
+  same repo's files fine. When the consuming render/tests only use
+  `pkg::dataset` objects (grep for `pkg::` to enumerate them), fetch
+  `DESCRIPTION` plus just the needed `data/*.rda` files at the lockfile's
+  pinned `RemoteSha`, write a stub comment-only `NAMESPACE`, and
+  `R CMD INSTALL` the result: `LazyData: true` makes `pkg::dataset` resolve
+  via lazydata with no exports and no `R/` sources needed. Don't copy the
+  real `NAMESPACE` — its `export()` lines reference functions whose `R/`
+  sources you didn't fetch, and the install fails on the missing objects.
+  (rme#1047/#1048: unblocked `quarto render` of a chapter needing
+  `rmb::hers` after the tarball 403'd; the older installed `rmb` predated
+  the dataset.)
 - **A stale `00LOCK-*` directory silently blocks every subsequent
   `install.packages()` call**, left behind when an earlier install was
   interrupted (killed mid-run, or two `install.packages()` calls racing —
@@ -1912,6 +1929,20 @@ common patterns.
   (`method: "get_workflow_job"` — confirmed in the live schema alongside
   `get_workflow_run`) for the per-step `conclusion` breakdown to know which step
   actually failed and roughly where in the log to look. (ai-config#403.)
+- **`get_job_logs` hard-caps the returned content at 5,000 lines regardless of
+  `tail_lines`** — a `tail_lines: 100000` request on a 14,503-line job log still
+  returns only the last 5,000 lines. The result's `original_length` field
+  reports the full line count, so compute the offset: returned line `i`
+  (0-based) is full-log line `original_length - 5000 + i + 1`. There's no way
+  to fetch the head through this tool, and the REST fallback
+  (`/actions/jobs/{id}/logs`) needs `api.github.com`, which the agent proxy
+  blocks in these sessions. A GitHub UI deep link `#step:N:L` means line `L`
+  counted *within step N* (step N's first log line is 1), so locating it in
+  the tail needs the step's start line — estimable from the earlier steps'
+  typical output volume when the head is unfetchable, and worth
+  cross-checking against whether a plausible warning/error actually sits at
+  the computed spot. (rme#1047: located a docx TeX-math warning this way at
+  `#step:10:8366` of a truncated publish log.)
 - **`claude-review` failing with "Skipping action due to workflow validation…
   must have identical content to the default branch" is NOT always the
   documented self-mod-skip or stale-`@v1`-tag drift.** Before assuming either,
