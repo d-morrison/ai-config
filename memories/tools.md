@@ -1318,9 +1318,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   appearing there means it still works for readers via redirect — and
   shared text is factored into `data/reusables/<area>/<name>.md` includes,
   so grep for a `{% data reusables.<area>.<name> %}` tag and fetch that
-  file when a section's body looks like one include line. (Used on
+  file when a section's body looks like one include line. Version-gated
+  (`{% ifversion <flag> %}`) passages resolve via `data/features/<flag>.yml`:
+  its `versions:` block (e.g. `fpt: '*'`) says whether the gated text is live
+  on github.com or only on GHES/GHEC. (Used on
   ai-config#601 to verify the GitHub Actions billing and `jobs.<job_id>.if`
-  citations offline.)
+  citations offline, and on gha#272 to confirm the approval-required
+  `pull_request`-runs exception applies to github.com.)
 
 ## Claude Code on the web: CI monitoring toggles have no default setting
 - The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
@@ -2037,6 +2041,28 @@ not block `claude-review`.)
 
 ## GitHub Actions workflow authoring gotchas
 
+- **A bare `devtools::test()` in a gating CI step never fails the job.**
+  `devtools::test()`'s signature sets `stop_on_failure = FALSE` and forwards
+  it to `testthat::test_local()` — overriding `test_local()`'s own `TRUE`
+  default (verified in `r-lib/devtools` `R/test.R`) — so under
+  `shell: Rscript {0}` the step exits 0 even when tests fail. Pass
+  `stop_on_failure = TRUE` explicitly in any step whose purpose is to gate.
+  (gha#272: `update-snapshots.yml`'s post-`snapshot_accept()` verification
+  re-run shipped this way for the capability's whole released life — a
+  still-failing suite exited 0 and the broken snapshots were committed and
+  pushed anyway; surfaced only when the new reference page's description of
+  the gate was fact-checked against the implementation in review.)
+- **`GITHUB_TOKEN`-driven pushes create no workflow runs — except on PRs,
+  where the runs now appear in an approval-required state instead of not at
+  all.** The long-standing no-retrigger rule has a github.com-live exception
+  for `pull_request` `opened`/`synchronize`/`reopened`: when a workflow's
+  `GITHUB_TOKEN` creates or updates a PR, the resulting runs are created
+  approval-required, and a write-access user starts them via "Approve
+  workflows to run" in the PR merge box. A `GITHUB_TOKEN` push to a plain
+  branch still triggers nothing. (Verified via the `github/docs` source:
+  `data/reusables/actions/actions-do-not-trigger-workflows.md`, gated by
+  `data/features/actions-github-token-pull-request-approval.yml` with
+  `fpt: '*'`. Used on gha#272's update-snapshots reference page.)
 - **Local composite refs (`./`) in reusable workflows resolve relative to the HOST repo.**
   A `workflow_call` reusable workflow living in gha cannot call `./path/to/composite` from
   a CALLER's repo — `./` always resolves to gha itself. Workaround: pass the data the
