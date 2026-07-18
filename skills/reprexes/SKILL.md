@@ -121,12 +121,10 @@ but nothing more.
     on a missing object or package, your example wasn't actually
     self-contained — fix that before sharing.
 
-  Companion helpers handle "wild-caught" reprexes (all exported in reprex
+  Companion helpers handle "wild-caught" reprexes (both exported in reprex
   2.x): `reprex::reprex_clean()` (strip the `#>` output markers from a
-  rendered/pasted reprex, leaving runnable code), `reprex::reprex_rescue()`
-  (recover code from R-console output with `>`/`+` prompts), and
-  `reprex::reprex_invert()` (the inverse of `reprex::reprex()` — recover the
-  input code from a rendered reprex).
+  rendered/pasted reprex, leaving runnable code) and `reprex::reprex_rescue()`
+  (recover code from R-console output with `>`/`+` prompts).
 - When the bug might be **version-dependent**, capture `sessionInfo()` (or set
   `session_info = TRUE` above) in the reprex so versions are part of the
   record. If you suspect *stale* packages are the cause,
