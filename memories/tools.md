@@ -1289,8 +1289,11 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   appearing there means it still works for readers via redirect — and
   shared text is factored into `data/reusables/<area>/<name>.md` includes,
   so grep for a `{% data reusables.<area>.<name> %}` tag and fetch that
-  file when a section's body looks like one include line. (Used on ai-config#601 to verify the
-  GitHub Actions billing and `jobs.<job_id>.if` citations offline.)
+  file when a section's body looks like one include line. (Used on
+  ai-config#601 to verify the GitHub Actions billing and `jobs.<job_id>.if`
+  citations offline.)
+
+## Claude Code on the web: CI monitoring toggles have no default setting
 - The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
   **Auto-fix CI & address comments** and **Auto-merge when ready**. There is
   **no account-, org-, repo-, or environment-level setting to default these on**
