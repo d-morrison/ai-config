@@ -2925,8 +2925,16 @@ review passes across two PRs before being caught — and only because a
 WRONG Copilot finding on a third PR prompted an empirical check
 (`grepl("a", NA)` is FALSE; it's `sub()`/`gsub()` that propagate NA — and
 the guard it justified was load-bearing for a different reason:
-`NA != ""` yields NA). When writing or reviewing a comment that states a
+`NA != ""` yields NA). Verified empirically in R 4.6.1
+(`grepl("a", NA)` → FALSE; `sub("a", "b", NA)` → NA;
+`gsub("a", "b", NA)` → NA; `NA != ""` → NA), and by `?grep` itself:
+"Both 'grep' and 'grepl' take missing values in 'x' as not matching a
+non-missing 'pattern'." When writing or reviewing a comment that states a
 language/library behavior, run the one-liner that checks it instead of
 trusting plausibility; when a reviewer finding is wrong, check whether the
 code's own documentation made the same wrong claim — the finding often
-mirrors prose it read in-context. (ucdavis/rampp #138/#111, 2026-07-17.)
+mirrors prose it read in-context. This same claim was later re-disputed
+by a reviewer citing a doc line that does not exist in `?grep` — a
+reminder that the empirical one-liner outranks any quoted documentation,
+including a reviewer's. (ucdavis/rampp #138/#111, 2026-07-17;
+re-verified on ai-config#611, 2026-07-18.)
