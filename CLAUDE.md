@@ -375,6 +375,23 @@ wants to be an instrument --- see the fragment for the procedure and tells.
 
 @shared/workflow/ultracode-merge-conflicts.md
 
+## Big-picture principles: KISS, DRY, DRW, modularity
+
+Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, highly functional, maintainable, extensible, human-readable, and reusable), each principle's statement, the specific rules and skills that operationalize it, and how the principles relate and trade off.
+When encoding a new coding/review rule, file it under the principle it serves (and add a new principle to the catalog when one emerges) rather than letting either float free.
+
+@shared/principles/README.md
+
+## Don't reinvent the wheel (DRW) — in dev and in review
+
+Before implementing a new function or feature, check that it hasn't already been done — in one of our own repos, or in a trustworthy external source we could depend on instead (base R, r-lib, tidyverse, a well-maintained CRAN package).
+Prefer forking and/or contributing to an existing external source over re-building the functionality from scratch.
+Apply this in review too: a hand-rolled equivalent of functionality that already exists is a review finding, the same weight as the other modularity checks.
+
+@shared/principles/dont-reinvent-wheel.md
+
+The `prefer-upstream` skill runs the search; the `prefer-packaged-functions` fragment below is the R-function special case; the `scout-peers` skill gates borrowed code by license.
+
 ## Coding: KISS is the umbrella principle
 
 Follow the KISS principle (keep it simple, stupid) in code and prose alike:

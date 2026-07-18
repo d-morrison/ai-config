@@ -18,3 +18,9 @@ hand-rolling a `.Random.seed` save/restore.
 This is a default, not an absolute rule. A tiny, dependency-free helper can
 beat pulling in a package, and sometimes nothing fits --- but look first, and
 prefer the standard, well-known way over a bespoke one.
+
+This is the R-function special case of the broader don't-reinvent-the-wheel
+principle --- see [`dont-reinvent-wheel`](../principles/dont-reinvent-wheel.md)
+for the general statement, which also covers whole features, the
+fork-or-contribute preference for close-but-not-exact matches, and the
+review-side application.
