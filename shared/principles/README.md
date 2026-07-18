@@ -30,8 +30,11 @@ We build code and prose that is:
   units, no accumulated complexity debt.
 - **Extensible** — new capability slots in without rework, because the
   units are composable and the abstractions are real ones.
-- **Human-readable** — a reader (including future us) can follow it
-  without archaeology; plain prose, idiomatic code.
+- **Human- and AI-readable** — a reader (including future us) can
+  follow it without archaeology: plain prose, idiomatic code.
+  Equally legible to AI agents: conventions stated where agents load
+  them (`CLAUDE.md`, shared fragments), greppable naming, and context
+  that doesn't depend on out-of-band knowledge.
 - **Reusable** — built once, usable across our repos; and conversely,
   built on what already exists rather than duplicated (DRW).
 
