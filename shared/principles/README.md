@@ -23,6 +23,9 @@ We build code and prose that is:
   reproducible, and cited so a reader can verify without re-deriving.
 - **Highly functional** — it does the whole job it exists for, not an
   approximation of it.
+- **Efficient** — economical with compute, memory, and people's time
+  (CI minutes, review rounds); performance tuning beyond that needs a
+  demonstrated hot spot, not speculation.
 - **Maintainable** — the next change is cheap: one home per fact, small
   units, no accumulated complexity debt.
 - **Extensible** — new capability slots in without rework, because the
