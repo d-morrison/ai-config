@@ -23,6 +23,9 @@ We build code and prose that is:
   reproducible, and cited so a reader can verify without re-deriving.
 - **Highly functional** — it does the whole job it exists for, not an
   approximation of it.
+- **Reliable** — behaves correctly on every run, not just the demo run:
+  edge cases handled, failures surfaced early and clearly rather than
+  silently swallowed, and no flaky tests or race-prone automation.
 - **Efficient** — economical with compute, memory, and people's time
   (CI minutes, review rounds); performance tuning beyond that needs a
   demonstrated hot spot, not speculation.

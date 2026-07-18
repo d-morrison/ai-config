@@ -377,7 +377,7 @@ wants to be an instrument --- see the fragment for the procedure and tells.
 
 ## Big-picture principles: KISS, DRY, DRW, modularity
 
-Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, highly functional, efficient, maintainable, extensible, human- and AI-readable, and reusable), each principle's statement, the specific rules and skills that operationalize it, and how the principles relate and trade off.
+Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, highly functional, reliable, efficient, maintainable, extensible, human- and AI-readable, and reusable), each principle's statement, the specific rules and skills that operationalize it, and how the principles relate and trade off.
 When encoding a new coding/review rule, file it under the principle it serves (and add a new principle to the catalog when one emerges) rather than leaving either the rule or the principle floating free.
 
 @shared/principles/README.md
