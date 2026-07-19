@@ -1414,6 +1414,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   comment's own reference to the failed `@claude` review job triggered a real agent
   run, which found and fixed a stale `CLAUDE.md` trigger-type claim before the PR
   merged.)
+  Prevention: in PR status/report comments, don't write the literal string
+  `@claude` unless you want a run — say "the Claude review" / "the Claude
+  bot" instead. Each accidental mention dispatches a full agent workflow run
+  (API spend) even when the comment asks for nothing. (Second instance on
+  ucdavis/rampp#111, 2026-07-18: a ready-for-merge report quoting "latest
+  @claude verdict" dispatched a run, which correctly no-op'd with a status
+  recap.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's
