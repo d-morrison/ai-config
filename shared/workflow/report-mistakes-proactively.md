@@ -20,15 +20,16 @@ ends; the issue is what makes it durable.
    Write it to stand alone: what is wrong, where (file/line or URL), why
    it's wrong, and — for a bug — a reprex where feasible, per
    [`issue-first`](issue-first.md).
-4. **Link it back.** Name the filed issue in the chat flag, and in a PR
-   comment when the mistake surfaced while working a PR, so the record is
-   discoverable from both sides.
+4. **Link it back.** Name the filed issue in chat — as a follow-up to
+   step 1's flag, or as one combined flag-plus-link message when filing is
+   quick — and in a PR comment when the mistake surfaced while working a
+   PR, so the record is discoverable from both sides.
 
 ## Where to file
 
 - **The repo where the mistake lives, when it's one we administrate** (our
   own repos and orgs — the same set [`dont-reinvent-wheel`](../principles/dont-reinvent-wheel.md)
-  lists as "our own repos", plus this corpus and `gha`).
+  lists as "our own repos").
 - **Never autonomously in an external repo.** When the mistake belongs to
   an upstream or third-party repo, follow
   [`upstream-issues`](upstream-issues.md): draft the report, file it in one
