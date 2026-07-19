@@ -2967,3 +2967,84 @@ by a reviewer citing a doc line that does not exist in `?grep` — a
 reminder that the empirical one-liner outranks any quoted documentation,
 including a reviewer's. (ucdavis/rampp #138/#111, 2026-07-17;
 re-verified on ai-config#611, 2026-07-18.)
+
+## Resuming a subagent mid-run tends to restart its long check, not resume it — verify the process directly before nudging it again
+
+When a background subagent pauses its own turn while a long-running local
+check (a full test/coverage suite, a build) is still executing in the
+background, sending it a follow-up message to "check the result" does NOT
+reliably make it poll the existing run — in practice it tends to just
+launch a FRESH invocation of the same check and wait on that one instead,
+discarding the earlier run's progress. This repeated three times in a row
+in one session (each resume costing ~4-6 minutes of the agent's own
+reasoning plus a full ~15-20 minute check re-run) before switching
+strategy. The subagent isn't lying about "waiting for the background run"
+— it genuinely doesn't have a reliable way to reattach to a shell command
+it started in an earlier turn, so a fresh nudge reads as "go check" and it
+takes the simplest interpretation: run it again.
+
+**Fix: verify the actual process state yourself before resuming, and when
+you do resume, hand the agent unambiguous evidence so it doesn't restart
+anything.** From the orchestrating session (not the subagent), check for a
+live process directly (`tasklist | grep -i <binary>` in Git Bash/Cygwin,
+`findstr /I <binary>` in native Windows CMD, `Get-Process -Name "..."` for
+start-time/age via PowerShell, or `pgrep`/`ps` elsewhere) and wait on it
+directly (`Wait-Process -Id <pid> -Timeout <seconds>` on Windows, or a bash
+poll loop) rather than just re-pinging the
+subagent and hoping. Once the process has genuinely exited (confirm via a
+fresh process check, not just elapsed time), resume the subagent with the
+specific evidence in hand ("I've confirmed no such process is running as
+of `<timestamp>`; the run already finished — do NOT start a new one, read
+its output and report") — this stops the same restart loop from recurring
+on the next resume. This is strictly better than either blindly trusting
+"still waiting" messages (which can repeat indefinitely) or arbitrarily
+capping the number of resumes (which risks cutting off a genuinely
+long-running check before it finishes).
+
+This generalizes beyond any one tool: the same pattern applies to any
+subagent orchestration where a delegated agent's own background command
+outlives its turn — verify state from the outside, don't just ask again.
+(Sparta `gii-mwc` session, 2026-07-19: hit on two independent subagents in
+the same session, one implementing a casualty-reflow feature and one a
+maneuver feature, each running the project's own `tools/check.sh` full
+suite — direct process verification via PowerShell resolved both.)
+
+## A diff-scoped local check silently no-ops on an empty/uncommitted diff — commit before running it, not after
+
+A repo's own pre-push check script can include steps that gate on `git diff
+<merge-base> HEAD` (a comment-citation scanner, a units-convention linter, a
+patch-coverage calculator) rather than the raw working tree. If you run such
+a script against **uncommitted** changes — reasoning "let me verify before I
+commit" — the diff-scoped steps compare HEAD against itself (or whatever the
+last commit was), see no changes, and silently report a clean pass ("no
+GDScript changes in this diff") without having examined your actual edits at
+all. Only the disk-based steps in the same invocation (a plain test run, a
+character-encoding scan of the working tree) give real signal; the
+diff-scoped ones are pure no-ops that LOOK identical to a genuine clean
+result in the printed summary.
+
+This cost one delegated subagent roughly two hours and most of a million
+tokens in one session: it wrote a real, working feature, then spent that
+time re-running the full check suite (each pass ~15-20 minutes) against its
+own uncommitted working tree, never noticing that three of the five
+requested checks were quietly checking nothing. The fix, once diagnosed,
+was mechanical — commit first, then re-run the checks against a real diff —
+but the diagnosis itself only happened after the orchestrating session
+noticed a suspicious mismatch (two full turns and heavy token spend, yet
+`git log`/`git status` showed no commits and no uncommitted changes) and
+asked the agent directly why there was no visible progress.
+
+**How to apply:** before trusting a "PASS" from any check step whose own
+description implies it scopes to a diff (a comment scanner, a
+units-convention check, coverage-of-new-lines), confirm there IS a
+non-empty diff for it to have scanned — commit (even a rough, uncommitted-
+but-final draft) before the verification pass, not after. When briefing a
+subagent to implement-and-verify a feature, say so explicitly: "commit your
+changes before running the diff-scoped checks (comments/units/patch_coverage
+in this repo's `tools/check.sh`), not after — they silently no-op against
+an empty diff." And when an orchestrating session sees a subagent burn
+much more wall-clock/tokens than its own diff would justify, checking
+`git log`/`git status` directly is a fast, decisive way to catch this class
+of problem rather than trusting the subagent's own narration that it's
+"still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
+`comments`/`units`/`patch_coverage` steps.)
