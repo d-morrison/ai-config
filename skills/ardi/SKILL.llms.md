@@ -1,0 +1,107 @@
+# ARDI — ARD + Iterate (single PR/MR)
+
+Drive one PR/MR to a clean review verdict by looping: read review → ARD every finding → push → post summary → re-request review → repeat until clean.
+
+## Procedure
+
+1.  **Identify and claim the PR/MR.** Use the current branch’s open MR, or the one the user specified. Post a brief claim comment (`COMMENT_PR`) so a parallel `@claude` CI run or another person doesn’t start a colliding session: `gh pr comment <N> --body "Driving this PR to clean — back off until done."` Skip if your most recent comment already says so. (`COMMENT_PR` and the other bracketed tokens below are abstract operation tokens — resolve to your model’s tool via [`tool-mappings.md`](../../tool-mappings.md).)
+
+2.  **Read the latest review.** Pull the most recent reviewer comment — the `@claude` bot’s, or a human’s. Don’t trust earlier cached verdicts — actively poll until a review appears that references the commit you just pushed, then read **that** one. `gh pr checks` (`PR_CHECKS`) / `glab ci list` going green is about **CI state**, not the review verdict — always parse the latest review *body* for findings.
+
+    - **GitHub:**
+
+      ``` bash
+      gh pr view <N> --json comments \
+        --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
+      ```
+
+      The reviewer’s bot login varies by setup — `gh pr view` reports it as `claude`, the REST API as `claude[bot]`, and some setups post as `github-actions[bot]`. `startswith("claude")` matches across `gh pr view` and `gh api`; broaden it if your reviewer posts under another login, or you’ll silently read `null` and false-pass. **This command captures the *bot* review only** — for a **human** reviewer (any login), gather comments with the `ard` skill’s step 1 (`gh pr view <N> --comments` plus the inline-thread API), which collects every reviewer’s comments regardless of login.
+
+    - **GitLab:** poll the MR notes (`sort=desc`) for a review note that references your latest short SHA before proceeding; if none has appeared, wait and retry rather than reading a stale verdict.
+
+    **If the latest review is a cancellation, the live verdict is stale — don’t re-do already-applied fixes.** A `cancel-in-progress` cancellation (on setups that cancel superseded review runs) means the last *complete* review’s findings may already have been fixed by a commit that landed after it, with the confirming re-review killed before it could post. Before treating those findings as outstanding work, **diff the current code against each one** to see what’s already addressed — then push only what’s genuinely needed and let a fresh review confirm. Re-applying fixes that are already in the tree wastes a round and muddies the diff. If *nothing* remains outstanding (every finding is already applied), don’t push an empty commit — skip to step 6 and re-request the review directly.
+
+3.  **ARD every finding — regardless of severity label.** “Not a blocker”, “minor”, “nit”, “optional”, “consider”, “if you want” are for the user’s prioritization, not a pass for the implementer. For each flagged item, choose exactly one:
+
+    - **Address** — fix it, commit.
+    - **Rebut** — explain why it’s correct (with evidence).
+    - **Defer** — file a follow-up issue, link it (use the `defer-issue` skill).
+
+4.  **Push fixes** (if any). If main moved ahead of the branch, sync it in *before* you push, so the next review evaluates against current main:
+
+    ``` bash
+    git fetch origin main
+    git log --oneline ..origin/main | head   # any commits? merge them in
+    git merge origin/main
+    ```
+
+    Resolve conflicts, run the repo’s pre-commit checks, then push. Don’t rebase/squash a published branch — a merge commit matches GitHub’s “Update branch” button. (The `sync-pr-branch` skill does exactly this.)
+
+    **Resolve inline threads as you go — including outdated ones.** After pushing fixes for a round, resolve the corresponding inline review threads immediately (`RESOLVE_REVIEW_THREAD`) via `mcp__github__pull_request_review_write` with `method: resolve_thread` and the `threadId` (returned by `READ_PR_REVIEW_COMMENTS` — `mcp__github__pull_request_read` with `method: get_review_comments`). Don’t wait until fully-clean to do thread housekeeping. For threads marked *outdated* in GitHub (the underlying code changed), confirm the fix is in the current tree, then resolve. Threads whose fixes are already in the tree but were never resolved still block the “fully clean” check — clear them as soon as you confirm the code is right.
+
+    **Opportunistic conflict sweep.** After pushing (or after any round where all findings were Rebutted/Deferred with no push), scan other open PRs in the same repo for merge conflicts:
+
+    ``` bash
+    gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS
+    ```
+
+    For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (see `resolve-conflicts`, “Verify before you act” — `UNKNOWN` can mean GitHub hasn’t finished computing yet, not that there’s no conflict), verify with `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38) before acting, then check claim status (most recent comment) and fix unclaimed ones — same cascade procedure as `post-merge` step 1.5 (claim → isolated worktree → fetch main → merge → `resolve-conflicts` skill → push → unclaim). A merge to `main` during your ARDI loop can create new conflicts in sibling PRs; clearing them while waiting for the next verdict is better than letting them pile up.
+
+5.  **Post the ARD summary** as a comment on the MR/PR (table format per the ARD skill).
+
+6.  **Re-request review — but don’t double-trigger.** How depends on whether this round pushed code:
+
+    - **Code was pushed:** the push **already** triggers the review (e.g. `claude-code-review` on `pull_request` sync). Do **NOT** also post “@claude review again”. On workflows with `concurrency: cancel-in-progress`, the push-triggered and mention-triggered runs **cancel each other**, leaving the latest commit with a canceled, never-posted verdict. Just wait for the push-triggered review.
+    - **No code pushed** (all Rebut/Defer): no push occurred, so nothing auto-triggers — you **must** explicitly re-request (post `@claude review`, or the forge’s equivalent). This is the only case where you post the mention.
+    - **Heads-up — some repos’ review workflow is *not* comment-triggered.** Some Quarto / R-package repos run `claude-code-review.yml` on `pull_request` (`opened, synchronize, ready_for_review, reopened`) and `workflow_dispatch` (input `pr_number`), not on an `@claude` comment. A new push auto-fires it; to force a fresh review on an existing PR **without a new commit**, prefer `workflow_dispatch` (`gh workflow run claude-code-review.yml -f pr_number=<N>`; without `gh`, the REST `.../actions/workflows/claude-code-review.yml/dispatches` endpoint, or your GitHub MCP workflow-dispatch tool). Closing+reopening the PR also works (fires `reopened`) but adds timeline noise. See [`memories/tools.md`](../../memories/tools.md).
+    - **Marking a draft ready seconds after its final push is another cancel-in-progress race** — the ready-event and synchronize runs fire a second apart and the cancellation can land on the newer (current-head) run; see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md) for the diagnosis and the `gh run rerun` remedy.
+    - **A review ends up canceled with no comment:** trigger one cleanly via `gh workflow run claude-review.yml -f pr_number=<N>` (input is `pr_number`) and don’t push/comment again until it posts. Note: a review run on a **bot-pushed** commit may show as `action_required` (gated) and never run — the explicit `workflow_dispatch` bypasses that.
+
+    **Don’t let the trigger phrase leak into prose.** The `issue_comment` trigger fires on the bare bot `@`-mention **anywhere** in a comment body — even inside a sentence saying you’re *not* triggering a review. In ARD summaries and status comments, refer to it obliquely (“re-request review”, “the review-trigger mention”) or split the tokens (e.g. `@ claude`, with a space, so the raw body never contains the contiguous handle); paste the literal `@`-mention only when you actually intend to dispatch. A stray mention spawns a run that cancels the push-triggered review on `cancel-in-progress` setups. On some mention-bot setups it also starts a session whose residual-commit sweep can churn the branch.
+
+    Then wait for the new verdict.
+
+    **While waiting, keep checking for merge conflicts.** Other PRs in this repo can become conflicting at any time (someone merges to `main` while the review runs). Poll every few minutes with `/loop` or a manual re-check:
+
+    ``` bash
+    gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments \
+      --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'   # LIST_PRS
+    ```
+
+    Verify each candidate with `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, “Verify before you act”) before claiming — `UNKNOWN` isn’t proof of a real conflict, and `CONFLICTING` can be stale if a sibling PR merged since GitHub last computed it. Claim and fix confirmed conflicts using the cascade procedure in `post-merge` step 1.5. Re-check after each resolution — new ones can appear at any time. This turns idle wait time into productive conflict prevention.
+
+7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows green **and** every inline thread resolved). Don’t exit on a clean review body alone.
+
+## Fix broken CI/workflows too
+
+If the PR’s CI checks are failing (not just the review), investigate and fix them as part of the ARDI loop — don’t declare “clean” with red CI. This includes:
+
+- **Workflow syntax errors** — fix them in this repo.
+- **Upstream template bugs** — if the failure is in a reusable workflow from a shared CI library (e.g., HACtions) or a GitHub Action, file an issue (or open a PR) upstream using the `sup` skill, then either pin a working version or apply a local workaround until the upstream fix lands.
+- **Flaky / infra failures** — retry once; if it persists, investigate root cause.
+
+The goal is green CI + clean review, not just clean review.
+
+## The bar: “fully clean”
+
+The loop ends only at **fully clean**, which means **both**:
+
+1.  **All CI workflows green** — every required check, not just the review job (see *Fix broken CI/workflows too* above).
+2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.”
+
+**Threads:** at fully-clean, every **inline** review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the `ard` skill, step 4b.)
+
+## Asymptotic-noise guard and deadlocks
+
+- **Deadlock on an item:** if you and the reviewer can’t reach consensus (your rebuttal didn’t convince them, and their re-raise didn’t convince you), **escalate to a human reviewer** for the final decision rather than looping or unilaterally overriding. Request `d-morrison` via the `request-pr-review` skill (or `gh pr edit <N> --add-reviewer d-morrison`), `@`-mention them in a comment summarizing the impasse, and surface the open item to the user.
+- **Asymptotic noise:** if after 3–4 rounds the reviewer keeps generating new nits (not converging), surface that to the user and ask whether to continue or accept.
+
+## On clean
+
+Post an unclaim comment (`COMMENT_PR` — `gh pr comment <N> --body "Done — PR is free."`) to unblock any parallel sessions that backed off in step 1.
+
+Always provide a clickable link to the MR/PR in the final message.
+
+Report the final verdict and round count. Don’t merge unless asked.
+
+Back to top
