@@ -5,6 +5,12 @@ of scope for your current task.
 An observation that lives only in the conversation is lost when the session
 ends; the issue is what makes it durable.
 
+"Any medium" is literal: it includes our AI-config files themselves
+(skills, shared fragments, memories, `CLAUDE.md`s), `gha` workflows and
+composite actions, and generated or derived artifacts (test snapshots,
+lockfiles, rendered output) — an infrastructure mistake is as trackable as
+a product one.
+
 ## The procedure
 
 1. **Say something in chat.** Surface the mistake as a one-line `⚠️ FLAG`

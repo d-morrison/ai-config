@@ -245,7 +245,7 @@ The `st` (Start Task) skill operationalizes this; `gi` (Grab Issue) is the path 
 
 @shared/workflow/report-mistakes-proactively.md
 
-The proactive counterpart to issue-first above: when a mistake shows up in any medium — code, prose, or anything else — even out of scope for the current task, flag it in chat (`⚠️ FLAG`) and file a tracking issue immediately, in a repo we administrate.
+The proactive counterpart to issue-first above: when a mistake shows up in any medium — code, prose, AI-config files, `gha` workflows, snapshot and other generated files, or anything else — even out of scope for the current task, flag it in chat (`⚠️ FLAG`) and file a tracking issue immediately, in a repo we administrate.
 Never file autonomously in an external repo; the upstream-issues ladder governs that case.
 The `defer-issue` skill covers the user-initiated version of this; this rule is self-initiated.
 
