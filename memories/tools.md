@@ -2986,10 +2986,11 @@ takes the simplest interpretation: run it again.
 **Fix: verify the actual process state yourself before resuming, and when
 you do resume, hand the agent unambiguous evidence so it doesn't restart
 anything.** From the orchestrating session (not the subagent), check for a
-live process directly (`tasklist | grep -i <binary>` on Windows,
-`Get-Process -Name "..."` for start-time/age via PowerShell, or `pgrep`/`ps`
-elsewhere) and wait on it directly (`Wait-Process -Id <pid> -Timeout
-<seconds>` on Windows, or a bash poll loop) rather than just re-pinging the
+live process directly (`tasklist | grep -i <binary>` in Git Bash/Cygwin,
+`findstr /I <binary>` in native Windows CMD, `Get-Process -Name "..."` for
+start-time/age via PowerShell, or `pgrep`/`ps` elsewhere) and wait on it
+directly (`Wait-Process -Id <pid> -Timeout <seconds>` on Windows, or a bash
+poll loop) rather than just re-pinging the
 subagent and hoping. Once the process has genuinely exited (confirm via a
 fresh process check, not just elapsed time), resume the subagent with the
 specific evidence in hand ("I've confirmed no such process is running as
