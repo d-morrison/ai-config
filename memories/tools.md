@@ -237,6 +237,26 @@
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
   NOT `issueNumber`. This is the opposite of `pull_request_read`. Reload the
   tool schema when unsure rather than guessing.
+- **`mcp__github__issue_write` with `method: "update"` and a `body` param
+  REPLACES the entire issue body -- it is not a way to post a comment.**
+  Passing a short claim string like "Working on this" as `body` silently
+  overwrites the full issue description with that one line; the call
+  succeeds with no warning, since `update` genuinely means "set these
+  fields," not "append." To post a comment, use
+  `mcp__github__add_issue_comment` instead -- never pass `body` to
+  `issue_write update` unless the actual intent is to edit/replace the
+  issue's description. The tool's own result echoes back the (now-wrong)
+  body, so the mistake is visible immediately if you check the response;
+  fix it with a follow-up `issue_write update` call restoring the original
+  text (keep a copy of the issue's existing body before editing it, since
+  the tool's response only echoes the new state, not the prior one --
+  or re-fetch it with `issue_read` `get` if you didn't), then post the
+  actual comment via `add_issue_comment`. (Hit claiming
+  `UCD-SERG/serocalculator#571` per the `claim-pr` convention: intended
+  `add_issue_comment` but called `issue_write update` with just the claim
+  text as `body`, clobbering the freshly-filed issue description --- caught
+  immediately from the echoed response and fixed with a restore-then-comment
+  pair of calls.)
 - **`mcp__github__create_or_update_file`'s `content` param is raw plain text,
   not base64** — despite the GitHub REST API's own `PUT /repos/.../contents/`
   endpoint taking base64, this MCP tool does the encoding for you. Passing an
