@@ -16,6 +16,8 @@ As soon as a learning worth saving shows up during a session — a corrected mis
 
 Still run UMS before `/clear` too, as a final catch-all for anything accumulated since the last proactive pass — but treat that as a backstop, not the trigger to wait for.
 
+**In a multi-PR/multi-issue session (GII-style), treat each PR merge as a concrete proactive-UMS checkpoint, not just "whenever a learning happens to surface."** "As learnings accumulate" is easy to defer indefinitely during heads-down execution across several PRs, since no single moment feels like the obvious trigger — a merge is a natural, unmissable boundary to pause at instead. (Corrected in a sparta `gii-mwc` session, 2026-07-19: three PRs merged back-to-back with real, worth-saving learnings at each one — a subagent-resume/restart pattern, a diff-scoped-check no-op, a stale benchmark baseline — and UMS never ran until the user asked why `/clear` was suggested with UMS still outstanding, which is exactly the failure mode this fragment exists to prevent.)
+
 ## Flag good moments to `/clear` in long-running sessions
 
 Proactively tell me — don't wait to be asked — when a session has grown long and hits a natural stopping point: a multi-step task or loop (GII/ARDIA/GIP, a research pass) just checkpointed or fully wrapped, a PR merged with no other in-flight work riding on this conversation, or an open question just got answered with nothing left pending.
@@ -241,6 +243,14 @@ That registry is the single source of truth for the gh/glab-to-MCP mapping in th
 
 The `st` (Start Task) skill operationalizes this; `gi` (Grab Issue) is the path when the issue already exists.
 
+## If you see something, say something — file an issue for every noticed mistake
+
+@shared/workflow/report-mistakes-proactively.md
+
+The proactive counterpart to issue-first above: when a mistake shows up in any medium — code, prose, AI-config files, `gha` workflows, snapshot and other generated files, or anything else — even out of scope for the current task, flag it in chat (`⚠️ FLAG`) and file a tracking issue immediately, in a repo we administrate.
+Never file autonomously in an external repo; the upstream-issues ladder governs that case.
+The `defer-issue` skill covers the user-initiated version of this; this rule is self-initiated.
+
 ## Tracking issues in upstream repos
 
 <!-- Shared with the lab manual; edit shared/workflow/upstream-issues.md, not here. -->
@@ -375,12 +385,54 @@ wants to be an instrument --- see the fragment for the procedure and tells.
 
 @shared/workflow/ultracode-merge-conflicts.md
 
+## Big-picture principles: KISS, DRY, DRW, modularity, and friends
+
+Our big-picture principles are cataloged centrally in `shared/principles/` — the overall dev goals they serve (code and prose that is valid and easy to externally validate, reproducible, highly functional, reliable, secure, efficient, maintainable, extensible, human- and AI-readable, and reusable), each principle's statement (KISS, YAGNI, DRY, DRW, modularity, least astonishment, purity, self-documenting code, fail fast, algorithmatize checks — plus the reduce/reuse/recycle lens over them), the specific rules and skills that operationalize each, and how the principles relate and trade off.
+When encoding a new coding/review rule, file it under the principle it serves (and add a new principle to the catalog when one emerges) rather than leaving either the rule or the principle floating free.
+
+@shared/principles/README.md
+
+## Don't reinvent the wheel (DRW) — in dev and in review
+
+Before implementing a new function or feature, check that it hasn't already been done — in one of our own repos, or in a trustworthy external source we could depend on instead (base R, r-lib, tidyverse, a well-maintained CRAN package).
+Prefer forking and/or contributing to an existing external source over re-building the functionality from scratch.
+Apply this in review too: a hand-rolled equivalent of functionality that already exists is a review finding, the same weight as any other standing review check.
+
+@shared/principles/dont-reinvent-wheel.md
+
+The `prefer-upstream` skill runs the search; the `prefer-packaged-functions` fragment below is the R-function special case; the `scout-peers` skill gates borrowed code by license.
+
+## Fail fast — no silent failures
+
+Detect bad state early and stop with a clear error rather than proceeding on it; never swallow an error into a silent fallback (a bare `except:`, a `tryCatch` returning `NULL`, a shell `|| true`), and make any genuinely wanted fallback explicit, bounded, and observable.
+Apply this in review too: error handling that hides failure is a review finding, the same weight as any other standing review check.
+
+@shared/principles/fail-fast.md
+
+## Coding: KISS is the umbrella principle
+
+Follow the KISS principle (keep it simple, stupid) in code and prose alike:
+prefer the simplest construct that does the job, and treat added complexity
+as a cost that needs justification.
+The specific coding rules below (avoid nesting, no map-site lambdas, prefer
+packaged functions, per-operation grouping, tidy code, one function per
+file, decompose to functions) and the review-side
+`challenge-unnecessary-complexity` policy are special cases of this
+principle — they exist because a bare "keep it simple" isn't concretely
+reviewable, but when a case arises that none of them covers, apply KISS
+directly rather than treating the enumerated rules as exhaustive.
+
 ## Coding style: avoid nesting; follow the lab manual
 
 Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding and collaboration conventions.
 
 <!-- Shared with the lab manual; edit shared/coding/avoid-nesting.md, not here. -->
 @shared/coding/avoid-nesting.md
+
+## Coding: single-indent multi-line function signatures
+
+<!-- Not yet shared with the lab manual; edit shared/coding/function-signature-style.md, not here. -->
+@shared/coding/function-signature-style.md
 
 ## Coding: prefer existing packaged functions over rolling your own
 

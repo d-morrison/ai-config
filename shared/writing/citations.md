@@ -24,6 +24,20 @@ misleading/out-of-context check catches that case; run it on content with
 citations alongside `purge-hallucinations` (which only checks the citation
 *exists*).
 
+**The authoring-side counterpart: write citations from a fresh fetch of the
+target, not from memory.** A remembered URL-plus-statement pairing goes
+stale when the docs reorganize: the citation can be historically correct
+(the page once said it) and still be a defect today, because doc sites move
+statements between pages while keeping old URLs resolving via redirects ---
+so the remembered URL lands on a live page that no longer contains the
+claim. Fetch the cited target at writing time and confirm the statement is
+actually there (when a docs site is blocked by a network policy, use its
+source repo instead --- see the `github/docs` bullet in `memories/tools.md`). (gha#272: the
+`GITHUB_TOKEN` no-retrigger claim was cited to GitHub's
+`automatic-token-authentication` page, whose successor no longer carries the
+statement --- it had moved to the "Triggering a workflow" article; caught by
+review.)
+
 **Mirroring a precedent's citation style doesn't guarantee the new citation
 holds.** When a new section is modeled on an existing one --- same structure,
 same "this is a global standing rule from X (see file Y)" closing sentence

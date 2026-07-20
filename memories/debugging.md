@@ -489,3 +489,85 @@ density-blind bug plus a real deployment-overlap consequence; caught only
 when the user asked which surface the PR targeted. The same bug pattern
 recurring in the same file also means the pattern rule applied: fix every
 occurrence, not the flagged one.)
+
+## GitHub Pages serves stale content / new paths 404: check gh-pages size vs the 1 GB limit
+
+- Signature: the site's existing pages load fine but a **newly added path
+  404s**, even though the file verifiably exists at the `gh-pages` tip.
+  Pages serves the last **successful build**, not the branch — when builds
+  start failing, the domain silently freezes on an old deployment, so old
+  content works, new content (including a just-merged fix deployed to the
+  site root) never goes live, and nothing in the repo's checks goes red
+  (deploy actions only push the branch; `wait-for-pages-deployment` is
+  often disabled on private repos).
+- First check: total site size against Pages' hard **1 GB** limit.
+  The Pages build API (`/repos/<o>/<r>/pages*`) is blocked by the CCR agent
+  proxy even for in-scope repos, so measure from git instead:
+  `git fetch origin gh-pages --depth 1`, then
+  `git ls-tree -r -l origin/gh-pages | awk '{s+=$4} END {printf "%.2f GB\n", s/1e9}'`
+  (and the same `awk` keyed on path prefix for a per-directory breakdown).
+- Usual cause in our repos: accumulated `pr-preview/<pr-N>/` directories —
+  a rendered docs-site preview runs ~40+ MB, so a couple dozen closed PRs'
+  previews reach 1 GB on their own.
+- Fix: dispatch the repo's `cleanup-pr-previews` workflow (the
+  `d-morrison/gha` reusable: deletes previews for non-open PRs, then
+  orphan-squashes `gh-pages` under `compact-history`) rather than waiting
+  for its weekly Sunday cron — the limit can be crossed mid-week. Re-measure
+  after, and expect the next successful Pages build to pick up everything
+  that accumulated on the branch while builds were failing.
+- (ucdavis/bcs, 2026-07-18: 24 preview dirs put `gh-pages` at 1.05 GB; PR
+  #375's preview and the post-merge production deploy both sat unserved on
+  the branch while the URL 404'd; one dispatch dropped the tree to 0.09 GB.)
+
+## Dead rdrr.io self-links on an altdoc docs site = downlit couldn't discover the site
+
+- Signature: an altdoc/Quarto docs site (`code-link: true`) links the
+  documented package's **own** functions to
+  `https://rdrr.io/pkg/<pkg>/man/<topic>.html`, all 404 — rdrr.io only
+  indexes CRAN packages.
+- Mechanism: downlit resolves a package's site by fetching
+  `<DESCRIPTION URL>/pkgdown.yml` at render time
+  (`remote_metadata_slow()`); on a **private** GitHub Pages repo that URL
+  404s publicly (the real site sits behind auth on an obfuscated
+  `*.pages.github.io` domain), so downlit falls back to rdrr.io for every
+  self-reference. Deliberate downlit behavior (r-lib/downlit#106, #195) —
+  not worth forking downlit over, since even its local-package hooks emit
+  pkgdown's `reference/` layout, not altdoc's `man/`.
+- Fixed generally in the `d-morrison/altdoc` fork (altdoc#25/#26): the
+  post-render rewrite pass converts the documented package's rdrr-form
+  self-links to page-relative `man/` links, alongside the recorded-site-URL
+  form it already handled. A consumer repo just needs its renv altdoc pin at
+  or past that merge (`fb551ef`, 2026-07-18) and a re-render.
+  (ucdavis/bcs#374/#375: ~140 dead links on one article page.)
+
+## A test suite that only covers the exact-multiple/round-number case can miss an asymmetry bug entirely
+
+- Signature: a function distributes `n` items across `k` groups (soldiers
+  across formation files, rows across pages, work across shards) and has a
+  "leftover redistribution" rule for when `n` isn't an exact multiple of
+  `k` — e.g. centre the remainder, round-robin it, pad the last group.
+  A hand-written implementation of that rule can be silently biased (always
+  piling the remainder onto the same edge/first group) while every test
+  only ever exercises `n` values that ARE exact multiples of `k`, so the
+  remainder-handling code path never actually runs under test at all.
+- Mechanism: it's natural to write the "happy path" test first (round
+  numbers, no remainder) and consider the function covered once that
+  passes, especially when the remainder case feels like a minor edge case
+  rather than the interesting part of the function. But the remainder case
+  is exactly where an asymmetry bug lives — the exact-multiple case can't
+  distinguish a correctly-centred remainder from a raw
+  first-N/last-N assignment, because there IS no remainder to place.
+- Fix/check: for any "distribute `n` across `k` with a leftover rule"
+  function, deliberately test at least one `n` where `n % k != 0`, and
+  assert on WHERE the leftover lands (centred, not banked onto one edge),
+  not just that every item got assigned somewhere. If reviewing someone
+  else's tests for such a function, check the specific `n`/`k` values used
+  and confirm at least one is a genuine non-exact-multiple case before
+  trusting the coverage. (Sparta#995/#997, 2026-07-19: a formation-grid
+  reflow function's tests all happened to use soldier counts that were
+  exact multiples of the file count, so a real bug — a raw `i % files`
+  assignment piling every reshuffled unit's leftover rank onto the same
+  edge column instead of centring it, making a fresh, zero-casualty spawn
+  visibly lopsided for almost every real unit in the game — passed the
+  full test suite undetected until an independent review deliberately
+  picked a non-exact-multiple count to check.)

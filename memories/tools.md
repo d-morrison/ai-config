@@ -67,6 +67,21 @@
   session on gha#176: two consecutive genuine — not raced — stub reviews on the
   pinned dogfooding checker, each requiring an empty retrigger commit after the
   dispatched `/review` came back clean.)
+  - **The empty retrigger commit must be pushed by a HUMAN actor — a
+    bot-pushed one is silently skipped.** `claude-code-review.yml` (and the
+    review-triggering workflows generally) gate on a bot-actor `if:` filter
+    (e.g. `github.actor != 'github-actions[bot]'` / not a `[bot]` login), so a
+    `synchronize` event fired by a bot-authored push — e.g. the `@claude`
+    agent itself doing `git commit --allow-empty` on the PR — is *filtered
+    out* and never starts the gating `claude-review` run. The check stays red
+    with no new run at all (not even a stub), which reads like nothing
+    happened. Push the empty commit from a human actor (your own session's
+    push) to get the gating run to fire. So when you ask the `@claude` agent
+    to "retrigger the review," it can't self-serve this: its own empty commit
+    is skipped, and it separately 403s on `rerun_failed_jobs` (below) — a
+    human-actor push is the only lever left. (serocalculator#564, 2026-07-20:
+    the agent's bot-pushed empty commit didn't fire the review; a
+    human-actor empty commit did.)
 - **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
   but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
   is a field in the Claude Code SDK's runtime execution-output JSON, not
@@ -92,6 +107,19 @@
   external sources, matching `gha`'s own `CLAUDE.md` "Fact-check prose
   against domain knowledge and external sources" review guideline) is left
   as an open decision in gha#189, not decided unilaterally.
+  - **The stub can recur across *unrelated* PRs in the same session/window,
+    not just repeatedly on one diff — treat a cluster as a
+    session/service-level condition, not N independent diff bugs.** When two
+    different PRs in different repos both stub within the same span
+    (serocalculator#564 and gha#276, 2026-07-20, both stubbed in the same
+    session), don't burn a re-trigger round on each hoping the *diff* is at
+    fault: post the self-review (per `CLAUDE.md`'s "Do the review yourself
+    when the @claude workflow doesn't produce a verdict"), hand the required
+    `require-review` check to the human, and stop re-triggering after one
+    round. Both the app token and the `@claude` agent 403 on
+    `rerun_failed_jobs` (below), so neither you nor the agent can force a
+    fresh gating run without a human-actor push — which the human is doing
+    anyway when they decide to merge past the stubbed check.
 - **Diagnosing which tool call was denied requires the reusable workflow's
   `show-full-output` input turned on for a re-run — the job log alone won't
   show it.** Same underlying hidden-output behavior as the
@@ -155,6 +183,18 @@
   explicit go-ahead first if the workflow has a real side effect (e.g. a
   gh-pages deploy step not gated to `main`) — dispatching isn't just a status
   check in that case, it's a live action.
+- **A sustained run of `503` responses across every endpoint (not just PR
+  reads) is a GitHub-side outage, not a per-call glitch — confirm with the
+  cheapest possible probe, then stop retrying and back off.** When
+  `pull_request_read`/`list_pull_requests` both 503, don't keep hammering the
+  same call — call `mcp__github__get_me` (no arguments, smallest possible
+  request) once: if that 503s too, it's a broad outage rather than something
+  scoped to one repo, PR, or endpoint, and no amount of retrying the original
+  call will help. Report the outage plainly, use whatever was last confirmed
+  before it started, and re-check later rather than looping. (ai-config#583/
+  #585 session, 2026-07-16: `pull_request_read`, `list_pull_requests`, and
+  `get_me` all 503'd for roughly an hour across several separate check-ins;
+  confirmed via `get_me` that it wasn't scoped to the two PRs being watched.)
 - `mcp__github__pull_request_read` `method:` enum: `get` · `get_diff` (PR
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
@@ -710,9 +750,13 @@ by #328.)
     `RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/__linux__/noble/latest`
     was sitting right there in the workflow file the whole time.
   - d-morrison GitHub-only pkgs → r-universe `https://d-morrison.r-universe.dev`
-    has `dobson`, `regress3d` (and more), but NOT `rmb` — `rmb` is unavailable
-    anywhere reachable, so it blocks full renders of any chapter that does
-    `rmb::hers` / `library(rmb)`.
+    has `dobson`, `regress3d` (and more), but NOT `rmb` — and `rmb`'s standard
+    install channels (tarball/clone via `github.com`/`codeload`, plus
+    `api.github.com` for renv/pak) are proxy-blocked when the repo isn't in
+    session scope. That no longer blocks renders of chapters that do
+    `rmb::hers` / `library(rmb)`: see the "Scope-blocked GitHub repo, but you
+    only need its *datasets*" bullet in this file for the data-only rebuild
+    from `raw.githubusercontent.com` (which stays reachable).
   - `igraph` needs system lib `libglpk.so.40` → `apt-get install -y libglpk40`
     (you're root in these containers). Needed to run `data-raw/callout-graph.R`.
   - The install routes through **pak** (renv's pak backend), which is ATOMIC:
@@ -866,6 +910,23 @@ by #328.)
   `d-morrison/altdoc@recursive-qmd-search`; fixing the consumer's docs build
   required altdoc PR #27 into that branch, and altdoc PR #28 caught the branch
   up to main's jarl-clean state, 2026-07.)
+- **Scope-blocked GitHub repo, but you only need its *datasets* (an R data
+  package like `rmb`): rebuild a minimal data-only package from
+  `raw.githubusercontent.com`.** The proxy's repo-scope check blocks
+  `github.com`/`codeload.github.com` tarball downloads and `git clone` for
+  out-of-scope repos (the same 403 as the renv bullet above), and `add_repo`
+  needs an explicit user request — but `raw.githubusercontent.com` serves the
+  same repo's files fine. When the consuming render/tests only use
+  `pkg::dataset` objects (grep for `pkg::` to enumerate them), fetch
+  `DESCRIPTION` plus just the needed `data/*.rda` files at the lockfile's
+  pinned `RemoteSha`, write a stub comment-only `NAMESPACE`, and
+  `R CMD INSTALL` the result: `LazyData: true` makes `pkg::dataset` resolve
+  via lazydata with no exports and no `R/` sources needed. Don't copy the
+  real `NAMESPACE` — its `export()` lines reference functions whose `R/`
+  sources you didn't fetch, and the install fails on the missing objects.
+  (rme#1047/#1048: unblocked `quarto render` of a chapter needing
+  `rmb::hers` after the tarball 403'd; the older installed `rmb` predated
+  the dataset.)
 - **A stale `00LOCK-*` directory silently blocks every subsequent
   `install.packages()` call**, left behind when an earlier install was
   interrupted (killed mid-run, or two `install.packages()` calls racing —
@@ -927,6 +988,26 @@ by #328.)
   checks LaTeX/markdown/cross-refs for edits that don't touch R chunks without
   provisioning the whole dep tree. Grep the rendered HTML for `?@` / `>??<` to
   catch broken cross-refs.
+- **Asset paths in `{{< include >}}`-ed fragments resolve against the
+  master/including file's directory** in the outputs that matter (observed on
+  wai, Quarto 1.9.38, `type: website`; distinct from *include-path*
+  resolution in the bullet above --- that one is about where a nested
+  `{{< include >}}` directive finds its target file, this one is about where
+  a relative image/asset path inside a fragment resolves at render time): the rendered master HTML page emits
+  the `img src` as written, relative to the master page's output location,
+  and the lualatex PDF pass compiles from the master file's directory. So an
+  image referenced as `assets/images/x.png` inside
+  `chapters/ai-tools/fragment.qmd`, included by `chapters/master.qmd`, must
+  live at `chapters/assets/images/x.png` — project root and fragment-dir
+  placements both fail (HTML silently as a placeholder; PDF hard with
+  lualatex `file not found`). Verify empirically: check where `quarto render`
+  copies the asset under `_site/`, and read the failing `.log`'s own path
+  (`chapters/master.log` ⇒ compile cwd was `chapters/`). Related trap that
+  let a wrong fix merge green: wai's PR `preview` job renders HTML only,
+  while `publish.yml` on main renders all formats — the PR's checks never
+  exercised the PDF pass, so main stayed red after merge. Identify which CI
+  job actually runs the failing format before trusting a green PR.
+  (wai#13 → #15 → #16, 2026-07-16.)
 - Chapters that `{{< include r-config.qmd >}}` pull the full ~40-pkg set
   (dobson, survminer, gtsummary, …); chapters that only include macros.qmd are
   light (math-prereqs needs just plotly).
@@ -1225,17 +1306,42 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
     instead — the spellcheck parses markdown and skips code spans, and
     backticking a `pkg::fn()`/identifier/message is the correct markdown style
     anyway. Cleaner than both rewording and a WORDLIST add. (ucdavis/ettbc#30.)
-- A `docs-check` / `R-check-docs` job runs `roxygenize()` then `git diff --exit-code
-  man/`, so a roxygen edit with a stale `man/*.Rd` fails. **When you can't run
-  `devtools::document()` (no R toolchain, e.g. a cloud/web session), you can still
-  edit roxygen docs**: hand-edit the matching `man/*.Rd` in lockstep, as long as the
-  change doesn't re-wrap lines — a **same-length word swap** (e.g. `biannual`→`biennial`,
-  both 8 chars) is ideal because roxygen copies description/param/return prose verbatim
-  into the `.Rd` and `roxygenize()` is deterministic, so an identical edit to both
-  reproduces exactly what `document()` would generate and `docs-check` passes. Watch
-  `@inheritParams`/`@inherit`: editing one function's roxygen also changes the `.Rd` of
-  every function that inherits that text, so grep `man/` for the changed sentence and
-  edit those `.Rd` files too. (Used on ucdavis/bcs#225 across 13 R files + ~18 man pages.)
+  - **Cross-repo issue refs and bare domain names are spellable-token sources
+    too, not just code identifiers.** The checker splits on punctuation, so an
+    unbackticked `d-morrison/altdoc#26` flags `morrison`, and `rdrr.io` flags
+    both `rdrr` and `io`. Backtick them (existing NEWS entries already backtick
+    cross-repo refs, so this matches convention), and reword genuinely-prose
+    words instead of listing them (`undiscoverable` → "cannot discover").
+    (ucdavis/bcs#375: four tokens flagged from one NEWS entry, fixed with zero
+    WORDLIST additions.)
+- **Regenerating `man/*.Rd`: run `devtools::document()` (or
+  `roxygen2::roxygenise()`) --- never hand-edit the `.Rd`.** A `docs-check` /
+  `R-check-docs` job runs `roxygenize()` then `git diff --exit-code man/`, so a
+  roxygen edit with a stale `man/*.Rd` fails; the fix is to regenerate, not to
+  hand-write the `.Rd`. **If the toolchain looks missing** (a bare-R cloud/web
+  sandbox with no `devtools`/`roxygen2`), install it ---
+  `install.packages("roxygen2")` plus the package's own `Imports` so
+  `pkgload::load_all()` can load it --- and run `roxygen2::roxygenise()`
+  (`devtools::document()` if `devtools` is also installed). Treat "no R
+  toolchain" as a resource to obtain (growth-mindset), not a reason to edit
+  `.Rd` by hand. (Corrected 2026-07-20: on serocalculator#562 I hand-edited two
+  `.Rd` files instead of installing roxygen2 and running `document()`; the
+  user's rule is to run the generator.)
+- **Hand-editing `.Rd` is a genuine last resort, only when installing the
+  toolchain truly fails** (offline / locked-down sandbox). If forced to it, keep
+  the edit safe: roxygen copies `@format`/`@param`/`@return` prose verbatim into
+  the `.Rd` and `roxygenize()` is deterministic, so a **same-length word swap**
+  (e.g. `biannual`->`biennial`) reproduces exactly what `document()` would
+  generate. For a larger edit, first verify the transform empirically --- diff an
+  existing `\item{}` block's roxygen source (stripped of its `#'` prefix) against
+  its rendered `.Rd` lines; roxygen with `markdown = TRUE` preserves line breaks
+  and converts `` `x` `` to `\code{x}` (and `**bold**` to `\strong{}`, `[text](url)`
+  to `\href{}{}`) --- then validate your hand-edit with a scripted
+  transform-and-diff (`` perl -pe 's/`([^`]+)`/\\code{$1}/g' `` piped to `diff`
+  against the `.Rd`). Watch `@inheritParams`/`@inherit`: editing one function's
+  roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
+  changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
+  toolchain over all of this.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
@@ -1293,6 +1399,30 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   site: `jarl.etiennebacher.com/reference/config-file` 403'd, but
   `WebSearch` surfaced `docs/reference/config-file.md` as the underlying
   file, which raw-fetched with the full field-by-field config reference.)
+- **`docs.github.com` itself can be blocked outright by a remote session's
+  network policy** (proxy 403 on every page, and `api.github.com` too —
+  both at the curl/WebFetch level; the GitHub MCP tools route through
+  their own server and keep working), not
+  just anti-scraping — but `raw.githubusercontent.com` stays reachable, and
+  GitHub's docs are built from the public `github/docs` repo. Verify a docs
+  claim or URL against that source instead: page content lives under
+  `content/<area>/.../<slug>.md`, but live-URL paths do NOT map 1:1 to
+  source paths (the docs get reorganized; e.g.
+  `/billing/managing-billing-for-your-products/...` now lives at
+  `content/billing/concepts/product-billing/github-actions.md`). If a page
+  was moved, its frontmatter carries a `redirect_from:` list — an old URL
+  appearing there means it still works for readers via redirect — and
+  shared text is factored into `data/reusables/<area>/<name>.md` includes,
+  so grep for a `{% data reusables.<area>.<name> %}` tag and fetch that
+  file when a section's body looks like one include line. Version-gated
+  (`{% ifversion <flag> %}`) passages resolve via `data/features/<flag>.yml`:
+  its `versions:` block (e.g. `fpt: '*'`) says which plans the gated text
+  applies to: `fpt` = Free/Pro/Team on github.com, `ghec` = GitHub Enterprise
+  Cloud (also github.com-hosted), `ghes` = GitHub Enterprise Server
+  (self-hosted). (Used on
+  ai-config#601 to verify the GitHub Actions billing and `jobs.<job_id>.if`
+  citations offline, and on gha#272 to confirm the approval-required
+  `pull_request`-runs exception applies to github.com.)
 
 ## Claude Code on the web: CI monitoring toggles have no default setting
 - The per-PR "CI monitoring" panel (web session sidebar) shows two toggles,
@@ -1380,6 +1510,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   comment's own reference to the failed `@claude` review job triggered a real agent
   run, which found and fixed a stale `CLAUDE.md` trigger-type claim before the PR
   merged.)
+  Prevention: in PR status/report comments, don't write the literal string
+  `@claude` unless you want a run — say "the Claude review" / "the Claude
+  bot" instead. Each accidental mention dispatches a full agent workflow run
+  (API spend) even when the comment asks for nothing. (Second instance on
+  ucdavis/rampp#111, 2026-07-18: a ready-for-merge report quoting "latest
+  @claude verdict" dispatched a run, which correctly no-op'd with a status
+  recap.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's
@@ -1801,21 +1938,49 @@ common patterns.
     MCP tools or (in scoped sessions) the API. Hand the flip to the user, and
     order it safely: deploy to `gh-pages` FIRST (populates root; live site keeps
     serving the old artifact), THEN flip the source, or the root 404s in between.
+- **`lint-changed-lines.yml@v2`** (gha#276) — runs `lintr` on changed R files but
+  filters the reported lints down to only the lines a PR **adds or modifies**,
+  so a repo can adopt or tighten a lint rule *incrementally*: new and edited
+  code must comply while untouched legacy code is left alone. This is the
+  answer to "a linter version bump (e.g. lintr 3.4.0's `indentation_linter`
+  now matching the current tidyverse single-indent style) flags the whole
+  repo" — don't disable the linter or reformat everything at once; adopt via
+  this workflow and let the rule migrate file-by-file as code is touched.
+  Caller stub is ~8 lines (`uses: d-morrison/gha/.github/workflows/lint-changed-lines.yml@v2`).
+  Implementation detail worth knowing when debugging false negatives: the
+  reusable workflow checks out `github.event.pull_request.head.sha` (NOT the
+  default `refs/pull/N/merge` ref) so on-disk line numbers match the
+  head-relative line numbers in the GitHub "list PR files" `patch` field.
+  serocalculator#564 is the first consumer.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
-- **gha's major tag auto-slides on EVERY merge to main** (`slide-major-tag.yml`,
-  r-lib/actions style): it re-points the major derived from the latest `vX.Y.Z`
-  tag to HEAD. So a **breaking** change that merges to main **silently slides
-  `v1` onto the breaking commit** — `@v1` consumers get it on their next run.
-  Cutting a breaking release therefore needs TWO tag moves, run BEFORE the next
-  main merge (else the slide re-breaks v1): (1) force `v1` back to the last
-  non-breaking commit (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`),
-  and (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
+- **gha's major tag slides ONLY on a manual `workflow_dispatch`, NOT on every
+  merge to main** (`slide-major-tag.yml`; `on: workflow_dispatch:` only, gated
+  `if: github.ref == 'refs/heads/main'`). It re-points the major derived from
+  the latest `vX.Y.Z` tag to HEAD when dispatched. So merging a fix or a new
+  capability to `main` does **not** roll it out to `@v1`/`@v2` consumers on its
+  own — the tag stays put until someone runs the workflow. This is deliberate
+  (the workflow's own header comment: "the slide is a deliberate manual step,
+  not an automatic reaction to every push" — merge, optionally canary a
+  consumer at `@main`, then dispatch once confident). Practical consequence:
+  after merging a PR that adds/fixes a capability, a consumer PR that calls it
+  at `@v2` keeps running the **pre-merge** tagged version until the human
+  dispatches the slide — the same "can't self-verify before merge" bootstrapping
+  gap gha's own `CLAUDE.md` describes, but persisting *after* merge too until
+  the dispatch. (serocalculator#564 called gha's new `lint-changed-lines.yml@v2`
+  right after gha#276 merged; it only picked up the real capability once the
+  user manually dispatched `slide-major-tag`.)
+  Because the slide is manual, a **breaking** change merging to main does NOT
+  silently slide `v1` onto it — but when you DO dispatch after a breaking
+  change, guard it with TWO tag moves so the slide doesn't break `v1`:
+  (1) force `v1` back to the last non-breaking commit
+  (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`), and
+  (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
   semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
   MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
   Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
-- **Despite the auto-slide above, `@v1` can still trail `main` in practice —
+- **`@v1` can trail `main` in practice —
   verify against the TAGGED file, not `main` or `examples/`.** Observed:
   `main`'s `claude.yml` / `claude-code-review.yml` both declare an
   `ANTHROPIC_API_KEY` secret in their `workflow_call: secrets:` block, and
@@ -1931,6 +2096,20 @@ common patterns.
   (`method: "get_workflow_job"` — confirmed in the live schema alongside
   `get_workflow_run`) for the per-step `conclusion` breakdown to know which step
   actually failed and roughly where in the log to look. (ai-config#403.)
+- **`get_job_logs` hard-caps the returned content at 5,000 lines regardless of
+  `tail_lines`** — a `tail_lines: 100000` request on a 14,503-line job log still
+  returns only the last 5,000 lines. The result's `original_length` field
+  reports the full line count, so compute the offset: returned line `i`
+  (0-based) is full-log line `original_length - 5000 + i + 1`. There's no way
+  to fetch the head through this tool, and the REST fallback
+  (`/actions/jobs/{id}/logs`) needs `api.github.com`, which the agent proxy
+  blocks in these sessions. A GitHub UI deep link `#step:N:L` means line `L`
+  counted *within step N* (step N's first log line is 1), so locating it in
+  the tail needs the step's start line — estimable from the earlier steps'
+  typical output volume when the head is unfetchable, and worth
+  cross-checking against whether a plausible warning/error actually sits at
+  the computed spot. (rme#1047: located a docx TeX-math warning this way at
+  `#step:10:8366` of a truncated publish log.)
 - **`claude-review` failing with "Skipping action due to workflow validation…
   must have identical content to the default branch" is NOT always the
   documented self-mod-skip or stale-`@v1`-tag drift.** Before assuming either,
@@ -1995,6 +2174,29 @@ not block `claude-review`.)
 
 ## GitHub Actions workflow authoring gotchas
 
+- **A bare `devtools::test()` in a gating CI step never fails the job.**
+  `devtools::test()`'s signature sets `stop_on_failure = FALSE` and forwards
+  it to `testthat::test_local()` — overriding `test_local()`'s own `TRUE`
+  default (verified in `r-lib/devtools` `R/test.R`) — so under
+  `shell: Rscript {0}` the step exits 0 even when tests fail. Pass
+  `stop_on_failure = TRUE` explicitly in any step whose purpose is to gate.
+  (gha#272: `update-snapshots.yml`'s post-`snapshot_accept()` verification
+  re-run shipped this way for the capability's whole released life — a
+  still-failing suite exited 0 and the broken snapshots were committed and
+  pushed anyway; surfaced only when the new reference page's description of
+  the gate was fact-checked against the implementation in review.)
+- **`GITHUB_TOKEN`-driven pushes create no workflow runs — except on PRs,
+  where the runs now appear in an approval-required state instead of not at
+  all.** The long-standing no-retrigger rule has a github.com-live exception
+  for `pull_request` `opened`/`synchronize`/`reopened`: when a workflow's
+  `GITHUB_TOKEN` creates or updates a PR, the resulting runs are created
+  approval-required, and a write-access user starts them via "Approve
+  workflows to run" in the PR merge box. A `GITHUB_TOKEN` push to a plain
+  branch still triggers nothing. (Verified via the `github/docs` source:
+  `data/reusables/actions/actions-do-not-trigger-workflows.md`, gated by
+  `data/features/actions-github-token-pull-request-approval.yml` with
+  `fpt: '*'` and `ghec: '*'` (GHES commented out). Used on gha#272's
+  update-snapshots reference page.)
 - **Local composite refs (`./`) in reusable workflows resolve relative to the HOST repo.**
   A `workflow_call` reusable workflow living in gha cannot call `./path/to/composite` from
   a CALLER's repo — `./` always resolves to gha itself. Workaround: pass the data the
@@ -2330,10 +2532,25 @@ plain wakeup tool, if present) for a one-off self check-in instead; reserve
 availability above for the fallback (`CronCreate`) if it disappears.
 (ai-config#455/gha#216, 2026-07-03.)
 
+**Correction: the validation error is about a missing `prompt`, not about
+being outside `/loop` per se.** In a remote/web session, calling
+`ScheduleWakeup` with an explicit, self-written `prompt` string (not the
+`/loop` sentinel) for a plain ad-hoc check-in did **not** throw
+`InputValidationError` --- it accepted the call, returned a confirmed clock
+time, and the wakeup fired as scheduled. This is a workable fallback when
+`send_later` itself is unavailable or repeatedly failing (e.g. an MCP server
+mid-reconnect) --- supply your own full prompt text rather than assuming the
+tool rejects non-`/loop` calls outright. (ai-config#583/#585 session,
+2026-07-16: `mcp__Claude_Code_Remote__send_later` failed three times in a row
+with "Tool permission stream closed before response received"; `ScheduleWakeup`
+with a custom prompt worked immediately both times it was tried as a fallback.)
+
 ## In a plain local Claude Code session, `ScheduleWakeup` can accept an ad-hoc call but silently fail to fire
 
 This is a DIFFERENT harness/observation from the entry above (that one is the `Claude Code Remote`
-MCP server's `ScheduleWakeup`, which rejects a non-`/loop` call outright with a validation error).
+MCP server's `ScheduleWakeup`; the "rejects non-`/loop` calls with a validation error" characterization
+was corrected by the block above it --- the error is about a missing `prompt`, not the non-`/loop`
+context, and a supplied `prompt` works fine there).
 In a plain local Claude Code CLI session, `ScheduleWakeup` accepted an arbitrary one-off
 `{delaySeconds, prompt, reason}` call with no error and returned a confirmed clock time (e.g.
 "Next wakeup scheduled for 08:27:00") -- but the scheduled re-invocation never actually fired.
@@ -2770,3 +2987,212 @@ these.
     shell to release the slice. Force-release with `scancel $SLURM_JOB_ID`; check
     for a forgotten slice with `squeue -u $USER` (job name `claude`/`codex`).
   - Full usage/exit doc: `~/.config/tui-alloc/README.md`.
+
+## quarto-actions/setup with tinytex — two shared-runner failure signatures (win, 2026-07)
+
+- **`ERROR: Unable to determine latest release for rstudio/tinytex-releases / 403 - Forbidden`**
+  during "Set up Quarto": `quarto install tinytex`'s latest-release lookup is an
+  unauthenticated GitHub API call, and shared runners intermittently rate-limit it.
+  Fix: `env: GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` (or `${{ github.token }}`) on the
+  setup step. gha's `preview` composite already does this; `quarto-publish` gap filed
+  as gha#270. (Broke ucdavis/win's preview/publish repeatedly; fixed in win PR #69.)
+- **`renv::restore()` fails compiling `curl` ("libcurl was not found")** on
+  current ubuntu runner images: the R build libs are no longer preinstalled, so any
+  renv repo needs an explicit apt step. Working set for a typical
+  curl/openssl/xml2/gert/V8/igraph/ragg/textshaping lockfile:
+  `libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libnode-dev libglpk-dev
+  libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev
+  libtiff5-dev libjpeg-dev` (gha's `preview` reusable workflow's default
+  `apt-packages` list is the fuller reference).
+- Diagnostic order matters: the TinyTeX 403 masks the renv gap — fixing the first
+  failure surfaces the second on the next run, so read each new failed run's log
+  fresh instead of assuming the prior diagnosis still applies.
+
+## gha claude-code-review — self-modification skip guard (not a stub)
+
+A PR that **edits `.github/workflows/claude-code-review.yml` itself** gets a
+fast (~9s) green `review / claude-review` job that posts **no review**: the
+reusable workflow detects the self-edit and deliberately skips
+("PR #N edits .github/workflows/claude-code-review.yml — skipping self-review
+(the action 401s on workflow validation until merged; it runs after merge)"),
+and `require-review` tolerates the skip. Don't treat this as a stub review or
+re-trigger it — read the job log for the `::notice::` line to confirm, post a
+manual self-review with a verdict instead (per the do-the-review-yourself
+rule), and note the first genuine end-to-end run happens on the next PR after
+merge. (ucdavis/win#75, 2026-07-16 — the migration PR itself could never be
+bot-reviewed; win#69's post-merge sync then ran the migrated workflow live and
+it worked, including `check-latex-macros` and the cost report.)
+
+## WORDLIST alphabetization — Copilot vs claude reviewer collation conflict
+
+`spelling`-package WORDLISTs sort in **two case-grouped blocks**
+(uppercase-leading then lowercase-leading), each **case-insensitively** sorted
+within the block — the order `spelling::update_wordlist()` emits under a UTF-8
+locale. The claude reviewer enforces that order; Copilot sometimes flags the
+same lines wanting ASCII/byte order (e.g. claiming `PP` must precede
+`Positivity`). Don't flip-flop between the two: keep the case-insensitive
+convention, verify each block **separately** with `sort -f -c`
+(e.g. `grep '^[A-Z]' inst/WORDLIST | sort -f -c` for the uppercase block —
+a whole-file `sort -f -c` false-fails at the block boundary even when the
+file is correctly formatted), and rebut Copilot citing the
+tool's own emitted order — the rebuttal stuck (Copilot dropped it on
+subsequent rounds; ucdavis/win#69, 2026-07-16).
+
+## Remote-session push proxy: branch DELETION silently no-ops
+
+The Claude Code web/remote push proxy accepts branch pushes but silently
+refuses branch deletions: `git push origin --delete <branch>` (and the
+`:refs/heads/<branch>` refspec form) reports `Everything up-to-date` (or
+`fatal: the remote end hung up unexpectedly` followed by up-to-date) while
+`git ls-remote` confirms the remote branch still exists. There is no error
+that says "deletion not allowed" — the success-looking output is the trap.
+Verify with `git ls-remote --heads origin <branch>` after any deletion
+attempt, and when it survives, hand the deletion to the user (GitHub UI
+Branches page) instead of retrying. (ucdavis/rampp, 2026-07-17: deleting the
+orphaned `claude/split-survival` stack branch per its tracking issue no-op'd
+twice; delegated to d-morrison in the issue-close comment.)
+
+## Stacked-PR series: a closed base PR strands the whole downstream stack silently
+
+When PRs are stacked A <- B <- C and the PR for A is closed unmerged (even
+accidentally — check `closed_by`/`closed_at` via the API rather than
+inferring a mechanism), B and C keep "working": their reviews run, they go
+clean, and they MERGE — but into A's head branch, which no longer has any
+open PR to main. Nothing errors; the reviewed content is simply stranded on
+an orphaned branch. Detection: (1) closed-unmerged PRs whose head branches
+still exist with commits not on main (`git rev-list --count
+origin/main..origin/<branch>`), (2) branches with substantial unmerged
+content and no PR at all (never-PR'd forgotten work is found the same way).
+Recovery that worked well: **re-cut the stranded reviewed content from the
+stack's tip** (it embodies every review round's refinements — taking the
+older pre-review copies from elsewhere re-litigates settled findings), layer
+any later improvements from other branches on top, and verify per function
+that the re-cut supersedes the stranded branch before deleting it
+(`git grep -E '^[\w.]+ <- function'` on both refs, set-difference the
+names). Also verify the close reason from the API record: the earlier
+"auto-closed when its base branch was deleted" explanation was disproven by
+`closed_at` predating the base's merge by 8 days — `closed_by: <user>` with
+no comment was the actual record. (ucdavis/rampp #127 closed 2026-07-05;
+PRs #128/#129 merged into the orphaned `claude/split-survival`; re-cut
+as #136–#138, 2026-07-16..17.)
+
+## CI failure on untouched files: diff the installed-package line between last-green and first-red logs
+
+When a CI job fails on files the PR never touched, suspect toolchain drift
+and make the version comparison the FIRST diagnostic: fetch the last
+passing run's job log and the failing run's, and grep each for the suspect
+package's sessioninfo line. A dev-tracking install (`extra-packages:
+r-lib/lintr` in r-lib/actions) makes this a recurring class, and the log
+line pins it exactly. Two 2026-07 instances in ucdavis/rampp: (1) `lint`
+red on 31 untouched files — `lintr 3.3.0.9000 Github(@4579471)` green on
+07-13 vs `3.4.0.9000 Github(@178882f)` red on 07-16 (lintr 3.4.0 dropped
+double-indent formals, r-lib/lintr#2830); fixed by restyling, since the new
+style is valid under both versions. (2) `macos-latest` R CMD check red
+repo-wide — flextable 0.10.0 hit CRAN with no macOS binary yet, forcing a
+source build that needs XQuartz libs the runner lacks; self-healed when the
+binary appeared ~7h later, so the right move was retry-later
+(`rerun_failed_jobs`), not a code change.
+
+## Fact-check code comments' factual claims — a false one can survive many review rounds
+
+A code comment asserting a checkable fact ("grepl() returns NA for NA
+input") is prose the review bots tend to accept as given, especially when
+it justifies adjacent defensive code: this one survived ~10 independent
+review passes across two PRs before being caught — and only because a
+WRONG Copilot finding on a third PR prompted an empirical check
+(`grepl("a", NA)` is FALSE; it's `sub()`/`gsub()` that propagate NA — and
+the guard it justified was load-bearing for a different reason:
+`NA != ""` yields NA). Verified empirically in R 4.6.1
+(`grepl("a", NA)` → FALSE; `sub("a", "b", NA)` → NA;
+`gsub("a", "b", NA)` → NA; `NA != ""` → NA), and by `?grep` itself:
+"Both 'grep' and 'grepl' take missing values in 'x' as not matching a
+non-missing 'pattern'." When writing or reviewing a comment that states a
+language/library behavior, run the one-liner that checks it instead of
+trusting plausibility; when a reviewer finding is wrong, check whether the
+code's own documentation made the same wrong claim — the finding often
+mirrors prose it read in-context. This same claim was later re-disputed
+by a reviewer citing a doc line that does not exist in `?grep` — a
+reminder that the empirical one-liner outranks any quoted documentation,
+including a reviewer's. (ucdavis/rampp #138/#111, 2026-07-17;
+re-verified on ai-config#611, 2026-07-18.)
+
+## Resuming a subagent mid-run tends to restart its long check, not resume it — verify the process directly before nudging it again
+
+When a background subagent pauses its own turn while a long-running local
+check (a full test/coverage suite, a build) is still executing in the
+background, sending it a follow-up message to "check the result" does NOT
+reliably make it poll the existing run — in practice it tends to just
+launch a FRESH invocation of the same check and wait on that one instead,
+discarding the earlier run's progress. This repeated three times in a row
+in one session (each resume costing ~4-6 minutes of the agent's own
+reasoning plus a full ~15-20 minute check re-run) before switching
+strategy. The subagent isn't lying about "waiting for the background run"
+— it genuinely doesn't have a reliable way to reattach to a shell command
+it started in an earlier turn, so a fresh nudge reads as "go check" and it
+takes the simplest interpretation: run it again.
+
+**Fix: verify the actual process state yourself before resuming, and when
+you do resume, hand the agent unambiguous evidence so it doesn't restart
+anything.** From the orchestrating session (not the subagent), check for a
+live process directly (`tasklist | grep -i <binary>` in Git Bash/Cygwin,
+`findstr /I <binary>` in native Windows CMD, `Get-Process -Name "..."` for
+start-time/age via PowerShell, or `pgrep`/`ps` elsewhere) and wait on it
+directly (`Wait-Process -Id <pid> -Timeout <seconds>` on Windows, or a bash
+poll loop) rather than just re-pinging the
+subagent and hoping. Once the process has genuinely exited (confirm via a
+fresh process check, not just elapsed time), resume the subagent with the
+specific evidence in hand ("I've confirmed no such process is running as
+of `<timestamp>`; the run already finished — do NOT start a new one, read
+its output and report") — this stops the same restart loop from recurring
+on the next resume. This is strictly better than either blindly trusting
+"still waiting" messages (which can repeat indefinitely) or arbitrarily
+capping the number of resumes (which risks cutting off a genuinely
+long-running check before it finishes).
+
+This generalizes beyond any one tool: the same pattern applies to any
+subagent orchestration where a delegated agent's own background command
+outlives its turn — verify state from the outside, don't just ask again.
+(Sparta `gii-mwc` session, 2026-07-19: hit on two independent subagents in
+the same session, one implementing a casualty-reflow feature and one a
+maneuver feature, each running the project's own `tools/check.sh` full
+suite — direct process verification via PowerShell resolved both.)
+
+## A diff-scoped local check silently no-ops on an empty/uncommitted diff — commit before running it, not after
+
+A repo's own pre-push check script can include steps that gate on `git diff
+<merge-base> HEAD` (a comment-citation scanner, a units-convention linter, a
+patch-coverage calculator) rather than the raw working tree. If you run such
+a script against **uncommitted** changes — reasoning "let me verify before I
+commit" — the diff-scoped steps compare HEAD against itself (or whatever the
+last commit was), see no changes, and silently report a clean pass ("no
+GDScript changes in this diff") without having examined your actual edits at
+all. Only the disk-based steps in the same invocation (a plain test run, a
+character-encoding scan of the working tree) give real signal; the
+diff-scoped ones are pure no-ops that LOOK identical to a genuine clean
+result in the printed summary.
+
+This cost one delegated subagent roughly two hours and most of a million
+tokens in one session: it wrote a real, working feature, then spent that
+time re-running the full check suite (each pass ~15-20 minutes) against its
+own uncommitted working tree, never noticing that three of the five
+requested checks were quietly checking nothing. The fix, once diagnosed,
+was mechanical — commit first, then re-run the checks against a real diff —
+but the diagnosis itself only happened after the orchestrating session
+noticed a suspicious mismatch (two full turns and heavy token spend, yet
+`git log`/`git status` showed no commits and no uncommitted changes) and
+asked the agent directly why there was no visible progress.
+
+**How to apply:** before trusting a "PASS" from any check step whose own
+description implies it scopes to a diff (a comment scanner, a
+units-convention check, coverage-of-new-lines), confirm there IS a
+non-empty diff for it to have scanned — commit (even a rough, uncommitted-
+but-final draft) before the verification pass, not after. When briefing a
+subagent to implement-and-verify a feature, say so explicitly: "commit your
+changes before running the diff-scoped checks (comments/units/patch_coverage
+in this repo's `tools/check.sh`), not after — they silently no-op against
+an empty diff." And when an orchestrating session sees a subagent burn
+much more wall-clock/tokens than its own diff would justify, checking
+`git log`/`git status` directly is a fast, decisive way to catch this class
+of problem rather than trusting the subagent's own narration that it's
+"still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
+`comments`/`units`/`patch_coverage` steps.)

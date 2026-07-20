@@ -21,6 +21,25 @@ This is easy to miss because the failure mode is often silent or delayed:
   asset --- a relative image path isn't a spelling word or an external link,
   so none of the usual content-quality CI catches this gap.
 
+**Copying the assets to a plausible destination is not enough --- the
+destination must match the renderer's actual resolution base.** For Quarto
+`{{< include >}}` fragments, a relative image path written inside a fragment
+resolves against the **master/including file's** directory in the outputs
+that matter --- the rendered master HTML page and the LaTeX PDF compile ---
+not the fragment's own directory, and not the project root. Verify
+empirically instead of reasoning from the source layout: check where the
+renderer copies the asset into the output tree (`_site/...`), and for a PDF
+failure read the `.log` file's own path (e.g. `chapters/coding-agents.log`
+means lualatex ran from `chapters/`, so `assets/images/...` must exist
+under `chapters/`).
+
+**Also check which CI job exercises the failing format before trusting a
+green PR.** A PR preview job often renders HTML only, while the deploy job
+on the default branch renders all formats --- so a PR fixing a PDF-only
+failure can pass every one of its checks without ever testing the fix. Say
+so in the PR body, and verify the deploy job actually goes green after
+merge before calling the fix done.
+
 When *removing* content instead of moving it, check the inverse case too:
 does an asset referenced only by the removed content become orphaned? Decide
 whether to delete it along with the text, or leave a note for a follow-up
@@ -54,4 +73,7 @@ copied the `assets/images/` directory itself. HTML rendering silently
 degraded to missing-image placeholders and every other CI check passed, so
 the gap wasn't caught until the PDF render --- part of the same "render all
 formats" publish job, just slower to reach --- hard-failed with a LaTeX
-"file not found" error. Fixed as a follow-up, wai#13.)
+"file not found" error. Two follow-up fixes put the images at plausible but
+wrong locations --- wai#13 at the project root, wai#15 next to the fragments
+--- and each merged green because the PR checks render HTML only; the
+correct, master-file-relative fix landed in wai#16.)
