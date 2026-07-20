@@ -1242,7 +1242,8 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   hand-write the `.Rd`. **If the toolchain looks missing** (a bare-R cloud/web
   sandbox with no `devtools`/`roxygen2`), install it ---
   `install.packages("roxygen2")` plus the package's own `Imports` so
-  `pkgload::load_all()` can load it --- and run `document()`. Treat "no R
+  `pkgload::load_all()` can load it --- and run `roxygen2::roxygenise()`
+  (`devtools::document()` if `devtools` is also installed). Treat "no R
   toolchain" as a resource to obtain (growth-mindset), not a reason to edit
   `.Rd` by hand. (Corrected 2026-07-20: on serocalculator#562 I hand-edited two
   `.Rd` files instead of installing roxygen2 and running `document()`; the
