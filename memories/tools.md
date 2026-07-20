@@ -67,6 +67,21 @@
   session on gha#176: two consecutive genuine — not raced — stub reviews on the
   pinned dogfooding checker, each requiring an empty retrigger commit after the
   dispatched `/review` came back clean.)
+  - **The empty retrigger commit must be pushed by a HUMAN actor — a
+    bot-pushed one is silently skipped.** `claude-code-review.yml` (and the
+    review-triggering workflows generally) gate on a bot-actor `if:` filter
+    (e.g. `github.actor != 'github-actions[bot]'` / not a `[bot]` login), so a
+    `synchronize` event fired by a bot-authored push — e.g. the `@claude`
+    agent itself doing `git commit --allow-empty` on the PR — is *filtered
+    out* and never starts the gating `claude-review` run. The check stays red
+    with no new run at all (not even a stub), which reads like nothing
+    happened. Push the empty commit from a human actor (your own session's
+    push) to get the gating run to fire. So when you ask the `@claude` agent
+    to "retrigger the review," it can't self-serve this: its own empty commit
+    is skipped, and it separately 403s on `rerun_failed_jobs` (below) — a
+    human-actor push is the only lever left. (serocalculator#564, 2026-07-20:
+    the agent's bot-pushed empty commit didn't fire the review; a
+    human-actor empty commit did.)
 - **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
   but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
   is a field in the Claude Code SDK's runtime execution-output JSON, not
@@ -92,6 +107,19 @@
   external sources, matching `gha`'s own `CLAUDE.md` "Fact-check prose
   against domain knowledge and external sources" review guideline) is left
   as an open decision in gha#189, not decided unilaterally.
+  - **The stub can recur across *unrelated* PRs in the same session/window,
+    not just repeatedly on one diff — treat a cluster as a
+    session/service-level condition, not N independent diff bugs.** When two
+    different PRs in different repos both stub within the same span
+    (serocalculator#564 and gha#276, 2026-07-20, both on head `97de285`-era
+    reviews), don't burn a re-trigger round on each hoping the *diff* is at
+    fault: post the self-review (per `CLAUDE.md`'s "Do the review yourself
+    when the @claude workflow doesn't produce a verdict"), hand the required
+    `require-review` check to the human, and stop re-triggering after one
+    round. Both the app token and the `@claude` agent 403 on
+    `rerun_failed_jobs` (below), so neither you nor the agent can force a
+    fresh gating run without a human-actor push — which the human is doing
+    anyway when they decide to merge past the stubbed check.
 - **Diagnosing which tool call was denied requires the reusable workflow's
   `show-full-output` input turned on for a re-run — the job log alone won't
   show it.** Same underlying hidden-output behavior as the
@@ -1859,21 +1887,50 @@ common patterns.
     MCP tools or (in scoped sessions) the API. Hand the flip to the user, and
     order it safely: deploy to `gh-pages` FIRST (populates root; live site keeps
     serving the old artifact), THEN flip the source, or the root 404s in between.
+- **`lint-changed-lines.yml@v2`** (gha#276) — runs `lintr` on changed R files but
+  filters the reported lints down to only the lines a PR **adds or modifies**,
+  so a repo can adopt or tighten a lint rule *incrementally*: new and edited
+  code must comply while untouched legacy code is left alone. This is the
+  answer to "a linter version bump (e.g. lintr 3.4.0's `indentation_linter`
+  now matching the current tidyverse single-indent style) flags the whole
+  repo" — don't disable the linter or reformat everything at once; adopt via
+  this workflow and let the rule migrate file-by-file as code is touched.
+  Caller stub is ~8 lines (`uses: d-morrison/gha/.github/workflows/lint-changed-lines.yml@v2`).
+  Implementation detail worth knowing when debugging false negatives: the
+  reusable workflow checks out `github.event.pull_request.head.sha` (NOT the
+  default `refs/pull/N/merge` ref) so on-disk line numbers match the
+  head-relative line numbers in the GitHub "list PR files" `patch` field.
+  serocalculator#564 is the first consumer.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
-- **gha's major tag auto-slides on EVERY merge to main** (`slide-major-tag.yml`,
-  r-lib/actions style): it re-points the major derived from the latest `vX.Y.Z`
-  tag to HEAD. So a **breaking** change that merges to main **silently slides
-  `v1` onto the breaking commit** — `@v1` consumers get it on their next run.
-  Cutting a breaking release therefore needs TWO tag moves, run BEFORE the next
-  main merge (else the slide re-breaks v1): (1) force `v1` back to the last
-  non-breaking commit (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`),
-  and (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
+- **gha's major tag slides ONLY on a manual `workflow_dispatch`, NOT on every
+  merge to main** (`slide-major-tag.yml`; `on: workflow_dispatch:` only, gated
+  `if: github.ref == 'refs/heads/main'`). It re-points the major derived from
+  the latest `vX.Y.Z` tag to HEAD when dispatched. So merging a fix or a new
+  capability to `main` does **not** roll it out to `@v1`/`@v2` consumers on its
+  own — the tag stays put until someone runs the workflow. This is deliberate
+  (the workflow's own header comment: "the slide is a deliberate manual step,
+  not an automatic reaction to every push" — merge, optionally canary a
+  consumer at `@main`, then dispatch once confident). Practical consequence:
+  after merging a PR that adds/fixes a capability, a consumer PR that calls it
+  at `@v2` keeps running the **pre-merge** tagged version until the human
+  dispatches the slide — the same "can't self-verify before merge" bootstrapping
+  gap gha's own `CLAUDE.md` describes, but persisting *after* merge too until
+  the dispatch. (serocalculator#564 called gha's new `lint-changed-lines.yml@v2`
+  right after gha#276 merged; it only picked up the real capability once the
+  user manually dispatched `slide-major-tag` — run
+  `github.com/d-morrison/gha/actions/runs/...`.)
+  Because the slide is manual, a **breaking** change merging to main does NOT
+  silently slide `v1` onto it — but when you DO dispatch after a breaking
+  change, guard it with TWO tag moves so the slide doesn't break `v1`:
+  (1) force `v1` back to the last non-breaking commit
+  (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`), and
+  (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
   semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
   MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
   Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
-- **Despite the auto-slide above, `@v1` can still trail `main` in practice —
+- **`@v1` can trail `main` in practice —
   verify against the TAGGED file, not `main` or `examples/`.** Observed:
   `main`'s `claude.yml` / `claude-code-review.yml` both declare an
   `ANTHROPIC_API_KEY` secret in their `workflow_call: secrets:` block, and
