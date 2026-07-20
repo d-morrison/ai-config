@@ -912,6 +912,24 @@ by #328.)
   chain — `add_repo` unblock, `compare` showing the branch fully merged,
   then two more hardcoded copies of the same stale ref found in
   `docs.yaml` and `copilot-setup-steps.yml`.)
+- **When a consumer repo pins a dependency to an upstream *feature branch*
+  (not a tag/default branch) and the consumer's CI is failing because of a bug
+  *in* that dependency, the fix must land ON that pinned branch --- open a PR
+  into it, don't just fix the consumer.** The consumer's CI reinstalls the
+  branch's tip on the next run (pak/`setup-r-dependencies` resolves
+  `owner/repo@branch` to its current SHA at install time), so once the upstream
+  fix merges into the pinned branch, re-triggering the consumer's failing job
+  picks it up with no change to the consumer at all. Corollary: a stale feature
+  branch can fail its *own* repo's newer CI (e.g. a `jarl-check` on
+  pre-existing `unused_function` warnings) purely from being behind `main` ---
+  don't debug those as new defects; catch the branch up to `main`'s
+  already-clean state (mirror what `main` already did: add the `jarl.toml`,
+  remove the dead functions `main` removed). Verify main's tree with
+  `git show origin/main:<file>` reads rather than a shallow-clone range diff
+  (see below). (UCD-SERG/serocalculator#503 pinned
+  `d-morrison/altdoc@recursive-qmd-search`; fixing the consumer's docs build
+  required altdoc PR #27 into that branch, and altdoc PR #28 caught the branch
+  up to main's jarl-clean state, 2026-07.)
 - **Scope-blocked GitHub repo, but you only need its *datasets* (an R data
   package like `rmb`): rebuild a minimal data-only package from
   `raw.githubusercontent.com`.** The proxy's repo-scope check blocks
@@ -1207,6 +1225,39 @@ from `xmlparsedata` on the matched node, so line span is `line2 - line1 + 1`.
 documented pattern (see `vignette("creating_linters", package = "lintr")`).
 Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 `lms::function_length_linter()` in UCD-SERG/lab-manual#381.)
+
+## air (R formatter) vs lintr's `indentation_linter` — keep `indent-width` aligned
+
+- `air`'s `air.toml` `[format]` table has a configurable `indent-width`
+  (default 2). Air indents a multi-line function *definition*'s arguments by a
+  *single* level (one `indent-width`), NOT the styler/tidyverse-style-guide
+  "double indent". lintr's default `indentation_linter` also expects a single
+  2-space indent there. So air's default output and lintr agree at 2 --- but a
+  repo that sets `air.toml` `indent-width = 4` (as `d-morrison/altdoc` does)
+  will have air-formatted signatures that a *different* repo's lintr (default
+  2) rejects.
+- **Practical failure:** old styler-formatted code (4-space double-indent
+  function signatures) sitting in a repo whose `.lintr` uses
+  `lintr::linters_with_defaults()` passes CI only until a PR *touches* that
+  file --- `lint-changed-files` then flags `[indentation_linter] Indentation
+  should be 2 spaces but is 4 spaces`. Fix by reformatting the signature to a
+  single 2-space indent (de-indent the arg block by 2), and set/confirm
+  `air.toml` `indent-width = 2` so a future `air format` keeps it lintr-clean.
+  (Only the *first* mis-indented line of a block is reported; de-indent the
+  whole signature block, not just the flagged line, or the next line flags on
+  the next run.) (UCD-SERG/serocalculator#503, 2026-07.)
+- **A `lint-changed-files`-style workflow that calls `gh::gh()` (or any
+  GitHub API) to list the PR's changed files can flake with `403 API rate
+  limit exceeded for <IP>` when it runs *unauthenticated*.** The R `gh`
+  package reads its token from `GITHUB_PAT` then `GITHUB_TOKEN`; if the
+  workflow sets `env: GITHUB_PAT: ${{ secrets.GITHUB_PAT }}` and that custom
+  secret isn't configured in the repo, the value is empty and the call runs
+  anonymously (low shared-IP rate limit). Fix:
+  `GITHUB_PAT: ${{ secrets.GITHUB_PAT || secrets.GITHUB_TOKEN }}` --- falls
+  back to the always-present built-in token (`permissions: read-all` already
+  covers the read). It's a flake (passes most runs), so a red
+  `lint-changed-files` with no R lint output and a `gh_error`/`rate limit`
+  traceback is this, not a code problem. (UCD-SERG/serocalculator#503, 2026-07.)
 
 ## jarl (Just Another R Linter) — `jarl.toml` fields lag the published docs
 - `jarl` (`etiennebacher/jarl`, installed via `etiennebacher/setup-jarl@vX` in
@@ -2636,6 +2687,23 @@ open questions.
 A pinned submodule SHA that isn't `ai-config`'s current tip is still
 fetchable with `git fetch --depth 1 origin <sha>` --- GitHub's shallow-clone
 protocol supports fetching any reachable commit, not just branch tips.
+
+**A `--depth 1` shallow clone gives a bogus merge-base, so a `git log A..B`
+/ `git diff A..B` range against another branch shows the *entire* repo as
+added.** In a shallow clone the histories of two branches share no common
+ancestor git can see (it's truncated), so `origin/main` and a feature branch
+appear fully disjoint --- `git log <branch>..origin/main --stat` reports
+hundreds of files / thousands of insertions that aren't real, and a real
+`git merge origin/main` produces spurious mass conflicts. Don't run
+merge/diff-vs-main operations on a shallow clone. What *is* reliable on a
+shallow clone: single-tree reads (`git show origin/main:<file>`,
+`git cat-file`) --- they read the fetched tip's tree directly, no merge-base
+needed. `git fetch --depth N origin <branch>` deepens enough history to make
+a real merge-base available if you must merge. (Hit resolving
+UCD-SERG/serocalculator#503's altdoc chain, 2026-07: a `--depth 1` altdoc
+clone made `recursive-qmd-search..origin/main` show 272 files / 14k
+insertions, all an artifact; the `git show origin/main:R/utils.R` tree reads
+in the same session were accurate.)
 
 A fine-grained `SUBMODULES_TOKEN` scoped to a private submodule (e.g. rme's
 `latex-macros`) also authenticates a newly-added *public* submodule, since
