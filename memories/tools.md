@@ -2304,7 +2304,9 @@ not block `claude-review`.)
   every `man/*.Rd` file under one ungrouped "Reference" section, internal
   topics (`@keywords internal`) included.** Confirmed by reading
   `d-morrison/altdoc`'s `R/settings_quarto_website.R`,
-  `.sidebar_vignettes_quarto_website()`: it globs `man/*.qmd` under the
+  `.sidebar_vignettes_quarto_website()` (despite the vignettes-only-sounding
+  name, this one function handles both the `$ALTDOC_VIGNETTE_BLOCK` and
+  `$ALTDOC_MAN_BLOCK` placeholders): it globs `man/*.qmd` under the
   render output and turns the whole list into `section: Reference` with no
   filtering or title-based grouping, unlike pkgdown's `reference:` block in
   `_pkgdown.yml`. To reproduce a pkgdown-style grouped index/sidebar (with
