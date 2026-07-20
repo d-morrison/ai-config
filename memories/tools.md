@@ -1246,6 +1246,23 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   `@inheritParams`/`@inherit`: editing one function's roxygen also changes the `.Rd` of
   every function that inherits that text, so grep `man/` for the changed sentence and
   edit those `.Rd` files too. (Used on ucdavis/bcs#225 across 13 R files + ~18 man pages.)
+- **A bigger edit than a same-length swap is also safe --- if you first verify
+  roxygen's transform empirically, then replicate it exactly.** roxygen (with
+  `Roxygen: list(markdown = TRUE)`) does two deterministic things to
+  `@format`/`\describe` prose: it preserves the source line breaks verbatim (no
+  reflow to 80 cols) and converts markdown inline code `` `x` `` to `\code{x}`.
+  Confirm both on the actual package before trusting them: diff an existing
+  multi-line `\item{}` block's roxygen source (strip the `#'   ` prefix) against
+  its rendered `man/*.Rd` lines --- a line-for-line match proves the transform is
+  verbatim, so you can safely mirror a brand-new multi-line block the same way.
+  Then validate your hand-edit with a scripted transform-and-diff before
+  committing: strip the `#'` prefix from your new roxygen, convert each
+  backtick-delimited span to `\code{...}` with a `perl -pe` substitution, and
+  `diff` the result against the `.Rd` you wrote --- an empty diff means it
+  matches what `document()` would generate. (serocalculator#562: rewrote a whole multi-line
+  `\item{eps}` block across two `.Rd` files this way in a bare-R sandbox with
+  neither devtools nor roxygen2 installable; a scripted line-for-line check, the
+  `@claude` review, and `docs-check` all confirmed the match on the first push.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
