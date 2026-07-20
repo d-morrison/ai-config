@@ -2299,6 +2299,27 @@ not block `claude-review`.)
   it without evaluating), matching the existing convention (e.g.
   `R/calc_ip_weights.R`). Runnable examples with self-contained synthetic data
   are fine and do execute. (Hit on ucdavis/bcs#238.)
+- **altdoc's `$ALTDOC_MAN_BLOCK` sidebar placeholder has no pkgdown-style
+  `reference:` grouping and no internal-topic exclusion --- it flat-lists
+  every `man/*.Rd` file under one ungrouped "Reference" section, internal
+  topics (`@keywords internal`) included.** Confirmed by reading
+  `d-morrison/altdoc`'s `R/settings_quarto_website.R`,
+  `.sidebar_vignettes_quarto_website()` (despite the vignettes-only-sounding
+  name, this one function handles both the `$ALTDOC_VIGNETTE_BLOCK` and
+  `$ALTDOC_MAN_BLOCK` placeholders): it globs `man/*.qmd` under the
+  render output and turns the whole list into `section: Reference` with no
+  filtering or title-based grouping, unlike pkgdown's `reference:` block in
+  `_pkgdown.yml`. To reproduce a pkgdown-style grouped index/sidebar (with
+  internal topics hidden) on an altdoc site today, hand-author the grouping
+  directly in the consuming repo's `altdoc/quarto_website.yml` --- replace
+  the `$ALTDOC_MAN_BLOCK` placeholder with explicit `section:`/`contents:`
+  entries pointing at `man/<topic>.qmd` (the same file-path convention the
+  navbar's "Documentation" entry already uses for
+  `man/serocalculator-package.qmd`), and simply omit any `.Rd` topic marked
+  `\keyword{internal}`. When migrating from an old pkgdown site, its retired
+  `_pkgdown.yml` (recoverable from git history even after deletion) is
+  usually still an accurate source for the grouping and titles to reproduce.
+  (`UCD-SERG/serocalculator#575`.)
 - **`NEWS.md` section headers need a blank line before them.** A bullet that ends
   immediately before a `## Next-section` heading (no blank line) can cause
   `utils::news()` to misparse adjacent sections. Always leave one blank line
