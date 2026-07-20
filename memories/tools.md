@@ -111,8 +111,8 @@
     not just repeatedly on one diff — treat a cluster as a
     session/service-level condition, not N independent diff bugs.** When two
     different PRs in different repos both stub within the same span
-    (serocalculator#564 and gha#276, 2026-07-20, both on head `97de285`-era
-    reviews), don't burn a re-trigger round on each hoping the *diff* is at
+    (serocalculator#564 and gha#276, 2026-07-20, both stubbed in the same
+    session), don't burn a re-trigger round on each hoping the *diff* is at
     fault: post the self-review (per `CLAUDE.md`'s "Do the review yourself
     when the @claude workflow doesn't produce a verdict"), hand the required
     `require-review` check to the human, and stop re-triggering after one
@@ -1919,8 +1919,7 @@ common patterns.
   gap gha's own `CLAUDE.md` describes, but persisting *after* merge too until
   the dispatch. (serocalculator#564 called gha's new `lint-changed-lines.yml@v2`
   right after gha#276 merged; it only picked up the real capability once the
-  user manually dispatched `slide-major-tag` — run
-  `github.com/d-morrison/gha/actions/runs/...`.)
+  user manually dispatched `slide-major-tag`.)
   Because the slide is manual, a **breaking** change merging to main does NOT
   silently slide `v1` onto it — but when you DO dispatch after a breaking
   change, guard it with TWO tag moves so the slide doesn't break `v1`:
