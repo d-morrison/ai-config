@@ -1235,38 +1235,34 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
     words instead of listing them (`undiscoverable` → "cannot discover").
     (ucdavis/bcs#375: four tokens flagged from one NEWS entry, fixed with zero
     WORDLIST additions.)
-- A `docs-check` / `R-check-docs` job runs `roxygenize()` then `git diff --exit-code
-  man/`, so a roxygen edit with a stale `man/*.Rd` fails. **When you can't run
-  `devtools::document()` (no R toolchain, e.g. a cloud/web session), you can still
-  edit roxygen docs**: hand-edit the matching `man/*.Rd` in lockstep, as long as the
-  change doesn't re-wrap lines — a **same-length word swap** (e.g. `biannual`→`biennial`,
-  both 8 chars) is ideal because roxygen copies description/param/return prose verbatim
-  into the `.Rd` and `roxygenize()` is deterministic, so an identical edit to both
-  reproduces exactly what `document()` would generate and `docs-check` passes. Watch
-  `@inheritParams`/`@inherit`: editing one function's roxygen also changes the `.Rd` of
-  every function that inherits that text, so grep `man/` for the changed sentence and
-  edit those `.Rd` files too. (Used on ucdavis/bcs#225 across 13 R files + ~18 man pages.)
-- **A bigger edit than a same-length swap is also safe --- if you first verify
-  roxygen's transform empirically, then replicate it exactly.** roxygen (with
-  `Roxygen: list(markdown = TRUE)`) does two deterministic things to plain
-  `@format`/`\describe` prose containing only inline code: it preserves the
-  source line breaks verbatim (no reflow to 80 cols) and converts markdown
-  inline code `` `x` `` to `\code{x}`. (Other markdown adds further transforms
-  --- `**bold**` to `\strong{}`, `*italic*` to `\emph{}`, `[text](url)` to
-  `\href{}{}` --- which the empirical diff step below reveals.)
-  Confirm both on the actual package before trusting them: diff an existing
-  multi-line `\item{}` block's roxygen source (strip the `#'   ` prefix) against
-  its rendered `man/*.Rd` lines --- a line-for-line match proves the transform is
-  verbatim, so you can safely mirror a brand-new multi-line block the same way.
-  Then validate your hand-edit with a scripted transform-and-diff before
-  committing: strip the `#'` prefix from your new roxygen, convert each
-  backtick-delimited span to `\code{...}`
-  (`` perl -pe 's/`([^`]+)`/\\code{$1}/g' ``), and `diff` the result against the
-  `.Rd` you wrote --- an empty diff means it matches what `document()` would
-  generate. (serocalculator#562: rewrote a whole multi-line
-  `\item{eps}` block across two `.Rd` files this way in a bare-R sandbox with
-  neither devtools nor roxygen2 installable; a scripted line-for-line check, the
-  `@claude` review, and `docs-check` all confirmed the match on the first push.)
+- **Regenerating `man/*.Rd`: run `devtools::document()` (or
+  `roxygen2::roxygenise()`) --- never hand-edit the `.Rd`.** A `docs-check` /
+  `R-check-docs` job runs `roxygenize()` then `git diff --exit-code man/`, so a
+  roxygen edit with a stale `man/*.Rd` fails; the fix is to regenerate, not to
+  hand-write the `.Rd`. **If the toolchain looks missing** (a bare-R cloud/web
+  sandbox with no `devtools`/`roxygen2`), install it ---
+  `install.packages("roxygen2")` plus the package's own `Imports` so
+  `pkgload::load_all()` can load it --- and run `roxygen2::roxygenise()`
+  (`devtools::document()` if `devtools` is also installed). Treat "no R
+  toolchain" as a resource to obtain (growth-mindset), not a reason to edit
+  `.Rd` by hand. (Corrected 2026-07-20: on serocalculator#562 I hand-edited two
+  `.Rd` files instead of installing roxygen2 and running `document()`; the
+  user's rule is to run the generator.)
+- **Hand-editing `.Rd` is a genuine last resort, only when installing the
+  toolchain truly fails** (offline / locked-down sandbox). If forced to it, keep
+  the edit safe: roxygen copies `@format`/`@param`/`@return` prose verbatim into
+  the `.Rd` and `roxygenize()` is deterministic, so a **same-length word swap**
+  (e.g. `biannual`->`biennial`) reproduces exactly what `document()` would
+  generate. For a larger edit, first verify the transform empirically --- diff an
+  existing `\item{}` block's roxygen source (stripped of its `#'` prefix) against
+  its rendered `.Rd` lines; roxygen with `markdown = TRUE` preserves line breaks
+  and converts `` `x` `` to `\code{x}` (and `**bold**` to `\strong{}`, `[text](url)`
+  to `\href{}{}`) --- then validate your hand-edit with a scripted
+  transform-and-diff (`` perl -pe 's/`([^`]+)`/\\code{$1}/g' `` piped to `diff`
+  against the `.Rd`). Watch `@inheritParams`/`@inherit`: editing one function's
+  roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
+  changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
+  toolchain over all of this.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
