@@ -248,8 +248,9 @@
   issue's description. The tool's own result echoes back the (now-wrong)
   body, so the mistake is visible immediately if you check the response;
   fix it with a follow-up `issue_write update` call restoring the original
-  text (keep a copy of anything you're about to file, since the original
-  isn't recoverable from the tool response otherwise), then post the
+  text (keep a copy of the issue's existing body before editing it, since
+  the tool's response only echoes the new state, not the prior one --
+  or re-fetch it with `issue_read` `get` if you didn't), then post the
   actual comment via `add_issue_comment`. (Hit claiming
   `UCD-SERG/serocalculator#571` per the `claim-pr` convention: intended
   `add_issue_comment` but called `issue_write update` with just the claim
