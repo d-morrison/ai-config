@@ -1,5 +1,19 @@
 # Debugging notes
 
+## Heredoc commands in this terminal are unreliable
+
+Multi-line heredoc-style commands in chained terminal commands get garbled or silently fail. Always write multi-line content to a temp file first, then reference it:
+
+```sh
+cat > /tmp/msg.txt << 'EOF'
+line 1
+line 2
+EOF
+git commit -F /tmp/msg.txt
+```
+
+Never inline heredocs in chained commands. Applies to git commit messages, MR descriptions, and any other multi-line content passed to CLI tools. (Learned during HACtions MR !37.)
+
 ## Markdown line-by-line processors: every inner loop needs its own fence tracker
 
 When writing a script that reformats Markdown line by line, the outer loop usually
