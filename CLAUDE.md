@@ -652,6 +652,7 @@ Only surface the choice if it's ambiguous or touches something architecturally s
 
 ## PowerShell CLI Command Safety
 
-- **Never inline Markdown backticks in PowerShell double quotes**: PowerShell interprets `` `b `` as an ASCII Backspace control character (`0x08`).
-- **Use body files for GitHub PR descriptions**: Always write multi-line PR descriptions to a file and pass `--body-file` or `gh api -F body=@file.md` to prevent terminal string escaping artifacts.
+- **Never pass backtick-containing content in PowerShell double-quoted strings**: PowerShell treats `` ` `` as its escape character — `` `b `` (Backspace, 0x08), `` `n ``, `` `t ``, `` `r ``, etc. — so Markdown code spans and other backtick-containing text will be silently corrupted. Use single-quoted strings (`'...'` / `@'...'@`) for inline content, or write to a file and pass `--body-file` for multi-line PR descriptions.
+- **Use body files for GitHub PR descriptions**: Write multi-line PR descriptions to a temp file and pass `--body-file <file>` to `gh pr create`/`gh pr edit`, or `gh api -F body=@<file>` for raw API calls. This avoids terminal string-escaping corruption for any content with backticks or other shell-special characters.
+
 
