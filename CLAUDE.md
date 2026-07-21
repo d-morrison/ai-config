@@ -651,3 +651,10 @@ When *I* iterate a PR, the ARDI loop above is the mechanism — it already addre
 When the user gives feedback, corrections, or guidance that applies beyond the current session (a standing rule, style preference, workflow change, or behavioral note), decide on your own how to encode it --- don't ask.
 Choose the right form (memory bullet in CLAUDE.md, update to a shared fragment in `shared/`, new or revised skill, etc.) and commit the change.
 Only surface the choice if it's ambiguous or touches something architecturally significant.
+
+## PowerShell CLI Command Safety
+
+- **Never pass backtick-containing content in PowerShell double-quoted strings**: PowerShell treats `` ` `` as its escape character — `` `b `` (Backspace, 0x08), `` `n ``, `` `t ``, `` `r ``, etc. — so Markdown code spans and other backtick-containing text will be silently corrupted. Use single-quoted strings (`'...'` / `@'...'@`) for inline content, or write to a file and pass `--body-file` for multi-line PR descriptions.
+- **Use body files for GitHub PR descriptions**: Write multi-line PR descriptions to a temp file and pass `--body-file <file>` to `gh pr create`/`gh pr edit`, or `gh api -F body=@<file>` for raw API calls. This avoids terminal string-escaping corruption for any content with backticks or other shell-special characters.
+
+
