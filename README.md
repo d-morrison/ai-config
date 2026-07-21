@@ -1,7 +1,7 @@
 # ai-config
 
 Portable AI agent config — skills, memories, and commands synced across
-machines via git. Works with Claude Code, Codex, [Gemini CLI / Antigravity](https://github.com/google-gemini/gemini-cli), VS Code Copilot, and any
+machines via git. Works with Claude Code, Codex, [Gemini CLI](https://github.com/google-gemini/gemini-cli), VS Code Copilot, and any
 agent that reads markdown instruction files.
 
 Each top-level subdir is symlinked into the appropriate consumer directory
@@ -9,8 +9,8 @@ by `bootstrap.sh`.
 
 ## Setup on a new machine
 
-
 ```sh
+
 git clone https://github.com/d-morrison/ai-config.git ~/ai-config
 bash ~/ai-config/bootstrap.sh
 ```

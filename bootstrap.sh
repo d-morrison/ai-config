@@ -31,8 +31,8 @@ link_one() {
 
   if [ -L "$dest" ]; then
     local current
-
     current="$(readlink "$dest")"
+
     if [ "$current" = "$src" ]; then
       printf 'ok    %s (already linked)\n' "$name"
     else

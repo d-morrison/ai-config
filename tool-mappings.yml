@@ -25,8 +25,8 @@ models:
   - id: copilot
     label: VS Code Copilot
     resolves: GitHub MCP tool.
-  - id: antigravity
-    label: Google Antigravity
+  - id: gemini
+    label: Gemini CLI
     resolves: GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
   - id: cli
     label: Generic shell / CLI
@@ -38,8 +38,8 @@ models:
 operations:
   - id: VIEW_PR
     description: Read a pull request's details and metadata.
-
     cli: gh pr view <N>
+
     github_mcp: mcp__github__pull_request_read (method=get)
   - id: LIST_PRS
     description: List pull requests.

@@ -15,7 +15,7 @@ operation to the equivalent GitHub MCP tool so any model can run a skill.
 - **Claude Code** — GitHub MCP tool in remote/web sessions; the CLI command locally.
 - **Codex** — GitHub MCP tool if the session has it; otherwise the CLI command.
 - **VS Code Copilot** — GitHub MCP tool.
-- **Google Antigravity** — GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
+- **Gemini CLI** — GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
 - **Generic shell / CLI** — The CLI command (fallback for any agent that just runs a shell).
 
 ## Operations
