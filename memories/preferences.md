@@ -63,6 +63,13 @@
 - On GitLab, assign MRs to `demorrison`.
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
   devtools::test(), devtools::check(), pkgdown::build_site() (per repo copilot-instructions).
+- Before committing code changes, run the repo checks that CI enforces
+  (at minimum lint + tests, plus build/render where applicable),
+  not only the narrowest package-level test command.
+  If a repo has both package tests and a root lint step,
+  run both before the commit.
+  (Learned on UCD-SERG/lab-manual#433:
+  committing after package tests passed still left a root lint failure.)
 - Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md →
   the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING)
   and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it
