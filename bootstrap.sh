@@ -25,8 +25,8 @@ COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code
 mkdir -p "$CLAUDE_DIR"
 
 # Symlink $src -> $dest unless something is already there.
-
 link_one() {
+
   local src="$1" dest="$2" name
   name="$(basename "$dest")"
 
