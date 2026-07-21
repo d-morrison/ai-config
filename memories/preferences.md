@@ -112,8 +112,6 @@
   When working in that fork, open PRs against the upstream original (`d-morrison/ai-config`, base `main`) as a cross-fork PR with head `dem-extra1:<branch>` — NOT against the fork's own `main`. (If a remote/web session is scoped only to `dem-extra1/ai-config` with no `add_repo` tool, the cross-fork PR can't be created from that session; push the branch and surface that the upstream PR must be opened where `d-morrison/ai-config` is in scope.)
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
-- Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(),
-  devtools::test(), devtools::check(), pkgdown::build_site() (per repo copilot-instructions).
 - Before committing code changes, run the repo checks that CI enforces
   (at minimum lint + tests, plus build/render where applicable),
   not only the narrowest package-level test command.
@@ -121,38 +119,6 @@
   run both before the commit.
   (Learned on UCD-SERG/lab-manual#433:
   committing after package tests passed still left a root lint failure.)
-- Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md →
-  the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING)
-  and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it
-  via red CI. For R packages this means a NEWS.md entry AND a DESCRIPTION dev-version bump
-  (`usethis::use_version()`) even for a docs-only / vignette-only change — the changelog-check
-  and version-check jobs fail otherwise (opt-out labels `no changelog` / `no version
-  increment` exist for non-user-visible PRs, but the default is to do the bump). NEWS.md prose is spell-checked too,
-  so keep it to words already in `inst/WORDLIST` or add new terms there. Also re-check the
-  version after merging `main` mid-PR: if a commit on `main` already bumped the version to
-  match the branch, the version-check CI will fail again — run `usethis::use_version("dev")`
-  once more so the branch stays ahead.
-- In the HACtions repo, use the `test.hac` project/group as a test bed (always).
-- After an iterate loop completes, ALWAYS create follow-up issues for every deferred/acknowledged
-  item before reporting done. Never leave deferred items untracked.
-- When an MR/PR addresses multiple independent concerns, proactively offer to split it into
-  separate MRs/PRs (one per concern). Simpler diffs = easier review, independent merge timelines,
-  and less risk of one concern blocking another.
-- When resolving a git merge/rebase/cherry-pick conflict, consolidate the best of BOTH branches —
-  read why each side changed the hunk and preserve both intents; never blind-pick `--ours`/`--theirs`,
-  which silently discards the other side's work. Remove every marker (verify with `git diff --check`),
-  run the repo's pre-commit checks (a merge clean on each side separately can break combined), then
-  stage and finish the operation — don't `--abort`/`--skip` a conflict you were asked to resolve.
-  Note: "ours"/"theirs" are reversed in a rebase vs a merge. The `resolve-conflicts` skill (alias
-  `rc`) operationalizes this; `sync-pr-branch`/`clean-branches`/`gii` delegate to it. (Distinct from
-  `session-lock`/`deconflict-sessions`, which deconflicts AI *sessions*, not git content.)
-- When deferring items to follow-up issues during a PR/MR review loop, always update the
-  PR/MR description with a "Known Deferred Items" section listing each deferred issue
-  (with link), description, and rationale. This gives automated reviewers context so they
-  stop re-flagging the same items. Include a "Notes for Automated Reviewers" section for
-  any recurring false positives.
-- When noticing potential improvements to the codebase while working, proactively suggest them
-  (don't wait to be asked). The user wants to hear about improvements as they come up.
 - Always use `glab` (the GitLab CLI) for GitLab operations — MR comments, file uploads, API calls, pipeline checks — instead of raw `curl` against the GitLab REST API.
   `glab` handles auth via its own config (no `GITLAB_TOKEN` env var needed), so it works even when a token isn't exported in the current shell.
   Use `glab api` for endpoints without a dedicated subcommand (e.g. `POST /projects/:id/uploads` for file attachments).
