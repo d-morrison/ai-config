@@ -29,9 +29,9 @@ link_one() {
   local src="$1" dest="$2" name
   name="$(basename "$dest")"
 
-
   if [ -L "$dest" ]; then
     local current
+
     current="$(readlink "$dest")"
     if [ "$current" = "$src" ]; then
       printf 'ok    %s (already linked)\n' "$name"
