@@ -137,9 +137,11 @@ if [ -d "$SCRIPT_DIR/skills" ]; then
   ]
 }
 EOF
-    printf 'write skills.json -> %s/skills\n' "$GEMINI_DIR"
+    printf 'write skills.json (%s) -> %s/skills\n' "$SKILLS_JSON" "$GEMINI_DIR"
+  elif grep -q "$GEMINI_DIR/skills" "$SKILLS_JSON" 2>/dev/null; then
+    printf 'ok    skills.json (%s/skills already registered)\n' "$GEMINI_DIR"
   else
-    printf 'ok    skills.json (already exists at %s; registered path not checked)\n' "$SKILLS_JSON"
+    printf 'skip  skills.json (%s exists but does not register %s/skills)\n' "$SKILLS_JSON" "$GEMINI_DIR"
   fi
 fi
 
