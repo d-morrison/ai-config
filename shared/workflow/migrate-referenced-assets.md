@@ -45,6 +45,28 @@ does an asset referenced only by the removed content become orphaned? Decide
 whether to delete it along with the text, or leave a note for a follow-up
 cleanup pass --- don't leave it silently unreferenced with no record of why.
 
+**Migrating a referenced include from a local file to a git submodule breaks
+*staged*-render tools even though *in-place* renderers keep working.** A
+renderer that builds documents where they sit (pkgdown) resolves a relative
+`{{< include ../macros/macros.qmd >}}` against the repo tree, so it doesn't
+care whether `macros/` is a plain dir or a submodule. A renderer that copies
+selected source trees into a build staging dir first (altdoc's `_quarto/`,
+which stages `vignettes/`/`man/`/`altdoc/` but not a repo-root `macros/`
+submodule) resolves the same `../macros/...` against the *staging* dir, where
+the submodule was never copied --- so the include hard-fails
+(`could not find file .../_quarto/macros/macros.qmd`). Two consequences when
+a repo migrates a shared asset (LaTeX macros, a common header) from a local
+`_*.qmd` include to a submodule: (1) the staged renderer's checkout step needs
+`submodules: true` *and* the renderer itself must stage the submodule's
+content into the build dir (fixed upstream in d-morrison/altdoc's
+`quarto_website` flow, PR #27 --- `submodules: true` alone is necessary but not
+sufficient); (2) the docs CI workflow's `paths:` trigger filter should include
+the submodule path (e.g. `macros`, `.gitmodules`) so a submodule-pointer bump
+actually rebuilds the docs. (UCD-SERG/serocalculator#503, 2026-07: `main`
+migrated the macros to the `d-morrison/macros` submodule while the pkgdown-to-altdoc
+PR was open; pkgdown had rendered fine, altdoc's staged build could not find
+`../macros/macros.qmd`.)
+
 (d-morrison/wai#6, 2026-07-14: a chapter migration from one Quarto repo to
 another moved 25 `.qmd` fragments referencing five meme images, but never
 copied the `assets/images/` directory itself. HTML rendering silently

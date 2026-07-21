@@ -539,3 +539,35 @@ occurrence, not the flagged one.)
   form it already handled. A consumer repo just needs its renv altdoc pin at
   or past that merge (`fb551ef`, 2026-07-18) and a re-render.
   (ucdavis/bcs#374/#375: ~140 dead links on one article page.)
+
+## A test suite that only covers the exact-multiple/round-number case can miss an asymmetry bug entirely
+
+- Signature: a function distributes `n` items across `k` groups (soldiers
+  across formation files, rows across pages, work across shards) and has a
+  "leftover redistribution" rule for when `n` isn't an exact multiple of
+  `k` — e.g. centre the remainder, round-robin it, pad the last group.
+  A hand-written implementation of that rule can be silently biased (always
+  piling the remainder onto the same edge/first group) while every test
+  only ever exercises `n` values that ARE exact multiples of `k`, so the
+  remainder-handling code path never actually runs under test at all.
+- Mechanism: it's natural to write the "happy path" test first (round
+  numbers, no remainder) and consider the function covered once that
+  passes, especially when the remainder case feels like a minor edge case
+  rather than the interesting part of the function. But the remainder case
+  is exactly where an asymmetry bug lives — the exact-multiple case can't
+  distinguish a correctly-centred remainder from a raw
+  first-N/last-N assignment, because there IS no remainder to place.
+- Fix/check: for any "distribute `n` across `k` with a leftover rule"
+  function, deliberately test at least one `n` where `n % k != 0`, and
+  assert on WHERE the leftover lands (centred, not banked onto one edge),
+  not just that every item got assigned somewhere. If reviewing someone
+  else's tests for such a function, check the specific `n`/`k` values used
+  and confirm at least one is a genuine non-exact-multiple case before
+  trusting the coverage. (Sparta#995/#997, 2026-07-19: a formation-grid
+  reflow function's tests all happened to use soldier counts that were
+  exact multiples of the file count, so a real bug — a raw `i % files`
+  assignment piling every reshuffled unit's leftover rank onto the same
+  edge column instead of centring it, making a fresh, zero-casualty spawn
+  visibly lopsided for almost every real unit in the game — passed the
+  full test suite undetected until an independent review deliberately
+  picked a non-exact-multiple count to check.)

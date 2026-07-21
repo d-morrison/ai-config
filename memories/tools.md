@@ -67,6 +67,21 @@
   session on gha#176: two consecutive genuine — not raced — stub reviews on the
   pinned dogfooding checker, each requiring an empty retrigger commit after the
   dispatched `/review` came back clean.)
+  - **The empty retrigger commit must be pushed by a HUMAN actor — a
+    bot-pushed one is silently skipped.** `claude-code-review.yml` (and the
+    review-triggering workflows generally) gate on a bot-actor `if:` filter
+    (e.g. `github.actor != 'github-actions[bot]'` / not a `[bot]` login), so a
+    `synchronize` event fired by a bot-authored push — e.g. the `@claude`
+    agent itself doing `git commit --allow-empty` on the PR — is *filtered
+    out* and never starts the gating `claude-review` run. The check stays red
+    with no new run at all (not even a stub), which reads like nothing
+    happened. Push the empty commit from a human actor (your own session's
+    push) to get the gating run to fire. So when you ask the `@claude` agent
+    to "retrigger the review," it can't self-serve this: its own empty commit
+    is skipped, and it separately 403s on `rerun_failed_jobs` (below) — a
+    human-actor push is the only lever left. (serocalculator#564, 2026-07-20:
+    the agent's bot-pushed empty commit didn't fire the review; a
+    human-actor empty commit did.)
 - **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
   but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
   is a field in the Claude Code SDK's runtime execution-output JSON, not
@@ -92,6 +107,19 @@
   external sources, matching `gha`'s own `CLAUDE.md` "Fact-check prose
   against domain knowledge and external sources" review guideline) is left
   as an open decision in gha#189, not decided unilaterally.
+  - **The stub can recur across *unrelated* PRs in the same session/window,
+    not just repeatedly on one diff — treat a cluster as a
+    session/service-level condition, not N independent diff bugs.** When two
+    different PRs in different repos both stub within the same span
+    (serocalculator#564 and gha#276, 2026-07-20, both stubbed in the same
+    session), don't burn a re-trigger round on each hoping the *diff* is at
+    fault: post the self-review (per `CLAUDE.md`'s "Do the review yourself
+    when the @claude workflow doesn't produce a verdict"), hand the required
+    `require-review` check to the human, and stop re-triggering after one
+    round. Both the app token and the `@claude` agent 403 on
+    `rerun_failed_jobs` (below), so neither you nor the agent can force a
+    fresh gating run without a human-actor push — which the human is doing
+    anyway when they decide to merge past the stubbed check.
 - **Diagnosing which tool call was denied requires the reusable workflow's
   `show-full-output` input turned on for a re-run — the job log alone won't
   show it.** Same underlying hidden-output behavior as the
@@ -209,6 +237,26 @@
 - `mcp__github__add_issue_comment` parameter is **`issue_number`** (snake_case),
   NOT `issueNumber`. This is the opposite of `pull_request_read`. Reload the
   tool schema when unsure rather than guessing.
+- **`mcp__github__issue_write` with `method: "update"` and a `body` param
+  REPLACES the entire issue body -- it is not a way to post a comment.**
+  Passing a short claim string like "Working on this" as `body` silently
+  overwrites the full issue description with that one line; the call
+  succeeds with no warning, since `update` genuinely means "set these
+  fields," not "append." To post a comment, use
+  `mcp__github__add_issue_comment` instead -- never pass `body` to
+  `issue_write update` unless the actual intent is to edit/replace the
+  issue's description. The tool's own result echoes back the (now-wrong)
+  body, so the mistake is visible immediately if you check the response;
+  fix it with a follow-up `issue_write update` call restoring the original
+  text (keep a copy of the issue's existing body before editing it, since
+  the tool's response only echoes the new state, not the prior one --
+  or re-fetch it with `issue_read` `get` if you didn't), then post the
+  actual comment via `add_issue_comment`. (Hit claiming
+  `UCD-SERG/serocalculator#571` per the `claim-pr` convention: intended
+  `add_issue_comment` but called `issue_write update` with just the claim
+  text as `body`, clobbering the freshly-filed issue description --- caught
+  immediately from the echoed response and fixed with a restore-then-comment
+  pair of calls.)
 - **`mcp__github__create_or_update_file`'s `content` param is raw plain text,
   not base64** — despite the GitHub REST API's own `PUT /repos/.../contents/`
   endpoint taking base64, this MCP tool does the encoding for you. Passing an
@@ -864,6 +912,24 @@ by #328.)
   chain — `add_repo` unblock, `compare` showing the branch fully merged,
   then two more hardcoded copies of the same stale ref found in
   `docs.yaml` and `copilot-setup-steps.yml`.)
+- **When a consumer repo pins a dependency to an upstream *feature branch*
+  (not a tag/default branch) and the consumer's CI is failing because of a bug
+  *in* that dependency, the fix must land ON that pinned branch --- open a PR
+  into it, don't just fix the consumer.** The consumer's CI reinstalls the
+  branch's tip on the next run (pak/`setup-r-dependencies` resolves
+  `owner/repo@branch` to its current SHA at install time), so once the upstream
+  fix merges into the pinned branch, re-triggering the consumer's failing job
+  picks it up with no change to the consumer at all. Corollary: a stale feature
+  branch can fail its *own* repo's newer CI (e.g. a `jarl-check` on
+  pre-existing `unused_function` warnings) purely from being behind `main` ---
+  don't debug those as new defects; catch the branch up to `main`'s
+  already-clean state (mirror what `main` already did: add the `jarl.toml`,
+  remove the dead functions `main` removed). Verify main's tree with
+  `git show origin/main:<file>` reads rather than a shallow-clone range diff
+  (see below). (UCD-SERG/serocalculator#503 pinned
+  `d-morrison/altdoc@recursive-qmd-search`; fixing the consumer's docs build
+  required altdoc PR #27 into that branch, and altdoc PR #28 caught the branch
+  up to main's jarl-clean state, 2026-07.)
 - **Scope-blocked GitHub repo, but you only need its *datasets* (an R data
   package like `rmb`): rebuild a minimal data-only package from
   `raw.githubusercontent.com`.** The proxy's repo-scope check blocks
@@ -1160,6 +1226,39 @@ documented pattern (see `vignette("creating_linters", package = "lintr")`).
 Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
 `lms::function_length_linter()` in UCD-SERG/lab-manual#381.)
 
+## air (R formatter) vs lintr's `indentation_linter` — keep `indent-width` aligned
+
+- `air`'s `air.toml` `[format]` table has a configurable `indent-width`
+  (default 2). Air indents a multi-line function *definition*'s arguments by a
+  *single* level (one `indent-width`), NOT the styler/tidyverse-style-guide
+  "double indent". lintr's default `indentation_linter` also expects a single
+  2-space indent there. So air's default output and lintr agree at 2 --- but a
+  repo that sets `air.toml` `indent-width = 4` (as `d-morrison/altdoc` does)
+  will have air-formatted signatures that a *different* repo's lintr (default
+  2) rejects.
+- **Practical failure:** old styler-formatted code (4-space double-indent
+  function signatures) sitting in a repo whose `.lintr` uses
+  `lintr::linters_with_defaults()` passes CI only until a PR *touches* that
+  file --- `lint-changed-files` then flags `[indentation_linter] Indentation
+  should be 2 spaces but is 4 spaces`. Fix by reformatting the signature to a
+  single 2-space indent (de-indent the arg block by 2), and set/confirm
+  `air.toml` `indent-width = 2` so a future `air format` keeps it lintr-clean.
+  (Only the *first* mis-indented line of a block is reported; de-indent the
+  whole signature block, not just the flagged line, or the next line flags on
+  the next run.) (UCD-SERG/serocalculator#503, 2026-07.)
+- **A `lint-changed-files`-style workflow that calls `gh::gh()` (or any
+  GitHub API) to list the PR's changed files can flake with `403 API rate
+  limit exceeded for <IP>` when it runs *unauthenticated*.** The R `gh`
+  package reads its token from `GITHUB_PAT` then `GITHUB_TOKEN`; if the
+  workflow sets `env: GITHUB_PAT: ${{ secrets.GITHUB_PAT }}` and that custom
+  secret isn't configured in the repo, the value is empty and the call runs
+  anonymously (low shared-IP rate limit). Fix:
+  `GITHUB_PAT: ${{ secrets.GITHUB_PAT || secrets.GITHUB_TOKEN }}` --- falls
+  back to the always-present built-in token (`permissions: read-all` already
+  covers the read). It's a flake (passes most runs), so a red
+  `lint-changed-files` with no R lint output and a `gh_error`/`rate limit`
+  traceback is this, not a code problem. (UCD-SERG/serocalculator#503, 2026-07.)
+
 ## jarl (Just Another R Linter) — `jarl.toml` fields lag the published docs
 - `jarl` (`etiennebacher/jarl`, installed via `etiennebacher/setup-jarl@vX` in
   CI) is a fast Rust-based R linter, a sibling to `{flir}` by the same author
@@ -1235,17 +1334,34 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
     words instead of listing them (`undiscoverable` → "cannot discover").
     (ucdavis/bcs#375: four tokens flagged from one NEWS entry, fixed with zero
     WORDLIST additions.)
-- A `docs-check` / `R-check-docs` job runs `roxygenize()` then `git diff --exit-code
-  man/`, so a roxygen edit with a stale `man/*.Rd` fails. **When you can't run
-  `devtools::document()` (no R toolchain, e.g. a cloud/web session), you can still
-  edit roxygen docs**: hand-edit the matching `man/*.Rd` in lockstep, as long as the
-  change doesn't re-wrap lines — a **same-length word swap** (e.g. `biannual`→`biennial`,
-  both 8 chars) is ideal because roxygen copies description/param/return prose verbatim
-  into the `.Rd` and `roxygenize()` is deterministic, so an identical edit to both
-  reproduces exactly what `document()` would generate and `docs-check` passes. Watch
-  `@inheritParams`/`@inherit`: editing one function's roxygen also changes the `.Rd` of
-  every function that inherits that text, so grep `man/` for the changed sentence and
-  edit those `.Rd` files too. (Used on ucdavis/bcs#225 across 13 R files + ~18 man pages.)
+- **Regenerating `man/*.Rd`: run `devtools::document()` (or
+  `roxygen2::roxygenise()`) --- never hand-edit the `.Rd`.** A `docs-check` /
+  `R-check-docs` job runs `roxygenize()` then `git diff --exit-code man/`, so a
+  roxygen edit with a stale `man/*.Rd` fails; the fix is to regenerate, not to
+  hand-write the `.Rd`. **If the toolchain looks missing** (a bare-R cloud/web
+  sandbox with no `devtools`/`roxygen2`), install it ---
+  `install.packages("roxygen2")` plus the package's own `Imports` so
+  `pkgload::load_all()` can load it --- and run `roxygen2::roxygenise()`
+  (`devtools::document()` if `devtools` is also installed). Treat "no R
+  toolchain" as a resource to obtain (growth-mindset), not a reason to edit
+  `.Rd` by hand. (Corrected 2026-07-20: on serocalculator#562 I hand-edited two
+  `.Rd` files instead of installing roxygen2 and running `document()`; the
+  user's rule is to run the generator.)
+- **Hand-editing `.Rd` is a genuine last resort, only when installing the
+  toolchain truly fails** (offline / locked-down sandbox). If forced to it, keep
+  the edit safe: roxygen copies `@format`/`@param`/`@return` prose verbatim into
+  the `.Rd` and `roxygenize()` is deterministic, so a **same-length word swap**
+  (e.g. `biannual`->`biennial`) reproduces exactly what `document()` would
+  generate. For a larger edit, first verify the transform empirically --- diff an
+  existing `\item{}` block's roxygen source (stripped of its `#'` prefix) against
+  its rendered `.Rd` lines; roxygen with `markdown = TRUE` preserves line breaks
+  and converts `` `x` `` to `\code{x}` (and `**bold**` to `\strong{}`, `[text](url)`
+  to `\href{}{}`) --- then validate your hand-edit with a scripted
+  transform-and-diff (`` perl -pe 's/`([^`]+)`/\\code{$1}/g' `` piped to `diff`
+  against the `.Rd`). Watch `@inheritParams`/`@inherit`: editing one function's
+  roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
+  changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
+  toolchain over all of this.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
@@ -1414,6 +1530,13 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   comment's own reference to the failed `@claude` review job triggered a real agent
   run, which found and fixed a stale `CLAUDE.md` trigger-type claim before the PR
   merged.)
+  Prevention: in PR status/report comments, don't write the literal string
+  `@claude` unless you want a run — say "the Claude review" / "the Claude
+  bot" instead. Each accidental mention dispatches a full agent workflow run
+  (API spend) even when the comment asks for nothing. (Second instance on
+  ucdavis/rampp#111, 2026-07-18: a ready-for-merge report quoting "latest
+  @claude verdict" dispatched a run, which correctly no-op'd with a status
+  recap.)
 - **Dispatched reviews now post a PR comment (gha#89, now in `v1`).** Before this fix,
   `workflow_dispatch` runs wrote output to the step summary only —
   `github.event.pull_request.number` is null for dispatch events, so the action's
@@ -1835,21 +1958,49 @@ common patterns.
     MCP tools or (in scoped sessions) the API. Hand the flip to the user, and
     order it safely: deploy to `gh-pages` FIRST (populates root; live site keeps
     serving the old artifact), THEN flip the source, or the root 404s in between.
+- **`lint-changed-lines.yml@v2`** (gha#276) — runs `lintr` on changed R files but
+  filters the reported lints down to only the lines a PR **adds or modifies**,
+  so a repo can adopt or tighten a lint rule *incrementally*: new and edited
+  code must comply while untouched legacy code is left alone. This is the
+  answer to "a linter version bump (e.g. lintr 3.4.0's `indentation_linter`
+  now matching the current tidyverse single-indent style) flags the whole
+  repo" — don't disable the linter or reformat everything at once; adopt via
+  this workflow and let the rule migrate file-by-file as code is touched.
+  Caller stub is ~8 lines (`uses: d-morrison/gha/.github/workflows/lint-changed-lines.yml@v2`).
+  Implementation detail worth knowing when debugging false negatives: the
+  reusable workflow checks out `github.event.pull_request.head.sha` (NOT the
+  default `refs/pull/N/merge` ref) so on-disk line numbers match the
+  head-relative line numbers in the GitHub "list PR files" `patch` field.
+  serocalculator#564 is the first consumer.
 - **Convention:** ai-config (and d-morrison repos generally) call `d-morrison/gha`
   reusable workflows with `@v1` (not a SHA-pinned ref). SHA-pinning is the pattern
   for third-party actions only.
-- **gha's major tag auto-slides on EVERY merge to main** (`slide-major-tag.yml`,
-  r-lib/actions style): it re-points the major derived from the latest `vX.Y.Z`
-  tag to HEAD. So a **breaking** change that merges to main **silently slides
-  `v1` onto the breaking commit** — `@v1` consumers get it on their next run.
-  Cutting a breaking release therefore needs TWO tag moves, run BEFORE the next
-  main merge (else the slide re-breaks v1): (1) force `v1` back to the last
-  non-breaking commit (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`),
-  and (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
+- **gha's major tag slides ONLY on a manual `workflow_dispatch`, NOT on every
+  merge to main** (`slide-major-tag.yml`; `on: workflow_dispatch:` only, gated
+  `if: github.ref == 'refs/heads/main'`). It re-points the major derived from
+  the latest `vX.Y.Z` tag to HEAD when dispatched. So merging a fix or a new
+  capability to `main` does **not** roll it out to `@v1`/`@v2` consumers on its
+  own — the tag stays put until someone runs the workflow. This is deliberate
+  (the workflow's own header comment: "the slide is a deliberate manual step,
+  not an automatic reaction to every push" — merge, optionally canary a
+  consumer at `@main`, then dispatch once confident). Practical consequence:
+  after merging a PR that adds/fixes a capability, a consumer PR that calls it
+  at `@v2` keeps running the **pre-merge** tagged version until the human
+  dispatches the slide — the same "can't self-verify before merge" bootstrapping
+  gap gha's own `CLAUDE.md` describes, but persisting *after* merge too until
+  the dispatch. (serocalculator#564 called gha's new `lint-changed-lines.yml@v2`
+  right after gha#276 merged; it only picked up the real capability once the
+  user manually dispatched `slide-major-tag`.)
+  Because the slide is manual, a **breaking** change merging to main does NOT
+  silently slide `v1` onto it — but when you DO dispatch after a breaking
+  change, guard it with TWO tag moves so the slide doesn't break `v1`:
+  (1) force `v1` back to the last non-breaking commit
+  (`git tag -f v1 <sha>; git push --force origin refs/tags/v1`), and
+  (2) create `v2.0.0` + `v2` at HEAD. Once `v2.0.0` exists it's the latest
   semver, so the slide moves `v2` thereafter and `v1` stays frozen. There is NO
   MCP tool to create tags/releases — use `git` (but see the 403 caveat below).
   Notify registered consumers in `REVDEPS.md` (e.g. `Lacaedemon/sparta`).
-- **Despite the auto-slide above, `@v1` can still trail `main` in practice —
+- **`@v1` can trail `main` in practice —
   verify against the TAGGED file, not `main` or `examples/`.** Observed:
   `main`'s `claude.yml` / `claude-code-review.yml` both declare an
   `ANTHROPIC_API_KEY` secret in their `workflow_call: secrets:` block, and
@@ -2199,6 +2350,27 @@ not block `claude-review`.)
   it without evaluating), matching the existing convention (e.g.
   `R/calc_ip_weights.R`). Runnable examples with self-contained synthetic data
   are fine and do execute. (Hit on ucdavis/bcs#238.)
+- **altdoc's `$ALTDOC_MAN_BLOCK` sidebar placeholder has no pkgdown-style
+  `reference:` grouping and no internal-topic exclusion --- it flat-lists
+  every `man/*.Rd` file under one ungrouped "Reference" section, internal
+  topics (`@keywords internal`) included.** Confirmed by reading
+  `d-morrison/altdoc`'s `R/settings_quarto_website.R`,
+  `.sidebar_vignettes_quarto_website()` (despite the vignettes-only-sounding
+  name, this one function handles both the `$ALTDOC_VIGNETTE_BLOCK` and
+  `$ALTDOC_MAN_BLOCK` placeholders): it globs `man/*.qmd` under the
+  render output and turns the whole list into `section: Reference` with no
+  filtering or title-based grouping, unlike pkgdown's `reference:` block in
+  `_pkgdown.yml`. To reproduce a pkgdown-style grouped index/sidebar (with
+  internal topics hidden) on an altdoc site today, hand-author the grouping
+  directly in the consuming repo's `altdoc/quarto_website.yml` --- replace
+  the `$ALTDOC_MAN_BLOCK` placeholder with explicit `section:`/`contents:`
+  entries pointing at `man/<topic>.qmd` (the same file-path convention the
+  navbar's "Documentation" entry already uses for
+  `man/serocalculator-package.qmd`), and simply omit any `.Rd` topic marked
+  `\keyword{internal}`. When migrating from an old pkgdown site, its retired
+  `_pkgdown.yml` (recoverable from git history even after deletion) is
+  usually still an accurate source for the grouping and titles to reproduce.
+  (`UCD-SERG/serocalculator#575`.)
 - **`NEWS.md` section headers need a blank line before them.** A bullet that ends
   immediately before a `## Next-section` heading (no blank line) can cause
   `utils::news()` to misparse adjacent sections. Always leave one blank line
@@ -2515,6 +2687,23 @@ open questions.
 A pinned submodule SHA that isn't `ai-config`'s current tip is still
 fetchable with `git fetch --depth 1 origin <sha>` --- GitHub's shallow-clone
 protocol supports fetching any reachable commit, not just branch tips.
+
+**A `--depth 1` shallow clone gives a bogus merge-base, so a `git log A..B`
+/ `git diff A..B` range against another branch shows the *entire* repo as
+added.** In a shallow clone the histories of two branches share no common
+ancestor git can see (it's truncated), so `origin/main` and a feature branch
+appear fully disjoint --- `git log <branch>..origin/main --stat` reports
+hundreds of files / thousands of insertions that aren't real, and a real
+`git merge origin/main` produces spurious mass conflicts. Don't run
+merge/diff-vs-main operations on a shallow clone. What *is* reliable on a
+shallow clone: single-tree reads (`git show origin/main:<file>`,
+`git cat-file`) --- they read the fetched tip's tree directly, no merge-base
+needed. `git fetch --depth N origin <branch>` deepens enough history to make
+a real merge-base available if you must merge. (Hit resolving
+UCD-SERG/serocalculator#503's altdoc chain, 2026-07: a `--depth 1` altdoc
+clone made `recursive-qmd-search..origin/main` show 272 files / 14k
+insertions, all an artifact; the `git show origin/main:R/utils.R` tree reads
+in the same session were accurate.)
 
 A fine-grained `SUBMODULES_TOKEN` scoped to a private submodule (e.g. rme's
 `latex-macros`) also authenticates a newly-added *public* submodule, since
@@ -2967,3 +3156,84 @@ by a reviewer citing a doc line that does not exist in `?grep` — a
 reminder that the empirical one-liner outranks any quoted documentation,
 including a reviewer's. (ucdavis/rampp #138/#111, 2026-07-17;
 re-verified on ai-config#611, 2026-07-18.)
+
+## Resuming a subagent mid-run tends to restart its long check, not resume it — verify the process directly before nudging it again
+
+When a background subagent pauses its own turn while a long-running local
+check (a full test/coverage suite, a build) is still executing in the
+background, sending it a follow-up message to "check the result" does NOT
+reliably make it poll the existing run — in practice it tends to just
+launch a FRESH invocation of the same check and wait on that one instead,
+discarding the earlier run's progress. This repeated three times in a row
+in one session (each resume costing ~4-6 minutes of the agent's own
+reasoning plus a full ~15-20 minute check re-run) before switching
+strategy. The subagent isn't lying about "waiting for the background run"
+— it genuinely doesn't have a reliable way to reattach to a shell command
+it started in an earlier turn, so a fresh nudge reads as "go check" and it
+takes the simplest interpretation: run it again.
+
+**Fix: verify the actual process state yourself before resuming, and when
+you do resume, hand the agent unambiguous evidence so it doesn't restart
+anything.** From the orchestrating session (not the subagent), check for a
+live process directly (`tasklist | grep -i <binary>` in Git Bash/Cygwin,
+`findstr /I <binary>` in native Windows CMD, `Get-Process -Name "..."` for
+start-time/age via PowerShell, or `pgrep`/`ps` elsewhere) and wait on it
+directly (`Wait-Process -Id <pid> -Timeout <seconds>` on Windows, or a bash
+poll loop) rather than just re-pinging the
+subagent and hoping. Once the process has genuinely exited (confirm via a
+fresh process check, not just elapsed time), resume the subagent with the
+specific evidence in hand ("I've confirmed no such process is running as
+of `<timestamp>`; the run already finished — do NOT start a new one, read
+its output and report") — this stops the same restart loop from recurring
+on the next resume. This is strictly better than either blindly trusting
+"still waiting" messages (which can repeat indefinitely) or arbitrarily
+capping the number of resumes (which risks cutting off a genuinely
+long-running check before it finishes).
+
+This generalizes beyond any one tool: the same pattern applies to any
+subagent orchestration where a delegated agent's own background command
+outlives its turn — verify state from the outside, don't just ask again.
+(Sparta `gii-mwc` session, 2026-07-19: hit on two independent subagents in
+the same session, one implementing a casualty-reflow feature and one a
+maneuver feature, each running the project's own `tools/check.sh` full
+suite — direct process verification via PowerShell resolved both.)
+
+## A diff-scoped local check silently no-ops on an empty/uncommitted diff — commit before running it, not after
+
+A repo's own pre-push check script can include steps that gate on `git diff
+<merge-base> HEAD` (a comment-citation scanner, a units-convention linter, a
+patch-coverage calculator) rather than the raw working tree. If you run such
+a script against **uncommitted** changes — reasoning "let me verify before I
+commit" — the diff-scoped steps compare HEAD against itself (or whatever the
+last commit was), see no changes, and silently report a clean pass ("no
+GDScript changes in this diff") without having examined your actual edits at
+all. Only the disk-based steps in the same invocation (a plain test run, a
+character-encoding scan of the working tree) give real signal; the
+diff-scoped ones are pure no-ops that LOOK identical to a genuine clean
+result in the printed summary.
+
+This cost one delegated subagent roughly two hours and most of a million
+tokens in one session: it wrote a real, working feature, then spent that
+time re-running the full check suite (each pass ~15-20 minutes) against its
+own uncommitted working tree, never noticing that three of the five
+requested checks were quietly checking nothing. The fix, once diagnosed,
+was mechanical — commit first, then re-run the checks against a real diff —
+but the diagnosis itself only happened after the orchestrating session
+noticed a suspicious mismatch (two full turns and heavy token spend, yet
+`git log`/`git status` showed no commits and no uncommitted changes) and
+asked the agent directly why there was no visible progress.
+
+**How to apply:** before trusting a "PASS" from any check step whose own
+description implies it scopes to a diff (a comment scanner, a
+units-convention check, coverage-of-new-lines), confirm there IS a
+non-empty diff for it to have scanned — commit (even a rough, uncommitted-
+but-final draft) before the verification pass, not after. When briefing a
+subagent to implement-and-verify a feature, say so explicitly: "commit your
+changes before running the diff-scoped checks (comments/units/patch_coverage
+in this repo's `tools/check.sh`), not after — they silently no-op against
+an empty diff." And when an orchestrating session sees a subagent burn
+much more wall-clock/tokens than its own diff would justify, checking
+`git log`/`git status` directly is a fast, decisive way to catch this class
+of problem rather than trusting the subagent's own narration that it's
+"still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
+`comments`/`units`/`patch_coverage` steps.)
