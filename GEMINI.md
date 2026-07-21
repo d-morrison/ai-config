@@ -1,6 +1,6 @@
 # User-wide Gemini CLI instructions
 
-[Gemini CLI](https://github.com/google-gemini/gemini-cli) is an AI development platform built on [gemini-cli](https://github.com/google-gemini/gemini-cli) (`~/.gemini`). See [Google AI](https://ai.google.dev).
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) is an open-source AI assistant for the terminal. It stores user-wide config under `~/.gemini`. See [Google AI](https://ai.google.dev).
 
 ## Keep ai-config and repo checkouts fresh
 
