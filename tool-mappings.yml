@@ -25,9 +25,13 @@ models:
   - id: copilot
     label: VS Code Copilot
     resolves: GitHub MCP tool.
+  - id: antigravity
+    label: Google Antigravity
+    resolves: GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
   - id: cli
     label: Generic shell / CLI
     resolves: The CLI command (fallback for any agent that just runs a shell).
+
 
 # Each operation gives the canonical `gh`/`git` command (the CLI fallback,
 # and what the Claude skills are written in) plus the GitHub MCP tool that

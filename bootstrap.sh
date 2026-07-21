@@ -17,11 +17,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+ANTIGRAVITY_DIR="${ANTIGRAVITY_HOME:-$HOME/.gemini/antigravity}"
 
 # VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
 COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/memory-tool/memories}"
 
 mkdir -p "$CLAUDE_DIR"
+
 
 # Symlink $src -> $dest unless something is already there.
 link_one() {
@@ -110,3 +112,19 @@ if [ -d "$SCRIPT_DIR/memories" ] && [ -d "$COPILOT_MEMORY_DIR" ]; then
 else
   printf '\nskip  memories/ (dir not found or Copilot memory dir missing)\n'
 fi
+
+# --- Antigravity skills & config: symlink skills and GEMINI.md into Antigravity ---
+if [ -d "$SCRIPT_DIR/skills" ]; then
+  printf '\n--- Antigravity skills ---\n'
+  mkdir -p "$ANTIGRAVITY_DIR/skills"
+  for src in "$SCRIPT_DIR"/skills/*; do
+    [ -d "$src" ] || continue
+    link_one "$src" "$ANTIGRAVITY_DIR/skills/$(basename "$src")"
+  done
+fi
+
+if [ -f "$SCRIPT_DIR/GEMINI.md" ]; then
+  mkdir -p "$ANTIGRAVITY_DIR"
+  link_one "$SCRIPT_DIR/GEMINI.md" "$ANTIGRAVITY_DIR/GEMINI.md"
+fi
+

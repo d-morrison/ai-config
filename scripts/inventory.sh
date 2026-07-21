@@ -12,3 +12,4 @@ echo "  Codex wrappers:  $(count codex-skills -maxdepth 2 -name SKILL.md)"
 echo "  commands:        $(count commands -maxdepth 1 -name '*.md')"
 echo "  doc pages:       $(count docs -maxdepth 1 -name '*.md')"
 echo "  reference packs: $(count references -mindepth 1 -maxdepth 1 -type d)"
+
