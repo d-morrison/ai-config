@@ -1,5 +1,7 @@
 # User-wide Google Antigravity (AGY) instructions
 
+[Google Antigravity](https://antigravity.google/docs) is an AI-first development platform.
+
 ## Keep ai-config and repo checkouts fresh
 
 In every session — at session start, and again periodically during long sessions — refresh local state:
@@ -15,5 +17,5 @@ When printing a status recap or summary, include a timestamp in the user's local
 ## File formatting & links
 
 - Use GitHub-style markdown for all responses and documentation.
-- When referencing files or code symbols in workspace paths, use standard `file://` scheme links (e.g. `[filename](file:///path/to/file)`).
+- When referencing files or code symbols in workspace paths, use relative markdown links (e.g. `[filename](relative/path/to/file)`) or inline code backticks (e.g. `` `path/to/file` ``).
 - Preserve semantic line breaks and formatting conventions when editing markdown docs in this repo.

@@ -24,8 +24,8 @@ COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code
 
 mkdir -p "$CLAUDE_DIR"
 
-
 # Symlink $src -> $dest unless something is already there.
+
 link_one() {
   local src="$1" dest="$2" name
   name="$(basename "$dest")"
@@ -114,8 +114,11 @@ else
 fi
 
 # --- Antigravity skills & config: symlink skills and GEMINI.md into Antigravity ---
+# Note: Google Antigravity natively parses standard SKILL.md frontmatter directly from skills/,
+# so we symlink canonical skill directories directly rather than generated wrappers.
 if [ -d "$SCRIPT_DIR/skills" ]; then
   printf '\n--- Antigravity skills ---\n'
+
   mkdir -p "$ANTIGRAVITY_DIR/skills"
   for src in "$SCRIPT_DIR"/skills/*; do
     [ -d "$src" ] || continue

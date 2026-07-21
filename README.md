@@ -1,7 +1,7 @@
 # ai-config
 
 Portable AI agent config — skills, memories, and commands synced across
-machines via git. Works with Claude Code, Codex, Google Antigravity (AGY), VS Code Copilot, and any
+machines via git. Works with Claude Code, Codex, [Google Antigravity (AGY)](https://antigravity.google/docs), VS Code Copilot, and any
 agent that reads markdown instruction files.
 
 Each top-level subdir is symlinked into the appropriate consumer directory
@@ -24,7 +24,6 @@ After bootstrapping, confirm the symlinks resolved and the skills are visible:
 ls -l ~/.claude/skills ~/.claude/commands ~/.codex/skills ~/.gemini/antigravity/skills
 scripts/inventory.sh                         # live counts of skills/wrappers/commands/docs
 ```
-
 
 In a Claude Code session, type `/` and confirm the skills appear (e.g.
 `/scout-peers`, `/ardi`).
