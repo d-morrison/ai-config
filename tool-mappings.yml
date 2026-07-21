@@ -33,9 +33,9 @@ models:
     resolves: The CLI command (fallback for any agent that just runs a shell).
 
 # Each operation gives the canonical `gh`/`git` command (the CLI fallback,
-
 # and what the Claude skills are written in) plus the GitHub MCP tool that
 # performs the same action. `<N>` is a PR/issue number; `<branch>` a ref.
+
 operations:
   - id: VIEW_PR
     description: Read a pull request's details and metadata.
