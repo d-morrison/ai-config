@@ -17,22 +17,26 @@ finding → push → post summary → re-request review → repeat until clean.
 ## Procedure
 
 1. **Identify and claim the PR/MR.** Use the current branch's open MR, or
-   the one the user specified. Post a brief claim comment so a parallel
-   `@claude` CI run or another person doesn't start a colliding session:
+   the one the user specified. Post a brief claim comment (`COMMENT_PR`) so a
+   parallel `@claude` CI run or another person doesn't start a colliding
+   session:
    `gh pr comment <N> --body "Driving this PR to clean — back off until done."`
-   Skip if your most recent comment already says so.
+   Skip if your most recent comment already says so. (`COMMENT_PR` and the
+   other bracketed tokens below are abstract operation tokens — resolve to
+   your model's tool via [`tool-mappings.md`](../../tool-mappings.md).)
 
 2. **Read the latest review.** Pull the most recent reviewer comment — the
    `@claude` bot's, or a human's. Don't trust earlier cached verdicts — actively
    poll until a review appears that references the commit you just pushed, then
    read **that** one.
-   `gh pr checks` / `glab ci list` going green is about **CI state**, not the
-   review verdict — always parse the latest review *body* for findings.
+   `gh pr checks` (`PR_CHECKS`) / `glab ci list` going green is about **CI
+   state**, not the review verdict — always parse the latest review *body*
+   for findings.
 
    - **GitHub:**
      ```bash
      gh pr view <N> --json comments \
-       --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'
+       --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
      ```
      The reviewer's bot login varies by setup — `gh pr view` reports it as
      `claude`, the REST API as `claude[bot]`, and some setups post as
@@ -78,18 +82,33 @@ finding → push → post summary → re-request review → repeat until clean.
    rebase/squash a published branch — a merge commit matches GitHub's "Update
    branch" button. (The `sync-pr-branch` skill does exactly this.)
 
+   **Resolve inline threads as you go — including outdated ones.** After
+   pushing fixes for a round, resolve the corresponding inline review threads
+   immediately (`RESOLVE_REVIEW_THREAD`) via `mcp__github__pull_request_review_write` with
+   `method: resolve_thread` and the `threadId` (returned by
+   `READ_PR_REVIEW_COMMENTS` — `mcp__github__pull_request_read` with
+   `method: get_review_comments`). Don't wait until fully-clean to do thread
+   housekeeping. For threads marked *outdated* in GitHub (the underlying code
+   changed), confirm the fix is in the current tree, then resolve. Threads
+   whose fixes are already in the tree but were never resolved still block the
+   "fully clean" check — clear them as soon as you confirm the code is right.
+
    **Opportunistic conflict sweep.** After pushing (or after any round where
    all findings were Rebutted/Deferred with no push), scan other open PRs in
    the same repo for merge conflicts:
    ```bash
-   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments
+   gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS
    ```
-   For each PR where `mergeable == "CONFLICTING"`, check claim status (most
-   recent comment) and fix unclaimed ones — same cascade procedure as
-   `post-merge` step 1.5 (claim → isolated worktree → fetch main → merge →
-   `resolve-conflicts` skill → push → unclaim). A merge to `main` during your
-   ARDI loop can create new conflicts in sibling PRs; clearing them while
-   waiting for the next verdict is better than letting them pile up.
+   For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (see
+   `resolve-conflicts`, "Verify before you act" — `UNKNOWN` can mean GitHub
+   hasn't finished computing yet, not that there's no conflict), verify with
+   `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38) before acting,
+   then check claim status (most recent comment) and fix unclaimed ones —
+   same cascade procedure as `post-merge` step 1.5 (claim → isolated worktree
+   → fetch main → merge → `resolve-conflicts` skill → push → unclaim). A
+   merge to `main` during your ARDI loop can create new conflicts in sibling
+   PRs; clearing them while waiting for the next verdict is better than
+   letting them pile up.
 
 5. **Post the ARD summary** as a comment on the MR/PR (table format per the
    ARD skill).
@@ -119,6 +138,11 @@ finding → push → post summary → re-request review → repeat until clean.
      GitHub MCP workflow-dispatch tool). Closing+reopening the PR also works
      (fires `reopened`) but adds timeline noise. See
      [`memories/tools.md`](../../memories/tools.md).
+   - **Marking a draft ready seconds after its final push is another
+     cancel-in-progress race** — the ready-event and synchronize runs fire a
+     second apart and the cancellation can land on the newer (current-head)
+     run; see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md) for the
+     diagnosis and the `gh run rerun` remedy.
    - **A review ends up canceled with no comment:** trigger one cleanly via
      `gh workflow run claude-review.yml -f pr_number=<N>` (input is
      `pr_number`) and don't push/comment again until it posts. Note: a review
@@ -143,12 +167,15 @@ finding → push → post summary → re-request review → repeat until clean.
    runs). Poll every few minutes with `/loop` or a manual re-check:
    ```bash
    gh pr list --state open --json number,title,headRefName,mergeable,mergeStateStatus,comments \
-     --jq '.[] | select(.mergeable == "CONFLICTING")'
+     --jq '.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'   # LIST_PRS
    ```
-   Claim and fix any unclaimed conflicts using the cascade procedure in
-   `post-merge` step 1.5. Re-check after each resolution — new ones can
-   appear at any time. This turns idle wait time into productive conflict
-   prevention.
+   Verify each candidate with `git merge-tree --write-tree origin/main
+   origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, "Verify before you act") before
+   claiming — `UNKNOWN` isn't proof of a real conflict, and `CONFLICTING` can
+   be stale if a sibling PR merged since GitHub last computed it. Claim and
+   fix confirmed conflicts using the cascade procedure in `post-merge` step
+   1.5. Re-check after each resolution — new ones can appear at any time.
+   This turns idle wait time into productive conflict prevention.
 
 7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
    "fully clean"* below — zero findings **and** all CI workflows green **and**
@@ -204,7 +231,7 @@ thread) and your reply to it. (Thread mechanics live in the `ard` skill, step
 
 ## On clean
 
-Post an unclaim comment (`gh pr comment <N> --body "Done — PR is free."`) to
+Post an unclaim comment (`COMMENT_PR` — `gh pr comment <N> --body "Done — PR is free."`) to
 unblock any parallel sessions that backed off in step 1.
 
 Always provide a clickable link to the MR/PR in the final message.

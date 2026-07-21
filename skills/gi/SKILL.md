@@ -14,6 +14,11 @@ allowed-tools:
 Pick the highest-priority open issue, implement it, open an MR/PR, and drive
 it to a clean review verdict via ARDI.
 
+Commands below are annotated with their abstract operation token (e.g.
+`LIST_ISSUES`, `CREATE_PR`) — resolve to your model's tool via
+[`tool-mappings.md`](../../tool-mappings.md) instead of the `gh` command shown
+if this session doesn't have `gh`.
+
 ## When this fires
 
 - User says "gi", "grab an issue", "pick up the next issue"
@@ -26,7 +31,7 @@ it to a clean review verdict via ARDI.
 
 ```bash
 # GitHub
-gh issue list --state open --limit 20 --json number,title,labels,assignees,createdAt | cat
+gh issue list --state open --limit 20 --json number,title,labels,assignees,createdAt | cat   # LIST_ISSUES
 
 # GitLab
 glab issue list --per-page=20 2>&1 | cat
@@ -43,6 +48,7 @@ Scan the issue list and rank by priority. Use these signals (in order):
 | Bug vs feature (bugs first, generally) | Medium |
 | Age (older unresolved issues accumulate cost) | Medium |
 | Size/complexity (prefer issues you can complete in one session) | Tie-breaker |
+| Internal infrastructure vs feature (infra slightly preferred — see [`pr-prioritization`](../../shared/workflow/pr-prioritization.md)) | Tie-breaker |
 | Already assigned to someone else | **Skip** |
 | Issue comment says "Working on this" | **Skip** |
 | Open PR already exists for the issue | **Skip** |
@@ -80,7 +86,7 @@ check both explicitly here).
 
 ```bash
 # GitHub — read the issue's latest comment:
-gh issue view <N> --json comments --jq '.comments | last | .body' | cat
+gh issue view <N> --json comments --jq '.comments | last | .body' | cat   # READ_ISSUE_COMMENTS
 ```
 
 If it contains "Working on this" / "paws off" (or an equivalent claim), skip
@@ -90,14 +96,14 @@ the issue.
 
 ```bash
 # GitHub — list open PRs and scan for any whose title or branch references this issue:
-gh pr list --state open --json number,title,headRefName | cat
+gh pr list --state open --json number,title,headRefName | cat   # LIST_PRS
 # Authoritative — the issue's cross-referenced open PRs via the REST timeline API.
 # (gh issue view --json has no timelineItems field; in the timeline, source.type is
 #  always "issue", so a PR is one whose source.issue.pull_request is non-null. The
 #  state filter keeps only open PRs — merged/closed siblings aren't active competitors.
 #  --paginate walks every page so a cross-reference past the first 30 events isn't missed.)
 gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline \
-  --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"' | cat
+  --jq '.[] | select(.event == "cross-referenced") | .source.issue | select(.pull_request != null) | select(.state == "open") | "#\(.number) \(.title)"' | cat   # ISSUE_LINKED_PRS
 ```
 
 If an open PR already exists for the issue:
@@ -116,7 +122,7 @@ MRs/PRs that touched the same area. Don't undo past progress.
 
 ```bash
 # GitHub
-gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."
+gh issue comment <N> --body "Claude Code CLI (local session) is working on this — paws off until I'm done."   # COMMENT_ISSUE
 
 # GitLab
 glab issue note <N> --message "Claude Code CLI (local session) is working on this — paws off until I'm done."
@@ -125,8 +131,8 @@ glab issue note <N> --message "Claude Code CLI (local session) is working on thi
 ### 7. Create a branch
 
 ```bash
-git fetch origin main
-git checkout -b fix/<slug> origin/main   # or feat/<slug>, docs/<slug>
+git fetch origin main                    # FETCH
+git checkout -b fix/<slug> origin/main   # CREATE_BRANCH — or feat/<slug>, docs/<slug>
 ```
 
 Branch naming:
@@ -135,7 +141,33 @@ Branch naming:
 - Docs → `docs/<issue-slug>`
 - Refactor → `refactor/<issue-slug>`
 
-### 8. Implement
+### 8. Open the PR now — draft, from an empty commit
+
+Open the PR **immediately, before implementing**, so the open-PR signal that
+step 4 relies on fires right away and other sessions can see the issue is being
+worked (see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md)). Give the
+branch a diff with an empty commit, push, and open a **draft** PR:
+
+```bash
+git commit --allow-empty -m "start: <issue title> (closes #<N>)"   # COMMIT
+git push -u origin fix/<slug>                                      # PUSH
+
+# GitHub — draft PR
+gh pr create --draft --title "<title>" --body "Closes #<N>
+
+WIP — opened up front to claim the issue; implementing now."   # CREATE_PR
+
+# GitLab — draft MR
+glab mr create --draft --title "<title>" --description "Closes #<N>
+
+WIP — opened up front to claim the issue; implementing now." --assignee <your-gitlab-username>  # default: demorrison
+```
+
+Keep it a draft: a draft doesn't trigger the `@claude` review bot, so no review
+round is wasted on an empty diff. Include `Closes #N` to auto-close the issue on
+merge.
+
+### 9. Implement
 
 - Read the issue description carefully — understand "done" criteria
 - Make the changes (code, tests, docs as needed)
@@ -146,32 +178,23 @@ Branch naming:
 - Commit with a message referencing the issue:
   `fix: handle auth timeout on slow networks (closes #12)`
 
-### 9. Push and open MR/PR
+### 10. Push and mark the PR ready for review
 
 ```bash
-git push -u origin fix/<slug>
+git push origin fix/<slug>   # PUSH — push the implementation onto the draft PR from step 8
+gh pr ready <N>              # MARK_PR_READY — GitHub, flip draft → ready, which kicks off review
+# GitLab: glab mr update <N> --ready
 ```
 
-```bash
-# GitHub
-gh pr create --title "<title>" --body "Closes #<N>
+The PR already exists (step 8), so there's nothing new to create — pushing the
+implementation and marking it ready for review is what starts ARDI.
 
-<description of what was done and why>"
+### 11. ARDI to clean
 
-# GitLab
-glab mr create --title "<title>" --description "Closes #<N>
+Invoke the `ardi` skill on the MR/PR. Drive it through review rounds until the
+verdict is clean (zero findings).
 
-<description>" --assignee <your-gitlab-username>  # default: demorrison
-```
-
-Include `Closes #N` in the description to auto-close the issue on merge.
-
-### 10. ARDI to clean
-
-Invoke the `ardi` skill on the newly opened MR/PR. Drive it through
-review rounds until the verdict is clean (zero findings).
-
-### 11. Report
+### 12. Report
 
 When ARDI completes clean, report:
 - Issue number + link
@@ -190,8 +213,8 @@ opening PR-list scan won't catch a PR that didn't exist yet. Re-check right
 before merging (and treat an unexpected merge conflict as a signal):
 
 - Search open *and merged* PRs for one that already references `Closes #<N>`
-  for your issue (`gh pr list --state all --search "closes #<N>"` / the GitHub
-  `mcp__github__search_pull_requests` tool) — the default `gh pr list` lists only open PRs
+  for your issue (`SEARCH_PRS` — `gh pr list --state all --search "closes #<N>"`
+  / the GitHub `mcp__github__search_pull_requests` tool) — the default `gh pr list` lists only open PRs
   and would miss a sibling that already merged and closed the issue, the case
   that matters most. If the issue is already closed, don't merge a now-redundant
   PR blindly.
@@ -211,8 +234,10 @@ dependency, needs design decision, upstream bug):
 ## Relationship to other skills
 
 - **`check-history`** — invoked in step 5 to avoid undoing past work
-- **`ardi`** — invoked in step 10 to drive the MR/PR to clean
+- **`ardi`** — invoked in step 11 to drive the MR/PR to clean
 - **`claim-pr`** — the issue claim in step 6 follows the same pattern
+- **`pr-on-claim`** — the rule behind step 8: open the draft PR up front so the
+  work is visible to other sessions before you implement
 - **`split-concerns`** — if the implementation grows too large, offer to split
 - **`defer-issue`** — if sub-tasks emerge during implementation, defer them
 
@@ -224,6 +249,8 @@ dependency, needs design decision, upstream bug):
 - ❌ Picking a huge issue that can't be completed in one session without
   discussing scope with the user first
 - ❌ Implementing without understanding "done" criteria from the issue
+- ❌ Opening the PR only after implementing — open a draft PR up front (step 8)
+  so the work is visible and a parallel session doesn't grab the same issue
 - ❌ Forgetting `Closes #N` in the MR/PR description
 - ❌ Merging without re-checking that a concurrent session's PR hasn't already
   closed the issue (resolve a surprise merge conflict by reading the diff, not

@@ -40,9 +40,11 @@ Run the full GI procedure:
 3. Check history
 4. Claim the issue
 5. Create a branch
-6. Implement
-7. Push and open MR/PR
-8. ARDI to clean
+6. Open the draft PR up front, from an empty commit, before implementing —
+   see [`pr-on-claim`](../../shared/workflow/pr-on-claim.md)
+7. Implement
+8. Push and mark the PR ready for review
+9. ARDI to clean
 
 #### b. Record the result
 
@@ -55,6 +57,12 @@ Track each completed issue in a running table:
 (Examples use GitHub `#N` notation; on GitLab the MR IID is `!N`.)
 
 #### c. Decide the next base branch (stacking)
+
+A clean-but-unmerged MR is **not** a stopping point. Merging is human-gated
+(you don't self-merge), but that gates only the merge, not the loop — keep
+going to the next issue instead of pausing to wait for a human to merge first.
+Stacking is what lets the loop keep moving without merges. See
+[`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md).
 
 After ARDI completes clean on the current MR/PR:
 
@@ -75,7 +83,8 @@ Stop the loop when:
 - User interrupts or says "stop" / "that's enough"
 - A configurable max is reached (default: 5 issues per session, to avoid
   unbounded runs — ask the user to continue if hit)
-- An issue is blocked and no other unblocked issues remain
+- An issue is blocked and no other unblocked issues remain — otherwise
+  **bypass** the blocked issue (surface it) and keep going with the rest
 
 If stopping due to max-issues, ask:
 > "Completed 5 issues — want me to keep going, or stop here?"
@@ -133,6 +142,8 @@ When the loop ends, print a summary:
   out and works it concurrently in worktree-isolated subagents instead of
   serially. This loop stays serial for everything `gip` can't prove independent.
 - **`gi`** — the inner loop; each iteration is a full GI invocation
+- **`pr-on-claim`** — each iteration opens its draft PR up front (step 6) so the
+  in-flight issue is visible before implementing
 - **`ardi`** — drives each MR/PR to clean review within GI
 - **`check-history`** — invoked per-issue to avoid undoing past work
 - **`split-concerns`** — if an issue's implementation grows too large, split
@@ -145,7 +156,9 @@ When the loop ends, print a summary:
 If the user says "just go", "do all", "work through everything", or similar:
 - Skip the per-issue confirmation ("I'd grab #12 — proceed?")
 - Still pause at the max-issues checkpoint
-- Still pause if an issue looks ambiguous or blocked
+- Surface and **bypass** a blocked or ambiguous issue — note it and skip to the
+  next rather than halting; stop only if no independent issues remain (per the
+  stopping conditions above)
 
 ## Anti-patterns
 
@@ -154,5 +167,9 @@ If the user says "just go", "do all", "work through everything", or similar:
 - ❌ Continuing after a blocked issue without telling the user
 - ❌ Forgetting to note stack dependencies in MR descriptions
 - ❌ Basing on main when the previous MR hasn't merged yet and the next issue
-  touches the same files (creates guaranteed conflicts)
+  would edit the same passages it changes — that almost always conflicts; run
+  `stack-prs`'s decision gate (same file but different regions usually merges
+  cleanly from main and doesn't need the stack)
+- ❌ Pausing after a clean-but-unmerged MR to wait for a human merge — you don't
+  self-merge, but that's no reason to stop; keep going and stack the next issue
 - ❌ Running unbounded without a checkpoint — always pause at 5

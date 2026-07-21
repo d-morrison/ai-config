@@ -1,7 +1,7 @@
 # ai-config
 
 Portable AI agent config — skills, memories, and commands synced across
-machines via git. Works with Claude Code, Codex, VS Code Copilot, and any
+machines via git. Works with Claude Code, Codex, [Gemini CLI](https://github.com/google-gemini/gemini-cli), VS Code Copilot, and any
 agent that reads markdown instruction files.
 
 Each top-level subdir is symlinked into the appropriate consumer directory
@@ -21,7 +21,7 @@ Rerun `bootstrap.sh` any time a new top-level dir is added to the repo.
 After bootstrapping, confirm the symlinks resolved and the skills are visible:
 
 ```sh
-ls -l ~/.claude/skills ~/.claude/commands ~/.codex/skills
+ls -l ~/.claude/skills ~/.claude/commands ~/.codex/skills ~/.gemini/skills
 scripts/inventory.sh                         # live counts of skills/wrappers/commands/docs
 ```
 
@@ -52,6 +52,15 @@ GitHub MCP equivalent, with a per-model resolution rule (Codex, Copilot, and a
 generic CLI fallback). The sync script above embeds this table into every Codex
 wrapper and renders the full reference at [`tool-mappings.md`](tool-mappings.md).
 Edit the `.yml`, then rerun the script — CI fails if either output is stale.
+
+A handful of the highest-traffic skills (`ard`, `ardi`, `claim-pr`,
+`pr-status`) go a step further and name the operation token inline next to the
+concrete command (e.g. `` gh pr comment <N> ... # COMMENT_PR ``), so a
+non-Claude wrapper can resolve by token instead of pattern-matching the `gh`
+command. This is a pilot (ai-config#195) — the rest of the corpus still names
+only concrete commands. `scripts/validate-skills.py` lints every such token
+against the registry, so a typo'd token fails CI instead of silently not
+resolving for other models.
 
 ## Claude Code on the web
 
@@ -231,19 +240,21 @@ Conventions for fragments:
 resolve in local CLI sessions; the `@claude` CI bot reads `shared/` from the
 repo root.
 
-### Vendored from the lab manual (`shared/vendored/`)
+### Vendored from wai (`shared/vendored/`)
 
-A few fragments are authored in the **lab manual** instead (prompt formats, the
-Copilot-review workflow). This repo can't add the manual as a submodule — the
-manual already submodules this repo, and a mutual submodule would recurse — so
+A few fragments are authored in **[d-morrison/wai](https://github.com/d-morrison/wai)**
+instead (prompt formats, the Copilot-review workflow) — that repo hosts the
+UCD-SERG lab's "Working with AI" notes, migrated out of the lab manual once
+they outgrew a single chapter. This repo can't add wai as a submodule — wai
+already submodules this repo, and a mutual submodule would recurse — so
 it keeps a pinned **copy** under `shared/vendored/`, recorded in
 `shared/vendored/MANIFEST.json` (source repo, per-file commit, and content
 `sha256`). `CLAUDE.md` `@`-imports the copies the same way as any other fragment.
 
-Don't edit the vendored copies here — edit them in the lab manual.
+Don't edit the vendored copies here — edit them in wai.
 `scripts/check-vendored-drift.py` (run by `validate.yml`) recomputes each copy's
-hash and fails CI if it stops matching the manifest. The `Sync from lab-manual`
-workflow (`.github/workflows/sync-from-lab-manual.yml`) refreshes them weekly —
+hash and fails CI if it stops matching the manifest. The `Sync from wai`
+workflow (`.github/workflows/sync-from-wai.yml`) refreshes them weekly —
 via `d-morrison/gha`'s `sync-shared-fragments` — and opens a PR when the upstream
 files change.
 

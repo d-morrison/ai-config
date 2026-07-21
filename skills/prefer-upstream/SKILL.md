@@ -13,6 +13,13 @@ allowed-tools:
 Before writing custom code for a common task, search for existing
 well-maintained packages or tools that already solve the problem.
 
+This skill is the search procedure for the don't-reinvent-the-wheel (DRW)
+principle --- see
+[`shared/principles/dont-reinvent-wheel.md`](../../shared/principles/dont-reinvent-wheel.md)
+for the umbrella statement, including checking our own repos, the
+fork-or-contribute preference for close-but-not-exact matches, and the
+review-side application.
+
 ## When this fires (automatically)
 
 - About to write a utility function (string manipulation, file parsing, API
@@ -67,7 +74,11 @@ well-maintained packages or tools that already solve the problem.
    - Package name and link
    - How it solves the problem
    - Any wrapping needed
-5. **If no upstream exists** — proceed with custom implementation, but note
+5. **If a close-but-not-exact match exists** — prefer contributing the
+   missing piece upstream, or forking, over re-building from scratch (see
+   the DRW fragment's fork-or-contribute section and its `upstream-issues`
+   / `scout-peers` gates)
+6. **If no upstream exists** — proceed with custom implementation, but note
    in comments that you checked and nothing fit
 
 ## Anti-patterns to avoid

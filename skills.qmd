@@ -25,20 +25,25 @@ Most skills also respond to plain-English triggers listed in their `description`
 |-------|---------|--------------|
 | [`ardi`](skills/ardi/SKILL.md) | `dc`, `drive`, `clean`, `iterate` | Read the latest review, address/rebut/defer every finding, push, re-request review — loop until clean |
 | [`ard`](skills/ard/SKILL.md) | `adr` | Single ARD pass: address, rebut, defer, or acknowledge — without the iterate loop |
+| [`resolve-pr-threads`](skills/resolve-pr-threads/SKILL.md) | | Resolve inline review threads that are already settled, without a full ARD pass |
 | [`claim-pr`](skills/claim-pr/SKILL.md) | | Post a "paws off" comment before a work session; unclaim when done |
 | [`request-pr-review`](skills/request-pr-review/SKILL.md) | | Add a human reviewer and @-mention them with context |
 | [`pr-status`](skills/pr-status/SKILL.md) | | Report the current PR's CI and review state |
 | [`pr-status-all`](skills/pr-status-all/SKILL.md) | | Report status across all open PRs |
+| [`stack-prs`](skills/stack-prs/SKILL.md) | | Branch a new PR off an unmerged base PR, keep it in sync, and re-target it to `main` once the base merges |
 
 ### Issue management
 
 | Skill | Aliases | What it does |
 |-------|---------|--------------|
+| [`brainstorm`](skills/brainstorm/SKILL.md) | | Socratic clarifying-question loop before any code/issue, ending in a plan file |
 | [`start-task`](skills/start-task/SKILL.md) | `st` | File a tracking issue (if none exists), branch, implement, open PR, ARDI to clean |
 | [`grab-issue`](skills/grab-issue/SKILL.md) | `gi` | Pick the highest-priority open issue and work it end-to-end |
 | [`grab-issues-in-parallel`](skills/grab-issues-in-parallel/SKILL.md) | `gip` | Grab multiple issues and work them in parallel worktrees |
 | [`defer-issue`](skills/defer-issue/SKILL.md) | | File a follow-up issue for something out of scope in the current PR |
 | [`cancel-superseded`](skills/cancel-superseded/SKILL.md) | `cb` | Close issues/PRs that a merged PR made redundant |
+| [`discussions`](skills/discussions/SKILL.md) | | Read and respond to GitHub Discussions topics; mark Q&A answers |
+| [`migrate-discussion`](skills/migrate-discussion/SKILL.md) | | Move an item between Discussions and Issues when it fits the other tracker better |
 
 ### Branch / sync
 
@@ -46,8 +51,10 @@ Most skills also respond to plain-English triggers listed in their `description`
 |-------|---------|--------------|
 | [`sync-pr-branch`](skills/sync-pr-branch/SKILL.md) | `sync`, `merge-main`, `resync-branch` | Fetch origin, merge main into the branch, push |
 | [`merge-it`](skills/merge-it/SKILL.md) | `merged` | Squash-merge a ready PR, then run post-merge cleanup |
+| [`mwc`](skills/mwc/SKILL.md) | `merge-when-confident`, `maw`, `merge-at-will` | Grant session-scoped permission to merge fully-clean PRs without asking per PR |
 | [`post-merge`](skills/post-merge/SKILL.md) | | After a merge: checkout main, pull, delete branch, run UMS |
 | [`clean-branches`](skills/clean-branches/SKILL.md) | `prune` | Delete local branches already merged or closed |
+| [`resolve-conflicts`](skills/resolve-conflicts/SKILL.md) | `rmc` | Resolve merge/rebase/cherry-pick conflicts by consolidating the best of both branches |
 
 ### Memory and skills maintenance
 
@@ -55,8 +62,12 @@ Most skills also respond to plain-English triggers listed in their `description`
 |-------|---------|--------------|
 | [`ums`](skills/ums/SKILL.md) | `update-memories-and-skills` | Capture learnings from the session into memory files and skill definitions |
 | [`memorize`](skills/memorize/SKILL.md) | `remember`, `always` | Save a specific fact or preference to memory |
+| [`push-memory`](skills/push-memory/SKILL.md) | | Push a general-purpose memory into ai-config from a session working in another repo — on a branch + PR |
 | [`record-learnings`](skills/record-learnings/SKILL.md) | | Structured post-mortem: extract lessons from a completed task |
 | [`consolidate-memory`](skills/consolidate-memory/SKILL.md) | | Merge or deduplicate memory files that have drifted |
+| [`skill-audit`](skills/skill-audit/SKILL.md) | | Report which skills actually fire (and how often) vs. dead weight, and recommend pruning candidates |
+| [`learn`](skills/learn/SKILL.md) | | Stage a candidate learning without yet deciding if it's durable enough to commit |
+| [`promote-memory`](skills/promote-memory/SKILL.md) | | Review staged learnings and promote the durable ones into committed memory |
 
 ### Writing and style
 
@@ -64,6 +75,11 @@ Most skills also respond to plain-English triggers listed in their `description`
 |-------|---------|--------------|
 | [`use-preferred-style`](skills/use-preferred-style/SKILL.md) | `style` | Apply the plain-prose writing guide to a draft |
 | [`find-ai-tells`](skills/find-ai-tells/SKILL.md) | `ai-tells` | Scan text for AI-sounding patterns and flag them |
+| [`fact-check-prose`](skills/fact-check-prose/SKILL.md) | `fcp` | Check prose claims, reasoning, and computed values against sources and rendered output |
+| [`fix-forward-references`](skills/fix-forward-references/SKILL.md) | `ffr` | Detect and rearrange/reword forward-pointing references ("see below") in prose |
+| [`detect-informal-definitions`](skills/detect-informal-definitions/SKILL.md) | | Find concepts defined with definitional precision that never got wrapped in a formal definition div |
+| [`detect-hypothetical-examples`](skills/detect-hypothetical-examples/SKILL.md) | | Find worked examples using invented numbers when a real dataset is already available |
+| [`use-math-macros`](skills/use-math-macros/SKILL.md) | `macroize` | Rewrite manuscript math onto the shared d-morrison/macros submodule |
 | [`tidy`](skills/tidy/SKILL.md) | | Clean up code or prose without changing behavior |
 | [`simplify`](skills/simplify/SKILL.md) | | Reduce a file or function to its essential parts |
 
@@ -78,15 +94,29 @@ Most skills also respond to plain-English triggers listed in their `description`
 | [`send-upstream`](skills/send-upstream/SKILL.md) | `sup` | Open a PR or issue in an upstream repo for a bug found here |
 | [`reprexes`](skills/reprexes/SKILL.md) | | Build minimal reproducible examples for a bug |
 | [`r-pkg-spellcheck`](skills/r-pkg-spellcheck/SKILL.md) | | Spell-check an R package's documentation |
+| [`r-pkg-check`](skills/r-pkg-check/SKILL.md) | | Run `devtools::check()`/`R CMD check` and triage the results |
+| [`r-pkg-news`](skills/r-pkg-news/SKILL.md) | | Draft a new NEWS.md entry for an R package |
+| [`r-pkg-cran-checklist`](skills/r-pkg-cran-checklist/SKILL.md) | | Walk through the standard CRAN submission checklist |
+| [`reproducibility-audit`](skills/reproducibility-audit/SKILL.md) | | Audit a project for reproducibility gaps: hidden deps, hardcoded paths, undocumented prerequisites, output traceability |
 
 ### Session management
 
 | Skill | Aliases | What it does |
 |-------|---------|--------------|
 | [`session-lock`](skills/session-lock/SKILL.md) | `deconflict-sessions` | Register/deregister this session to prevent parallel clobbering |
-| [`handoff`](skills/handoff/SKILL.md) | `wrap-up` | Summarize context and open items so another session can pick up |
+| [`handoff`](skills/handoff/SKILL.md) | | Snapshot work state (branch, jobs, open decisions) so the next session can resume cleanly |
+| [`wrap-up`](skills/wrap-up/SKILL.md) | `done`, `merged` | Verify true PR/issue/branch state, report a linked summary, then run UMS |
 | [`select-model`](skills/select-model/SKILL.md) | `model-fit`, `assess-model-fit` | Choose the right Claude model for the task at hand |
+| [`away`](skills/away/SKILL.md) | | Grant session-scoped permission to stop asking clarifying questions, pick confident work, and consult a stronger model instead of blocking |
+| [`back`](skills/back/SKILL.md) | | Cancel the `away` grant and surface a decision log of what was resolved unattended |
+| [`delegate-to-codex`](skills/delegate-to-codex/SKILL.md) | `dtc` | Offload heavy read/draft/verify work to the `codex` CLI before spending Claude quota, with Claude fallback |
+| [`prompt-me`](skills/prompt-me/SKILL.md) | `pm` | Surface the single most pressing open question (or top N) waiting on user input |
+| [`prompt-me-all`](skills/prompt-me-all/SKILL.md) | `pma` | Restate every open question still waiting on user input, uncapped |
+| [`pending-decisions`](skills/pending-decisions/SKILL.md) | `pd` | Sweep issues/PRs (not just this conversation) for ones waiting on a decision from you, and ask about them one at a time |
+| [`checkpoint`](skills/checkpoint/SKILL.md) | | Save a deliberate mid-task snapshot without ending the session |
+| [`compress-session`](skills/compress-session/SKILL.md) | | Distill the session into auto memory before context fills up |
+| [`permission-check`](skills/permission-check/SKILL.md) | | Diagnose why Claude Code is (or isn't) prompting for permission on an action |
 
 ## Full skill list
 
-All 112+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.
+All 171+ canonical skills are in [`skills/`](https://github.com/d-morrison/ai-config/tree/main/skills) on GitHub. Generated Codex wrappers live in [`codex-skills/`](https://github.com/d-morrison/ai-config/tree/main/codex-skills). Each canonical `SKILL.md` has a `description` field that lists the trigger phrases and a full procedure.

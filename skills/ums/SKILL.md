@@ -13,17 +13,24 @@ allowed-tools:
 
 Actively review recent session context and update all relevant memory files
 and skill definitions to capture what was learned. Unlike `record-learnings`
-(which fires passively as you work), UMS is an explicit checkpoint: stop,
-reflect, and persist.
+(which records individual facts in place as they arise), UMS is a reflective
+checkpoint: survey what accumulated, categorize it, and persist it all in one
+committed pass.
 
 ## When this fires
 
+- **As soon as a learning worth saving shows up** — a corrected mistake, a
+  new preference, a tool quirk, a workflow gap. This is the primary trigger:
+  run UMS right then, interleaved with the main work, instead of batching
+  learnings for a wrap-up step at the end. Don't wait for the task to finish
+  or for `/clear` to accumulate a backlog — and don't gate it on approval or
+  on a PR merging: capture the learning the moment it appears, even while the
+  PR that taught it is still open and unreviewed.
 - User says "ums", "update memories and skills", "record what we learned"
-- **At the start of `/clear`** — before context is lost, capture any
-  accumulated learnings from the session
+- **At the start of `/clear`** — a backstop, not the primary trigger: catch
+  anything accumulated since the last proactive pass before context is lost
 - After a workflow reveals a gap (e.g., a skill was followed but missed a
   step, or a preference wasn't encoded)
-- After a multi-step session where several learnings accumulated
 - When the user says "did you update memories?" (the answer should be "let
   me do that now")
 
@@ -74,18 +81,18 @@ reflect, and persist.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-   git commit -m "ums: <brief summary>"
-   git push origin HEAD
+   git commit -m "ums: <brief summary>"   # COMMIT
+   git push origin HEAD                   # PUSH
    ```
 
    *No PR yet:* branch off main first — a direct-to-main push is denied by
    auto-mode and bypasses review.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-   git fetch origin main && git checkout -b ums-<topic> origin/main
+   git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-   git commit -m "ums: <brief summary>"
-   git push -u origin HEAD && gh pr create --fill   # then request d-morrison as reviewer
+   git commit -m "ums: <brief summary>"   # COMMIT
+   git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then request d-morrison as reviewer
    ```
    **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing*
    was committed — verify with `git status` / `git log` before any `git reset
@@ -114,20 +121,53 @@ reflect, and persist.
   without agent-doc infrastructure, fall back to that repo's local Claude project
   memory: `~/.claude/projects/<project-path>/memory/` (write directly; no commit).
 - [ ] Did the user express a new preference? → `/memories/preferences.md`
-- [ ] Did a workflow emerge that could be a new skill? → Create it
+- [ ] Did a workflow emerge that could be a new skill? → run `spot-skill-opportunities`
+  to judge whether it's genuinely recurring, then `skill-builder` to create it
+- [ ] Did a heavy skill's fan-out step need a dedicated read-only worker persona
+  (like `dependency-auditor` / `hallucination-detector` / `community-demand-scout`),
+  rather than just a new skill? → run `agent-builder` to scaffold
+  `.claude/agents/<name>.md`
 - [ ] Are there existing skills that reference outdated info? → Fix them
+- [ ] Has `learn-staging.md` accumulated entries since the last
+  `promote-memory` run? → fold in a `promote-memory` pass now.
 - [ ] Did I edit one step's scope without updating sibling steps in the same file? →
   Search the file for all enumerations of the changed category and make them consistent.
 - [ ] Did I add a shared-procedure step to one skill but not to sibling skills? →
   Grep sibling skills for the same action and add the step there too.
+- [ ] Did I change how a skill describes its relationship/contrast to a sibling
+  skill (e.g. "X is passive, Y is explicit")? → Grep the sibling skill for its
+  own mirrored description of that same relationship and update it too — a
+  one-directional fix leaves the sibling's docs contradicting the new
+  behavior. (Caught by `@claude` review on ai-config#439: `ums/SKILL.md`'s
+  passive-vs-active contrast with `record-learnings` was fixed, but
+  `record-learnings/SKILL.md`'s own mirrored line describing `ums` as "the
+  explicit ... counterpart" was missed until review flagged it as a
+  follow-on.)
 
-## Relationship to record-learnings
+## Relationship to record-learnings and staged capture
 
-- `record-learnings` = passive, continuous, fires as you work
-- `ums` = active, explicit, user-invoked checkpoint
+- `record-learnings` = records individual facts in place, in the moment they arise
+- `ums` = a reflective, full-context sweep — survey what accumulated, categorize it, and persist it all in one committed pass
 
-Both write to the same destinations. UMS is for when you forgot to
-record-as-you-go, or when the user wants to ensure nothing was missed.
+Both write to the same destinations. `ums` fires proactively, as soon as a
+learning worth saving shows up, rather than waiting to catch up later; the
+`/clear` trigger is only a backstop for anything that slipped through.
+
+`spot-skill-opportunities` is the standing, continuous version of this
+skill's "did a workflow emerge that could be a new skill?" checklist item —
+it runs the recognition judgment call live, in the moment, instead of only
+at this checkpoint. `agent-builder` is the sibling construction step for the
+other checklist item above — a recurring fan-out worker persona rather than a
+new user-invocable skill.
+
+`learn`/`promote-memory` are a staged alternative for the uncertain case:
+`record-learnings` and this skill both write directly to committed memory
+the moment something looks worth remembering, which is right when you're
+confident. When you're not — a candidate whose generality or evidence isn't
+solid yet — `learn` stages it instead, and a `promote-memory` pass (which a
+`ums` run can fold in, or run standalone) reviews staged candidates before
+they land in committed memory. Neither replaces the direct-write path; they
+add a review gate for the cases that need one.
 
 ## Anti-patterns
 
@@ -145,3 +185,15 @@ record-as-you-go, or when the user wants to ensure nothing was missed.
   `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the
   repo has no agent-doc infrastructure. See the checklist item above and
   `memories/preferences.md` for the full rule.
+- ❌ Inserting a new bullet into any memory file with nested lists (including
+  `tools.md`, `preferences.md`) without checking the surrounding indentation
+  first. These files mix 0-indent top-level bullets with 2-/4-indent sub-bullets and
+  multi-paragraph continuations; a new top-level bullet dropped in the middle
+  of an existing parent's sub-list re-parents whatever follows it in Markdown
+  (a sibling sub-bullet silently becomes this new bullet's child). Before
+  committing an insertion, re-read the few lines immediately above and below
+  the insertion point and confirm the indentation still matches what it did
+  before — or place the new bullet after the complete enclosing list instead
+  of inside it. (Caught by `@claude` review on ai-config#335: a new 0-indent
+  bullet landed between two sibling sub-bullets of an existing parent,
+  breaking the nesting.)

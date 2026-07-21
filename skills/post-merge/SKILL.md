@@ -32,7 +32,7 @@ review lifecycle is still fresh in context.
 ### 1. Verify the merge — never assume
 
 ```bash
-gh pr view <N> --json number,title,state,mergedAt,mergeCommit,headRefName
+gh pr view <N> --json number,title,state,mergedAt,mergeCommit,headRefName   # VIEW_PR
 # GitLab
 glab mr view <N>
 ```
@@ -43,42 +43,97 @@ standing **never assume; always verify** rule applied to closing out a PR.)
 
 ### 1.5. Cascade conflict scan
 
+**In an ultracode/coordinator session, delegate this whole step to a
+subagent** rather than running the scan-and-resolve loop in the main thread
+--- it's exactly the kind of investigation-plus-fix work the coordinator
+should hand off (see `memories/preferences.md`'s coordinator-mode bullet).
+Brief the subagent with the merged PR's number/branch and the steps below;
+have it report back which PRs it found conflicting, what it did about each,
+and any it skipped (already claimed, conflict it couldn't understand). Do the
+scan inline only for a solo (non-orchestrated) session.
+
+**If any OTHER agents already own a claimed branch (an active, resumable
+`Agent`-tool session, not a one-shot `Workflow`-internal `agent()` call),
+message each one directly right after the merge, instead of relying solely on
+a separate scan to find and fix their conflict after the fact:** "main just
+advanced (PR #N merged) --- fetch and merge origin/main into your branch now,
+resolve any conflict yourself (you have the context on your own change), then
+continue." This is faster and higher-context than a scanning subagent
+guessing at the resolution from outside: the branch's own owning agent
+already knows why its code looks the way it does.
+
+**This depends on the coordinator finding out about a merge in the first
+place --- so brief every delegated agent, up front, to report back the
+instant its OWN tracked PR merges, not just when its ARDI work is done.**
+A PR sitting "ready for merge" isn't the end of that agent's watch: keep
+polling until the merge actually happens --- by a human, since the agent
+itself must not self-merge --- then notify the coordinator immediately. This
+is what lets the coordinator fan out the "merge main now" nudge above to
+every OTHER live agent right when it matters, instead of the coordinator
+having to separately poll every open PR's merge state itself to notice. Fold
+this into the standard delegation brief (see `gia`/`gii`'s per-issue agent
+prompts) alongside the no-self-merge instruction, rather than treating it as
+a one-off ask.
+
+Reserve the scan-and-fix
+subagent above for branches with NO active owning agent (e.g. a completed
+`Workflow` run's one-shot agent that already returned).
+
 A squash-merge on `main` can knock previously-mergeable open PRs into conflict.
 Scan right after the merge is confirmed:
 
 ```bash
 gh pr list --state open \
-  --json number,title,headRefName,mergeable,mergeStateStatus,comments
+  --json number,title,headRefName,mergeable,mergeStateStatus,comments   # LIST_PRS
 ```
 
-For each PR where `mergeable == "CONFLICTING"`:
+For each PR where `mergeable == "CONFLICTING"` **or `"UNKNOWN"`** (GitHub can
+take minutes to finish computing mergeability after a push — a genuinely
+conflicting PR can sit in `UNKNOWN` and get missed if you filter for
+`CONFLICTING` alone):
 
-1. **Check claim status.** Read the most recent comment. If it says "Working on
+1. **Verify before claiming — don't trust the flag alone.** See
+   `resolve-conflicts`, "Verify before you act": `git merge-tree --write-tree
+   origin/main origin/<branch>` gives ground truth without a worktree
+   (git ≥ 2.38). Skip if it comes back clean.
+2. **Check claim status.** Read the most recent comment. If it says "Working on
    this — paws off" (or equivalent), skip it — another session owns it.
-2. **Claim it.**
+3. **Claim it.**
    ```bash
-   gh pr comment <N> --body "Working on this — paws off until I'm done."
+   gh pr comment <N> --body "Working on this — paws off until I'm done."   # COMMENT_PR
    ```
-3. **Create an isolated worktree**, fetch the latest `main` (the squash-merge
+4. **Create an isolated worktree**, fetch the latest `main` (the squash-merge
    commit that caused the conflict), and merge:
    ```bash
-   git fetch origin main <branch>   # fetch both: we need the new main tip
+   git fetch origin main <branch>   # FETCH — fetch both: we need the new main tip
    git worktree add .claude/worktrees/pr-<N> origin/<branch>
    cd .claude/worktrees/pr-<N>
    git checkout -b <branch>         # or --track origin/<branch> if the name is free
-   git merge origin/main            # picks up the new squash-merge commit
+   git merge origin/main            # MERGE_BRANCH — picks up the new squash-merge commit
    ```
-4. **Resolve conflicts** using the `resolve-conflicts` skill (consolidate both
+5. **Resolve conflicts** using the `resolve-conflicts` skill (consolidate both
    sides' intent; do not blindly pick one side wholesale).
-5. **Run the repo's pre-commit checks**, then push and remove the worktree:
+6. **Run the repo's pre-commit checks, `git fetch` the branch again, then push.**
+   The claim comment isn't an atomic lock — a repo's own automated bot (e.g. an
+   `@claude` CI agent triggered independently by the same merge event) can pick up
+   and resolve the identical cascade conflict in parallel even when no claim
+   comment was posted. If the fetch shows the remote has moved with an
+   **equivalent** fix already pushed, adopt it (verify with `git merge-tree
+   --write-tree origin/main origin/<branch>` [git ≥ 2.38] — no remaining conflict — plus a
+   content diff against what you were about to push) instead of force-pushing
+   a duplicate merge commit. Only push your own resolution if the remote is
+   still where you left it.
    ```bash
-   git push origin <branch>
+   git fetch origin <branch>   # FETCH
+   # If origin/<branch> already carries an equivalent fix, stop here — don't push.
+   git diff HEAD origin/<branch>   # empty/equivalent means the bot beat you to it
+   git push origin <branch>   # PUSH — only if the remote hasn't moved
    cd -
    git worktree remove .claude/worktrees/pr-<N>
    ```
-6. **Unclaim** with a brief resolution summary:
+7. **Unclaim** with a brief resolution summary:
    ```bash
-   gh pr comment <N> --body "Conflict resolved — branch is now mergeable. <one-line summary of what conflicted and how it was resolved>"
+   gh pr comment <N> --body "Conflict resolved — branch is now mergeable. <one-line summary of what conflicted and how it was resolved>"   # COMMENT_PR
    ```
 
 Resolve PRs one at a time — not because worktrees race each other (each
@@ -109,6 +164,14 @@ git worktree list                 # find the merged branch's worktree path
 git worktree remove <path>        # refuses on a dirty tree — don't blindly --force
 git branch -d <merged-branch>     # now succeeds
 ```
+
+**Worktree containing a submodule:** `git worktree remove <path>` refuses with
+`fatal: working trees containing submodules cannot be moved or removed` even
+when the tree is perfectly clean (`git status --short` empty) — this is a
+different refusal than the dirty-tree one above, triggered by the mere
+presence of a submodule, not by uncommitted state. Confirm clean with
+`git status --short` first (as always), then `git worktree remove --force
+<path>` is the correct move here, not a sign of misclassification.
 
 **Running from within the worktree:** if post-merge fires while the shell is
 inside the worktree being tidied, `git worktree remove <path>` fails ("cannot
@@ -151,7 +214,8 @@ Run the full `ums` procedure (invoke the `ums` skill by name), focused on what
 - **Corrections / guidance the user gave mid-PR** → preference + skill update
   (per "update BOTH skills AND preferences").
 - **Tool / CI quirks** hit during the loop → `tools.md` / `debugging.md`.
-- **A multi-step pattern that emerged** → consider a new skill.
+- **A multi-step pattern that emerged** → run `spot-skill-opportunities` to
+  judge whether it's genuinely recurring, then hand off to `skill-builder`.
 
 This is the "learn from mistakes and guidance along the way" step — a merge is
 the natural checkpoint to bank those lessons before the context is gone. If
@@ -183,6 +247,8 @@ PT on a machine set to any other zone).
   per-PR version: run it each time a PR lands; run `wrap-up` once at session
   end. They share the verify-then-UMS shape.
 - **`ums`** — step 4 invokes it.
+- **`spot-skill-opportunities`** — step 4's "multi-step pattern that emerged"
+  bullet routes here to judge recurrence before handing off to `skill-builder`.
 - **`cb` / `clean-branches`** — for stacked or stale sibling branches.
 - **`clean-worktrees` / `cw`** — if the PR was built in a git worktree, remove
   it during the tidy (step 2); a leftover worktree pins its branch and blocks

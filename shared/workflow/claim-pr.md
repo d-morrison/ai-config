@@ -24,3 +24,24 @@ agent (`claude.yml`), the agent can push commits to your branch on PR activity
 --- e.g. merging `main` in --- and collide with your in-flight push, so claim
 early to flag the branch as actively worked. (See `memories/tools.md`,
 "@claude CI action", for the collision-recovery steps.)
+
+When starting work from an issue, follow the claim comment with an immediate
+draft PR --- see [`pr-on-claim`](pr-on-claim.md) for the mechanics. An open
+PR is a stronger "in-flight" signal than a comment alone.
+
+**Handing off mid-task to another agent, on user request ("finish what you're
+doing, then relinquish holds; I'll put another agent on them"):** don't just
+stop --- leave the next agent a clean starting point. On each claimed PR/issue:
+(1) post a status comment on the PR itself distinguishing what's **done** from
+what's genuinely **not done** (the actual point of the issue, not just the
+side-fixes found along the way) and any blocker still open, so the next agent
+doesn't have to re-derive it from the diff; (2) post the closing/unclaim
+comment on the issue per the pattern above; (3) `unsubscribe_pr_activity` (or
+stop babysitting locally) so you don't keep auto-fixing a PR you no longer
+own; (4) stop any background watch/poll task tied to that work (e.g. a
+`ScheduleWakeup` or a `Monitor`/background-Bash wait) so it doesn't fire into
+a session that's moved on. A merge-conflict-free `git status` and a pushed
+branch are not enough on their own --- the status comment is what makes the
+handoff legible. (ucdavis/bcs `gia` session, 2026-07-06: handed off PRs #310
+and #311 mid-implementation this way, each blocked on the same slow
+`renv::restore()`.)

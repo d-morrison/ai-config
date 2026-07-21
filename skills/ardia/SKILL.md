@@ -19,7 +19,7 @@ each to a clean review verdict in series.
 1. **List the open PRs/MRs and decide which are in scope.**
    ```bash
    gh pr list --state open --limit 100 \
-     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision
+     --json number,title,headRefName,baseRefName,isDraft,author,reviewDecision   # LIST_PRS
    ```
    On GitLab, use `glab api "projects/:id/merge_requests?state=opened&per_page=100"`
    and look for `source_branch` (≡ `headRefName`) and `target_branch` (≡ `baseRefName`)
@@ -44,6 +44,13 @@ each to a clean review verdict in series.
    If a circular stack is found (impossible in practice but check anyway),
    surface it to the user and skip those PRs.
 
+   **Tie-break with infrastructure-first.** Among PRs with no stacking
+   relationship, when otherwise equally pressing, process internal
+   infrastructure PRs (shared tooling, CI workflows, reusable actions,
+   templates) slightly ahead of feature PRs — see
+   [`pr-prioritization`](../../shared/workflow/pr-prioritization.md). This
+   never overrides the stacking order above.
+
    Report the in-scope list (with bare PR URLs) **before** you start, so the
    user can veto any before the loop pushes commits.
 
@@ -57,6 +64,31 @@ each to a clean review verdict in series.
    review findings), complete ARDI on the base first to drive it to clean and
    merge it, then start the derived PR. Never run ARDI on a derived PR while its
    base is still open and unclean — you'd be reviewing against a moving target.
+
+   A PR reaching **clean-but-unmerged** is that PR's terminal state, **not** a
+   reason to pause the sweep: merging is human-gated (you don't self-merge), but
+   that gates only the merge — move straight to the next PR rather than waiting
+   for a human to merge first. See
+   [`stack-dont-pause`](../../shared/workflow/stack-dont-pause.md), and use
+   [`stack-prs`](../stack-prs/SKILL.md) for the branch/PR mechanics when the
+   next item needs to stack on a clean-but-unmerged PR.
+
+   **Cascading the stack is part of ARDIA, not separate side work.** Every time
+   a base advances — it merges into `main`, *or* its own head moves (a review
+   fix, a main-sync commit) — every PR stacked above it goes `BEHIND`/`DIRTY`
+   and must be re-synced: merge the base's new head into the child, resolve
+   conflicts (keeping *both* the base's changes and the child's own — e.g. a
+   rename in the base and a new parameter in the child both survive), re-verify
+   (run the repo's own checks — build/lint/tests, plus any doc regeneration or
+   character check), bump the child's version above the base where the repo
+   requires it, and push. This ripples:
+   a single review-fix commit to a mid-stack PR puts every descendant behind,
+   so one ARDIA pass may sync the same branch more than once as fixes land
+   below it. When the user says "cascade" or "keep driving all these to clean,"
+   that includes this conflict-resolution/re-sync loop up the whole stack —
+   don't treat "resolve merge conflicts" or "sync the stack" as out-of-scope.
+   Process bottom-up: sync the lowest `BEHIND`/`DIRTY` PR first, then its
+   children, since each sync advances a head the next child needs.
 
    Drive each to a terminal state:
    - **Clean** — zero flagged items under any heading; post the unclaim

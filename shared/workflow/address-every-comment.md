@@ -17,8 +17,69 @@ observation", or "could improve" sections. "Looks good" / "no findings" /
 "approved" with no follow-on bullets is the bar. Resolve every inline review
 thread along the way, leaving only the final all-clear exchange.
 
+**Always resolve an inline thread the moment its comment is successfully
+addressed** --- the fix pushed and a reply posted naming it --- in the same
+pass, whatever workflow you're in: a formal `ard`/`ardi` round, a CI-monitor
+nudge, or a one-off fix outside any loop. Addressing without resolving leaves
+a thread that reads as outstanding work to every later reviewer, blocks
+[`fully-clean`](fully-clean.md)'s every-inline-thread-resolved criterion, and
+drags stale noise into the next review round. The per-disposition settlement
+rules in `ard` step 4b still govern the exceptions: a **Rebut** stays open
+until the reviewer drops it, and an **Address** you're not confident fully
+settles the concern gets a reply asking for confirmation instead of a
+resolve. The `resolve-pr-threads` skill sweeps any stragglers, but it's a
+backstop --- resolve-on-address is the default, not a cleanup step.
+
 Do **not** report "ready to merge with one minor nit noted" / "harmless as-is" /
 "can address if you want" --- that hedging just pushes triage back to the
 requester. If after 3--4 rounds the reviewer keeps generating new nits each
 cycle (asymptotic noise), surface that and ask whether to keep going or accept
 the current state.
+
+**Noise is per-item, not per-round --- don't stop the whole loop over one
+recurring flag.** A long-running PR can have both real findings (worth fixing
+every round) and one specific item the reviewer re-raises verbatim round after
+round even though it's already deferred/tracked (e.g. a file-length guideline
+already split into a follow-up issue). Keep fixing every *new* finding as it
+appears --- don't let the recurring item make you stop processing genuinely
+new ones. But stop re-litigating *that one item* every round: reply once
+pointing at the tracked issue, and hold on it specifically rather than
+re-deferring it on each pass. Surface the pattern to the user (which item, how
+many rounds, where it's tracked) and let them decide whether to resolve it now
+(e.g. do the split) or leave it as accepted recurring noise --- don't decide
+unilaterally to either keep re-processing it or silently drop it. (rme#706 ran
+100+ review rounds: each round's *new* findings --- a missing derivation step,
+a missing i.i.d. hypothesis, an unverified citation locator --- got fixed
+every time; the one recurring file-length flag got a single reply-and-hold
+each round until the user weighed in.)
+
+**When a finding is a pattern (a formatting/style rule broken in one spot),
+apply it everywhere it recurs in the same file, not just the flagged line.**
+A reviewer that flags one inconsistent list-item format is telling you about
+the rule, not just that one item --- fix every occurrence in the same file that
+breaks it in the same pass, rather than waiting for the reviewer to flag each
+occurrence in a separate round. Re-scan the whole changed file for the same
+pattern before pushing the fix.
+
+**When a prose fix changes wording that's also paraphrased elsewhere in the
+same PR (a CHANGELOG entry, a PR description, a cross-reference), sync that
+copy too.** A CHANGELOG entry written before the review lands often quotes or
+paraphrases the exact phrase a reviewer later flags; fixing the source
+prose but leaving the paraphrase stale reintroduces the same wording issue
+one file over. Grep the diff for the flagged phrase before considering the
+finding closed. (ai-config#373: fixed "routing/dispatch site" in the skill
+per review, but the CHANGELOG entry still said it until a follow-up commit.)
+
+**This generalizes to a skill's own inline restatement of a fragment it
+links to.** A `SKILL.md` that links a backing `shared/` fragment for the
+full detail often *also* restates the fragment's approach or word list
+inline (in its `description` field, or a short procedure-step summary) so
+a reader doesn't have to open the linked file. Fixing a bug in the
+fragment doesn't automatically fix these inline restatements --- they're a
+second, independent copy of the same claim, and a review round after the
+fragment fix can catch them going stale exactly like a CHANGELOG paraphrase
+does. Grep the whole PR diff for the fixed phrase/word-list, not just the
+fragment file, before considering a fragment fix complete. (`ai-config#507`:
+fixing `forward-references.md`'s regex left `fix-forward-references/SKILL.md`'s
+own `description` field and Step 2 summary describing the old, already-fixed
+approach --- caught in a second review round.)

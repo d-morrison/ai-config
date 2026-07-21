@@ -31,6 +31,56 @@ floor. Don't. **Consolidate, don't choose.**
   conflicts fully"), `clean-branches`' rebase-onto-main step, or a stacked
   `gii` MR. When one of those stops on a conflict, run this.
 
+## Verify before you act — don't trust `mergeable` alone
+
+Before claiming and fixing a PR flagged by a cascade conflict scan
+(`post-merge` step 1.5, `ardi`'s opportunistic sweeps, `wrap-up` step 1), get
+ground truth locally instead of acting on the API field directly:
+
+```bash
+git fetch origin main <branch> -q   # FETCH
+git merge-tree --write-tree origin/main origin/<branch>   # git >=2.38; no worktree/checkout needed
+echo "exit: $?"   # 0 = clean merge (no action needed); 1 = real conflict exists
+```
+
+Two failure modes this catches:
+
+- **`mergeable == "UNKNOWN"` is not "no conflict."** GitHub returns `UNKNOWN`
+  right after a push or a sibling PR's merge, while it's still computing —
+  sometimes for minutes. A cascade scan that filters only
+  `mergeable == "CONFLICTING"` silently skips a PR stuck in `UNKNOWN` even
+  when it's genuinely conflicting. Treat `UNKNOWN` the same as
+  `CONFLICTING`: a candidate to verify, not a PR to skip.
+- **`mergeable == "CONFLICTING"` (or a `dirty` mergeable_state) can itself be
+  stale.** GitHub computes it against whatever `main` snapshot it last saw —
+  if a sibling PR merged since, the flag may still say conflicting even
+  though a fresh merge against current `main` is clean. Acting on a stale
+  flag risks wasted resolution effort. (Seen on ai-config#372: flagged
+  `dirty`, but `git merge-tree` against current `main` came back clean —
+  no manual resolution was needed, just a `git merge` + push.)
+
+If `git merge-tree` exits clean, there's nothing to resolve — skip the PR (or,
+if you want the branch to reflect the now-current `main`, do a plain
+`git merge origin/main && git push`, no conflict markers involved). Only
+proceed to the consolidation procedure below when it reports a real conflict.
+
+**Check `git --version` before trusting the exit code — on git <2.38 this
+command fails a different way that a naive check misreads.** `--write-tree`
+mode doesn't exist before 2.38; on an older install the command errors with
+`fatal: unknown rev --write-tree` (a non-zero exit, same as a real conflict)
+or, if scripted with a text-based check instead of the exit code, an error
+message that a naive `grep -qi conflict` fails to match — silently
+misclassifying every single PR in a batch scan as clean (a false negative
+that defeats the whole scan; hit across a 5-PR cascade scan on ai-config,
+2026-07-03). Confirm `git --version` is 2.38+ before relying on this
+command's exit code at all. On an older git, use the legacy 3-arg form
+instead (same read-only guarantee, no worktree/checkout):
+```bash
+base=$(git merge-base origin/main origin/<branch>)
+git merge-tree "$base" origin/main origin/<branch>   # git <2.38 (any version)
+# conflict markers ("<<<<<<<") in the output = real conflict; empty/clean = no conflict
+```
+
 ## Core principle: consolidate the best of both branches
 
 Each conflict hunk has three inputs — the common **base**, **our** side, and
@@ -78,6 +128,24 @@ go read the history first (step 2).
    change from **both** sides, then delete every conflict marker
    (`<<<<<<<`, `=======`, `>>>>>>>`). Take one side wholesale only when you've
    confirmed the other side has nothing worth keeping — and note that you did.
+
+   **Also check whether the merged result duplicates content that already
+   exists elsewhere in the file — a separate problem from the textual
+   conflict itself.** This can arise two ways: a single incoming PR may
+   internally copy a sentence into a new section (the merge is clean, but
+   the result now says the same thing twice), or both branches may
+   independently add equivalent sentences in different sections (a
+   cross-branch variant with the same symptom). In both cases `git
+   merge`/`merge-tree` reports zero conflicts even though the result
+   contains duplication — sometimes with a pronoun or reference that only
+   made sense in its original location. Grep the merged file for the
+   distinctive phrase from each side's addition before finishing;
+   if it already appears elsewhere, keep one copy (usually the version with
+   the clearer standalone referent) and drop the redundant one. (ai-config#446:
+   the merge itself was clean, but the incoming PR's own diff had separately
+   duplicated a CLAUDE.md sentence verbatim into a different section, where
+   "this policy" lost its antecedent — the intra-PR variant, caught by the
+   `@claude` review bot as a distinct finding from the conflict resolution.)
 
 4. **Prove no markers (or whitespace damage) slipped through:**
    ```bash

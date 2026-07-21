@@ -37,6 +37,10 @@ X", "whenever I edit Y do Z"), memory can't execute it — that needs a **hook**
 in `settings.json` / `settings.local.json` (use the `update-config` skill).
 Say so and route it there; don't store a note that will never fire.
 
+Unsure whether a request is really a memory versus a skill, subagent, hook, or
+`gha` capability? `config-ai` (`ca`/`cai`) is the broader router across all of
+those forms — this skill is what it hands off to once memory is the answer.
+
 ## Procedure
 
 1. **Parse** the fact/preference from the user's message.
@@ -74,7 +78,10 @@ Say so and route it there; don't store a note that will never fire.
    memory writes to `~/.claude/projects/*/memory/` (they persist locally,
    outside the ai-config repo — no git commit needed). **Everything else —
    including `~/.claude/CLAUDE.md` writes — gets committed**. This assumes `bootstrap.sh` has symlinked `memories/` and
-   `CLAUDE.md` into the ai-config repo (the expected setup). Resolve the repo
+   `CLAUDE.md` into the ai-config repo (the expected setup) and that ai-config is
+   your working repo. When you're **working primarily in another repo** and want
+   to push a general memory to ai-config from there, use `push-memory` instead —
+   it delivers on a branch + PR and never touches the repo you're in. Resolve the repo
    from the `memories/` symlink and stage the file by its path *within* the
    repo (`git rev-parse --show-toplevel` follows the symlink to the repo root,
    robust across one or many hops — unlike single-hop `readlink`):

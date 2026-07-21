@@ -15,3 +15,55 @@ like human approval (and Claude Code's auto-mode classifier will rightly deny it
 as a self-authored merge). Drive to fully clean, report ready, and leave the
 merge --- and any other destructive one-off, e.g. a `gh workflow run` that
 force-pushes --- for explicit human authorization.
+
+The one exception: if the human has explicitly granted the `mwc`
+(merge-when-confident) session permission, that grant is a live human
+instruction, not a self-authored one, so baking a self-merge step into a
+wakeup/loop prompt is fine for the rest of that session. See
+[`mwc`](../../skills/mwc/SKILL.md) for the grant's scope and limits.
+
+In the **clear-all family** (`ardia`, `gia`, `gii`, `gip`), "report ready, don't
+merge" gates only the merge --- it does **not** pause the sweep. A
+clean-but-unmerged PR is not a stop; move to the next item, and stack it when it
+isn't naturally independent of that PR. See
+[`stack-dont-pause`](stack-dont-pause.md).
+
+**Self-review against the project's own stated conventions before every
+push, not just the first --- and don't just re-read the criteria, actually
+run the applicable review skills against your own diff and iterate on
+what they find, the same ARD cycle you'd run against an external
+reviewer's findings.** Don't treat the review bot as the mechanism that
+discovers a project's documented conventions --- self-apply them first.
+When a project's own `CLAUDE.md` (or equivalent agent doc) already states
+specific criteria --- a DRY/no-duplication rule, a doc-sync checklist for a
+new input, a changelog-category rule, a citation requirement, a "new logic
+needs test coverage" norm, a prose-quality check like `fact-check-prose`,
+`fix-forward-references`, or `detect-informal-definitions` --- a first-pass
+implementation checked only against feature correctness forces the review
+loop to spend a round re-deriving what the project's own docs already
+said. Before every push, re-read the project's own stated review criteria
+and actually invoke the review skills/checks it names against the diff
+(not just recall them from memory), the same way an external reviewer
+would apply them. Address every finding your own self-review surfaces ---
+fix, rebut, or defer, exactly like the ARD step above --- before the push
+goes out; a self-review that finds issues and pushes anyway has only
+moved the round to the external reviewer instead of skipping it. Repeat
+until your own self-review pass is clean, then push.
+([gha#219](https://github.com/d-morrison/gha/issues/219)/[#220](https://github.com/d-morrison/gha/pull/220): one review round surfaced five findings --- a DRY
+duplication, an incomplete-coverage doc overclaim, a wrong changelog
+category, an uncited claim, and missing test coverage for new logic --- all
+catchable this way, since each was a direct match against gha's own
+`CLAUDE.md` conventions, not new information the review surfaced.)
+
+**Proactively self-correct a technical claim you already told a reviewer,
+the moment further testing shows it was wrong --- don't wait for the
+reviewer to catch it.** If you stated a rationale (an approach is safe, a
+risk doesn't apply, a backstop exists) and then discover through your own
+follow-up verification that it's false, post the correction with the actual
+evidence immediately, rather than leaving the stale claim standing until a
+review round re-raises it. This keeps the review loop converging instead of
+churning on a claim you already know is wrong. ([d-morrison/rme#989](https://github.com/d-morrison/rme/pull/989) /
+[ucdavis/epi204#363](https://github.com/ucdavis/epi204/pull/363): after telling both reviewers `references.bib` didn't
+share `CLAUDE.md`'s union-merge corruption risk, a follow-up merge
+simulation showed it does --- posted the correction with repro steps on
+both PRs before either reviewer re-raised it.)

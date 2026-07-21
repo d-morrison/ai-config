@@ -25,6 +25,9 @@ models:
   - id: copilot
     label: VS Code Copilot
     resolves: GitHub MCP tool.
+  - id: gemini
+    label: Gemini CLI
+    resolves: GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
   - id: cli
     label: Generic shell / CLI
     resolves: The CLI command (fallback for any agent that just runs a shell).
@@ -41,6 +44,10 @@ operations:
     description: List pull requests.
     cli: gh pr list
     github_mcp: mcp__github__list_pull_requests
+  - id: SEARCH_PRS
+    description: Search pull requests by keyword / query string.
+    cli: gh pr list --search "<query>"
+    github_mcp: mcp__github__search_pull_requests
   - id: DIFF_PR
     description: Read a pull request's diff.
     cli: gh pr diff <N>
@@ -49,6 +56,14 @@ operations:
     description: Read a pull request's CI check / status results.
     cli: gh pr checks <N>
     github_mcp: mcp__github__pull_request_read (method=get_check_runs)
+  - id: READ_PR_COMMENTS
+    description: Read a pull request's top-level (conversation) comments.
+    cli: gh pr view <N> --comments
+    github_mcp: mcp__github__pull_request_read (method=get_comments)
+  - id: READ_PR_REVIEW_COMMENTS
+    description: Read a pull request's inline review-thread comments (also returns thread ids).
+    cli: gh api repos/<owner>/<repo>/pulls/<N>/comments
+    github_mcp: mcp__github__pull_request_read (method=get_review_comments)
   - id: CREATE_PR
     description: Open a new pull request.
     cli: gh pr create
@@ -61,6 +76,14 @@ operations:
     description: Merge a pull request.
     cli: gh pr merge <N>
     github_mcp: mcp__github__merge_pull_request
+  - id: MARK_PR_READY
+    description: Flip a draft pull request to ready for review.
+    cli: gh pr ready <N>
+    github_mcp: mcp__github__update_pull_request (draft=false)
+  - id: REOPEN_PR
+    description: Reopen a closed pull request.
+    cli: gh pr reopen <N>
+    github_mcp: mcp__github__update_pull_request (state=open)
   - id: COMMENT_PR
     description: Post a top-level comment on a pull request.
     cli: gh pr comment <N> --body "..."
@@ -69,6 +92,10 @@ operations:
     description: Reply to an inline pull-request review comment.
     cli: gh api (reply to review comment)
     github_mcp: mcp__github__add_reply_to_pull_request_comment
+  - id: RESOLVE_REVIEW_THREAD
+    description: Mark an inline pull-request review thread as resolved.
+    cli: gh api graphql (resolveReviewThread)
+    github_mcp: mcp__github__resolve_review_thread
   - id: WATCH_PR
     description: Subscribe to / unsubscribe from a pull request's activity.
     cli: (no CLI equivalent)
@@ -81,6 +108,18 @@ operations:
     description: List issues.
     cli: gh issue list
     github_mcp: mcp__github__list_issues
+  - id: SEARCH_ISSUES
+    description: Search issues by keyword / query string.
+    cli: gh issue list --search "<query>"
+    github_mcp: mcp__github__search_issues
+  - id: READ_ISSUE_COMMENTS
+    description: Read an issue's comments.
+    cli: gh issue view <N> --comments
+    github_mcp: mcp__github__issue_read (method=get_comments)
+  - id: ISSUE_LINKED_PRS
+    description: List the pull requests cross-referenced from an issue's timeline (i.e. PRs that link or close it).
+    cli: gh api --paginate repos/<owner>/<repo>/issues/<N>/timeline
+    github_mcp: (no GitHub MCP tool; approximate with SEARCH_PRS)
   - id: CREATE_ISSUE
     description: Open a new issue.
     cli: gh issue create
@@ -89,6 +128,38 @@ operations:
     description: Post a comment on an issue.
     cli: gh issue comment <N> --body "..."
     github_mcp: mcp__github__add_issue_comment
+  - id: CLOSE_ISSUE
+    description: Close an issue with a reason.
+    cli: gh issue close <N> --reason "..."
+    github_mcp: mcp__github__issue_write (method=update, state=closed, state_reason=...)
+  - id: REOPEN_ISSUE
+    description: Reopen a closed issue.
+    cli: gh issue reopen <N> --comment "..."
+    github_mcp: mcp__github__issue_write (method=update, state=open)
+  - id: LIST_DISCUSSIONS
+    description: List a repository's discussions. Discussions are GraphQL-only.
+    cli: gh api graphql (list discussions)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
+  - id: VIEW_DISCUSSION
+    description: Read a discussion topic and its comment thread.
+    cli: gh api graphql (read discussion + comments)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
+  - id: COMMENT_DISCUSSION
+    description: Post a reply on a discussion (top-level or threaded).
+    cli: gh api graphql (addDiscussionComment)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
+  - id: ANSWER_DISCUSSION
+    description: Mark a comment as the accepted answer on a Q&A discussion.
+    cli: gh api graphql (markDiscussionCommentAsAnswer)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
+  - id: CREATE_DISCUSSION
+    description: Open a new discussion in a category.
+    cli: gh api graphql (createDiscussion)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
+  - id: CLOSE_DISCUSSION
+    description: Close a discussion with a reason (RESOLVED, OUTDATED, DUPLICATE).
+    cli: gh api graphql (closeDiscussion)
+    github_mcp: (no GitHub MCP tool; use gh api graphql)
   - id: PUSH
     description: Push commits to a branch.
     cli: git push -u origin <branch>
@@ -105,3 +176,19 @@ operations:
     description: Merge a branch into the current one.
     cli: git merge origin/<branch>
     github_mcp: (use git; no GitHub MCP equivalent)
+  - id: CREATE_BRANCH
+    description: Create a new branch (e.g. off the default branch).
+    cli: git switch -c <branch> origin/<base>
+    github_mcp: mcp__github__create_branch
+  - id: DELETE_REF
+    description: Delete a remote branch or tag ref.
+    cli: git push origin --delete <branch> (or git push origin :refs/tags/<tag>)
+    github_mcp: (no GitHub MCP tool; use gh api -X DELETE repos/<owner>/<repo>/git/refs/heads/<branch>)
+  - id: READ_FILE
+    description: Read a file's contents from the repo.
+    cli: gh api repos/<owner>/<repo>/contents/<path>
+    github_mcp: mcp__github__get_file_contents
+  - id: WRITE_FILE
+    description: Create or update file(s) on a branch in a single commit.
+    cli: git add <path> && git commit -m "..." && git push
+    github_mcp: mcp__github__create_or_update_file (one file) / mcp__github__push_files (multiple)

@@ -164,13 +164,13 @@ PR (not direct to main), request `d-morrison` as reviewer (`request-pr-review`),
 then **ARDI to clean** (`ardi`).
 
 ```bash
-git checkout -b consolidate-<canonical>-skill origin/main
+git checkout -b consolidate-<canonical>-skill origin/main   # CREATE_BRANCH
 # write the canonical, overwrite absorbed skills as stubs, fix references
 git add skills/<canonical>/ skills/<absorbed-1>/ skills/<absorbed-2>/   # only the
 # dirs you touched — plus memories/preferences.md and/or CLAUDE.md ONLY if you
 # edited them. Never `git add -A` or a bare `skills/`, which sweeps in unrelated edits.
-git commit -m "skills: consolidate <a>/<b> into <canonical> (+ alias stubs)"
-git push -u origin HEAD && gh pr create --fill
+git commit -m "skills: consolidate <a>/<b> into <canonical> (+ alias stubs)"   # COMMIT
+git push -u origin HEAD && gh pr create --fill                                # PUSH, CREATE_PR
 ```
 
 ## Relationship to other skills
@@ -188,6 +188,9 @@ git push -u origin HEAD && gh pr create --fill
   other but stay separate, cross-link instead of merging.
 - **`tidy` / `simplify`** — the same "collapse near-duplicates over proliferating
   them" instinct, applied to code rather than the skill corpus.
+- **`decompose-skill`** — the mirror-image direction: this skill merges several
+  skills into one; `decompose-skill` splits one overly-broad skill into a
+  canonical skill plus extracted shared fragments or narrower siblings.
 
 ## Anti-patterns
 

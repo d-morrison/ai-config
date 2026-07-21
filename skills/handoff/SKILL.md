@@ -83,7 +83,7 @@ gh pr comment <N> --body "⏸️ **Local session paused** (<local timestamp>) �
 
 <2-4 bullets: in-flight jobs + IDs, unpushed local commits and why held, what runs next>
 
-Please don't push to this branch in the meantime."
+Please don't push to this branch in the meantime."   # COMMENT_PR
 ```
 
 If the work is genuinely *finished* (merged/closed, nothing outstanding), post a
@@ -103,3 +103,11 @@ PR note link, and the one-line pick-up summary. Include a local-time stamp.
   specialized "save session state" case.
 - `claim-pr` — owns the claim/unclaim lifecycle; `handoff` posts the *paused*
   note within an existing claim.
+- **`checkpoint`** — a lighter, deliberate mid-task snapshot for a session
+  that *isn't* ending: plan state, decisions, next actions, no branch/job/PR
+  mechanics. Run `handoff` when actually stopping; `checkpoint` when just
+  banking progress mid-task.
+- **`compress-session`** — distills the conversation into auto memory before
+  the context window fills up, so a compaction (not a session end) doesn't
+  lose what matters. `handoff` ends the session; `compress-session` keeps it
+  going with a smaller, curated context.

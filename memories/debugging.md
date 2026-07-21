@@ -1,5 +1,19 @@
 # Debugging notes
 
+## Heredocs in chained terminal commands are unreliable
+
+Multi-line heredoc-style commands in chained terminal commands get garbled or silently fail. Always write multi-line content to a temp file first, then reference it:
+
+```sh
+cat > /tmp/msg.txt << 'EOF'
+line 1
+line 2
+EOF
+git commit -F /tmp/msg.txt
+```
+
+Never inline heredocs in chained commands. Applies to git commit messages, MR descriptions, and any other multi-line content passed to CLI tools. (Learned during HACtions MR !37.)
+
 ## Markdown line-by-line processors: every inner loop needs its own fence tracker
 
 When writing a script that reformats Markdown line by line, the outer loop usually
@@ -62,6 +76,33 @@ lines had accumulated — unrelated to fence state, but found in the same cycle.
 - Poll until a review note appears that references your latest commit SHA.
 - Wait ~30-60s, then check. If nothing after ~2min, check pipeline status.
 - The iterate skill now has explicit polling instructions for both GitHub and GitLab.
+
+## Confirm a CI failure is pre-existing (not your diff) via workflow-run history on main
+- Before waving off a red CI check as "unrelated, pre-existing" (e.g. to defer
+  fixing it as out of scope for the current PR), verify it, don't assume —
+  check that same workflow's run history filtered to `main`, not just that the
+  failure looks unrelated to the files in your diff.
+- `mcp__github__actions_list` (`list_workflow_runs`, `resource_id: "<file>.yml"`,
+  `workflow_runs_filter: {"branch": "main"}`) returns that job's own run
+  history; sort by `run_number` descending and read the most recent entries'
+  `conclusion`. If it's already `failure` on `main`'s current HEAD commit (and
+  several commits back), the failure predates your branch and is safe to defer
+  — cite the specific `main` commit SHA(s) it fails on in the PR/issue as the
+  evidence, not just "looks unrelated."
+- The GitHub Checks API's check-run `name` (e.g. `jarl-check`) is often NOT the
+  workflow **file** name `list_workflow_runs` needs as `resource_id` — grep
+  `.github/workflows/*.y*ml` for the job's `name:` field to find which file
+  defines it (a repo can have several workflow files; the job name doesn't
+  say which one).
+- `actions_list` responses for an active repo can exceed the tool's token cap
+  and get written to a scratch file instead of returned inline — when that
+  happens, `python3 -c "import json; ..."` on the saved file (filter by
+  `path`/`head_branch`, sort by `run_number`) is far more reliable than
+  grepping the raw JSON text, since a single workflow run's JSON blob is
+  usually one unbroken line with no per-field markers to grep on the same
+  line. (`d-morrison/altdoc#16`: confirmed `jarl-check`'s failures via
+  `lint.yml`'s run history on `main` going back 4+ commits before reporting it
+  as pre-existing and out of scope.)
 
 ## VS Code editor buffer vs disk desync
 - `replace_string_in_file` / `read_file` operate on the VS Code editor buffer.
@@ -136,6 +177,16 @@ reverted fixes. Defenses:
 - **Escalate to the user to settle who drives the PR** once you see repeated
   force-pushes — that's the claim-pr/parallel-session collision, and one driver
   should own it.
+
+## PR `mergeable_state: blocked` can just mean required checks are still running
+Don't treat `blocked` as a branch-protection or review-request mystery by
+default — GitHub reports it whenever any required check hasn't yet completed
+successfully, including one that's simply still `in_progress` after a fresh
+push. Check `get_check_runs` before hypothesizing about missing approvals or
+protection rules: if `build`/`claude-review`/etc. are `in_progress`, that alone
+explains `blocked`, and it clears on its own once they finish. Only dig into
+branch-protection settings if `blocked` persists after every check is
+`completed`.
 
 ## Test implicit path coverage when a change affects more branches than described
 When a code block is placed in a shared path (e.g. the non-append `else:` branch
@@ -217,6 +268,20 @@ Also from ettbc#13/#14:
   `R CMD INSTALL .` before `lint_package`, so cross-file *internal* functions
   (e.g. a helper defined in another `R/` file) resolve — a single-file
   `lintr::lint()` can't see them and will false-flag them.
+- **`lintr::object_usage_linter` can't see a variable used only inside a
+  formula** — including every `~` in `dplyr::case_when()` / `case_match()`.
+  `codetools` doesn't walk formula bodies, so
+  `x <- f(y); dplyr::case_when(x %in% c(...) ~ "1", ...)` reports
+  `local variable 'x' assigned but may not be used` even though `x` is plainly
+  used. Don't suppress it: rewrite so the variable is referenced outside a
+  formula — a named lookup vector indexed by the variable (`bins[x]`) replaces
+  a `case_when` chain cleanly, and usually reads better anyway.
+  This is **not** a CI-only lint (verified: a plain single-file
+  `lintr::lint(f, linters = lintr::object_usage_linter())` reproduces it) — but
+  it is easy to *believe* it is, because an intervening local run can come back
+  clean off a stale loaded namespace and then CI flags it again. If a lint
+  disappears without you changing the thing it flagged, distrust the clean run.
+  (ucdavis/bcs#351.)
 - **`spelling::spell_check_package()` locally over-reports vs CI** on accented
   hyphenated names: line-wrapped `García-Albéniz`/`Hernán` in `.Rd` files
   tokenize as `Garc`/`niz`/`Hern`, which the CI spellcheck action does not flag
@@ -227,6 +292,29 @@ Also from ettbc#13/#14:
   limit"). It's environmental, non-blocking, and unfixable from a content PR
   (the bot can't edit `.github/workflows`). Stand in with a manual self-review
   rather than chasing it.
+- **Adding a new hidden top-level dotfile/dir to an R package (a `.claude`
+  config dir, a `.ai-config` git submodule, any new `.<name>`) fails
+  `R CMD check` with `checking for hidden files and directories ... NOTE`
+  unless it's listed in `.Rbuildignore`.** A repo whose `R-CMD-check` job sets
+  `error_on = "note"` (common per this corpus's own review-guideline citations)
+  turns that NOTE into a hard CI failure on every platform the check runs —
+  it isn't Linux/macOS/Windows-specific, since the check runs identically on
+  all of them. Add an anchored entry (`^\.claude$`) matching the existing
+  `.Rbuildignore` style (e.g. the `^\.github$` line most repos already have)
+  proactively, in the same commit that adds the new dotfile/dir, rather than
+  waiting for CI to name it. A submodule whose content isn't checked out in CI
+  (the common case — `actions/checkout` doesn't init submodules by default)
+  can dodge the NOTE by luck — the CI build log's own `R CMD build` step
+  ("checking for empty or unneeded directories") reported
+  `Removed empty directory '<pkg>/.ai-config'`, so the uninitialized submodule
+  never reached `R CMD check` at all — but exclude it in `.Rbuildignore`
+  anyway rather than relying on that accident of checkout config.
+  (`UCD-SERG/serodynamics#265`: adding `.claude/settings.json` failed
+  `ubuntu-latest`/`macos-latest`/`windows-latest` (all `release`) plus
+  `ubuntu-latest (oldrel-1)` R-CMD-check
+  simultaneously with this exact NOTE; the sibling `.ai-config` submodule
+  added in the same PR happened not to trigger it, for the empty-dir reason
+  above.)
 
 ## R snapshot tests (snapr / testthat) — regenerating without collateral damage
 Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
@@ -272,3 +360,228 @@ Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
   from a zero-risk group at small n. Muffle expected small-sample warnings in
   BOTH the package source (a `suppress_*_warnings()` helper wrapping the fit
   chain) AND the test helper, matching every pattern the fits actually emit.
+
+## A push-to-main-only workflow can't fail a PR — add a static PR guard when you fix one
+A workflow that triggers only on `push:` to `main` (deploy/publish/release jobs)
+never runs on pull requests, so a bug it would catch stays invisible until after
+merge — and then it fails on `main`, where no one is watching a specific PR.
+Hit on d-morrison/rme#966/#967: the Quarto **publish** workflow (push-to-main
+only) went red the moment the concept-map appendix merged and stayed red for two
+days across several later merges, because no PR ever ran the full multi-format
+website render that collides.
+
+When you fix such a post-merge-only failure, don't stop at the fix — add a
+**cheap static check that runs on `pull_request`** so the bug class can't regress
+unnoticed. It needn't reproduce the whole heavy job; a few seconds of parsing
+that asserts the invariant is enough. d-morrison/rme#970 added `check-render-headers`, a
+~120-line Python + PyYAML script that asserts "no two of a render-list page's
+formats resolve to the same output file," runs in ~8s, and would have caught the
+original bug at PR time. Prevention (fix the scaffolder/template that emits the
+bad input) and enforcement (the PR guard) are complementary — ship both.
+
+## stop-hook-git-check's "N" flag can be a false positive for SSH-signed commits
+The `~/.claude/stop-hook-git-check.sh` Stop hook flags a commit "N" (Unverified)
+whenever local `git log --show-signature` can't verify it — but locally that
+check needs `gpg.ssh.allowedSignersFile` configured, which this environment
+usually doesn't set up. A commit made with `commit.gpgsign=true` /
+`gpg.format=ssh` and the right `user.signingkey` is still genuinely signed even
+when the local verify fails; `git cat-file -p <sha>` shows a real
+`-----BEGIN SSH SIGNATURE-----` block with the correct author/committer email.
+GitHub verifies independently (it publishes the corresponding public signing
+key), so the commit still shows Verified there.
+
+Before treating the hook's feedback as an actionable problem: check
+`git cat-file -p <sha> | head -8` for the `gpgsig` block and confirm
+`author`/`committer` say `noreply@anthropic.com`. If both hold, the "N" is a
+local-verification artifact, not a real signing gap — no amend/re-sign needed.
+Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
+commit that's missing the `gpgsig` block entirely, or whose author/committer
+email is genuinely wrong. (ai-config#314 was the opposite: two SSH-signed
+`noreply@anthropic.com` commits flagged "N" back-to-back, but both were already
+correct — a false positive, not a real signing gap.)
+
+## Reproduce heavy-tool project bugs minimally
+The Quarto
+`safeMoveSync`/`renderProject` `rename '<stem>.html' -> No such file` collision
+reproduced in an R-free, LaTeX-free two-file website project (`format: {html,
+revealjs}`, one page missing the revealjs `output-file` rename so revealjs and
+html both write `<stem>.html`) in seconds. When a full render/build is too heavy
+to run in the sandbox, strip the failing behavior down to the smallest project
+that still triggers it — it confirms both the diagnosis and the fix far faster
+than the real pipeline, and becomes the negative test for the guard.
+
+## R: `glm()`'s default `na.action = na.omit` silently MISALIGNS `fitted()`
+
+`stats::glm()` defaults to `na.action = na.omit`, which **drops** rows with any
+missing predictor. `stats::fitted()` then returns a vector **shorter than the
+data frame**, so writing it back onto the full frame is wrong. How it fails
+depends on how you write it back — and only one of the two is loud:
+
+```r
+data <- dplyr::mutate(data, p = stats::fitted(fit))  # ERRORS (size N vs size k)
+data$p <- stats::fitted(fit)                         # SILENT when k divides N:
+                                                     # base R recycles -> wrong rows
+```
+
+Verified on R 4.5 / dplyr 1.2 with `nrow = 100` and 50 complete cases:
+`dplyr::mutate()` aborts with a size mismatch, while base `$<-` **silently
+recycles** the 50 fitted values twice, assigning each prediction to two
+different subjects. (Base `$<-` errors instead when `k` does *not* divide `N` —
+so the same code is loud or silent depending on the data, which is worse than
+either.) The same silent misalignment reaches you through any downstream
+join/index pattern where the short vector escapes undetected.
+
+Fix: `na.action = stats::na.exclude`, which pads `fitted()`/`residuals()` back
+out to the full row count with `NA` at the dropped positions, preserving
+alignment.
+
+```r
+fit <- stats::glm(f, data = data, family = binomial(), na.action = stats::na.exclude)
+data <- dplyr::mutate(data, p = stats::fitted(fit))   # aligned; dropped rows are NA
+```
+
+**This is a latent landmine, not a hypothetical.** Code that has always been fed
+fully-imputed (NA-free) data works perfectly and hides the bug — it only fires
+the day a covariate with real missingness is added. If you see
+`fitted(fit)`/`residuals(fit)` written back onto a data frame anywhere, check
+the `na.action`, even if the code currently "works". (Found on ucdavis/bcs#349,
+where adding a covariate that SAS deliberately leaves unimputed would have
+activated it.)
+
+## R: `mice` silently DROPS collinear columns instead of imputing them
+
+`mice::mice()` runs a collinearity check and quietly removes offending
+predictors — the evidence is only in `mi_result$loggedEvents`
+(`meth = "collinear"`), not in a warning you'd notice. The completed dataset
+then still has `NA` in the "imputed" column, and an
+`expect_false(anyNA(x))` test fails with no obvious cause.
+
+The usual trigger in a **test fixture**: covariates derived deterministically
+from the row index (`race = k %% 2`, `bmi = 22 + k %% 11`, ...). That makes
+every covariate an exact function of every other, so `mice` flags most of them
+collinear and imputes nothing. The fixture *looks* rich and is actually rank-1.
+
+Fixes:
+- Build the fixture by **sampling under a fixed seed** (`withr::with_seed()`),
+  not by deriving from the index — reproducible *and* genuinely varied.
+- When `mice` doesn't impute something, `print(mi_result$loggedEvents)` first.
+  It names the variable and the reason and saves a long hunt.
+
+Note the same index-derived-fixture degeneracy also makes GLM coefficients
+alias (NA coefficients) — which can be harmless if the test only asserts on
+*fitted values* — so it can lurk in a fixture for a long time before `mice`
+finally trips over it. (ucdavis/bcs#349.)
+
+## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
+
+The standard "prove the new fixture catches the regression" step (temporarily
+revert the fix, confirm the test fails, restore) has a destructive failure
+mode when the fix is still uncommitted: `git checkout <file>` / `git restore
+<file>` restores from HEAD, which silently discards the whole uncommitted fix
+along with the temporary revert — there is nothing to restore back to.
+Sequence it as: **commit the fix**, then revert temporarily (`git stash push
+<file>`, or a scripted counter-edit), prove the failure, then `git stash pop`
+/ re-checkout the committed state. If a counter-edit was applied with
+sed/perl instead of stash, restoring via `git checkout` is only safe because
+the fix is already in HEAD. (Self-hit on Lacaedemon/sparta PR #870,
+2026-07-15: proved the overlap test failed against the density-blind layout
+via a perl counter-edit, then `git checkout scripts/SelectionManager.gd` to
+"restore" — which discarded four uncommitted fix edits; all were re-applied
+from conversation context, but only because they were small and recent.)
+
+## A delegated fix must be verified against the issue body before merging
+
+A triage summary (yours or a scout agent's) describes what the issue
+*probably* means; the implementing agent then fixes the surface the SUMMARY
+names, which can be adjacent to — not the same as — the surface the issue's
+own words describe. Before merging a delegated fix, re-read the actual issue
+body and check the diff touches the thing IT names. (Lacaedemon/sparta #863,
+2026-07-15: issue said "the click and drag line doesn't match the current
+unit width" — the delegated fix corrected the flank-grip RESIZE preview,
+while the form-up click-and-drag one function over had the identical
+density-blind bug plus a real deployment-overlap consequence; caught only
+when the user asked which surface the PR targeted. The same bug pattern
+recurring in the same file also means the pattern rule applied: fix every
+occurrence, not the flagged one.)
+
+## GitHub Pages serves stale content / new paths 404: check gh-pages size vs the 1 GB limit
+
+- Signature: the site's existing pages load fine but a **newly added path
+  404s**, even though the file verifiably exists at the `gh-pages` tip.
+  Pages serves the last **successful build**, not the branch — when builds
+  start failing, the domain silently freezes on an old deployment, so old
+  content works, new content (including a just-merged fix deployed to the
+  site root) never goes live, and nothing in the repo's checks goes red
+  (deploy actions only push the branch; `wait-for-pages-deployment` is
+  often disabled on private repos).
+- First check: total site size against Pages' hard **1 GB** limit.
+  The Pages build API (`/repos/<o>/<r>/pages*`) is blocked by the CCR agent
+  proxy even for in-scope repos, so measure from git instead:
+  `git fetch origin gh-pages --depth 1`, then
+  `git ls-tree -r -l origin/gh-pages | awk '{s+=$4} END {printf "%.2f GB\n", s/1e9}'`
+  (and the same `awk` keyed on path prefix for a per-directory breakdown).
+- Usual cause in our repos: accumulated `pr-preview/<pr-N>/` directories —
+  a rendered docs-site preview runs ~40+ MB, so a couple dozen closed PRs'
+  previews reach 1 GB on their own.
+- Fix: dispatch the repo's `cleanup-pr-previews` workflow (the
+  `d-morrison/gha` reusable: deletes previews for non-open PRs, then
+  orphan-squashes `gh-pages` under `compact-history`) rather than waiting
+  for its weekly Sunday cron — the limit can be crossed mid-week. Re-measure
+  after, and expect the next successful Pages build to pick up everything
+  that accumulated on the branch while builds were failing.
+- (ucdavis/bcs, 2026-07-18: 24 preview dirs put `gh-pages` at 1.05 GB; PR
+  #375's preview and the post-merge production deploy both sat unserved on
+  the branch while the URL 404'd; one dispatch dropped the tree to 0.09 GB.)
+
+## Dead rdrr.io self-links on an altdoc docs site = downlit couldn't discover the site
+
+- Signature: an altdoc/Quarto docs site (`code-link: true`) links the
+  documented package's **own** functions to
+  `https://rdrr.io/pkg/<pkg>/man/<topic>.html`, all 404 — rdrr.io only
+  indexes CRAN packages.
+- Mechanism: downlit resolves a package's site by fetching
+  `<DESCRIPTION URL>/pkgdown.yml` at render time
+  (`remote_metadata_slow()`); on a **private** GitHub Pages repo that URL
+  404s publicly (the real site sits behind auth on an obfuscated
+  `*.pages.github.io` domain), so downlit falls back to rdrr.io for every
+  self-reference. Deliberate downlit behavior (r-lib/downlit#106, #195) —
+  not worth forking downlit over, since even its local-package hooks emit
+  pkgdown's `reference/` layout, not altdoc's `man/`.
+- Fixed generally in the `d-morrison/altdoc` fork (altdoc#25/#26): the
+  post-render rewrite pass converts the documented package's rdrr-form
+  self-links to page-relative `man/` links, alongside the recorded-site-URL
+  form it already handled. A consumer repo just needs its renv altdoc pin at
+  or past that merge (`fb551ef`, 2026-07-18) and a re-render.
+  (ucdavis/bcs#374/#375: ~140 dead links on one article page.)
+
+## A test suite that only covers the exact-multiple/round-number case can miss an asymmetry bug entirely
+
+- Signature: a function distributes `n` items across `k` groups (soldiers
+  across formation files, rows across pages, work across shards) and has a
+  "leftover redistribution" rule for when `n` isn't an exact multiple of
+  `k` — e.g. centre the remainder, round-robin it, pad the last group.
+  A hand-written implementation of that rule can be silently biased (always
+  piling the remainder onto the same edge/first group) while every test
+  only ever exercises `n` values that ARE exact multiples of `k`, so the
+  remainder-handling code path never actually runs under test at all.
+- Mechanism: it's natural to write the "happy path" test first (round
+  numbers, no remainder) and consider the function covered once that
+  passes, especially when the remainder case feels like a minor edge case
+  rather than the interesting part of the function. But the remainder case
+  is exactly where an asymmetry bug lives — the exact-multiple case can't
+  distinguish a correctly-centred remainder from a raw
+  first-N/last-N assignment, because there IS no remainder to place.
+- Fix/check: for any "distribute `n` across `k` with a leftover rule"
+  function, deliberately test at least one `n` where `n % k != 0`, and
+  assert on WHERE the leftover lands (centred, not banked onto one edge),
+  not just that every item got assigned somewhere. If reviewing someone
+  else's tests for such a function, check the specific `n`/`k` values used
+  and confirm at least one is a genuine non-exact-multiple case before
+  trusting the coverage. (Sparta#995/#997, 2026-07-19: a formation-grid
+  reflow function's tests all happened to use soldier counts that were
+  exact multiples of the file count, so a real bug — a raw `i % files`
+  assignment piling every reshuffled unit's leftover rank onto the same
+  edge column instead of centring it, making a fresh, zero-casualty spawn
+  visibly lopsided for almost every real unit in the game — passed the
+  full test suite undetected until an independent review deliberately
+  picked a non-exact-multiple count to check.)
