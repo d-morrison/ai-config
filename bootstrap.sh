@@ -19,9 +19,6 @@ CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
 GEMINI_CONFIG_DIR="${GEMINI_CONFIG_HOME:-$GEMINI_DIR/config}"
-GEMINI_CONFIG_DIR="${GEMINI_CONFIG_HOME:-$GEMINI_DIR/config}"
-
-# VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
 
 # VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
 COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/memory-tool/memories}"
@@ -125,8 +122,8 @@ if [ -d "$SCRIPT_DIR/skills" ]; then
     link_one "$src" "$GEMINI_DIR/skills/$(basename "$src")"
   done
 
-  # Antigravity/Gemini customization spec: skills.json in customization root
-  # accepts {"entries": [{"path": "..."}, ...], "inherits": [...], "exclude": [...]}.
+  # Antigravity/Gemini CLI customization spec (https://github.com/google-gemini/gemini-cli):
+  # skills.json in customization root accepts {"entries": [{"path": "..."}], "inherits": [...], "exclude": [...]}.
   mkdir -p "$GEMINI_CONFIG_DIR"
   SKILLS_JSON="$GEMINI_CONFIG_DIR/skills.json"
   if [ ! -f "$SKILLS_JSON" ]; then
