@@ -10,7 +10,6 @@ by `bootstrap.sh`.
 ## Setup on a new machine
 
 ```sh
-
 git clone https://github.com/d-morrison/ai-config.git ~/ai-config
 bash ~/ai-config/bootstrap.sh
 ```
@@ -22,7 +21,7 @@ Rerun `bootstrap.sh` any time a new top-level dir is added to the repo.
 After bootstrapping, confirm the symlinks resolved and the skills are visible:
 
 ```sh
-ls -l ~/.claude/skills ~/.claude/commands ~/.codex/skills ~/.gemini/antigravity/skills
+ls -l ~/.claude/skills ~/.claude/commands ~/.codex/skills ~/.gemini/skills
 scripts/inventory.sh                         # live counts of skills/wrappers/commands/docs
 ```
 

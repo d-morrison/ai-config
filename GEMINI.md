@@ -1,13 +1,13 @@
 # User-wide Gemini CLI instructions
 
-[Gemini CLI](https://github.com/google-gemini/gemini-cli) is an AI-first development platform built on [gemini-cli](https://github.com/google-gemini/gemini-cli) (`~/.gemini/antigravity`). See [Google AI](https://ai.google.dev).
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) is an AI-first development platform built on [gemini-cli](https://github.com/google-gemini/gemini-cli) (`~/.gemini`). See [Google AI](https://ai.google.dev).
 
 ## Keep ai-config and repo checkouts fresh
 
 In every session — at session start, and again periodically during long sessions — refresh local state:
 
 1. **The ai-config checkout.** Check that the local ai-config clone is on `main` and run `git pull --ff-only`.
-2. **The consumer copies / symlinks.** Ensure `bootstrap.sh` has run so `~/.gemini/antigravity/skills` contains up-to-date symlinks to `skills/`.
+2. **The consumer copies / symlinks.** Ensure `bootstrap.sh` has run so `~/.gemini/skills` contains up-to-date symlinks to `skills/`.
 3. **Working repo checkouts.** Keep `main` updated (`git fetch origin`, `git pull --ff-only`).
 
 ## Timestamp recaps in local time

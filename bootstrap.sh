@@ -17,7 +17,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
-ANTIGRAVITY_DIR="${ANTIGRAVITY_HOME:-$HOME/.gemini/antigravity}"
+GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
 
 # VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
 COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/memory-tool/memories}"
@@ -32,7 +32,6 @@ link_one() {
   if [ -L "$dest" ]; then
     local current
     current="$(readlink "$dest")"
-
     if [ "$current" = "$src" ]; then
       printf 'ok    %s (already linked)\n' "$name"
     else
@@ -113,21 +112,17 @@ else
   printf '\nskip  memories/ (dir not found or Copilot memory dir missing)\n'
 fi
 
-# --- Antigravity skills & config: symlink skills and GEMINI.md into Antigravity ---
-# Note: Google Antigravity natively parses standard SKILL.md frontmatter directly from skills/,
-# so we symlink canonical skill directories directly rather than generated wrappers.
+# --- Gemini CLI skills & config: symlink skills and GEMINI.md into Gemini CLI ---
 if [ -d "$SCRIPT_DIR/skills" ]; then
-  printf '\n--- Antigravity skills ---\n'
-
-  mkdir -p "$ANTIGRAVITY_DIR/skills"
+  printf '\n--- Gemini CLI skills ---\n'
+  mkdir -p "$GEMINI_DIR/skills"
   for src in "$SCRIPT_DIR"/skills/*; do
     [ -d "$src" ] || continue
-    link_one "$src" "$ANTIGRAVITY_DIR/skills/$(basename "$src")"
+    link_one "$src" "$GEMINI_DIR/skills/$(basename "$src")"
   done
 fi
 
 if [ -f "$SCRIPT_DIR/GEMINI.md" ]; then
-  mkdir -p "$ANTIGRAVITY_DIR"
-  link_one "$SCRIPT_DIR/GEMINI.md" "$ANTIGRAVITY_DIR/GEMINI.md"
+  mkdir -p "$GEMINI_DIR"
+  link_one "$SCRIPT_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md"
 fi
-
