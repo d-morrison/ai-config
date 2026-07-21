@@ -1,6 +1,6 @@
 # Debugging notes
 
-## Heredoc commands in this terminal are unreliable
+## Heredocs in chained terminal commands are unreliable
 
 Multi-line heredoc-style commands in chained terminal commands get garbled or silently fail. Always write multi-line content to a temp file first, then reference it:
 

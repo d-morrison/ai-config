@@ -113,7 +113,7 @@
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
 - Always use `glab` (the GitLab CLI) for GitLab operations — MR comments, file uploads, API calls, pipeline checks — instead of raw `curl` against the GitLab REST API.
-  `glab` handles auth via its own config (no `GITLAB_PAT` env var needed), so it works even when a token isn't exported in the current shell.
+  `glab` handles auth via its own config (no `GITLAB_TOKEN` env var needed), so it works even when a token isn't exported in the current shell.
   Use `glab api` for endpoints without a dedicated subcommand (e.g. `POST /projects/:id/uploads` for file attachments).
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(), devtools::test(), devtools::check(), pkgdown::build_site() (per repo copilot-instructions).
 - Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md → the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING) and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it via red CI.
