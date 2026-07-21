@@ -1,6 +1,6 @@
-# User-wide Google Antigravity (AGY) instructions
+# User-wide Google Antigravity (AGY) / Gemini CLI instructions
 
-[Google Antigravity](https://github.com/google-gemini/gemini-cli) is an AI-first development platform (`~/.gemini/antigravity`). See [Google AI](https://ai.google.dev).
+[Google Antigravity](https://github.com/google-gemini/gemini-cli) (AGY) is an AI-first development platform built on [gemini-cli](https://github.com/google-gemini/gemini-cli) (`~/.gemini/antigravity`). See [Google AI](https://ai.google.dev).
 
 ## Keep ai-config and repo checkouts fresh
 

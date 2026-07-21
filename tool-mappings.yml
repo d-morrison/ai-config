@@ -35,8 +35,8 @@ models:
 # Each operation gives the canonical `gh`/`git` command (the CLI fallback,
 # and what the Claude skills are written in) plus the GitHub MCP tool that
 # performs the same action. `<N>` is a PR/issue number; `<branch>` a ref.
-
 operations:
+
   - id: VIEW_PR
     description: Read a pull request's details and metadata.
     cli: gh pr view <N>

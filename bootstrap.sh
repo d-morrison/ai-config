@@ -27,8 +27,8 @@ mkdir -p "$CLAUDE_DIR"
 # Symlink $src -> $dest unless something is already there.
 link_one() {
   local src="$1" dest="$2" name
-
   name="$(basename "$dest")"
+
 
   if [ -L "$dest" ]; then
     local current
