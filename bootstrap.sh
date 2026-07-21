@@ -112,17 +112,32 @@ else
   printf '\nskip  memories/ (dir not found or Copilot memory dir missing)\n'
 fi
 
-# --- Gemini CLI & Antigravity skills: symlink skills and GEMINI.md ---
+# --- Gemini CLI & Antigravity skills: symlink skills and register skills.json ---
 if [ -d "$SCRIPT_DIR/skills" ]; then
   printf '\n--- Gemini CLI & Antigravity skills ---\n'
   mkdir -p "$GEMINI_DIR/skills"
-  mkdir -p "$GEMINI_DIR/config/skills"
   for src in "$SCRIPT_DIR"/skills/*; do
     [ -d "$src" ] || continue
     link_one "$src" "$GEMINI_DIR/skills/$(basename "$src")"
-    link_one "$src" "$GEMINI_DIR/config/skills/$(basename "$src")"
   done
+
+  GEMINI_CONFIG_DIR="${GEMINI_CONFIG_HOME:-$GEMINI_DIR/config}"
+  mkdir -p "$GEMINI_CONFIG_DIR"
+  SKILLS_JSON="$GEMINI_CONFIG_DIR/skills.json"
+  if [ ! -f "$SKILLS_JSON" ]; then
+    cat <<EOF > "$SKILLS_JSON"
+{
+  "entries": [
+    { "path": "$GEMINI_DIR/skills" }
+  ]
+}
+EOF
+    printf 'link  skills.json -> %s/skills\n' "$GEMINI_DIR"
+  else
+    printf 'ok    skills.json (already exists at %s)\n' "$SKILLS_JSON"
+  fi
 fi
+
 
 if [ -f "$SCRIPT_DIR/GEMINI.md" ]; then
   mkdir -p "$GEMINI_DIR"
