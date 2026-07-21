@@ -133,7 +133,7 @@ Keep it a draft: a draft doesn’t trigger the `@claude` review bot, so no revie
 
 - Read the issue description carefully — understand “done” criteria
 - Make the changes (code, tests, docs as needed)
-- Run the repo’s standard checks (lint, test, build) before committing. Prefer the same commands CI runs. If the repo has both subpackage tests and a root-level lint step, run both.
+- Run the repo’s standard checks (lint, test, build) before committing Prefer the same commands CI runs. If the repo has both subpackage tests and a root-level lint step, run both
 - Commit with a message referencing the issue: `fix: handle auth timeout on slow networks (closes #12)`
 
 ### 10. Push and mark the PR ready for review
