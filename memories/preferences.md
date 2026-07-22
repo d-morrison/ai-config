@@ -205,6 +205,8 @@
 - **AI memories, skills, and commands never stay local-only.** When I capture a durable learning, commit it to the right repo via PR — GENERAL/cross-project learnings go to `d-morrison/ai-config` (as bullets in the right `memories/*.md` topic file); PROJECT-SPECIFIC learnings go to that project's own repo (its `CLAUDE.md` / agent docs / `.claude/memories/`).
   A memory kept only under `~/.claude/projects/<path>/memory/` or `~/.codex/memories/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
   Capturing a learning isn't done until it's committed where the right audience will see it.
+- In Codex sessions, treat `d-morrison/ai-config` as the canonical home for cross-project memories even if a local `~/.Codex/memories/` store is present.
+  The local store is not the durable source of truth; if ai-config access is missing from the environment, restore access first rather than writing the memory only locally.
 - When committing, stage the SPECIFIC files you touched — NEVER `git add -A`.
   The working tree often holds unrelated in-flight edits (the user's own UMS/skill commits, another draft); `git add -A` silently sweeps those into your commit and onto your PR, bloating the review and extending the cycle.
   List paths explicitly, and `git status` before committing to confirm only intended files are staged. (Learned the hard way: a `git add -A` swept the user's `scout-peers` skill into an unrelated `/prune` PR, adding several extra review rounds.)
@@ -521,3 +523,10 @@ limits) before using up claude quota"). The `delegate-to-codex` skill (alias
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
+
+## Code organization
+- One function per file (for R and similar languages where this is practical).
+- Keep source files under ~100 lines of code.
+
+## Memory and skill storage
+- Never save memories or skills locally (e.g. directly in ~/.Codex/); always commit them to the ai-config repo. Use symlinks and/or submodules so that ~/.Codex/ picks them up automatically.
