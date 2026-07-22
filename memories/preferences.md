@@ -112,10 +112,15 @@
   When working in that fork, open PRs against the upstream original (`d-morrison/ai-config`, base `main`) as a cross-fork PR with head `dem-extra1:<branch>` — NOT against the fork's own `main`. (If a remote/web session is scoped only to `dem-extra1/ai-config` with no `add_repo` tool, the cross-fork PR can't be created from that session; push the branch and surface that the upstream PR must be opened where `d-morrison/ai-config` is in scope.)
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
+- Always use `glab` (the GitLab CLI) for GitLab operations — MR comments, file uploads, API calls, pipeline checks — instead of raw `curl` against the GitLab REST API.
+  `glab` handles auth via its own config (no `GITLAB_TOKEN` env var needed), so it works even when a token isn't exported in the current shell.
+  Use `glab api` for endpoints without a dedicated subcommand (e.g. `POST /projects/:id/uploads` for file attachments).
 - Run local validation before pushing R-pkg work: lintr::lint_package(), devtools::document(), devtools::test(), devtools::check(), pkgdown::build_site() (per repo copilot-instructions).
 - Before opening a PR, read the repo's own agent/contributor instructions (CLAUDE.md → the canonical reference it points to, e.g. `.github/copilot-instructions.md` / CONTRIBUTING) and front-load the required pre-PR housekeeping in the FIRST commit instead of discovering it via red CI.
   For R packages this means a NEWS.md entry AND a `usethis::use_version()` DESCRIPTION dev-version bump, even for a docs-only / vignette-only change — see `tools.md`'s "R-package PR CI gates" section for the full changelog-check / version-check / spellcheck / opt-out-label details.
-- In the HACtions repo, use the `test.hac` project/group as a test bed (always).
+- Never commit directly to a shared/multi-project CI-infra repo's `main` — even when confident and already validated the fix live.
+  Push to a branch and open an MR for review first.
+  This applies going forward; it does not retroactively require undoing an already-validated fix already on main unless the user asks.
 - After an iterate loop completes, ALWAYS create follow-up issues for every deferred/acknowledged item before reporting done.
   Never leave deferred items untracked.
 - When an MR/PR addresses multiple independent concerns, proactively offer to split it into separate MRs/PRs (one per concern).
@@ -198,7 +203,7 @@
 - After adding or updating skills OR memory files in the ai-config repo, always commit and push everything to origin (on the current branch if a PR is already open, or create a new branch + PR if the change is out of scope).
   Never leave ANY changes in ai-config as local-only uncommitted edits — including memory files.
 - **AI memories, skills, and commands never stay local-only.** When I capture a durable learning, commit it to the right repo via PR — GENERAL/cross-project learnings go to `d-morrison/ai-config` (as bullets in the right `memories/*.md` topic file); PROJECT-SPECIFIC learnings go to that project's own repo (its `CLAUDE.md` / agent docs / `.claude/memories/`).
-  A memory kept only under `~/.claude/projects/<path>/memory/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
+  A memory kept only under `~/.claude/projects/<path>/memory/` or `~/.codex/memories/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
   Capturing a learning isn't done until it's committed where the right audience will see it.
 - When committing, stage the SPECIFIC files you touched — NEVER `git add -A`.
   The working tree often holds unrelated in-flight edits (the user's own UMS/skill commits, another draft); `git add -A` silently sweeps those into your commit and onto your PR, bloating the review and extending the cycle.

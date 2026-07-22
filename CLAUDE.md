@@ -200,6 +200,15 @@ When a task involves an existing PR or branch, work on that PR's branch instead:
 
 Use the harness-specified branch only when starting work with no existing PR and no existing branch to continue.
 
+**Treat a PR-preview URL as an explicit PR target.**
+If the user points to a page under a path like
+`.../pr-preview/pr-436/...`,
+interpret that as "work on PR #436" by default:
+check out that PR's branch,
+push updates to it,
+and update that same PR.
+Do not open a separate PR unless the user explicitly asks for one.
+
 **Exception --- the session can only push to its own branch.** Some web/remote sessions are scoped so the agent proxy allows pushing *only* to the harness-assigned branch; a push to any other branch (the existing PR's branch included) is rejected with `HTTP 403`.
 When that happens you cannot follow step 3.
 Don't retry the 403 --- it's a policy denial, not a transient error.
@@ -225,6 +234,8 @@ Committing follow-up work on top of that stale branch and pushing looks fine loc
 Before adding commits to a branch you didn't just create, fetch `origin/main` and check ancestry first.
 If the branch's own PR already merged, don't build on top of it — start clean: `git checkout -b <branch> origin/main`, then `git cherry-pick` only the genuinely new commit(s).
 If you've already pushed a bloated diff, the same fix applies retroactively: rebuild the branch from `origin/main` plus a cherry-pick of the new work, then `git push --force-with-lease`. (Seen on gha#161 → gha#162 and ai-config#344 → ai-config#354, both squash-merged.)
+
+**A live variant of the same check: the human can merge the branch's PR out from under an in-flight push, not just leave a stale branch to discover later.** Pushing a commit right as its own PR merges lands in a race in repos that auto-delete head branches on merge: GitHub deletes the head branch, and the in-flight push silently recreates it under the same name — but now as a brand-new, orphaned branch with no PR, built on top of commits that (for a real merge commit, unlike the squash case above) *are* ancestors of `main`'s new tip. `git status`/`git push` report success with nothing to suggest anything went wrong. Recovery is the same ancestry check as above (`git merge-base --is-ancestor <branch-tip> origin/main` — true here, since it wasn't squashed), then cherry-pick the orphaned commit onto a fresh branch off the new `origin/main`; delete the stray local and (if push-permitted) remote branch. If the orphaned commit is genuinely new work — not a fix that belongs in the now-merged PR — treat this as the natural start of a new, stacked issue + PR rather than trying to reopen or append to the merged one. (`UCD-SERG/serocalculator#568` → `#572`, 2026-07-20: pushed a `Var(y_obs | y_true)` derivation commit just as #568 merged; recovered by cherry-picking it onto a new branch off `main`, filing #571 to track the follow-on `Var(y_obs | T=t)` derivation it was a prerequisite for, and opening #572 stacked on nothing but current `main`.)
 
 **The harness-assigned branch name itself can already exist locally, pointing at unrelated stale content from an earlier session in the same container.** A fresh container doesn't guarantee a fresh local branch state --- `git checkout -b <harness-branch> origin/<existing-PR-branch>` can fail with "a branch named `<harness-branch>` already exists" if a prior session in this container created one under that same name and left it pointing at old work. Don't assume it's safe to reuse or that it reflects the actual PR: check `git merge-base --is-ancestor <local-tip> origin/main` first --- if the local tip is already an ancestor of `main` (i.e. it was old, already-merged content, not in-flight work), it's safe to discard by force-checking out the real PR branch under that same name with `git checkout -B <harness-branch> origin/<existing-PR-branch>` (uppercase `-B` resets the branch in place instead of erroring). (ai-config#481: the assigned branch name `claude/resolve-pr-481-conflicts-dz9v4w` already existed locally, pointing at a commit that turned out to be an ancestor of `main` from an earlier session --- switched to the actual PR branch instead, per this section's own primary rule.)
 
@@ -649,3 +660,9 @@ When *I* iterate a PR, the ARDI loop above is the mechanism — it already addre
 When the user gives feedback, corrections, or guidance that applies beyond the current session (a standing rule, style preference, workflow change, or behavioral note), decide on your own how to encode it --- don't ask.
 Choose the right form (memory bullet in CLAUDE.md, update to a shared fragment in `shared/`, new or revised skill, etc.) and commit the change.
 Only surface the choice if it's ambiguous or touches something architecturally significant.
+
+## PowerShell CLI Command Safety
+
+- **Never pass backtick-containing content in PowerShell double-quoted strings**: PowerShell treats `` ` `` as its escape character — `` `b `` (Backspace, 0x08), `` `n ``, `` `t ``, `` `r ``, etc. — so Markdown code spans and other backtick-containing text will be silently corrupted. Use single-quoted strings (`'...'` / `@'...'@`) for inline content, or write to a file and pass `--body-file` for multi-line PR descriptions.
+- **Use body files for GitHub PR descriptions**: Write multi-line PR descriptions to a temp file and pass `--body-file <file>` to `gh pr create`/`gh pr edit`, or `gh api -F body=@<file>` for raw API calls. This avoids terminal string-escaping corruption for any content with backticks or other shell-special characters.
+

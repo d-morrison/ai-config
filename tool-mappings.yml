@@ -25,6 +25,9 @@ models:
   - id: copilot
     label: VS Code Copilot
     resolves: GitHub MCP tool.
+  - id: gemini
+    label: Gemini CLI
+    resolves: GitHub MCP tool if configured in MCP settings; otherwise the CLI command.
   - id: cli
     label: Generic shell / CLI
     resolves: The CLI command (fallback for any agent that just runs a shell).
