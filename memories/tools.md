@@ -1877,6 +1877,18 @@ any Quarto website (rme, psw, qwt, …).
   survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
+- **Custom Quarto shortcode Lua files belong under YAML `shortcodes:`, not
+  `filters:`.** A Lua file that returns a shortcode table (for example
+  `return { ['slidebreak'] = slidebreak }`) does **not** register that
+  shortcode when listed under `filters:`; Quarto treats it as a Pandoc filter,
+  leaves `{{< slidebreak >}}` literal in rendered HTML, and warns
+  `Shortcode 'slidebreak' not found`. Put the path under front-matter or
+  project metadata `shortcodes:` instead (e.g.
+  `shortcodes: [../_extensions/d-morrison/slidebreak/slidebreak.lua]`), even
+  when the file lives inside `_extensions/`. (Observed directly in
+  UCD-SERG/serocalculator, 2026-07-22: switching the same Lua path from
+  `filters:` to `shortcodes:` made the shortcode render and removed the
+  warning in a standalone `quarto render` smoke test.)
 - **Large site renders crash Deno's default 8 GB V8 heap — deterministically,
   not flakily.** Quarto's launcher script hardcodes
   `--max-old-space-size=8192,--max-heap-size=8192` and *prepends* those
