@@ -17,6 +17,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
+GEMINI_CONFIG_DIR="${GEMINI_CONFIG_HOME:-$GEMINI_DIR/config}"
 
 # VS Code Copilot memory directory (macOS default; override with COPILOT_MEMORY_DIR)
 COPILOT_MEMORY_DIR="${COPILOT_MEMORY_DIR:-$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/memory-tool/memories}"
@@ -109,4 +111,39 @@ if [ -d "$SCRIPT_DIR/memories" ] && [ -d "$COPILOT_MEMORY_DIR" ]; then
   done
 else
   printf '\nskip  memories/ (dir not found or Copilot memory dir missing)\n'
+fi
+
+# --- Gemini CLI & Antigravity skills: symlink skills and register skills.json ---
+if [ -d "$SCRIPT_DIR/skills" ]; then
+  printf '\n--- Gemini CLI & Antigravity skills ---\n'
+  mkdir -p "$GEMINI_DIR/skills"
+  for src in "$SCRIPT_DIR"/skills/*; do
+    [ -d "$src" ] || continue
+    link_one "$src" "$GEMINI_DIR/skills/$(basename "$src")"
+  done
+
+  # Antigravity/Gemini CLI customization spec (https://github.com/google-gemini/gemini-cli):
+  # skills.json in customization root accepts {"entries": [{"path": "..."}], "inherits": [...], "exclude": [...]}.
+  mkdir -p "$GEMINI_CONFIG_DIR"
+  SKILLS_JSON="$GEMINI_CONFIG_DIR/skills.json"
+  if [ ! -f "$SKILLS_JSON" ]; then
+    cat <<EOF > "$SKILLS_JSON"
+{
+  "entries": [
+    { "path": "$GEMINI_DIR/skills" }
+  ]
+}
+EOF
+    printf 'write skills.json (%s) -> %s/skills\n' "$SKILLS_JSON" "$GEMINI_DIR"
+  elif grep -q "$GEMINI_DIR/skills" "$SKILLS_JSON" 2>/dev/null; then
+    printf 'ok    skills.json (%s/skills already registered)\n' "$GEMINI_DIR"
+  else
+    printf 'skip  skills.json (%s exists but does not register %s/skills)\n' "$SKILLS_JSON" "$GEMINI_DIR"
+  fi
+fi
+
+
+if [ -f "$SCRIPT_DIR/GEMINI.md" ]; then
+  mkdir -p "$GEMINI_DIR"
+  link_one "$SCRIPT_DIR/GEMINI.md" "$GEMINI_DIR/GEMINI.md"
 fi

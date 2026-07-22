@@ -220,7 +220,10 @@ def check_json(rel: str, required: list[str]) -> None:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     print("Validating skills…")
+
     check_skills()
     check_operation_tokens()
     print("Validating Codex wrappers…")
