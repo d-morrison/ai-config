@@ -115,10 +115,10 @@
 - Before committing code changes, run the repo checks that CI enforces
   (at minimum lint + tests, plus build/render where applicable),
   not only the narrowest package-level test command.
-  If a repo has both package tests and a root lint step,
+  If a repo has both package tests and a root-level lint step,
   run both before the commit.
   (Learned on UCD-SERG/lab-manual#433:
-  committing after package tests passed still left a root lint failure.)
+  committing after package tests passed still left a root-level lint failure.)
 - Always use `glab` (the GitLab CLI) for GitLab operations — MR comments, file uploads, API calls, pipeline checks — instead of raw `curl` against the GitLab REST API.
   `glab` handles auth via its own config (no `GITLAB_TOKEN` env var needed), so it works even when a token isn't exported in the current shell.
   Use `glab api` for endpoints without a dedicated subcommand (e.g. `POST /projects/:id/uploads` for file attachments).
