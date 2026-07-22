@@ -203,7 +203,7 @@
 - After adding or updating skills OR memory files in the ai-config repo, always commit and push everything to origin (on the current branch if a PR is already open, or create a new branch + PR if the change is out of scope).
   Never leave ANY changes in ai-config as local-only uncommitted edits — including memory files.
 - **AI memories, skills, and commands never stay local-only.** When I capture a durable learning, commit it to the right repo via PR — GENERAL/cross-project learnings go to `d-morrison/ai-config` (as bullets in the right `memories/*.md` topic file); PROJECT-SPECIFIC learnings go to that project's own repo (its `CLAUDE.md` / agent docs / `.claude/memories/`).
-  A memory kept only under `~/.claude/projects/<path>/memory/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
+  A memory kept only under `~/.claude/projects/<path>/memory/` or `~/.codex/memories/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
   Capturing a learning isn't done until it's committed where the right audience will see it.
 - When committing, stage the SPECIFIC files you touched — NEVER `git add -A`.
   The working tree often holds unrelated in-flight edits (the user's own UMS/skill commits, another draft); `git add -A` silently sweeps those into your commit and onto your PR, bloating the review and extending the cycle.
