@@ -3,6 +3,7 @@
 ## gh (GitHub CLI)
 - `gh` opens a pager (alternate buffer) that hangs the agent terminal.
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
+- `gh --no-pager` is not a supported flag and will error; use `GH_PAGER=cat` or `| cat` instead.
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
 - **Polling for the bot's verdict: match `Claude finished`, don't exclude a placeholder.** While a run is underway, the bot's comment holds an in-progress placeholder whose wording *varies between runs* ("### Review in progress …", "Claude Code is working…"), so a watcher that exits when comments exist, or when one known placeholder phrase disappears, fires early on the next differently-worded placeholder. Completed runs (review and agent alike) start the body with `**Claude finished`. Poll `gh api repos/<o>/<r>/issues/<N>/comments --jq '[.[] | select(.user.login=="claude[bot]")] | last | .body'` and wait for that marker. (Cost two wasted watch rounds on ai-config#357 before keying on it.)
@@ -1877,6 +1878,18 @@ any Quarto website (rme, psw, qwt, …).
   survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
+- **Custom Quarto shortcode Lua files belong under YAML `shortcodes:`, not
+  `filters:`.** A Lua file that returns a shortcode table (for example
+  `return { ['slidebreak'] = slidebreak }`) does **not** register that
+  shortcode when listed under `filters:`; Quarto treats it as a Pandoc filter,
+  leaves `{{< slidebreak >}}` literal in rendered HTML, and warns
+  `Shortcode 'slidebreak' not found`. Put the path under front-matter or
+  project metadata `shortcodes:` instead (e.g.
+  `shortcodes: [../_extensions/d-morrison/slidebreak/slidebreak.lua]`), even
+  when the file lives inside `_extensions/`. (Observed directly in
+  UCD-SERG/serocalculator, 2026-07-22: switching the same Lua path from
+  `filters:` to `shortcodes:` made the shortcode render and removed the
+  warning in a standalone `quarto render` smoke test.)
 - **Large site renders crash Deno's default 8 GB V8 heap — deterministically,
   not flakily.** Quarto's launcher script hardcodes
   `--max-old-space-size=8192,--max-heap-size=8192` and *prepends* those

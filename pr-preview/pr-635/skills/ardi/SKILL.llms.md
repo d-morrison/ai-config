@@ -21,6 +21,8 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
     **If the latest review is a cancellation, the live verdict is stale — don’t re-do already-applied fixes.** A `cancel-in-progress` cancellation (on setups that cancel superseded review runs) means the last *complete* review’s findings may already have been fixed by a commit that landed after it, with the confirming re-review killed before it could post. Before treating those findings as outstanding work, **diff the current code against each one** to see what’s already addressed — then push only what’s genuinely needed and let a fresh review confirm. Re-applying fixes that are already in the tree wastes a round and muddies the diff. If *nothing* remains outstanding (every finding is already applied), don’t push an empty commit — skip to step 6 and re-request the review directly.
 
+    **If the reviewer explicitly skips or cannot produce a verdict** (for example, quota exhaustion, an outage, or a policy that prevents a reviewer from self-reviewing its own work), perform a full self-review before proceeding: read the current PR diff against its base, check each changed call path and edge case, run the focused tests and relevant lint/documentation checks, and address every finding you identify. Treat the skip as reviewer-unavailable: note it in your ARD summary comment, then retry or obtain an independent review when possible. A skipped review is never a clean external verdict and does not authorize marking the PR as approved.
+
 3.  **ARD every finding — regardless of severity label.** “Not a blocker”, “minor”, “nit”, “optional”, “consider”, “if you want” are for the user’s prioritization, not a pass for the implementer. For each flagged item, choose exactly one:
 
     - **Address** — fix it, commit.
@@ -86,7 +88,7 @@ The goal is green CI + clean review, not just clean review.
 
 The loop ends only at **fully clean**, which means **both**:
 
-1.  **All CI workflows green** — every required check, not just the review job (see *Fix broken CI/workflows too* above).
+1.  **All CI workflows and check runs green and completed** — every check, not just required ones and not just the review job; never `IN_PROGRESS`, `QUEUED`, or `PENDING` (see *Fix broken CI/workflows too* above).
 2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.”
 
 **Threads:** at fully-clean, every **inline** review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the `ard` skill, step 4b.)
