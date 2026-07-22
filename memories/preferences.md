@@ -40,6 +40,12 @@
   A plausible-sounding mechanism (e.g. "Rd `\arguments{\item{name}{...}}` labels get spell-checked", or "git pathspec globs don't cross `/` by default") can be wrong for the specific tool/version in use; a real, controlled test against a case that actually distinguishes the claim from its negation is the authoritative signal, not a theory about what the tool probably does — and this cuts both ways: accepting a false-but-confident finding wastes a fix cycle on a non-bug exactly as much as wrongly rebutting a true one does.
   (Learned on UCD-SERG/serodynamics#193: rebutted a claude[bot] WORDLIST finding by reading the Spellcheck job's actual log rather than debating the claim in the abstract. Learned again on sparta#852: a review claimed a git pathspec (`scripts/*.gd`) silently missed subdirectories; an initial "confirmation" test was flawed — it diffed against a case with no subdirectory files present, so it couldn't have shown the bug either way — and a rigorous test against a real commit touching `scripts/campaign/*.gd` showed the claim was false. The reviewer re-raised the same claim (inverted) on the next round, this time with a specific but wrong mechanism ("git uses `wildmatch()` with `WM_PATHNAME` by default"); `gitglossary(7)`'s own "pathspec" definition settles it authoritatively — the DEFAULT (non-magic) pathspec is explicitly documented as "matched against that pattern using fnmatch(3); in particular, `*` and `?` CAN match directory separators" (example given: `Documentation/*.jpg` matches `Documentation/chapter_1/figure_1.jpg`), which is a DIFFERENT code path from the explicit `:(glob)` magic word (documented separately as using `FNM_PATHNAME`, which does NOT cross `/`) — the two are easy to conflate but behave oppositely. The fix landed anyway since the more explicit `:(glob)**` form was harmless, but the PR/code comments had to be corrected from "this was a real bug" to "verified this was never actually broken," and the citation is what finally closed the loop after two rounds of empirical-only rebuttal weren't enough to convince the reviewer on their own.)
 - When creating a GitHub PR, request reviewer `d-morrison` (see request-pr-review skill).
+- If the user says the work belongs on a specific existing branch or on top of a
+  specific PR branch, honor that branch/base instruction over auto branch-naming
+  hygiene.
+  Don't rename or spin a fresh standalone branch just because the current name is
+  placeholder-ish; stay on the requested branch, or restack/rebase the working
+  branch onto it before continuing.
 - When deferring work out of scope during a review iteration, always file a follow-up issue (via `gh issue create` or `glab issue create`) capturing the deferred item.
   Don't just mention it in a comment — create the issue so it's tracked.
 - Always open MRs/PRs after pushing — never ask first ("always yes").
@@ -112,6 +118,13 @@
   When working in that fork, open PRs against the upstream original (`d-morrison/ai-config`, base `main`) as a cross-fork PR with head `dem-extra1:<branch>` — NOT against the fork's own `main`. (If a remote/web session is scoped only to `dem-extra1/ai-config` with no `add_repo` tool, the cross-fork PR can't be created from that session; push the branch and surface that the upstream PR must be opened where `d-morrison/ai-config` is in scope.)
 - Always include `Closes #N` in MR/PR descriptions to auto-close the linked issue on merge.
 - On GitLab, assign MRs to `demorrison`.
+- Before committing code changes, run the repo checks that CI enforces
+  (at minimum lint + tests, plus build/render where applicable),
+  not only the narrowest package-level test command.
+  If a repo has both package tests and a root-level lint step,
+  run both before the commit.
+  (Learned on UCD-SERG/lab-manual#433:
+  committing after package tests passed still left a root-level lint failure.)
 - Always use `glab` (the GitLab CLI) for GitLab operations — MR comments, file uploads, API calls, pipeline checks — instead of raw `curl` against the GitLab REST API.
   `glab` handles auth via its own config (no `GITLAB_TOKEN` env var needed), so it works even when a token isn't exported in the current shell.
   Use `glab api` for endpoints without a dedicated subcommand (e.g. `POST /projects/:id/uploads` for file attachments).

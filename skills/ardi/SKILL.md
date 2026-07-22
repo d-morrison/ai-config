@@ -63,6 +63,17 @@ finding → push → post summary → re-request review → repeat until clean.
    remains outstanding (every finding is already applied), don't push an empty
    commit — skip to step 6 and re-request the review directly.
 
+    **If the reviewer explicitly skips or cannot produce a verdict** (for
+    example, quota exhaustion, an outage, or a policy that prevents a reviewer
+    from self-reviewing its own work), perform a full self-review before
+    proceeding: read the current PR diff against its base, check each changed
+    call path and edge case, run the focused tests and relevant
+    lint/documentation checks, and address every finding you identify. Treat
+    the skip as reviewer-unavailable: note it in your ARD summary comment, then
+    retry or obtain an independent review when possible. A skipped review is
+    never a clean external verdict and does not authorize marking the PR as
+    approved.
+
 3. **ARD every finding — regardless of severity label.** "Not a blocker",
    "minor", "nit", "optional", "consider", "if you want" are for the user's
    prioritization, not a pass for the implementer. For each flagged item,
