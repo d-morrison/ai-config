@@ -212,8 +212,9 @@ The goal is green CI + clean review, not just clean review.
 
 The loop ends only at **fully clean**, which means **both**:
 
-1. **All CI workflows green** — every required check, not just the review job
-   (see *Fix broken CI/workflows too* above).
+1. **All CI workflows and check runs green and completed** — every check, not
+   just required ones and not just the review job; never `IN_PROGRESS`,
+   `QUEUED`, or `PENDING` (see *Fix broken CI/workflows too* above).
 2. **The latest review is totally clean** — zero flagged items under any
    heading. "Looks good" / "no findings" / "approved" with no follow-on
    bullets. Every item that wasn't directly **Addressed** is either
