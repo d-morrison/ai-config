@@ -200,6 +200,15 @@ When a task involves an existing PR or branch, work on that PR's branch instead:
 
 Use the harness-specified branch only when starting work with no existing PR and no existing branch to continue.
 
+**Treat a PR-preview URL as an explicit PR target.**
+If the user points to a page under a path like
+`.../pr-preview/pr-436/...`,
+interpret that as "work on PR #436" by default:
+check out that PR's branch,
+push updates to it,
+and update that same PR.
+Do not open a separate PR unless the user explicitly asks for one.
+
 **Exception --- the session can only push to its own branch.** Some web/remote sessions are scoped so the agent proxy allows pushing *only* to the harness-assigned branch; a push to any other branch (the existing PR's branch included) is rejected with `HTTP 403`.
 When that happens you cannot follow step 3.
 Don't retry the 403 --- it's a policy denial, not a transient error.
@@ -656,5 +665,4 @@ Only surface the choice if it's ambiguous or touches something architecturally s
 
 - **Never pass backtick-containing content in PowerShell double-quoted strings**: PowerShell treats `` ` `` as its escape character — `` `b `` (Backspace, 0x08), `` `n ``, `` `t ``, `` `r ``, etc. — so Markdown code spans and other backtick-containing text will be silently corrupted. Use single-quoted strings (`'...'` / `@'...'@`) for inline content, or write to a file and pass `--body-file` for multi-line PR descriptions.
 - **Use body files for GitHub PR descriptions**: Write multi-line PR descriptions to a temp file and pass `--body-file <file>` to `gh pr create`/`gh pr edit`, or `gh api -F body=@<file>` for raw API calls. This avoids terminal string-escaping corruption for any content with backticks or other shell-special characters.
-
 

@@ -3,8 +3,10 @@
 ## gh (GitHub CLI)
 - `gh` opens a pager (alternate buffer) that hangs the agent terminal.
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
+- `gh --no-pager` is not a supported flag and will error; use `GH_PAGER=cat` or `| cat` instead.
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
+- **A third variant: on `d-morrison/gha` itself, the review comment posts as `github-actions[bot]`, not `claude`/`claude[bot]`.** Filtering `.user.login == "claude"` (or `"claude[bot]"`) there returns nothing even though a real, complete review was posted — the workflow's own `gather-context` job comment even says "REST author login is `claude[bot]`", which doesn't match what the bot actually posts under in that repo. Don't conclude "no review yet" from an empty filter on one login string: if it comes back empty, list all comment authors (`gh api repos/<o>/<r>/issues/<N>/comments --jq '.[] | .user.login'`) and check the body for the `**Claude finished` marker regardless of which login posted it. (gha#278, 2026-07-21: `select(.author.login == "claude")` and `select(.user.login | test("claude"))` both came up empty; the actual review comments were under `github-actions[bot]`.)
 - **Polling for the bot's verdict: match `Claude finished`, don't exclude a placeholder.** While a run is underway, the bot's comment holds an in-progress placeholder whose wording *varies between runs* ("### Review in progress …", "Claude Code is working…"), so a watcher that exits when comments exist, or when one known placeholder phrase disappears, fires early on the next differently-worded placeholder. Completed runs (review and agent alike) start the body with `**Claude finished`. Poll `gh api repos/<o>/<r>/issues/<N>/comments --jq '[.[] | select(.user.login=="claude[bot]")] | last | .body'` and wait for that marker. (Cost two wasted watch rounds on ai-config#357 before keying on it.)
 - **A reply posted via `gh pr comment`/`gh api` from within a session shows up under the *human user's own* GitHub account, not a bot identity — don't mistake it for an independent human review when auditing a PR's review state.** `gh` authenticates as whatever account is logged in locally (often the user's own, e.g. seen as `dem-extra1` on `Lacaedemon/sparta`), so when an agent (or a dispatched subagent) replies to an inline review comment on the user's behalf, `gh api repos/<o>/<r>/pulls/<N>/reviews` lists it as a `COMMENTED` review authored by the user — indistinguishable at a glance from the user genuinely opening the PR in a browser and typing a reply themselves. Before treating an unexpected review entry as a signal that the human intervened, check whether its body/inline-comment content reads like the agent's own scripted reply (referencing a specific commit SHA, restating verification numbers) rather than free-form human commentary — if so, it's the session's own tooling, not new human input.
 - **`gh pr view --json` does not accept `merged` as a field.** Use `state` (returns `"MERGED"`) and `mergedAt` (ISO timestamp, null if not merged) to check merge status. Example: `gh pr view <N> --json state,mergedAt`.
@@ -1877,6 +1879,18 @@ any Quarto website (rme, psw, qwt, …).
   survives: don't write "CI covers this" in a PR description from assumption —
   verify what CI *actually* does before asserting either that it does or
   doesn't cover a given check.
+- **Custom Quarto shortcode Lua files belong under YAML `shortcodes:`, not
+  `filters:`.** A Lua file that returns a shortcode table (for example
+  `return { ['slidebreak'] = slidebreak }`) does **not** register that
+  shortcode when listed under `filters:`; Quarto treats it as a Pandoc filter,
+  leaves `{{< slidebreak >}}` literal in rendered HTML, and warns
+  `Shortcode 'slidebreak' not found`. Put the path under front-matter or
+  project metadata `shortcodes:` instead (e.g.
+  `shortcodes: [../_extensions/d-morrison/slidebreak/slidebreak.lua]`), even
+  when the file lives inside `_extensions/`. (Observed directly in
+  UCD-SERG/serocalculator, 2026-07-22: switching the same Lua path from
+  `filters:` to `shortcodes:` made the shortcode render and removed the
+  warning in a standalone `quarto render` smoke test.)
 - **Large site renders crash Deno's default 8 GB V8 heap — deterministically,
   not flakily.** Quarto's launcher script hardcodes
   `--max-old-space-size=8192,--max-heap-size=8192` and *prepends* those
