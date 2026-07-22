@@ -425,7 +425,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="the-bar-fully-clean">The bar: “fully clean”</h2>
 <p>The loop ends only at <strong>fully clean</strong>, which means <strong>both</strong>:</p>
 <ol type="1">
-<li><strong>All CI workflows and check runs green and completed</strong> — every check, not just required ones and not just the review job; never <code>IN_PROGRESS</code>, <code>QUEUED</code>, or <code>PENDING</code> (see <em>Fix broken CI/workflows too</em> above).</li>
+<li><strong>All CI workflows and check runs are green and completed</strong> — every check, not just required ones and not just the review job; never <code>IN_PROGRESS</code>, <code>QUEUED</code>, or <code>PENDING</code> (see <em>Fix broken CI/workflows too</em> above).</li>
 <li><strong>The latest review is totally clean</strong> — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly <strong>Addressed</strong> is either <strong>Deferred</strong> to a tracked issue or <strong>Rebutted with a rebuttal that actually convinced the reviewer</strong> (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does <strong>not</strong> count as clean. Don’t stop at “ready with one minor nit.”</li>
 </ol>
 <p><strong>Threads:</strong> at fully-clean, every <strong>inline</strong> review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the <code>ard</code> skill, step 4b.)</p>
