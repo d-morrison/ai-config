@@ -34,8 +34,9 @@ standing yes (see `preferences.md`).
 - Resolve which PR is meant (the one from the current session; if ambiguous,
   ask which number).
 - Confirm it is **fully clean** before merging (the ARDI terminal state — see
-  `shared/workflow/fully-clean.md`): all required CI checks green AND the latest
-  review clean.
+  `shared/workflow/fully-clean.md`): every CI workflow and check run — not
+  just required ones — is green **and completed** (never `IN_PROGRESS`,
+  `QUEUED`, or `PENDING`) AND the latest review is clean.
   Verify with a fresh query, not a cached verdict:
   `mcp__github__pull_request_read` (`get` for `mergeable_state`, `get_check_runs`
   for CI) — or `gh pr view <N>` / `gh pr checks <N>` in a local session.
@@ -45,9 +46,10 @@ standing yes (see `preferences.md`).
   `d-morrison` as reviewer (`gh pr edit <N> --add-reviewer d-morrison` —
   `EDIT_PR`) and leave a note that the PR is clean and ready. Don't attempt to
   force-merge.
-- If CI is red or the review still has open findings, **do not merge** — report
-  what's blocking instead. (Only merge a not-clean PR if the user explicitly
-  says to anyway.)
+- If any CI workflow or check run is red or still in-progress/queued/pending,
+  or the review still has open findings, **do not merge** — report what's
+  blocking instead. (Only merge a not-clean PR if the user explicitly says to
+  anyway.)
 
 ### 2. Merge
 
@@ -106,8 +108,8 @@ branch + PR is a standing yes (`preferences.md`).
   a busy, multi-threaded conversation makes this easy to drop, but the chain
   isn't optional follow-up; it's part of the merge action itself. See `mwc`'s
   own anti-pattern entry for the concrete case this happened in.
-- ❌ Merging a PR that isn't fully clean (red CI or open findings) without the
-  user explicitly saying so.
+- ❌ Merging a PR that isn't fully clean (red or still-in-progress CI, or open
+  findings) without the user explicitly saying so.
 - ❌ Letting the squash commit inherit a stale PR description — pass an accurate
   title/body when the body no longer matches the final diff.
 - ❌ Confusing "merge it" (merge the PR) with "merge main" (sync the branch).
