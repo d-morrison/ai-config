@@ -221,7 +221,7 @@ Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —
 the scout-peers duplicate `## Relationship to other skills` bug (ai-config#132)
 happened because an existing section was missed and a duplicate was appended at
-the end. Run `grep -n "^## " "<file>"` before appending.
+the end. Run `grep -n "^## " -- "<file>"` before appending.
 
 ## Writing robust bash scripts (recurring review findings)
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
@@ -506,11 +506,17 @@ attempt first if a branch happens to share the file's name (verified:
 instead of restoring the file).
 
 Use `--` before the path, or `git restore` (which has neither ambiguity).
-Sequence it as: **commit the fix**, then revert temporarily (`git stash push
-"<file>"`, or a scripted counter-edit), prove the failure, then `git stash pop`
-/ re-checkout the committed state. If a counter-edit was applied with
-sed/perl instead of stash, restoring via `git checkout` is only safe because
-the fix is already in HEAD (and the index matches it — nothing else staged).
+Sequence it as: **commit the fix first.** Then temporarily revert by
+checking out the file's *pre-fix* content from the parent commit --
+`git checkout HEAD~1 -- "<file>"` -- not by stashing: once the fix is
+committed the working tree is clean, so `git stash push "<file>"` finds
+nothing to save and silently no-ops, leaving the fix in place during the
+"prove it fails" run. Prove the failure, then restore the fix with
+`git checkout HEAD -- "<file>"`. A scripted counter-edit (sed/perl) works
+too, applied the same way -- edit, prove the failure, then restore via
+`git checkout HEAD -- "<file>"`, which is safe here specifically because
+the fix is already committed (and the index matches HEAD -- nothing else
+staged).
 (Self-hit on Lacaedemon/sparta PR #870,
 2026-07-15: proved the overlap test failed against the density-blind layout
 via a perl counter-edit, then `git checkout -- scripts/SelectionManager.gd` to
