@@ -189,8 +189,9 @@ finding → push → post summary → re-request review → repeat until clean.
    This turns idle wait time into productive conflict prevention.
 
 7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
-   "fully clean"* below — zero findings **and** all CI workflows green **and**
-   every inline thread resolved). Don't exit on a clean review body alone.
+   "fully clean"* below — zero findings **and** all CI workflows and check
+   runs green and completed **and** every inline thread resolved). Don't exit
+   on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
