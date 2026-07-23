@@ -49,7 +49,7 @@ Claude Code installs the plugin at session start. Skills are namespaced: `/ai-co
 
 Or try it interactively in any Claude Code session:
 
-``` sh
+``` text
 /plugin marketplace add d-morrison/ai-config
 /plugin install ai-config@d-morrison
 ```

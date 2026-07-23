@@ -2727,7 +2727,7 @@
     "href": "index.html#whats-in-this-repo",
     "title": "ai-config",
     "section": "What’s in this repo",
-    "text": "What’s in this repo\n\n\n\nDirectory\nPurpose\n\n\n\n\nskills/\nReusable workflow skills for Claude Code (~/.claude/skills/)\n\n\ncodex-skills/\nGenerated Codex wrappers (~/.codex/skills/)\n\n\ncommands/\nSlash commands (~/.claude/commands/)\n\n\n.claude/agents/\nRead-only custom subagents (see Agents)\n\n\nmemories/\nPersistent notes and preferences (shared VS Code Copilot)\n\n\nshared/\nSingle-topic guidance with UCD-SERG lab manual"
+    "text": "What’s in this repo\n\n\n\nDirectory\nPurpose\n\n\n\n\nskills/\nReusable workflow skills for Claude Code (~/.claude/skills/)\n\n\ncodex-skills/\nGenerated Codex wrappers (~/.codex/skills/)\n\n\ncommands/\nSlash commands (~/.claude/commands/)\n\n\n.claude/agents/\nRead-only custom subagents (see Agents)\n\n\nmemories/\nPersistent notes and preferences (shared with UCD-SERG lab manual)\n\n\nshared/\nSingle-topic guidance, fragments shared with UCD-SERG lab manual"
   },
   {
     "objectID": "index.html#three-ways-to-use-these-skills",

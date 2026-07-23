@@ -83,7 +83,7 @@ The [`send-upstream`](skills/send-upstream/SKILL.llms.md) skill (`/sup`) handles
 
 After a PR merges (or at the end of any significant session), run UMS to capture what you learned:
 
-``` bash
+``` text
 /ums
 ```
 
