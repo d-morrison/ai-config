@@ -186,9 +186,11 @@ committed pass.
   `.claude/memories/`),
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
-  without agent-doc infrastructure yet, write to `~/.claude/projects/<project-path>/memory/`
-  as short-lived staging only — hand off that a PR adding agent docs to that repo
-  is still required.
+  without agent-doc infrastructure yet, write to this session's own local
+  project-memory mechanism (Claude Code: `~/.claude/projects/<project-path>/memory/`
+  — a non-Claude session should use whatever the equivalent local staging
+  location is for its own agent) as short-lived staging only — hand off that a
+  PR adding agent docs to that repo is still required.
 - [ ] Did the user express a new preference? → `/memories/preferences.md`
 - [ ] Did a workflow emerge that could be a new skill? → run `spot-skill-opportunities`
   to judge whether it's genuinely recurring, then `skill-builder` to create it
@@ -252,9 +254,10 @@ add a review gate for the cases that need one.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
   `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`, or
   checked-in `.claude/memories/`) via a PR;
-  if the repo has no agent-doc infrastructure yet,
-  `~/.claude/projects/<project-path>/memory/` is short-lived staging only —
-  hand off that a PR adding those agent docs is still required. See the checklist
+  if the repo has no agent-doc infrastructure yet, this session's own local
+  project-memory mechanism (Claude Code: `~/.claude/projects/<project-path>/memory/`
+  — substitute the equivalent for a non-Claude agent) is short-lived staging
+  only — hand off that a PR adding those agent docs is still required. See the checklist
   item above and `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including
   `tools.md`, `preferences.md`) without checking the surrounding indentation
