@@ -140,6 +140,22 @@ Don’t resolve a thread you haven’t replied to. Every inline comment ends wit
 
 **End-state (fully clean):** when the PR/MR is fully clean, **every inline review thread is resolved**, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. A leftover open inline thread (an unaccepted rebuttal, an un-resolved Address) means you’re not clean yet.
 
+### ARD round-close checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md), confirm each box before reporting the round done:
+
+Every finding is captured exactly once in the ARD table (after deduping summary + inline duplicates).
+
+Every table row has exactly one disposition (A/R/D/K), and no change request is labeled K.
+
+Every Address row points to a pushed commit SHA.
+
+Every Defer row links a filed tracking issue.
+
+Every inline thread has a reply; settled Address/Defer/Acknowledge threads are resolved; unresolved rebuttals stay open.
+
+The summary comment is posted from a body file (not inline), and no accidental review-trigger mention is present unless this round must explicitly re-request review.
+
 ### 5. Report back with a link
 
 Tell the user what you did and give a **clickable URL** to the PR/MR (and to the posted summary comment if available), so they can review in one click.

@@ -79,6 +79,20 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
     Verify each candidate with `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, “Verify before you act”) before claiming — `UNKNOWN` isn’t proof of a real conflict, and `CONFLICTING` can be stale if a sibling PR merged since GitHub last computed it. Claim and fix confirmed conflicts using the cascade procedure in `post-merge` step 1.5. Re-check after each resolution — new ones can appear at any time. This turns idle wait time into productive conflict prevention.
 
+### Per-round checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md), confirm each box before advancing to the next round:
+
+The latest review analyzed is for the current head commit (not a stale prior run).
+
+Every finding from that review has an ARD disposition.
+
+If code changed, main was synced in first when needed, then fixes were pushed.
+
+ARD summary was posted and corresponding inline-thread replies/resolutions were handled.
+
+Re-review trigger was chosen correctly: push-trigger only when code was pushed; explicit mention/dispatch only when no code was pushed.
+
 7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows and check runs green and completed **and** every inline thread resolved). Don’t exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
@@ -99,6 +113,18 @@ The loop ends only at **fully clean**, which means **both**:
 2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.”
 
 **Threads:** at fully-clean, every **inline** review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the `ard` skill, step 4b.)
+
+### Fully-clean exit checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md), confirm each box before declaring “clean”:
+
+All workflows and check runs are green **and completed** for the current head.
+
+Latest review has zero findings and no disputed rebuttals.
+
+Every inline review thread is resolved.
+
+The only open conversation is the final all-clear exchange (the reviewer’s all-clear comment and your reply — normally a top-level PR comment, not an inline thread).
 
 ## Asymptotic-noise guard and deadlocks
 
