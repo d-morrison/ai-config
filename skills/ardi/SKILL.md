@@ -62,17 +62,33 @@ finding → push → post summary → re-request review → repeat until clean.
      formal GitHub review**, invisible to the command above. Request it
      (`POST /repos/<owner>/<repo>/pulls/<N>/requested_reviewers` with
      `reviewers: ["copilot-pull-request-reviewer[bot]"]`) and check whether
-     it posted a verdict *at the current head*:
+     it posted a verdict *at the current head*. Finding a review object at the
+     right `commit_id` only proves Copilot *looked* -- it says nothing about
+     whether that review is clean. Fetch the matched review's own overview
+     **and** its inline comments (same two-call shape as the review-link case
+     above) before treating it as an all-clear:
      ```bash
      head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
-     gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
-       --jq '.[] | select(.user.login=="copilot-pull-request-reviewer[bot]") | .commit_id' \
-       | grep -qx "$head" && echo "fresh verdict at current head" || echo "no fresh review yet -- wait or re-request"
+     review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
+       --jq --arg head "$head" \
+       '[.[] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$head)] | last | .id')"
+     if [ -n "$review_id" ] && [ "$review_id" != "null" ]; then
+       gh api "repos/<owner>/<repo>/pulls/<N>/reviews/$review_id" --jq '{state, body}'
+       gh api "repos/<owner>/<repo>/pulls/<N>/comments" \
+         --jq --arg rid "$review_id" \
+         '.[] | select(.pull_request_review_id == ($rid | tonumber)) | {line, body}'
+     else
+       echo "no fresh review yet -- wait or re-request"
+     fi
      ```
-     A stub-like non-answer ("ineligible", "reached their quota limit") is
-     not a verdict -- treat it the same as a skipped/stub `@claude` run (see
-     the "Do the review yourself" fallback in `CLAUDE.md`) and retry later
-     or fall back accordingly.
+     Only a `state` of `APPROVED`/`COMMENTED` with an empty body **and** zero
+     inline comments (or comments you've already Addressed/Rebutted/Deferred
+     per step 3) counts as the all-clear -- a review object existing at the
+     current `commit_id` with unresolved findings inside it is not clean, it's
+     just current. A stub-like non-answer ("ineligible", "reached their quota
+     limit") is also not a verdict -- treat it the same as a skipped/stub
+     `@claude` run (see the "Do the review yourself" fallback in `CLAUDE.md`)
+     and retry later or fall back accordingly.
    - **GitLab:** poll the MR notes (`sort=desc`) for a review note that
      references your latest short SHA before proceeding; if none has appeared,
      wait and retry rather than reading a stale verdict.
