@@ -108,9 +108,12 @@ committed pass.
    `gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<current-branch>&state=open" --jq '.[] | {number, url, state}'`
    (for `dem-extra1/ai-config`, that is `repos/d-morrison/ai-config/pulls?head=dem-extra1:<current-branch>`).
    If no open PR exists and upstream is accessible, open it immediately as cross-fork
-   (`gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch>`)
-   and request `d-morrison` as reviewer. If upstream is not accessible in-session,
-   push and explicitly hand off that upstream PR creation is still required.
+   with non-interactive metadata and the reviewer request in the same command
+   (bare `gh pr create` without `--fill`/`--title`/`--body` prompts
+   interactively and can hang a headless session):
+   `gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch> --fill --reviewer d-morrison`.
+   If upstream is not accessible in-session, push and explicitly hand off that
+   upstream PR creation is still required.
 
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
