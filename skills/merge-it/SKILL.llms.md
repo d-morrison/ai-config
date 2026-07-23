@@ -13,9 +13,9 @@ The active counterpart to `post-merge`. When I say “merge it”, I mean: do th
 ### 1. Identify the PR and confirm it’s ready — never assume
 
 - Resolve which PR is meant (the one from the current session; if ambiguous, ask which number).
-- Confirm it is **fully clean** before merging (the ARDI terminal state — see `shared/workflow/fully-clean.md`): all required CI checks green AND the latest review clean. Verify with a fresh query, not a cached verdict: `mcp__github__pull_request_read` (`get` for `mergeable_state`, `get_check_runs` for CI) — or `gh pr view <N>` / `gh pr checks <N>` in a local session.
+- Confirm it is **fully clean** before merging (the ARDI terminal state — see `shared/workflow/fully-clean.md`): every CI workflow and check run — not just required ones — is green **and completed** (never still queued or in progress) AND the latest review is clean. Verify with a fresh query, not a cached verdict: `mcp__github__pull_request_read` (`get` for `mergeable_state`, `get_check_runs` for CI) — or `gh pr view <N>` / `gh pr checks <N>` in a local session. `get_check_runs`/`gh pr checks` only cover check runs (plus legacy statuses), not every raw Actions workflow run — see `fully-clean.md`’s `action_required`-with-zero-jobs gotcha if something looks off despite an all-clear checks view.
 - Check `mergeStateStatus` in addition to `mergeable`. A PR can be `"MERGEABLE"` but `"BLOCKED"` when branch protection requires at least one approving review and only bot/comment reviews exist. Fix: request `d-morrison` as reviewer (`gh pr edit <N> --add-reviewer d-morrison` — `EDIT_PR`) and leave a note that the PR is clean and ready. Don’t attempt to force-merge.
-- If CI is red or the review still has open findings, **do not merge** — report what’s blocking instead. (Only merge a not-clean PR if the user explicitly says to anyway.)
+- If any CI workflow or check run is red or still in progress/queued/pending, or the review still has open findings, **do not merge**. Report what’s blocking instead. (Only merge a not-clean PR if the user explicitly says to anyway.)
 
 ### 2. Merge
 
@@ -51,7 +51,7 @@ Run the `post-merge` skill (invoke it by name) for the rest: tidy the local bran
 
 - ❌ Asking “want me to run UMS / wrap up?” after merging — it’s automatic.
 - ❌ Reporting the merge as done and moving on (including to other things the user said while the merge was in flight) without actually running step 4 — a busy, multi-threaded conversation makes this easy to drop, but the chain isn’t optional follow-up; it’s part of the merge action itself. See `mwc`’s own anti-pattern entry for the concrete case this happened in.
-- ❌ Merging a PR that isn’t fully clean (red CI or open findings) without the user explicitly saying so.
+- ❌ Merging a PR that isn’t fully clean (red or still-in-progress CI, or open findings) without the user explicitly saying so.
 - ❌ Letting the squash commit inherit a stale PR description — pass an accurate title/body when the body no longer matches the final diff.
 - ❌ Confusing “merge it” (merge the PR) with “merge main” (sync the branch).
 - ❌ `git branch -D` (force) in the tidy without checking why `-d` refused.

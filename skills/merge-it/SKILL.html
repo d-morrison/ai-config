@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -383,9 +383,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="identify-the-pr-and-confirm-its-ready-never-assume">1. Identify the PR and confirm it’s ready — never assume</h3>
 <ul>
 <li>Resolve which PR is meant (the one from the current session; if ambiguous, ask which number).</li>
-<li>Confirm it is <strong>fully clean</strong> before merging (the ARDI terminal state — see <code>shared/workflow/fully-clean.md</code>): all required CI checks green AND the latest review clean. Verify with a fresh query, not a cached verdict: <code>mcp__github__pull_request_read</code> (<code>get</code> for <code>mergeable_state</code>, <code>get_check_runs</code> for CI) — or <code>gh pr view &lt;N&gt;</code> / <code>gh pr checks &lt;N&gt;</code> in a local session.</li>
+<li>Confirm it is <strong>fully clean</strong> before merging (the ARDI terminal state — see <code>shared/workflow/fully-clean.md</code>): every CI workflow and check run — not just required ones — is green <strong>and completed</strong> (never still queued or in progress) AND the latest review is clean. Verify with a fresh query, not a cached verdict: <code>mcp__github__pull_request_read</code> (<code>get</code> for <code>mergeable_state</code>, <code>get_check_runs</code> for CI) — or <code>gh pr view &lt;N&gt;</code> / <code>gh pr checks &lt;N&gt;</code> in a local session. <code>get_check_runs</code>/<code>gh pr checks</code> only cover check runs (plus legacy statuses), not every raw Actions workflow run — see <code>fully-clean.md</code>’s <code>action_required</code>-with-zero-jobs gotcha if something looks off despite an all-clear checks view.</li>
 <li>Check <code>mergeStateStatus</code> in addition to <code>mergeable</code>. A PR can be <code>"MERGEABLE"</code> but <code>"BLOCKED"</code> when branch protection requires at least one approving review and only bot/comment reviews exist. Fix: request <code>d-morrison</code> as reviewer (<code>gh pr edit &lt;N&gt; --add-reviewer d-morrison</code> — <code>EDIT_PR</code>) and leave a note that the PR is clean and ready. Don’t attempt to force-merge.</li>
-<li>If CI is red or the review still has open findings, <strong>do not merge</strong> — report what’s blocking instead. (Only merge a not-clean PR if the user explicitly says to anyway.)</li>
+<li>If any CI workflow or check run is red or still in progress/queued/pending, or the review still has open findings, <strong>do not merge</strong>. Report what’s blocking instead. (Only merge a not-clean PR if the user explicitly says to anyway.)</li>
 </ul>
 </section>
 <section id="merge" class="level3">
@@ -424,7 +424,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>❌ Asking “want me to run UMS / wrap up?” after merging — it’s automatic.</li>
 <li>❌ Reporting the merge as done and moving on (including to other things the user said while the merge was in flight) without actually running step 4 — a busy, multi-threaded conversation makes this easy to drop, but the chain isn’t optional follow-up; it’s part of the merge action itself. See <code>mwc</code>’s own anti-pattern entry for the concrete case this happened in.</li>
-<li>❌ Merging a PR that isn’t fully clean (red CI or open findings) without the user explicitly saying so.</li>
+<li>❌ Merging a PR that isn’t fully clean (red or still-in-progress CI, or open findings) without the user explicitly saying so.</li>
 <li>❌ Letting the squash commit inherit a stale PR description — pass an accurate title/body when the body no longer matches the final diff.</li>
 <li>❌ Confusing “merge it” (merge the PR) with “merge main” (sync the branch).</li>
 <li>❌ <code>git branch -D</code> (force) in the tidy without checking why <code>-d</code> refused.</li>

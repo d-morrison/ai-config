@@ -72,7 +72,7 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
     Verify each candidate with `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, “Verify before you act”) before claiming — `UNKNOWN` isn’t proof of a real conflict, and `CONFLICTING` can be stale if a sibling PR merged since GitHub last computed it. Claim and fix confirmed conflicts using the cascade procedure in `post-merge` step 1.5. Re-check after each resolution — new ones can appear at any time. This turns idle wait time into productive conflict prevention.
 
-7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows green **and** every inline thread resolved). Don’t exit on a clean review body alone.
+7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows and check runs green and completed **and** every inline thread resolved). Don’t exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
@@ -88,7 +88,7 @@ The goal is green CI + clean review, not just clean review.
 
 The loop ends only at **fully clean**, which means **both**:
 
-1.  **All CI workflows green** — every required check, not just the review job (see *Fix broken CI/workflows too* above).
+1.  **All CI workflows and check runs are green and completed** — every check, not just required ones and not just the review job; never still queued or in progress (see *Fix broken CI/workflows too* above, and `shared/workflow/fully-clean.md` for the check-run-vs-workflow-run and API-casing gotchas).
 2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.”
 
 **Threads:** at fully-clean, every **inline** review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the `ard` skill, step 4b.)
