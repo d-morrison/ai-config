@@ -98,6 +98,11 @@ committed pass.
    was committed — verify with `git status` / `git log` before any `git reset
    --hard`, or you'll silently discard the still-uncommitted edits.
 
+   **After every push in UMS, verify PR state for the current branch.** Run
+   `gh pr list --head <current-branch> --json number,url,state` (or equivalent).
+   If no open PR exists, open one immediately (`gh pr create --fill`) and request
+   `d-morrison` as reviewer; do not assume a long-lived branch already has a PR.
+
 5. **Report what was updated.** Provide a brief summary table:
 
    | What | Where | Change |
