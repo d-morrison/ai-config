@@ -228,12 +228,7 @@ def write() -> int:
     WRAPPER_DIR.mkdir(exist_ok=True)
     for path, text in expected.items():
         path.parent.mkdir(parents=True, exist_ok=True)
-        # newline="\n" forces LF regardless of platform -- without it, Windows
-        # translates \n to the OS default \r\n on write, producing working-tree
-        # files that don't match .gitattributes' `eol=lf` until git's own
-        # normalization touches them (confusing when diagnosing sync issues
-        # locally; see ai-config#655).
-        path.write_text(text, encoding="utf-8", newline="\n")
+        path.write_text(text, encoding="utf-8")
 
     expected_dirs = {path.parent for path in expected}
     for child in sorted(WRAPPER_DIR.iterdir()):
