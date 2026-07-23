@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -429,7 +429,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><label><input type="checkbox"><strong>Preflight:</strong> confirm branch + cleanliness (<code>git branch --show-current</code> / <code>git status --short</code>)</label></li>
 <li><label><input type="checkbox"><strong>Safe write form:</strong> for any external post with markdown/backticks, use file-backed bodies (<code>--body-file</code> or <code>-F "body=@&lt;file&gt;"</code>), never inline double-quoted body strings</label></li>
 <li><label><input type="checkbox"><strong>Postcondition:</strong> after push, verify open PR exists in the intended base repo for the head owner/branch (<code>gh api --method GET "repos/&lt;upstream-owner&gt;/&lt;repo&gt;/pulls" -f "head=&lt;head-owner&gt;:&lt;branch&gt;" -f "state=open" --jq '.[] | {number, url, state}'</code> — not <code>gh pr list --head &lt;owner&gt;:&lt;branch&gt;</code>, which silently returns empty for an owner-qualified head)</label></li>
-<li><label><input type="checkbox"><strong>Recovery signature:</strong> if shell logs <code>command not found</code> during a comment/create command, first check whether <code>gh</code>/<code>glab</code> is actually installed (<code>which gh</code>); if it is unavailable in this session (expected in remote/web sessions), fall back to the MCP tool mapping in <code>tool-mappings.md</code> instead of retrying the CLI — if it <em>is</em> installed, the likely cause is backtick substitution mangling the body; re-run using a file-backed body and re-check posted content</label></li>
+<li><label><input type="checkbox"><strong>Recovery signature:</strong> if shell logs <code>command not found</code> during a comment/create command, check whichever CLI the failing command actually invoked (<code>which gh</code> or <code>which glab</code> — not always <code>gh</code>). If <code>gh</code> is unavailable in this session (expected in remote/web sessions), fall back to the MCP tool mapping in <code>tool-mappings.md</code> instead of retrying the CLI — <code>tool-mappings.yml</code> has no <code>glab</code> operations, so a missing <code>glab</code> has no MCP fallback; hand off or block instead of retrying. If the CLI that failed <em>is</em> installed, the likely cause is backtick substitution mangling the body; re-run using a file-backed body and re-check posted content</label></li>
 </ul></li>
 <li><p><strong>Report what was updated.</strong> Provide a brief summary table:</p>
 <table class="caption-top table">
