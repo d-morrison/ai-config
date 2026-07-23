@@ -65,6 +65,12 @@ standing yes (see `preferences.md`).
   gone stale across the review loop — pass `commit_title` / `commit_message`
   rather than letting GitHub paste the outdated description. Keep `Closes #N` in
   the message so the linked issue auto-closes.
+- If `gh pr merge` fails with `Head branch is out of date`, sync `origin/main`
+  into the PR branch and retry once. If it still fails while the branch is
+  actually up to date, re-read the PR head SHA from the API before retrying:
+  the PR object can lag the branch ref briefly. Only use `--admin` as the
+  final fallback when the user has explicitly authorized this merge action and
+  branch protection allows admin bypass.
 
 ```bash
 # MERGE_PR — remote/web (GitHub MCP):

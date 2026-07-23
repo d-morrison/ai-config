@@ -354,6 +354,7 @@
   conflicts; `unstable` just means "wait for CI" and needs no merge action.
   (ai-config#373: `mergeable_state: unstable` right after a push was CI still
   running, not a conflict signal.)
+- **`gh pr merge` can return "Head branch is out of date" even after syncing `main`; verify with SHAs before looping.** When this error repeats after a fresh `git fetch origin main` + merge/push, compare the branch ref SHA (`git ls-remote origin refs/heads/<branch>`) with the PR API's `.head.sha` (`gh api repos/<o>/<r>/pulls/<N> --jq .head.sha`). The PR object can lag the branch ref briefly, so repeated retries do nothing. If branch protection permits and the user explicitly authorized merging, `gh pr merge --admin` can still land the already-clean PR; otherwise stop and wait for mergeability state to refresh.
 - Webhook PR-activity events cover comments/reviews/CI *failures* but NOT CI
   *success*, new pushes, or merge-conflict transitions — don't rely on events
   alone to know a PR went green or merged; re-check explicitly.
