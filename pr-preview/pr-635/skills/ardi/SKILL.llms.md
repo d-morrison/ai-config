@@ -72,7 +72,7 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
     Verify each candidate with `git merge-tree --write-tree origin/main origin/<branch>` (git ≥ 2.38; see `resolve-conflicts`, “Verify before you act”) before claiming — `UNKNOWN` isn’t proof of a real conflict, and `CONFLICTING` can be stale if a sibling PR merged since GitHub last computed it. Claim and fix confirmed conflicts using the cascade procedure in `post-merge` step 1.5. Re-check after each resolution — new ones can appear at any time. This turns idle wait time into productive conflict prevention.
 
-7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows green **and** every inline thread resolved). Don’t exit on a clean review body alone.
+7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows and check runs green and completed **and** every inline thread resolved). Don’t exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
