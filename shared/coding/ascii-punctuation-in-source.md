@@ -15,8 +15,12 @@ must survive in output; see the last paragraph).
 
 **Scope: every tracked source file, `.md` included.** Markdown files are
 source too. They are version-controlled, diffed, and rendered, so the same
-smart-quote/copy-paste corruption and whole-paragraph-reflow diffs apply, and
-a stray em-dash in a doc reads as an AI tell. Do not exempt a README, a
+smart-quote/copy-paste corruption and whole-paragraph-reflow diffs apply.
+(This is a separate concern from [`find-ai-tells`](../writing/ai-tells.md)'s
+em-dash-*overuse* signal -- that tell is about frequency, not presence, and a
+single em-dash there is explicitly called innocent; this rule bans em-dashes
+in tracked source files regardless of frequency, for the ASCII-hygiene
+reasons above.) Do not exempt a README, a
 `NEWS.md`, a docs page, or any other Markdown doc, and do not exempt this
 corpus's own `shared/` fragments, `CLAUDE.md`s, or skill files. Chat replies
 and other ephemeral, non-tracked text are outside this rule's scope, but the
@@ -31,15 +35,17 @@ by an ASCII-only check, which makes a stray em-dash a hard build failure:
   that a helper defined in `data-raw/` (excluded from the build) passes
   silently until the function moves into `R/`, at which point the same
   em-dash starts failing CI.
-- Some repos run a dedicated non-standard-character workflow (e.g. the
-  UCD-SERG lab manual's / `d-morrison/gha`'s `check-non-standard-chars`),
-  which rejects em-dashes, curly quotes, and en-dashes outright over the
-  file types it scans.
+- Some repos run a dedicated non-standard-character workflow -- e.g. the
+  UCD-SERG lab manual's own check, or `d-morrison/gha`'s reusable
+  `check-non-standard-chars` -- which rejects em-dashes, curly quotes, and
+  en-dashes outright over the file types it scans.
 
 Where no CI gate covers a file (commonly a Markdown doc in a repo whose check
 only scans `.R`/`.qmd`), the rule is still required, not optional: keep the
-file ASCII anyway, and treat extending the repo's non-ASCII check to also
-scan `.md` as the enforcement follow-up. When the glyph must appear in
+file's *punctuation* ASCII anyway (this rule doesn't ban other non-ASCII
+characters, like an accented name or a quoted foreign term), and treat
+extending the repo's non-ASCII check to also scan `.md` as the enforcement
+follow-up. When the glyph must appear in
 rendered output, keep the source ASCII in a context-appropriate way. In an R
 or Python string literal (a status message, a plot label), use the `\uXXXX`
 escape, which the language decodes to the character. In `.qmd`/`.md` prose,
@@ -47,6 +53,8 @@ escape, which the language decodes to the character. In `.qmd`/`.md` prose,
 (`$\times$`), an HTML entity (`&times;`), or reword to avoid the glyph.
 
 Apply it when writing and when reviewing a diff: a raw em-dash in a roxygen
-block, a `.qmd`, or a `.md` doc is a review finding, the same weight as any
-other CI-breaking issue, whether or not this particular file is one the ASCII
+block, a `.qmd`, or a `.md` doc is a review finding, given the **same review
+weight** as a CI-breaking issue -- not a claim that it always breaks CI,
+since not every file type is scanned -- whether or not this particular
+file is one the ASCII
 check currently scans.
