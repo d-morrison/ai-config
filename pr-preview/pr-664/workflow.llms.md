@@ -52,7 +52,7 @@ A PR is fully clean when:
 
 At fully clean, every inline review thread is resolved. The only open conversation is the final all-clear exchange.
 
-See [`shared/workflow/fully-clean.md`](shared/workflow/fully-clean.md) for the full definition this page summarizes.
+See [`shared/workflow/fully-clean.md`](https://github.com/d-morrison/ai-config/blob/main/shared/workflow/fully-clean.md) for the full definition this page summarizes.
 
 **Deadlock:** if you and the reviewer can’t reach consensus after a rebuttal exchange, escalate to a human reviewer (`gh pr edit <N> --add-reviewer d-morrison`) rather than looping.
 
