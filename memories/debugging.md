@@ -520,7 +520,7 @@ still needs `--` too.
 Sequence it as: **commit the fix first.** Then temporarily revert by
 checking out the file's *pre-fix* content from the parent commit --
 `git checkout HEAD~1 -- "<file>"` -- not by stashing: once the fix is
-committed the working tree is clean, so `git stash push "<file>"` finds
+committed the working tree is clean, so `git stash push -- "<file>"` finds
 nothing to save and silently no-ops, leaving the fix in place during the
 "prove it fails" run. Prove the failure, then restore the fix with
 `git checkout HEAD -- "<file>"`. A scripted counter-edit (sed/perl) works
