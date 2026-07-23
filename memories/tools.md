@@ -3298,11 +3298,11 @@ of problem rather than trusting the subagent's own narration that it's
 "still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
 `comments`/`units`/`patch_coverage` steps.)
 
-## Windows Git Bash: `python`/`python3` don't resolve; only the `py` launcher does
+## Windows Git Bash: `python`/`python3` may resolve to the Store stub; use `py`
 
-On at least one Windows setup, neither `python` nor `python3` is on `PATH`
-inside the Git Bash tool — both silently redirect to a Windows Store
-install-shortcut stub and print `Python was not found; run without
+On at least one Windows setup, `python` and `python3` both resolve on
+`PATH` inside the Git Bash tool, but only to the Windows Store
+install-shortcut stub. They print `Python was not found; run without
 arguments to install from the Microsoft Store, or disable this shortcut
 from Settings > Apps > Advanced app settings > App execution aliases`
 instead of running the script, with a nonzero exit code. The `py` launcher
@@ -3311,9 +3311,11 @@ Python) works fine and should be the first thing tried when `python3 -c
 "..."` fails with that specific message — don't waste a retry loop guessing
 at other causes. When scripting a small one-off transform inline (e.g. a
 Bash tool call doing a targeted string replacement Edit's exact-match
-failed on), fall back with `python3 ... 2>&1 || py ...` so the command
-degrades gracefully across environments that do or don't have a bare
-`python3` on `PATH`. (ai-config#635, 2026-07-22/23: hit repeatedly running
+failed on), probe the launcher first with a non-mutating check such as
+`python3 -c "pass" >/dev/null 2>&1 || py -c "pass" >/dev/null 2>&1`, then
+run the real transform exactly once with the launcher that passed, rather
+than using `python3 ... || py ...` and risking a second run after a real
+script failure. (ai-config#635, 2026-07-22/23: hit repeatedly running
 `scripts/validate-skills.py`, and again scripting a one-off text
 replacement after an `Edit` tool call's `old_string` failed to match
 despite `grep` showing byte-identical content in the file.)
