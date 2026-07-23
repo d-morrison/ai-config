@@ -3298,3 +3298,39 @@ much more wall-clock/tokens than its own diff would justify, checking
 of problem rather than trusting the subagent's own narration that it's
 "still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
 `comments`/`units`/`patch_coverage` steps.)
+
+## Windows Git Bash: `python`/`python3` may resolve to the Store stub; use `py`
+
+On at least one Windows setup, `python` and `python3` both resolve on
+`PATH` inside the Git Bash tool, but only to the Windows Store
+install-shortcut stub. They print `Python was not found; run without
+arguments to install from the Microsoft Store, or disable this shortcut
+from Settings > Apps > Advanced app settings > App execution aliases`
+instead of running the script, with a nonzero exit code. The `py` launcher
+(the standard Windows Python launcher, installed alongside python.org
+Python) works fine and should be the first thing tried when `python3 -c
+"..."` fails with that specific message — don't waste a retry loop guessing
+at other causes. When scripting a small one-off transform inline (e.g. a
+Bash tool call doing a targeted string replacement Edit's exact-match
+failed on), resolve which launcher actually works before using it, rather
+than relying on the combined exit status of `A || B` (which tells you
+*something* succeeded, not *which side*): probe each candidate
+non-mutating and stop if neither works, rather than assuming the last one
+must be fine. Use `if`/`elif`, not a `||`-chained subshell assignment
+(`(cmd && VAR=x) || ...` looks like it works but the subshell's `VAR=x`
+never reaches the parent shell — verified this by testing both forms
+before publishing this note) —
+```sh
+if python3 -c "pass" >/dev/null 2>&1; then PY=python3
+elif py -c "pass" >/dev/null 2>&1; then PY=py
+else echo "no working python launcher found"; exit 1
+fi
+```
+— then invoke `$PY` for the real transform. This both avoids risking a
+second, possibly destructive run of a real script under a bare `||`
+fallback, and fails loudly instead of proceeding with an unverified
+command if neither launcher actually works. (ai-config#635,
+2026-07-22/23: hit repeatedly running `scripts/validate-skills.py`, and
+again scripting a one-off text replacement after an `Edit` tool call's
+`old_string` failed to match despite `grep` showing byte-identical content
+in the file.)
