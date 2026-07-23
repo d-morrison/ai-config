@@ -112,6 +112,7 @@
   Never jump straight into a PR without a tracking issue behind it. (see the `st` / `start-task` skill — the issue is the durable record of intent/scope/"done" and lets the PR auto-close it via `Closes #N`.)
   Search EVEN when the idea emerged organically mid-conversation (a design discussion, a code-review finding) and feels novel — "I haven't seen it this session" is not evidence it doesn't exist.
   Always `gh issue list --search "<keywords>" --state all` before every `gh issue create`, regardless of how the idea surfaced. (Learned on sparta: filed #447 without searching; the user had already filed #446 with the same core ask minutes earlier, and #447 had to be closed as a duplicate and folded into #446.)
+- When filing a follow-up issue in a repo that has a generic issue template, don't paste the template boilerplate verbatim into the body; write a concise, task-specific issue and include only the fields that materially help diagnosis/action.
 - When implementing a user instruction that edits a tracked file in the repo (e.g. CLAUDE.md, README, a config file), the task is not done at "made the local edit."
   Go all the way: file an issue, commit on a branch, and open a PR — without waiting to be asked.
   Stopping at a local edit leaves the change uncommitted and invisible to reviewers.
@@ -168,6 +169,9 @@
 - When finishing work on an MR/PR (clean review, ready to merge, etc.), always provide a clickable link to the MR/PR in the chat message.
 - When discovering bugs in upstream/shared infrastructure (e.g., HACtions templates), always file an issue immediately — don't ask first.
 - More generally: always post a follow-up issue without asking first, in any repo we own or are a member of (a filed issue is cheap to close later if it turns out not to be helpful, so there's no real downside to erring toward filing). The opposite default applies to a repo we're NOT a member of — never post there autonomously; draft it and ask the user for permission first, per the fuller upstream-contribution escalation path (`shared/workflow/upstream-issues.md`).
+- When I detect a concrete follow-up while working — even outside a formal review/defer loop — file the follow-up issue before reporting back, rather than just mentioning it in chat. Same owned/member-vs-external split as the bullet above: file directly in a repo we own or are a member of; in an external repo, draft it and ask the user first (`shared/workflow/upstream-issues.md`).
+- Before acting on a request, review the relevant ai-config memories first so existing standing rules and prior lessons shape the response.
+- When the user points out a mistake I made, fix that mistake immediately and then record the learning for future runs, without waiting for extra prompting.
 - When a CI/review gate on your OWN PR keeps failing because of the repo owner's tooling (a flaky review workflow, a misfiring guard) and NOT your content, don't rabbit-hole opening fix-PR after fix-PR against their CI infra — FIRST check whether the owner is already reworking that same infra in parallel (scan recent `main` commits and open PRs), since a fix landed under them collides with their work and is likely superseded; then verify the deliverable independently (render/lint/tests) and hand off/escalate to the owner sooner. Corollary — bootstrap deadlock: you can't cleanly fix a review workflow via PRs that are themselves reviewed by that broken workflow, so such a fix lands by admin-merge, not self-certification. (Learned on rme#954: content was done+verified early, but I iterated several `gha` review-workflow PRs chasing a no-verdict gate that d-morrison was concurrently fixing via his own #201/#204.)
 - Always check r-lib, tidyverse, and similar R ecosystem organizations for off-the-shelf solutions before building custom implementations.
   Prefer well-maintained upstream packages over hand-rolled code when they meet the requirements.
@@ -535,3 +539,8 @@ limits) before using up claude quota"). The `delegate-to-codex` skill (alias
 ## Git author mapping
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
+
+## Code organization defaults
+
+- One function per file, across languages (not just R) — the exception is a trivial two-line wrapper/helper, not a "major function" loophole that lets other private helpers ride along (see `shared/coding/one-function-per-file.md`).
+- Keep source files around 100 lines where practical by splitting large helpers into their own files.
