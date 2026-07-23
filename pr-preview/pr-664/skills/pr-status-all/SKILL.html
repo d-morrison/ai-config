@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -396,7 +396,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="fan-out-one-subagent-per-pr-concurrent" class="level3">
 <h3 class="anchored" data-anchor-id="fan-out-one-subagent-per-pr-concurrent">2. Fan out — one subagent per PR (concurrent)</h3>
 <p>Spawn <strong>one subagent per open PR, all in a single batch</strong> (multiple <code>Agent</code> calls in one message) so they run at once. The fan-out is read-only, so it needs <strong>no worktrees</strong> — each subagent only reads PR signals, nothing mutates, and there is nothing to collide on.</p>
-<p>Give each subagent its PR number and <code>headRefName</code>, and have it gather the <strong>four independent signals</strong> below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow <em>Read the LATEST review</em> will silently misreport:</p>
+<p>Give each subagent its PR number and <code>headRefName</code>, and have it gather the <strong>five independent signals</strong> below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow <em>Read the LATEST review</em> will silently misreport:</p>
 <p>A subagent starts <strong>fresh</strong> — it sees only this prompt, not this skill file — so <strong>inline the exact commands</strong>; don’t point it at a section it can’t read. Fill in <code>&lt;N&gt;</code>, <code>&lt;headRefName&gt;</code>, <code>&lt;owner&gt;</code>, <code>&lt;repo&gt;</code> for each PR (resolve owner/repo once with <code>gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"'</code>):</p>
 <blockquote class="blockquote">
 <p>Gather the status of PR <strong>#<n></n></strong> (branch <code>&lt;headRefName&gt;</code>) in this repo and return a single structured row. Do not push, merge, or modify anything.</p>

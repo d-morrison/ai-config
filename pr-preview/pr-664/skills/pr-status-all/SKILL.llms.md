@@ -28,7 +28,7 @@ This is fast and sequential — a single call to get the work units.
 
 Spawn **one subagent per open PR, all in a single batch** (multiple `Agent` calls in one message) so they run at once. The fan-out is read-only, so it needs **no worktrees** — each subagent only reads PR signals, nothing mutates, and there is nothing to collide on.
 
-Give each subagent its PR number and `headRefName`, and have it gather the **four independent signals** below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow *Read the LATEST review* will silently misreport:
+Give each subagent its PR number and `headRefName`, and have it gather the **five independent signals** below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow *Read the LATEST review* will silently misreport:
 
 A subagent starts **fresh** — it sees only this prompt, not this skill file — so **inline the exact commands**; don’t point it at a section it can’t read. Fill in `<N>`, `<headRefName>`, `<owner>`, `<repo>` for each PR (resolve owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"'`):
 
