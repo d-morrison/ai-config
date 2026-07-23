@@ -83,7 +83,9 @@ The [`send-upstream`](skills/send-upstream/SKILL.llms.md) skill (`/sup`) handles
 
 After a PR merges (or at the end of any significant session), run UMS to capture what you learned:
 
-    /ums
+``` text
+/ums
+```
 
 UMS reviews recent context for recurring review findings, corrections, and guidance, then writes or updates the relevant memory and skill files. A merge is the natural checkpoint to bank lessons before context is lost.
 
