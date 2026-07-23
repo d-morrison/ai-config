@@ -180,7 +180,7 @@ my sync-merge commit with a rebase that dropped my conflict resolutions and
 reverted fixes. Defenses:
 - **Before pushing to a shared PR branch, `git fetch` and check that `origin/<branch>`
   hasn't moved since your last push** — don't assume your last push is still HEAD.
-  `git log --oneline HEAD..origin/<branch>`: non-empty means a parallel session pushed
+  `git log --oneline "HEAD..origin/<branch>"`: non-empty means a parallel session pushed
   past you. (This handles unpushed local commits, where a bare `rev-parse HEAD` vs
   `origin` would always differ by design.)
 - **When it was force-pushed, reset to origin and re-verify the content** (refs,
@@ -221,16 +221,32 @@ Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —
 the scout-peers duplicate `## Relationship to other skills` bug (ai-config#132)
 happened because an existing section was missed and a duplicate was appended at
-the end. Run `grep -n "^## " <file>` before appending.
+the end. Run `grep -n "^## " -- "<file>"` before appending.
 
 ## Writing robust bash scripts (recurring review findings)
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
 - **`mktemp` + rename: add a cleanup trap.** A process killed between `mktemp`
-  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp <dir>/.tmp.XXXXXX);
+  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp -- "<dir>"/.tmp.XXXXXX);
   trap 'rm -f "${tmp:-}"' EXIT; … > "$tmp"; mv -f "$tmp" "$dest"; trap - EXIT`.
-  Belt-and-suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find <dir> -name '.tmp.*' -mmin +60 -delete` — but the `-name` glob must match
+  Quoting alone isn't enough here: a `<dir>` value starting with `-` (e.g.
+  `-cache`) makes the whole substituted template start with `-`, and
+  `mktemp` parses that as an option regardless of quoting (verified:
+  `mktemp "-cache"/.tmp.XXXXXX` fails with "unknown option -- c"; `mktemp --
+  "-cache"/.tmp.XXXXXX` correctly treats it as a path instead). Belt-and-
+  suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
+  `find "<dir>" -maxdepth 1 -name '.tmp.*' -type f -mmin +60 -delete` --
+  without `-maxdepth 1 -type f` it recurses into subdirectories and can
+  delete unrelated `.tmp.*` files nested below `<dir>`, not just this
+  script's own orphans (see the reference implementation at
+  `skills/session-lock/scripts/ai-session.sh:144`, which includes both
+  flags). Separately, **`--` does not fix
+  this for `find`** the way it does for `mktemp`: GNU `find`'s own
+  path-vs-expression parser still reads a dash-prefixed argument as an
+  expression even after `--` (verified: `find -- "-weird"` fails with
+  "unknown predicate `-weird'"). Make sure `<dir>` itself never starts with
+  `-` -- prefix a relative one with `./`, or use an absolute path, before
+  it reaches `find`. Separately, the `-name` glob must match
   the `mktemp` prefix you chose, or it silently misses every orphan
   (`.tmp.XXXXXX` → `'.tmp.*'`; mktemp's bare `tmp.XXXXXX` default → `'tmp.*'`).
 - **Bounds-check value-taking flags before `shift 2`.** In a `set -e` arg
@@ -344,7 +360,7 @@ Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
   snapr's own `expect_snapshot_data` pruning path; I didn't pin down which. The
   defense below holds either way.) Regenerate **per file** with
   `testthat::test_file("tests/testthat/test-<fn>.R")`, stage only the snapshots
-  you meant to touch (`git add tests/testthat/_snaps/<fn>.md`), and if the suite
+  you meant to touch (`git add "tests/testthat/_snaps/<fn>.md"`), and if the suite
   did prune others, restore them: `git checkout origin/main -- tests/testthat/_snaps`.
 - **snapr snapshot tests are skipped unless `NOT_CRAN=true`** (they're guarded
   like `skip_on_cran()`); locally you must set the env var or every snapshot
@@ -400,13 +416,13 @@ whenever local `git log --show-signature` can't verify it — but locally that
 check needs `gpg.ssh.allowedSignersFile` configured, which this environment
 usually doesn't set up. A commit made with `commit.gpgsign=true` /
 `gpg.format=ssh` and the right `user.signingkey` is still genuinely signed even
-when the local verify fails; `git cat-file -p <sha>` shows a real
+when the local verify fails; `git cat-file -p "<sha>"` shows a real
 `-----BEGIN SSH SIGNATURE-----` block with the correct author/committer email.
 GitHub verifies independently (it publishes the corresponding public signing
 key), so the commit still shows Verified there.
 
 Before treating the hook's feedback as an actionable problem: check
-`git cat-file -p <sha> | head -8` for the `gpgsig` block and confirm
+`git cat-file -p "<sha>" | head -8` for the `gpgsig` block and confirm
 `author`/`committer` say `noreply@anthropic.com`. If both hold, the "N" is a
 local-verification artifact, not a real signing gap — no amend/re-sign needed.
 Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
@@ -490,17 +506,57 @@ finally trips over it. (ucdavis/bcs#349.)
 ## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
 
 The standard "prove the new fixture catches the regression" step (temporarily
-revert the fix, confirm the test fails, restore) has a destructive failure
-mode when the fix is still uncommitted: `git checkout <file>` / `git restore
-<file>` restores from HEAD, which silently discards the whole uncommitted fix
-along with the temporary revert — there is nothing to restore back to.
-Sequence it as: **commit the fix**, then revert temporarily (`git stash push
-<file>`, or a scripted counter-edit), prove the failure, then `git stash pop`
-/ re-checkout the committed state. If a counter-edit was applied with
-sed/perl instead of stash, restoring via `git checkout` is only safe because
-the fix is already in HEAD. (Self-hit on Lacaedemon/sparta PR #870,
+revert the fix, confirm the test fails, restore) is only safe once the fix is
+**committed**. Sequence:
+
+1. Commit the fix.
+2. Revert to the parent commit's state: `git restore --source=HEAD~1 --staged
+   --worktree -- "<file>"`.
+3. Run the test, confirm it fails.
+4. Restore the fix: `git checkout HEAD -- "<file>"`.
+
+**Why `--staged --worktree`, and why not other forms:**
+
+- **Index vs. HEAD.** Both flags matter -- the default `git restore
+  --source=HEAD~1 -- "<file>"` only touches the working tree, leaving the
+  fix still staged in the index (verified: default form left `git status`
+  showing ` M`; `--staged --worktree` correctly showed `M `). That fixes a
+  test that reads staged/working file *content* (`git show :"<file>"`, a
+  checked-out worktree). It does **not** fix a test built on `git diff
+  --cached`: HEAD is still the fix commit, so the cached diff is a non-empty
+  reverse patch of the fix, not the empty diff a "clean at the parent"
+  check would expect (verified directly). A test like that needs a
+  detached worktree at `HEAD~1` instead, not an index/working-tree restore.
+- **Uncommitted fix.** Reverting before committing is destructive, not just
+  imprecise: `git checkout -- "<file>"` restores from the index, not HEAD.
+  If the fix is unstaged (the index still matches HEAD), this silently
+  discards the working-tree-only fix with nothing to restore back to. If
+  the fix is staged, checkout hands it right back instead, silently
+  no-opping the "revert" -- both defeat the point of the step, differently
+  (verified both cases directly).
+- **Branch/option parsing.** `git checkout "<file>"` (no `--`) can switch
+  branches instead of restoring, if a branch shares the file's name
+  (verified). A dash-prefixed filename is parsed as an option by *both*
+  `checkout` and `restore` even when shell-quoted -- usually a loud error,
+  but a name matching a real flag (e.g. `-p`) silently triggers that flag's
+  behavior instead (verified: `git restore "-p"` opened interactive patch
+  mode with no error at all). Always use `--` before the path.
+- **Newly added file.** `git checkout HEAD~1 -- "<file>"` errors out if the
+  fix itself added `<file>` (no match in the parent tree) -- `git restore
+  --source=HEAD~1 --staged --worktree -- "<file>"` handles this correctly
+  by removing the file entirely (verified both cases).
+- **Stashing instead.** Once the fix is committed the working tree is
+  clean, so `git stash push -- "<file>"` prints "No local changes to save"
+  and exits 0 without creating a stash -- not silent, but easy to miss, and
+  it leaves the fix in place during the "prove it fails" run (verified).
+
+A scripted counter-edit (sed/perl) works the same way: edit, prove the
+failure, restore via `git checkout HEAD -- "<file>"` -- safe here because
+the fix is already committed and the index matches HEAD.
+
+(Self-hit on Lacaedemon/sparta PR #870,
 2026-07-15: proved the overlap test failed against the density-blind layout
-via a perl counter-edit, then `git checkout scripts/SelectionManager.gd` to
+via a perl counter-edit, then `git checkout -- scripts/SelectionManager.gd` to
 "restore" — which discarded four uncommitted fix edits; all were re-applied
 from conversation context, but only because they were small and recent.)
 

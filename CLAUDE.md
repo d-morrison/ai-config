@@ -476,6 +476,11 @@ Follow the SERG lab manual (https://ucd-serg.github.io/lab-manual/) for coding a
 <!-- Shared with the lab manual; edit shared/coding/avoid-hardcoding-external-data.md, not here. -->
 @shared/coding/avoid-hardcoding-external-data.md
 
+## Coding: make every parameter configurable
+
+<!-- Not yet shared with the lab manual; edit shared/coding/configurable-parameters.md, not here. -->
+@shared/coding/configurable-parameters.md
+
 ## Coding: write tidy code; prefer tidyverse over base R/rlang for it
 
 <!-- Not yet shared with the lab manual; edit shared/coding/tidy-code.md, not here. -->
