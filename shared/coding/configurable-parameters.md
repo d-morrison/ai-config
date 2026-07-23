@@ -10,12 +10,15 @@ change it.
 
 **Universal physical constants** (the speed of light, Avogadro's number,
 unit-conversion factors between fixed units) and **true mathematical
-constants** (pi, e) are exempt --- values with no legitimate reason for any
-caller to want a different one, ever. The test: would a caller ever
-legitimately want a different value for a different call, run, or
-configuration? If yes, it's a parameter. If the value is fixed by the
+constants** (pi, e) are exempt from being caller-configurable --- no caller
+has a legitimate reason to want a different one, ever. The test: would a
+caller ever legitimately want a different value for a different call, run,
+or configuration? If yes, it's a parameter. If the value is fixed by the
 physical world or by mathematics itself and cannot vary by context, it
-stays a literal.
+doesn't need to be a parameter --- but exempt from configurability isn't
+license to hand-type an approximation: use the language or library's own
+named constant (`Math.PI`, `np.pi`, `scipy.constants.c`), not a duplicated
+literal that can drift from the canonical value or its precision.
 
 **Not exempt: quantities that are measured or vary by context.** Local
 gravitational acceleration varies by latitude and altitude (a caller
