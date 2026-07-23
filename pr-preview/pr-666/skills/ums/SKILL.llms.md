@@ -66,9 +66,12 @@ git push -u origin HEAD   # PUSH — PR creation is handled by the post-push ver
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-base="$(gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name)"
-git fetch "https://github.com/<upstream-owner>/<repo>.git" "$base"   # FETCH — the actual upstream, not `origin` (your fork)
-git checkout -b "ums-<topic>" FETCH_HEAD   # CREATE_BRANCH — from the fetched upstream ref, not a stale origin/main
+base="$(gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name)" \
+  && git fetch "https://github.com/<upstream-owner>/<repo>.git" "$base" \
+  && git checkout -b "ums-<topic>" FETCH_HEAD
+# chained with && on purpose -- a failed lookup or fetch must stop the
+# checkout, or it silently reuses an older FETCH_HEAD from a prior fetch,
+# recreating the stale-base problem this block exists to prevent
 git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
 git push -u origin HEAD   # PUSH — to your fork; PR creation is handled by the post-push verification step below
