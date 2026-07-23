@@ -1,6 +1,6 @@
 ---
 name: ardi
-description: "ARD + Iterate: apply the ARD framework within an iterate loop on a single PR/MR. Read the latest review, Address/Rebut/Defer every finding, push fixes, post the ARD summary, then re-request review — repeating until the verdict is clean. Use when asked to 'ardi', 'dc', 'drive', 'clean', 'drive to clean', 'iterate', 'iterate until clean', 'iterate this MR', 'drive this PR to clean', 'address the review comments', '@claude review again and fix what it finds', or after receiving a review you want to resolve completely / carry a PR all the way to mergeable."
+description: "ARD + Iterate: apply the ARD framework within an iterate loop on a single PR/MR. Read the latest review, Address/Rebut/Defer every finding, push fixes, post the ARD summary, then re-request review — repeating until the verdict is clean. Runs a per-round checklist before each re-review trigger (latest review analyzed for current head, all findings dispositioned, fixes pushed and summary posted) and a fully-clean exit checklist before declaring clean (all CI green, zero findings, all inline threads resolved, only final all-clear exchange open). Use when asked to 'ardi', 'dc', 'drive', 'clean', 'drive to clean', 'iterate', 'iterate until clean', 'iterate this MR', 'drive this PR to clean', 'address the review comments', '@claude review again and fix what it finds', or after receiving a review you want to resolve completely / carry a PR all the way to mergeable."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -198,6 +198,21 @@ finding → push → post summary → re-request review → repeat until clean.
    1.5. Re-check after each resolution — new ones can appear at any time.
    This turns idle wait time into productive conflict prevention.
 
+### Per-round checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
+confirm each box before advancing to the next round:
+
+- [ ] The latest review analyzed is for the current head commit (not a stale
+      prior run).
+- [ ] Every finding from that review has an ARD disposition.
+- [ ] If code changed, main was synced in first when needed, then fixes were
+      pushed.
+- [ ] ARD summary was posted and corresponding inline-thread replies/resolutions
+      were handled.
+- [ ] Re-review trigger was chosen correctly: push-trigger only when code was
+      pushed; explicit mention/dispatch only when no code was pushed.
+
 7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
    "fully clean"* below — zero findings **and** all CI workflows and check
    runs green and completed **and** every inline thread resolved). Don't exit
@@ -241,6 +256,19 @@ the only conversation left open is the final all-clear exchange — the
 reviewer's all-clear comment (usually a top-level PR comment, not an inline
 thread) and your reply to it. (Thread mechanics live in the `ard` skill, step
 4b.)
+
+### Fully-clean exit checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
+confirm each box before declaring "clean":
+
+- [ ] All workflows and check runs are green **and completed** for the current
+      head.
+- [ ] Latest review has zero findings and no disputed rebuttals.
+- [ ] Every inline review thread is resolved.
+- [ ] The only open conversation is the final all-clear exchange (the
+      reviewer's all-clear comment and your reply — normally a top-level PR
+      comment, not an inline thread).
 
 ## Asymptotic-noise guard and deadlocks
 
