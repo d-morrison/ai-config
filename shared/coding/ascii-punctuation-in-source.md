@@ -9,9 +9,10 @@ genuinely wanted, or a plain hyphen (`-`) for a compound.
 The same rule extends to the other non-ASCII punctuation that slips in from
 the same source (copy-paste from rendered text, an editor's smart-quote
 autocorrect): en-dashes (U+2013), curly quotes (U+201C U+201D U+2018 U+2019,
-which become `"` and `'`), and stray symbols like the multiplication sign
-(U+00D7, which becomes `x`, or a context-appropriate escape when the glyph
-must survive in output).
+which become `"` and `'`), and the multiplication sign (U+00D7, which
+becomes `x`, or a context-appropriate escape when the glyph must survive
+in output). These are the only symbols this rule bans -- other non-ASCII
+characters, like an accented name or a quoted foreign term, are unaffected.
 
 **Scope: every tracked source file, `.md` included.** Markdown files are
 source too. They are version-controlled, diffed, and rendered, so the same
@@ -55,11 +56,11 @@ This rule doesn't ban other non-ASCII characters in general, like an accented
 name or a quoted foreign term -- only the named glyphs.
 Treat adding or extending the repo's non-ASCII check to also scan `.md` as
 the enforcement follow-up: a repo with no such check yet needs to add one, and
-a repo whose check already scans `.R`/`.qmd` needs to extend it. Scanning
-`.md` alone isn't enough for `d-morrison/gha`'s `check-non-standard-chars`
-specifically -- its glyph set covers curly quotes and en/em-dashes but not
-the multiplication sign (verified against its source: no U+00D7 entry in
-`NON_STANDARD_CHARS`), so the follow-up there also needs to add that glyph.
+a repo whose check already scans `.R`/`.qmd` needs to extend it. For
+`d-morrison/gha`'s `check-non-standard-chars` specifically, the follow-up
+also needs to ensure its glyph set covers all four named glyphs (en/em-dash,
+curly quotes, multiplication sign), not just `.md` scanning -- as of this
+writing its `NON_STANDARD_CHARS` set has no U+00D7 entry yet.
 When the glyph must appear in rendered output, keep the source ASCII in a
 context-appropriate way.
 In an R or Python string literal (a status message, a plot label), use the
