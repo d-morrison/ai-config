@@ -105,7 +105,7 @@ finding → push → post summary → re-request review → repeat until clean.
     every round, not just once** -- a reviewer that was unavailable a few
     pushes ago can become available mid-session. A skipped review is never a
     clean external verdict on its own and does not authorize marking the PR
-    as approved — see *The bar: "fully clean"* below, which requires an
+    as approved -- see *The bar: "fully clean"* below, which requires an
     external verdict at the current head whenever one is reachable, not just
     a self-review.
 
