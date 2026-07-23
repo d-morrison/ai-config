@@ -103,6 +103,12 @@ committed pass.
    If no open PR exists, open one immediately (`gh pr create --fill`) and request
    `d-morrison` as reviewer; do not assume a long-lived branch already has a PR.
 
+   **Operational checklist (run in order):**
+   - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
+   - [ ] **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
+   - [ ] **Postcondition:** after push, verify open PR exists for head branch (`gh pr list --head <branch> --json number,url,state`)
+   - [ ] **Recovery signature:** if shell logs `command not found` during a comment/create command, assume command substitution mangled the body; re-run using a file-backed body and re-check posted content
+
 5. **Report what was updated.** Provide a brief summary table:
 
    | What | Where | Change |
