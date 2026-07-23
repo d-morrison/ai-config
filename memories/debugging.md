@@ -586,22 +586,13 @@ occurrence, not the flagged one.)
   full test suite undetected until an independent review deliberately
   picked a non-exact-multiple count to check.)
 
-## R `gsub()` replacement string interprets backslash sequences even with `fixed = TRUE`
+## R `gsub()` correction: `fixed = TRUE` keeps replacement literal
 
-`gsub(pattern, replacement, x, fixed = TRUE)` makes the *pattern* a literal string
-(no regex), but the *replacement* string is still processed for backslash sequences
-(`\\1` → back-reference, `\\U` → uppercase, etc.). Injecting a value that contains
-backslashes (e.g. a regex pattern like `\\.`) via `gsub()` will corrupt the output
-even when `fixed = TRUE` is set.
+Correction to an earlier note: with `gsub(..., fixed = TRUE)`, both matching and
+replacement are treated literally (no backreferences), so this mode does *not*
+interpret replacement escapes like `\\1`.
 
-**Fix:** use `strsplit` + `paste(collapse = ...)` for fully literal injection:
-
-```r
-replace_literal <- function(x, placeholder, value) {
-  parts <- strsplit(x, placeholder, fixed = TRUE)[[1]]
-  paste(parts, collapse = value)
-}
-```
-
-This approach has no interpretation of the replacement string at all.
-(d-morrison/altdoc#30, 2026-07-22.)
+If you do need regex matching (`fixed = FALSE`), replacement escapes can still
+apply, so validate any claim about replacement behavior against a runnable
+example before recording a generalized rule.
+(Correction logged from review on d-morrison/ai-config#641, 2026-07-22.)

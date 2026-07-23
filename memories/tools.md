@@ -1372,27 +1372,24 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
   changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
   toolchain over all of this.)
-- **Codoc mismatch: backslashes in default argument values.** `R CMD check` compares
-  default values between the R source and the generated `.Rd` file. A default containing
-  `\\.` (double-backslash dot) serializes as `\.` in the `.Rd`, so they appear different
-  and the check reports "Codoc mismatch". Fix: use POSIX character-class notation `[.]`
-  (or another non-backslash alternative) as the default in both the `.R` source and the
-  corresponding `man/*.Rd`. This applies to any regex-typed parameter default — not just
-  `\\.`; any sequence `\\.`, `\\d`, `\\w` etc. triggers the same mismatch. If using
-  roxygen2, regenerate after fixing the R source: `devtools::document()`.
+- **Codoc mismatch with escaped-dot defaults: limit the lesson to the observed case.**
+  In d-morrison/altdoc#30, changing the default regex from an escaped dot (`\\.`) to
+  a bracket expression (`[.]`) resolved an `R CMD check` codoc mismatch for
+  `setup_github_actions()`. Keep this note scoped to that concrete escaped-dot case;
+  avoid generalizing to other escape sequences without direct evidence.
   (d-morrison/altdoc#30, 2026-07-22.)
 - **Internal helper functions as default argument values appear literally in `.Rd` usage
   blocks.** If you write `foo = .helper_default()` as a parameter default, the roxygen
   `\usage{}` section shows `.helper_default()` verbatim — which is confusing to users
-  copy-pasting the signature and triggers no-visible-binding lint on the symbol. Inline
-  the literal value directly in the function signature instead. (d-morrison/altdoc#30.)
+  copy-pasting the signature. Inline the literal value directly in the function
+  signature instead. (d-morrison/altdoc#30.)
 
 ## YAML authoring (GitHub Actions / workflow files)
-- **Regex values with backslashes must go in single-quoted YAML scalars.** A
-  double-quoted YAML scalar (`"…"`) interprets backslash sequences (`\\`, `\"`, etc.) as
-  escape sequences, so `"foo\\.bar"` becomes `foo\.bar` (one backslash stripped). Use
-  single-quoted YAML (`'foo\\.bar'`) for any value containing literal backslashes; single-
-  quoted YAML does *no* escape processing (only `''` inside means a literal single quote).
+- **Regex values with backslashes: prefer single-quoted YAML, but document both forms
+  correctly.** YAML double-quoted scalars process escapes, so you must double each
+  backslash there (e.g. `"foo\\.bar"` for a single literal backslash before `.`).
+  Single-quoted scalars preserve backslashes as-is (e.g. `'foo\.bar'` for that same
+  single backslash), which is usually easier to reason about in workflow templates.
   This applies to `branches-or-tags-to-list` / regex inputs in reusable-workflow YAML.
   (d-morrison/altdoc#30.)
 
