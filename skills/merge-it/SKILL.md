@@ -65,6 +65,30 @@ standing yes (see `preferences.md`).
   gone stale across the review loop — pass `commit_title` / `commit_message`
   rather than letting GitHub paste the outdated description. Keep `Closes #N` in
   the message so the linked issue auto-closes.
+- If `gh pr merge` fails with `Head branch is out of date`, first read the
+  PR's actual base branch (`gh pr view <N> --json baseRefName -q .baseRefName`
+  — do **not** assume `main`; stacked and release PRs target a different base),
+  sync that base into the PR branch, and retry once. **Syncing the base
+  creates a new head SHA, which invalidates the CI/review "fully clean"
+  snapshot that authorized the original merge attempt** — re-run the ARDI
+  "fully clean" check (`fully-clean.md`) against the new SHA before retrying
+  the merge, don't just retry the merge command itself; a repo that doesn't
+  make every workflow/review a required branch-protection check can
+  otherwise merge an unreviewed/untested new head. If the merge still fails,
+  don't compare against `origin` blindly — for a cross-fork PR, `origin` is
+  the *base* repo, not necessarily where the head branch lives, so
+  `git ls-remote origin refs/heads/<branch>` can silently read a missing ref
+  or an unrelated same-named branch in the base repo. Get the actual head
+  repo and ref from the PR API first (`gh pr view <N> --json
+  headRepositoryOwner,headRepository,headRefName`), then query *that* repo's
+  ref (`gh api repos/<head-owner>/<head-repo>/git/refs/heads/<head-ref> --jq
+  .object.sha` — verified this endpoint works) and compare it against the PR
+  API's own `.head.sha` (`gh api repos/<owner>/<repo>/pulls/<N> --jq
+  .head.sha`) — the PR object can lag the branch ref briefly, so the correct
+  response is to **wait** until the two agree, not to keep retrying blindly.
+  Only use `--admin` as a last resort when the user has **separately and
+  explicitly** authorized the branch-protection bypass itself — ordinary
+  merge authorization does **not** cover it (see `preferences.md`).
 
 ```bash
 # MERGE_PR — remote/web (GitHub MCP):
