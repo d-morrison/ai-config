@@ -1,6 +1,6 @@
 ---
 name: ard
-description: "Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it's correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to 'address reviews' / 'respond to the review', or as the inner loop of the `ardi` skill."
+description: "Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it's correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Runs a round-close checklist before reporting the round done: every finding captured, every Address committed and pushed, every Defer tracked, every inline thread replied-to. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to 'address reviews' / 'respond to the review', or as the inner loop of the `ardi` skill."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -230,6 +230,23 @@ all-clear exchange — the reviewer's all-clear comment (usually a top-level PR
 comment, not an inline thread) and your reply to it. A leftover open inline
 thread (an unaccepted rebuttal, an un-resolved Address) means you're not clean
 yet.
+
+### ARD round-close checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
+confirm each box before reporting the round done:
+
+- [ ] Every finding is captured exactly once in the ARD table (after
+      deduping summary + inline duplicates).
+- [ ] Every table row has exactly one disposition (A/R/D/K), and no change
+      request is labeled K.
+- [ ] Every Address row points to a pushed commit SHA.
+- [ ] Every Defer row links a filed tracking issue.
+- [ ] Every inline thread has a reply; settled Address/Defer/Acknowledge threads
+      are resolved; unresolved rebuttals stay open.
+- [ ] The summary comment is posted from a body file (not inline), and no
+      accidental review-trigger mention is present unless this round must
+      explicitly re-request review.
 
 ### 5. Report back with a link
 
