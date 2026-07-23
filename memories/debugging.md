@@ -491,17 +491,25 @@ finally trips over it. (ucdavis/bcs#349.)
 
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has three separate hazards
-when the fix is still uncommitted -- only the first is the destructive
-silent-discard case. The second still succeeds, just at doing the wrong
-thing (a branch switch instead of a restore) rather than losing work. The
-third fails loudly with a rejected-flag error instead of doing anything.
+when the fix is still uncommitted. The first can silently destroy the fix
+(the unstaged case) or silently no-op the revert (the staged case),
+depending on what's in the index. The second still succeeds, just at doing
+the wrong thing (a branch switch instead of a restore) rather than losing
+work. The third fails loudly with a rejected-flag error instead of doing
+anything.
 
 First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
-the **index**, not HEAD. Normally the index matches HEAD, so this goes
-unnoticed -- but not when *this file* is staged (verified: staged one version,
-ran plain `git checkout "<file>"` without `--`, got the staged content
-back, not HEAD's). That silently discards the whole uncommitted fix along
-with the temporary revert -- there is nothing to restore back to.
+the **index**, not HEAD, and which one that destroys depends on whether the
+fix is staged. **Unstaged** fix (the common case -- an edit not yet
+`git add`ed): the index still matches HEAD (pre-fix), so this silently
+discards the whole working-tree-only fix -- there is nothing left to
+restore back to (verified: edited the file without staging, ran plain
+`git checkout "<file>"`, got HEAD's pre-fix content back, the edit gone).
+**Staged** fix: the index now holds the fix itself, so checkout hands the
+fix right back instead -- the fix survives, but the "revert" silently
+no-ops instead of showing pre-fix behavior, defeating the point of the step
+just as surely (verified: staged the fix, ran the same checkout, got the
+staged fix back unchanged, not HEAD's pre-fix content).
 
 Second, a bare `git checkout "<file>"` (no `--`) is parsed as a
 branch-switch attempt first if a branch happens to share the file's name
