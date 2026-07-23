@@ -1,38 +1,52 @@
-Never use em-dashes (U+2014) in source-code files. This covers `.R`,
-`.py`, `.qmd`, and any other code file, including the comments, roxygen/
-docstring prose, and string literals inside them. Use ASCII punctuation
-instead: a comma, colon, or semicolon where the em-dash joined clauses, a
-spaced double hyphen (`--`) when a dash is genuinely wanted, or a plain
-hyphen (`-`) for a compound.
+Never use em-dashes (U+2014) in tracked source files. This covers `.R`,
+`.py`, `.qmd`, `.md`, and any other source file in the repository, including
+the comments, roxygen/docstring prose, and string literals inside code
+files, and the body of Markdown docs (README, NEWS, docs pages, this corpus's
+own fragments). Use ASCII punctuation instead: a comma, colon, or semicolon
+where the em-dash joined clauses, a spaced double hyphen (`--`) when a dash is
+genuinely wanted, or a plain hyphen (`-`) for a compound.
 
 The same rule extends to the other non-ASCII punctuation that slips in from
 the same source (copy-paste from rendered text, an editor's smart-quote
 autocorrect): en-dashes (U+2013), curly quotes (U+201C U+201D U+2018 U+2019,
 which become `"` and `'`), and stray symbols like the multiplication sign
-(U+00D7, which becomes `x`, or a context-appropriate
-escape when the glyph must survive in output; see the last paragraph).
+(U+00D7, which becomes `x`, or a context-appropriate escape when the glyph
+must survive in output; see the last paragraph).
 
-**Why source files specifically, not all prose.** Repositories commonly gate
-source on an ASCII-only check that a plain Markdown doc is exempt from:
+**Scope: every tracked source file, `.md` included.** Markdown files are
+source too. They are version-controlled, diffed, and rendered, so the same
+smart-quote/copy-paste corruption and whole-paragraph-reflow diffs apply, and
+a stray em-dash in a doc reads as an AI tell. Do not exempt a README, a
+`NEWS.md`, a docs page, or any other Markdown doc, and do not exempt this
+corpus's own `shared/` fragments, `CLAUDE.md`s, or skill files. Chat replies
+and other ephemeral, non-tracked text are outside this rule's scope, but the
+same plain-ASCII habit there avoids re-introducing the glyphs on the next
+copy-paste into a file.
+
+**Why this holds even where CI does not gate it.** Some file types are gated
+by an ASCII-only check, which makes a stray em-dash a hard build failure:
 
 - R CMD check's "checking code files for non-ASCII characters" flags any
   non-ASCII byte in `R/`; under `error_on = "note"` it fails the build. Note
   that a helper defined in `data-raw/` (excluded from the build) passes
   silently until the function moves into `R/`, at which point the same
   em-dash starts failing CI.
-- Some repos run a dedicated non-standard-character workflow over `.qmd` and
-  `.R` (e.g. the UCD-SERG lab manual's `check-non-standard-chars`), which
-  rejects em-dashes, curly quotes, and en-dashes outright.
+- Some repos run a dedicated non-standard-character workflow (e.g. the
+  UCD-SERG lab manual's / `d-morrison/gha`'s `check-non-standard-chars`),
+  which rejects em-dashes, curly quotes, and en-dashes outright over the
+  file types it scans.
 
-So this is a source-code hygiene rule, not a general writing-style
-preference: ordinary `.md` docs and chat prose are not the target. When the
-glyph must appear in rendered output, keep the source ASCII in a
-context-appropriate way. In an R or Python string literal (a status message,
-a plot label), use the `\uXXXX` escape, which the language decodes to the
-character. In `.qmd` prose, `\uXXXX` is not interpreted by Pandoc and renders
-literally: use a math span (`$\times$`), an HTML entity (`&times;`), or reword
-to avoid the glyph.
+Where no CI gate covers a file (commonly a Markdown doc in a repo whose check
+only scans `.R`/`.qmd`), the rule is still required, not optional: keep the
+file ASCII anyway, and treat extending the repo's non-ASCII check to also
+scan `.md` as the enforcement follow-up. When the glyph must appear in
+rendered output, keep the source ASCII in a context-appropriate way. In an R
+or Python string literal (a status message, a plot label), use the `\uXXXX`
+escape, which the language decodes to the character. In `.qmd`/`.md` prose,
+`\uXXXX` is not interpreted by Pandoc and renders literally: use a math span
+(`$\times$`), an HTML entity (`&times;`), or reword to avoid the glyph.
 
-Apply it when writing code and when reviewing a diff: a raw em-dash in a
-roxygen block or a `.qmd` is a review finding, the same weight as any other
-CI-breaking issue, because it will fail the ASCII check before it merges.
+Apply it when writing and when reviewing a diff: a raw em-dash in a roxygen
+block, a `.qmd`, or a `.md` doc is a review finding, the same weight as any
+other CI-breaking issue, whether or not this particular file is one the ASCII
+check currently scans.
