@@ -155,8 +155,11 @@ resolve via GraphQL (`RESOLVE_REVIEW_THREAD`):
 
 ```bash
 # Reply on the same thread as inline comment <comment_id>:
+cat > /tmp/reply-<comment_id>.md <<'EOF'
+✅ Addressed in `<sha>`.
+EOF
 gh api repos/{owner}/{repo}/pulls/<N>/comments \
-  -f body="✅ Addressed in <sha>." -F in_reply_to=<comment_id>   # REPLY_REVIEW_COMMENT
+  -F in_reply_to=<comment_id> -F body=@/tmp/reply-<comment_id>.md   # REPLY_REVIEW_COMMENT
 
 # List threads to get the node id, then resolve the settled one:
 gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
@@ -172,8 +175,11 @@ In a remote/web session without `gh`, resolve `RESOLVE_REVIEW_THREAD` via
 **GitLab** — reply to the discussion, then resolve it:
 
 ```bash
+cat > /tmp/reply-<discussion_id>.md <<'EOF'
+Addressed in `<sha>`.
+EOF
 glab api -X POST "projects/:id/merge_requests/<N>/discussions/<discussion_id>/notes" \
-  -f body="Addressed in <sha>."
+  -F body=@/tmp/reply-<discussion_id>.md
 glab api -X PUT "projects/:id/merge_requests/<N>/discussions/<discussion_id>?resolved=true"
 ```
 
