@@ -46,8 +46,10 @@ file's punctuation and the specific stray symbols named above (the
 multiplication sign, U+00D7) ASCII anyway -- this rule doesn't ban other
 non-ASCII characters in general, like an accented name or a quoted foreign
 term, only the named glyphs -- and treat
-extending the repo's non-ASCII check to also scan `.md` as the enforcement
-follow-up. When the glyph must appear in
+adding or extending the repo's non-ASCII check to also scan `.md` as the
+enforcement follow-up (a repo with no such check yet needs to add one; a
+repo whose check already scans `.R`/`.qmd` needs to extend it). When the
+glyph must appear in
 rendered output, keep the source ASCII in a context-appropriate way. In an R
 or Python string literal (a status message, a plot label), use the `\uXXXX`
 escape, which the language decodes to the character. In `.qmd`/`.md` prose,
