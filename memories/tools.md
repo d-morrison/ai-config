@@ -3313,7 +3313,13 @@ at other causes. When scripting a small one-off transform inline (e.g. a
 Bash tool call doing a targeted string replacement Edit's exact-match
 failed on), fall back with `python3 ... 2>&1 || py ...` so the command
 degrades gracefully across environments that do or don't have a bare
-`python3` on `PATH`. (ai-config#635, 2026-07-22/23: hit repeatedly running
-`scripts/validate-skills.py`, and again scripting a one-off text
-replacement after an `Edit` tool call's `old_string` failed to match
-despite `grep` showing byte-identical content in the file.)
+`python3` on `PATH` — this is fine for a single command run once for its own
+effect, since you don't need to know which side of the `||` fired. If you
+need to run more than one command with the same interpreter in a session,
+resolve which one works up front instead of re-probing with `||` each time
+(`command -v python3 >/dev/null && PY=python3 || PY=py`, then invoke `$PY`
+for every subsequent call) — the combined exit status of `A || B` doesn't
+tell you which side actually ran. (ai-config#635, 2026-07-22/23: hit
+repeatedly running `scripts/validate-skills.py`, and again scripting a
+one-off text replacement after an `Edit` tool call's `old_string` failed to
+match despite `grep` showing byte-identical content in the file.)
