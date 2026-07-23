@@ -48,9 +48,9 @@ This rule doesn't ban other non-ASCII characters in general, like an accented
 name or a quoted foreign term -- only the named glyphs.
 Treat adding or extending the repo's non-ASCII check to also scan `.md` as
 the enforcement follow-up: a repo with no such check yet needs to add one, and
-a repo whose check already scans `.R`/`.qmd` needs to extend it. When the
-glyph must appear in
-rendered output, keep the source ASCII in a context-appropriate way. In an R
+a repo whose check already scans `.R`/`.qmd` needs to extend it.
+When the glyph must appear in rendered output, keep the source ASCII in a
+context-appropriate way. In an R
 or Python string literal (a status message, a plot label), use the `\uXXXX`
 escape, which the language decodes to the character. In `.qmd`/`.md` prose,
 `\uXXXX` is not interpreted by Pandoc and renders literally: use a math span
@@ -60,5 +60,4 @@ Apply it when writing and when reviewing a diff: a raw em-dash in a roxygen
 block, a `.qmd`, or a `.md` doc is a review finding, given the **same review
 weight** as a CI-breaking issue -- not a claim that it always breaks CI,
 since not every file type is scanned -- whether or not this particular
-file is one the ASCII
-check currently scans.
+file is one the ASCII check currently scans.
