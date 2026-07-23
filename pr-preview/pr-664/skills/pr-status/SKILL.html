@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -349,6 +349,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#verify-the-pr-is-still-open-first" id="toc-verify-the-pr-is-still-open-first" class="nav-link" data-scroll-target="#verify-the-pr-is-still-open-first">Verify the PR is still open first</a></li>
   <li><a href="#ci-green-review-clean" id="toc-ci-green-review-clean" class="nav-link" data-scroll-target="#ci-green-review-clean">CI green ≠ review clean</a></li>
   <li><a href="#read-the-latest-review" id="toc-read-the-latest-review" class="nav-link" data-scroll-target="#read-the-latest-review">Read the LATEST review</a></li>
+  <li><a href="#check-for-a-genuine-external-verdict-not-just-self-review" id="toc-check-for-a-genuine-external-verdict-not-just-self-review" class="nav-link" data-scroll-target="#check-for-a-genuine-external-verdict-not-just-self-review">Check for a genuine external verdict, not just self-review</a></li>
   <li><a href="#parse-for-findings-before-declaring-clean" id="toc-parse-for-findings-before-declaring-clean" class="nav-link" data-scroll-target="#parse-for-findings-before-declaring-clean">Parse for findings before declaring clean</a></li>
   <li><a href="#check-thread-resolution-state" id="toc-check-thread-resolution-state" class="nav-link" data-scroll-target="#check-thread-resolution-state">Check thread-resolution state</a></li>
   <li><a href="#output" id="toc-output" class="nav-link" data-scroll-target="#output">Output</a></li>
@@ -401,10 +402,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p><code>startswith("claude")</code> matches the <span class="citation" data-cites="claude">@claude</span> bot across both <code>gh pr view</code> and <code>gh api</code>. If your reviewer posts under a different login (e.g. <code>github-actions[bot]</code>), <strong>broaden the filter</strong> — otherwise the <code>--jq</code> returns <code>null</code> and you silently false-pass a PR with open findings. (Structured MCP GitHub tools like <code>mcp__github_ci__get_ci_status</code> are an alternative where the <code>gh</code> JSON parsing gets fragile.)</p>
 </section>
+<section id="check-for-a-genuine-external-verdict-not-just-self-review" class="level2">
+<h2 class="anchored" data-anchor-id="check-for-a-genuine-external-verdict-not-just-self-review">Check for a genuine external verdict, not just self-review</h2>
+<p>The <code>@claude</code> comment above isn’t the whole picture. Per <a href="../../shared/workflow/fully-clean.md"><code>fully-clean.md</code></a>, reporting a PR clean/ready requires a <strong>genuine posted verdict at the current head from an external reviewer, whenever one is reachable</strong> – a self-review (posted when <code>@claude</code> was skipped or stubbed) is a fallback, never a substitute, once an external reviewer becomes available again. Formal reviews (e.g.&nbsp;Copilot) don’t show up in the comments query above at all – they’re a separate review object. Run the availability/current-head check from <a href="../../skills/ardi/SKILL.html"><code>ardi</code>’s step 2</a> (request the reviewer, fetch the matched review’s body + inline comments at the current <code>commit_id</code>, require a zero-findings verdict) before declaring a PR ready. Green CI plus a clean self-review is not sufficient on its own if an external reviewer is reachable.</p>
+</section>
 <section id="parse-for-findings-before-declaring-clean" class="level2">
 <h2 class="anchored" data-anchor-id="parse-for-findings-before-declaring-clean">Parse for findings before declaring clean</h2>
 <p>Read the full latest review body and scan for any “Findings”, “Issues”, “Remaining”, “Non-blocking”, “Minor”, “Could improve”, “Consider”, etc. section. The bar for reporting <strong>clean</strong>: “Looks good” / “no findings” / “approved” with <strong>zero</strong> follow-on bullets under any heading. A posted rebuttal the reviewer is still disputing is <strong>open</strong>, not clean — a rebuttal counts only once it convinced the reviewer (they dropped the item).</p>
-<p>A PR is only <strong>fully clean / ready to merge</strong> when its review is clean <em>and</em> all CI workflows are green <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply to it — see <em>Check thread-resolution state</em> below). Do <strong>not</strong> report “ready to merge with one minor nit noted” / “harmless as-is” / “can address if you want” — that hedging just pushes triage back to the user. If there are open items, report them as open (and offer to run <code>ardi</code> to clear them).</p>
+<p>A PR is only <strong>fully clean / ready to merge</strong> when its review is clean <em>and</em> an external reviewer’s verdict is clean at the current head whenever one is reachable (see <em>Check for a genuine external verdict</em> above) <em>and</em> all CI workflows are green <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply to it — see <em>Check thread-resolution state</em> below). Do <strong>not</strong> report “ready to merge with one minor nit noted” / “harmless as-is” / “can address if you want” — that hedging just pushes triage back to the user. If there are open items, report them as open (and offer to run <code>ardi</code> to clear them).</p>
 </section>
 <section id="check-thread-resolution-state" class="level2">
 <h2 class="anchored" data-anchor-id="check-thread-resolution-state">Check thread-resolution state</h2>

@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -405,27 +405,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="op">&lt;</span>N<span class="op">&gt;</span> --json comments <span class="dt">\</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'[.comments[] | select(.author.login | startswith("claude"))] | last | .body'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The reviewer login varies by setup: <code>gh pr view</code> reports <code>claude</code>; the REST API reports <code>claude[bot]</code>. <code>startswith("claude")</code> matches both. If the result is <code>null</code>, the reviewer may post as <code>github-actions[bot]</code> or another login — <strong>never report “clean”</strong>; broaden the filter or say no review was found. The bar for <code>clean</code>: “Looks good” / “no findings” / “approved” with zero follow-on bullets under any heading. A rebuttal the reviewer still disputes is <strong>open</strong>, not clean.</p></li>
+<li><p><strong>External reviewer verdict</strong> – the comment above is the <code>@claude</code> bot only; a formal Copilot review is a separate object it won’t show. Request it and check for a genuine (non-stub) verdict at the current head:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api <span class="st">"repos/&lt;owner&gt;/&lt;repo&gt;/pulls/&lt;N&gt;/requested_reviewers"</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-X</span> POST <span class="at">-f</span> <span class="st">"reviewers[]=copilot-pull-request-reviewer[bot]"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">head</span><span class="op">=</span><span class="st">"</span><span class="va">$(</span><span class="ex">gh</span> pr view <span class="op">&lt;</span>N<span class="op">&gt;</span> --json headRefOid <span class="at">-q</span> .headRefOid<span class="va">)</span><span class="st">"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="va">review_id</span><span class="op">=</span><span class="st">"</span><span class="va">$(</span><span class="ex">gh</span> api <span class="st">"repos/&lt;owner&gt;/&lt;repo&gt;/pulls/&lt;N&gt;/reviews"</span> <span class="at">--paginate</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="ex">jq</span> <span class="at">-s</span> <span class="at">--arg</span> h <span class="st">"</span><span class="va">$head</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">'[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$h)] | last | .id'</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">"</span><span class="va">$review_id</span><span class="st">"</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="bu">[</span> <span class="st">"</span><span class="va">$review_id</span><span class="st">"</span> <span class="ot">!=</span> <span class="st">"null"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="ex">gh</span> api <span class="st">"repos/&lt;owner&gt;/&lt;repo&gt;/pulls/&lt;N&gt;/reviews/</span><span class="va">$review_id</span><span class="st">"</span> <span class="at">--jq</span> <span class="st">'{state, body}'</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="ex">gh</span> api <span class="st">"repos/&lt;owner&gt;/&lt;repo&gt;/pulls/&lt;N&gt;/comments"</span> <span class="at">--paginate</span> <span class="dt">\</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">|</span> <span class="ex">jq</span> <span class="at">-s</span> <span class="at">--arg</span> rid <span class="st">"</span><span class="va">$review_id</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line: (.line // .original_line), body}'</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"no fresh Copilot review at the current head -- treat as in-flight, not clean"</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Clean requires <strong>both</strong> an affirmative zero-new-findings overview (e.g. “generated no new comments” – never a literally empty body) <strong>and</strong> zero matched inline comments. A stub-like non-answer (“ineligible”, “reached their quota limit”) is not a verdict. If no formal reviewer is reachable at all, a self-review is the fallback – never report clean on green CI plus self-review alone when an external reviewer is reachable.</p></li>
 <li><p><strong>CI state</strong> — <code>gh pr checks &lt;N&gt;</code> (<code>PR_CHECKS</code>); name any failing/pending check, don’t just say “red”.</p></li>
 <li><p><strong>Unresolved threads</strong> — count open inline review threads (<code>READ_PR_REVIEW_COMMENTS</code>). Run exactly:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query {</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">  repository(owner:"&lt;owner&gt;", name:"&lt;repo&gt;") {</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">    pullRequest(number:&lt;N&gt;) {</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">      reviewThreads(first:100) {</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">        totalCount</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">        nodes { isResolved }</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">      }</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">    }</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">}'</span> <span class="at">--jq</span> <span class="st">'.data.repository.pullRequest.reviewThreads as $rt |</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">  ($rt.nodes | map(select(.isResolved | not)) | length) as $open |</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">  if $rt.totalCount &gt; ($rt.nodes | length)</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="st">  then "\($open)+ open (cap)"</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">  else if $open == 0 then "resolved" else "\($open) open" end</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">  end'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query {</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">  repository(owner:"&lt;owner&gt;", name:"&lt;repo&gt;") {</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">    pullRequest(number:&lt;N&gt;) {</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">      reviewThreads(first:100) {</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">        totalCount</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">        nodes { isResolved }</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">      }</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">    }</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="st">}'</span> <span class="at">--jq</span> <span class="st">'.data.repository.pullRequest.reviewThreads as $rt |</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">  ($rt.nodes | map(select(.isResolved | not)) | length) as $open |</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st">  if $rt.totalCount &gt; ($rt.nodes | length)</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">  then "\($open)+ open (cap)"</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">  else if $open == 0 then "resolved" else "\($open) open" end</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">  end'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The command emits one of three normalized values: <code>resolved</code> (all threads resolved), <code>N open</code> (e.g.&nbsp;<code>3 open</code>) — that many unresolved threads, or <code>N+ open (cap)</code> — the 100-thread cap was hit, <strong>cannot confirm clean</strong> — treat as unresolved.</p></li>
 <li><p><strong>Behind main?</strong> — fetch the head ref too (a fresh subagent has no local branch), then compare remote-tracking refs: <code>git fetch origin main &lt;headRefName&gt; -q &amp;&amp; git rev-list --count origin/&lt;headRefName&gt;..origin/main</code>. &gt;0 means main has moved ahead.</p></li>
 </ol>
-<p>Return: PR number, CI (✅/❌-with-name/⏳), review (<code>clean</code> / <code>N open</code> with the headline finding / <code>none found</code> / <code>in-flight</code>), threads (<code>resolved</code> / <code>N open</code> / <code>N+ open (cap)</code>), behind-main (<code>up to date</code> / <code>N commits</code>).</p>
+<p>Return: PR number, CI (✅/❌-with-name/⏳), review (<code>clean</code> / <code>N open</code> with the headline finding / <code>none found</code> / <code>in-flight</code>), external (<code>clean</code> / <code>N open</code> / <code>no verdict at head</code> / <code>self-review only</code>), threads (<code>resolved</code> / <code>N open</code> / <code>N+ open (cap)</code>), behind-main (<code>up to date</code> / <code>N commits</code>).</p>
 </blockquote>
 </section>
 <section id="assemble-orchestrator" class="level3">
@@ -434,28 +450,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="graceful-degradation-to-series" class="level3">
 <h3 class="anchored" data-anchor-id="graceful-degradation-to-series">Graceful degradation to series</h3>
-<p>If subagent fan-out is unavailable (no <code>Agent</code> tool in the session), fall back to gathering the four signals <strong>in series</strong> — loop the same per-PR gather over each PR from step 1. The output is the same; it’s just slower.</p>
+<p>If subagent fan-out is unavailable (no <code>Agent</code> tool in the session), fall back to gathering the five signals <strong>in series</strong> – loop the same per-PR gather over each PR from step 1. The output is the same; it’s just slower.</p>
 </section>
 </section>
 <section id="read-the-latest-review-the-subtle-part" class="level2">
 <h2 class="anchored" data-anchor-id="read-the-latest-review-the-subtle-part">Read the LATEST review (the subtle part)</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="op">&lt;</span>N<span class="op">&gt;</span> --json comments <span class="dt">\</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'[.comments[] | select(.author.login | startswith("claude"))] | last | .body'</span>   <span class="co"># READ_PR_COMMENTS</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="op">&lt;</span>N<span class="op">&gt;</span> --json comments <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'[.comments[] | select(.author.login | startswith("claude"))] | last | .body'</span>   <span class="co"># READ_PR_COMMENTS</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>startswith("claude")</code> matches the <span class="citation" data-cites="claude">@claude</span> bot across both API modes (<code>gh pr view</code> → <code>claude</code>; REST API → <code>claude[bot]</code>). If the result is <code>null</code>, the reviewer may post as <code>github-actions[bot]</code> or another login — you must <strong>not</strong> silently report that as “clean”: broaden the filter or flag that no review was found.</p>
 <p>Scan the latest body for any “Findings”, “Issues”, “Remaining”, “Non-blocking”, “Minor”, “Could improve”, “Consider”, etc. section. The bar for <strong>clean</strong>: “Looks good” / “no findings” / “approved” with <strong>zero</strong> follow-on bullets under any heading. Anything else is <strong>open</strong> — count the items. A posted rebuttal the reviewer is still disputing is <strong>open</strong>, not clean: a rebuttal only counts once it convinced the reviewer (they dropped the item).</p>
 </section>
 <section id="output" class="level2">
 <h2 class="anchored" data-anchor-id="output">Output</h2>
 <p>A Markdown table, one row per open PR, with these columns:</p>
-<div class="line-block">PR | Title | Branch | CI | Review | Threads | Behind main |</div>
+<div class="line-block">PR | Title | Branch | CI | Review | External | Threads | Behind main |</div>
 <ul>
 <li><strong>PR</strong> — make the number a markdown link, <code>[#&lt;N&gt;](https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;N&gt;)</code> (repo policy — never a bare <code>#N</code>), so it’s one-click and compact.</li>
 <li><strong>CI</strong> — ✅ / ❌ (name the failing check) / ⏳ pending.</li>
 <li><strong>Review</strong> — <code>clean</code>, <code>N open</code> (with the headline finding), <code>none found</code> (filter didn’t match / no review yet), or <code>in-flight</code> if a review run is still going.</li>
+<li><strong>External</strong> – <code>clean</code> (a genuine, non-stub Copilot verdict at the current head, per subagent item 2), <code>N open</code> (findings in that verdict), <code>no verdict at head</code> (Copilot hasn’t posted at the current commit yet – treat as in-flight, not clean), or <code>self-review only</code> (no external reviewer was reachable; a self-review is not sufficient once one becomes reachable).</li>
 <li><strong>Threads</strong> — <code>resolved</code> (none open), <code>N open</code> (unresolved inline review threads), or <code>N+ open (cap)</code> (100-thread cap hit — cannot confirm clean).</li>
 <li><strong>Behind main</strong> — <code>up to date</code> or <code>N commits</code> (offer <code>sync-pr-branch</code>).</li>
 </ul>
-<p>Below the table, list each PR’s open findings briefly (or “none”), and call out anything needing action: branches behind main, failing CI, drafts, or reviews that returned <code>null</code>. Do <strong>not</strong> label a PR “ready to merge” unless it is <strong>fully clean</strong> — its review is genuinely clean <em>and</em> all CI workflows are green <em>and</em> it’s not behind main <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply). Never hedge with “ready except for one nit.”</p>
+<p>Below the table, list each PR’s open findings briefly (or “none”), and call out anything needing action: branches behind main, failing CI, drafts, or reviews that returned <code>null</code>. Do <strong>not</strong> label a PR “ready to merge” unless it is <strong>fully clean</strong> – its review is genuinely clean <em>and</em> an external reviewer’s verdict is <code>clean</code> at the current head whenever one is reachable (<code>self-review only</code> does not qualify once a reachable reviewer exists) <em>and</em> all CI workflows are green <em>and</em> it’s not behind main <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply). Never hedge with “ready except for one nit.”</p>
 </section>
 <section id="why-fan-out-is-safe-here-and-the-write-loops-stay-series" class="level2">
 <h2 class="anchored" data-anchor-id="why-fan-out-is-safe-here-and-the-write-loops-stay-series">Why fan-out is safe here (and the write-loops stay series)</h2>
