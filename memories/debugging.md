@@ -235,7 +235,12 @@ pre-empt these when authoring shell, especially under `set -euo pipefail`:
   `mktemp "-cache"/.tmp.XXXXXX` fails with "unknown option -- c"; `mktemp --
   "-cache"/.tmp.XXXXXX` correctly treats it as a path instead). Belt-and-
   suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` -- **`--` does not fix
+  `find "<dir>" -maxdepth 1 -name '.tmp.*' -type f -mmin +60 -delete` --
+  without `-maxdepth 1 -type f` it recurses into subdirectories and can
+  delete unrelated `.tmp.*` files nested below `<dir>`, not just this
+  script's own orphans (see the reference implementation at
+  `skills/session-lock/scripts/ai-session.sh:144`, which includes both
+  flags). Separately, **`--` does not fix
   this for `find`** the way it does for `mktemp`: GNU `find`'s own
   path-vs-expression parser still reads a dash-prefixed argument as an
   expression even after `--` (verified: `find -- "-weird"` fails with
