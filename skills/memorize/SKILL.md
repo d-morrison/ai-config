@@ -99,9 +99,10 @@ those forms — this skill is what it hands off to once memory is the answer.
      approval) instead.
    - **`~/.claude/projects/*/memory/` staging** (the project repo has no
      agent-doc infrastructure yet, or is external and not yet approved) —
-     no git commit; it persists locally only. Tell the user this is
-     temporary staging and what's still needed (agent-doc infra added via a
-     PR, or upstream approval).
+     no git commit; it persists locally only. Update `MEMORY.md` in that
+     directory as an index entry. Tell the user this is temporary staging
+     and what's still needed (agent-doc infra added via a PR, or upstream
+     approval).
    - **`/memories/session/`** — skip; conversation-only notes shouldn't enter
      the shared repo.
    - **Everything else — including `~/.claude/CLAUDE.md` writes — gets
