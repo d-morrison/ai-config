@@ -116,7 +116,7 @@ handles steps 1--2.
 After a PR merges (or at the end of any significant session), run UMS to capture
 what you learned:
 
-```bash
+```text
 /ums
 ```
 
