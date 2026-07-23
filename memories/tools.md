@@ -1039,6 +1039,13 @@ by #328.)
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
+- More generally, when Quarto errors with `Include directive failed` / `could
+  not find file ...` and the missing path is under a submodule directory,
+  check `git submodule status` first and initialize/update that submodule in
+  the current worktree before debugging include paths (`git submodule update
+  --init <path>`). (Observed in UCD-SERG/serocalculator, 2026-07-22: missing
+  `../macros/macros.qmd` was from an uninitialized `macros` submodule, not a
+  bad include expression.)
 - In a Quarto **project** (observed on rme), `{{< include >}}` paths for files
   rendered via a root wrapper resolved from the PROJECT ROOT *in practice* —
   even for *nested* includes inside subfiles (a `{{< include _root.qmd >}}`
