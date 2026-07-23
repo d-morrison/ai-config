@@ -101,7 +101,7 @@ committed pass.
    git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
-   git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then request d-morrison as reviewer
+   git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
    ```
    **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing*
    was committed — verify with `git status` / `git log` before any `git reset
@@ -136,7 +136,7 @@ committed pass.
    **Project-specific items** (a convention or gotcha tied to one repo we
    own): commit to *that* repo's own agent docs (`CLAUDE.md`,
    `.github/agents/*.md`, `.github/instructions/*.md`,
-   `.github/copilot-instructions.md`) via a branch + PR in
+   `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a branch + PR in
    that repo — not ai-config. Discover its path the same way, `cd`-ing into
    that repo's own checkout instead of the ai-config one, then follow the
    same branch/commit/push/PR steps above, substituting that repo's own
@@ -174,7 +174,8 @@ committed pass.
 
 - [ ] Did I discover a repo convention for a repo **we own** that has checked-in
   agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`,
-  `.github/instructions/*.md`, or `.github/copilot-instructions.md`),
+  `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in
+  `.claude/memories/`),
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
   without agent-doc infrastructure yet, write to `~/.claude/projects/<project-path>/memory/`
@@ -241,7 +242,8 @@ add a review gate for the cases that need one.
   draft skills) into your commit/PR. Stage the specific files you touched.
 - ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
-  `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`) via a PR;
+  `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`, or
+  checked-in `.claude/memories/`) via a PR;
   if the repo has no agent-doc infrastructure yet,
   `~/.claude/projects/<project-path>/memory/` is short-lived staging only —
   hand off that a PR adding those agent docs is still required. See the checklist
