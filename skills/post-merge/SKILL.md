@@ -145,14 +145,25 @@ understand without more context — comment asking for clarification instead.
 ### 2. Tidy the local branch
 
 ```bash
-git checkout main
-git pull --ff-only origin main
-git branch -d <merged-branch>     # -d, NOT -D
+if [ "$(git branch --show-current)" != "main" ]; then
+  git checkout main
+fi
+git fetch origin main
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+  git pull --ff-only origin main
+fi
+if git show-ref --verify --quiet "refs/heads/<merged-branch>"; then
+  git branch -d <merged-branch>     # -d, NOT -D
+fi
 ```
 
 Use `git branch -d` (not `-D`): `-d` refuses to delete a branch with commits
 that aren't merged. If it refuses, the branch has unmerged work — investigate
 before forcing anything.
+
+These guards avoid a common no-op/error sequence after
+`gh pr merge --delete-branch`: that command may already switch this checkout
+to `main`, fast-forward it, and delete the local merged branch.
 
 If the PR was built in a **git worktree** (agent isolation or `session-lock`),
 remove the worktree as part of the tidy — a worktree pins its branch, so

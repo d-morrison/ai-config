@@ -40,6 +40,7 @@ main's. A conflict-free merge can silently put them at parity — main advanced
 of main, compare versions:
 
 ```bash
+git fetch origin main
 git show origin/main:DESCRIPTION | grep ^Version
 grep ^Version DESCRIPTION
 ```
