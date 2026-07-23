@@ -1,5 +1,14 @@
 # Local tools & CLIs
 
+## Copilot tool availability can change mid-session
+
+- Honor `tools_changed_notice` events literally. If a notice says a tool is no
+  longer available (e.g., `create`, `edit`), switch immediately to still-listed
+  alternatives (typically `apply_patch` + `view` + `bash`) instead of retrying
+  the removed tool.
+- For UMS/maintenance passes this matters because stale muscle memory ("use
+  create/edit") can fail repeatedly after the tool list changes.
+
 ## gh (GitHub CLI)
 - `gh` opens a pager (alternate buffer) that hangs the agent terminal.
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
