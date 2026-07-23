@@ -1383,6 +1383,26 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
   changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
   toolchain over all of this.)
+- **Codoc mismatch with escaped-dot defaults: limit the lesson to the observed case.**
+  In d-morrison/altdoc#30, changing the default regex from an escaped dot (`\\.`) to
+  a bracket expression (`[.]`) resolved an `R CMD check` codoc mismatch for
+  `setup_github_actions()`. Keep this note scoped to that concrete escaped-dot case;
+  avoid generalizing to other escape sequences without direct evidence.
+  (d-morrison/altdoc#30, 2026-07-22.)
+- **Internal helper functions as default argument values appear literally in `.Rd` usage
+  blocks.** If you write `foo = .helper_default()` as a parameter default, the roxygen
+  `\usage{}` section shows `.helper_default()` verbatim — which is confusing to users
+  copy-pasting the signature. Inline the literal value directly in the function
+  signature instead. (d-morrison/altdoc#30.)
+
+## YAML authoring (GitHub Actions / workflow files)
+- **Regex values with backslashes: prefer single-quoted YAML, but document both forms
+  correctly.** YAML double-quoted scalars process escapes, so you must double each
+  backslash there (e.g. `"foo\\.bar"` for a single literal backslash before `.`).
+  Single-quoted scalars preserve backslashes as-is (e.g. `'foo\.bar'` for that same
+  single backslash), which is usually easier to reason about in workflow templates.
+  This applies to `branches-or-tags-to-list` / regex inputs in reusable-workflow YAML.
+  (d-morrison/altdoc#30.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no
