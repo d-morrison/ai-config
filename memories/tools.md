@@ -3299,11 +3299,11 @@ of problem rather than trusting the subagent's own narration that it's
 "still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
 `comments`/`units`/`patch_coverage` steps.)
 
-## Windows Git Bash: `python`/`python3` don't resolve; only the `py` launcher does
+## Windows Git Bash: `python`/`python3` may resolve to the Store stub; use `py`
 
-On at least one Windows setup, neither `python` nor `python3` is on `PATH`
-inside the Git Bash tool — both silently redirect to a Windows Store
-install-shortcut stub and print `Python was not found; run without
+On at least one Windows setup, `python` and `python3` both resolve on
+`PATH` inside the Git Bash tool, but only to the Windows Store
+install-shortcut stub. They print `Python was not found; run without
 arguments to install from the Microsoft Store, or disable this shortcut
 from Settings > Apps > Advanced app settings > App execution aliases`
 instead of running the script, with a nonzero exit code. The `py` launcher
@@ -3312,15 +3312,14 @@ Python) works fine and should be the first thing tried when `python3 -c
 "..."` fails with that specific message — don't waste a retry loop guessing
 at other causes. When scripting a small one-off transform inline (e.g. a
 Bash tool call doing a targeted string replacement Edit's exact-match
-failed on), fall back with `python3 ... 2>&1 || py ...` so the command
-degrades gracefully across environments that do or don't have a bare
-`python3` on `PATH` — this is fine for a single command run once for its own
-effect, since you don't need to know which side of the `||` fired. If you
-need to run more than one command with the same interpreter in a session,
-resolve which one works up front instead of re-probing with `||` each time
-(`command -v python3 >/dev/null && PY=python3 || PY=py`, then invoke `$PY`
-for every subsequent call) — the combined exit status of `A || B` doesn't
-tell you which side actually ran. (ai-config#635, 2026-07-22/23: hit
-repeatedly running `scripts/validate-skills.py`, and again scripting a
-one-off text replacement after an `Edit` tool call's `old_string` failed to
-match despite `grep` showing byte-identical content in the file.)
+failed on), resolve which launcher actually works before using it, rather
+than relying on the combined exit status of `A || B` (which tells you
+*something* succeeded, not *which side*): probe non-mutating first
+(`python3 -c "pass" >/dev/null 2>&1 && PY=python3 || PY=py`), then invoke
+`` for the real transform. This both avoids risking a second, possibly
+destructive run of a real script under a bare `||` fallback, and captures
+the working interpreter for any later calls in the same session. (ai-config#635,
+2026-07-22/23: hit repeatedly running `scripts/validate-skills.py`, and
+again scripting a one-off text replacement after an `Edit` tool call's
+`old_string` failed to match despite `grep` showing byte-identical content
+in the file.)
