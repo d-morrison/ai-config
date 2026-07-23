@@ -46,13 +46,19 @@ those forms — this skill is what it hands off to once memory is the answer.
 1. **Parse** the fact/preference from the user's message.
 2. **Choose scope by relevance**:
    - **Project-specific** — a fact, convention, or gotcha tied to ONE specific repo
-     ("renders with renv via `R_LIBS_USER`") → write directly to that repo's
-     Claude project memory: `~/.claude/projects/<project-path>/memory/<file>.md`
-     (NOT `memories/repo/` inside ai-config; that directory is removed). The
-     project path is the repo's directory path with `/` replaced by `-` — e.g.
+     ("renders with renv via `R_LIBS_USER`") → commit it to **that project's
+     own repo** via a PR (its `CLAUDE.md`, `.github/copilot-instructions.md`,
+     or whatever agent-doc infrastructure it already has), so the whole team
+     and every `@claude` session there sees it. (NOT `memories/repo/`
+     inside ai-config; that directory is removed.) If the repo has no
+     agent-doc infrastructure yet, write to its local Claude project memory
+     instead — `~/.claude/projects/<project-path>/memory/<file>.md` — as
+     **short-lived staging only, not a durable destination**, and tell the
+     user a PR adding agent-doc infrastructure to that repo (plus migrating
+     the staged memory there) is still needed. The project path is the
+     repo's directory path with `/` replaced by `-` — e.g.
      `/Users/you/Documents/GitHub/rme` → `-Users-you-Documents-GitHub-rme`.
-     No git commit is needed for project memory writes — they persist locally.
-     Update `MEMORY.md` in that directory as an index entry.
+     Update `MEMORY.md` in that directory as an index entry either way.
    - **General standing rule** — an always-apply working preference across ALL
      repos ("always link PRs in tables", "use Pacific time") →
      `~/.claude/CLAUDE.md` (it's loaded every session)
@@ -73,11 +79,19 @@ those forms — this skill is what it hands off to once memory is the answer.
 4. **Write** a concise bullet (one line preferred), matching the file's voice;
    include the *why* if it isn't obvious. Don't record what the repo already
    documents (code structure, git history) — capture only the non-obvious.
-5. **Commit & push** the change so it persists. Skip for `/memories/session/`
-   (conversation-only notes shouldn't enter the shared repo) and for project
-   memory writes to `~/.claude/projects/*/memory/` (they persist locally,
-   outside the ai-config repo — no git commit needed). **Everything else —
-   including `~/.claude/CLAUDE.md` writes — gets committed**. This assumes `bootstrap.sh` has symlinked `memories/` and
+5. **Commit & push** the change so it persists. What that means depends on
+   where step 2 wrote it:
+   - **Project's own repo** (the normal project-specific case) — commit,
+     push a branch, and open a PR there, same as any other change to that
+     repo.
+   - **`~/.claude/projects/*/memory/` staging** (only when the project repo
+     has no agent-doc infrastructure yet) — no git commit; it persists
+     locally only. Tell the user this is temporary staging and a PR adding
+     agent-doc infrastructure to that repo is still needed.
+   - **`/memories/session/`** — skip; conversation-only notes shouldn't enter
+     the shared repo.
+   - **Everything else — including `~/.claude/CLAUDE.md` writes — gets
+     committed** to ai-config. This assumes `bootstrap.sh` has symlinked `memories/` and
    `CLAUDE.md` into the ai-config repo (the expected setup) and that ai-config is
    your working repo. When you're **working primarily in another repo** and want
    to push a general memory to ai-config from there, use `push-memory` instead —

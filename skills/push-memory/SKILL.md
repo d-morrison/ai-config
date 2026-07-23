@@ -48,10 +48,13 @@ cross-repo case.
 Two things route elsewhere before you go further:
 
 - **Project-specific fact** — a convention or gotcha tied to ONE repo ("this
-  repo renders with renv via `R_LIBS_USER`"). That belongs in that repo's local
-  project memory (`~/.claude/projects/<project-path>/memory/`) or its own
-  `CLAUDE.md`, **not** in shared `ai-config`. Route it there (see `memorize`);
-  don't push it here.
+  repo renders with renv via `R_LIBS_USER`"). That belongs committed to that
+  repo's own agent docs (`CLAUDE.md`, `.github/copilot-instructions.md`, or
+  whatever it already has) via a PR — **not** in shared `ai-config`. If that
+  repo has no agent-doc infrastructure yet, its local Claude project memory
+  (`~/.claude/projects/<project-path>/memory/`) is short-lived staging only,
+  not a durable destination. Route it there (see `memorize`); don't push it
+  here.
 - **Automated every-time action** ("after each commit run X"). Memory can't
   execute it — that's a **hook** in `settings.json` (use `update-config`). Say
   so and route it there.
@@ -140,8 +143,10 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
 
 ## Don't
 
-- Don't push a **project-specific** fact here — it belongs in that repo's local
-  memory or its own `CLAUDE.md`, not shared `ai-config`.
+- Don't push a **project-specific** fact here — it belongs committed to that
+  repo's own agent docs via a PR (its local project memory is short-lived
+  staging only, when it has no agent-doc infrastructure yet), not shared
+  `ai-config`.
 - Don't edit or commit anything in the repo you're working in — only the
   `ai-config` target file(s).
 - Don't push straight to `ai-config`'s `main`, and don't `git add -A` — stage

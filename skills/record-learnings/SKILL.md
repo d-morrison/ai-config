@@ -35,13 +35,20 @@ For facts that apply across all projects:
 When you add a *new* file under `/memories/` (not just a bullet to an existing
 one), register it in `memories/MEMORY.md` as an index entry.
 
-### Repository memory (`~/.claude/projects/<project-path>/memory/`)
-For facts specific to ONE repo (build quirks, project conventions, CI behavior):
-write directly to that repo's Claude project memory directory. The project path
-is the repo's directory path with `/` replaced by `-` — e.g.
-`/Users/you/Documents/GitHub/rme` → `~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/`.
-No git commit needed — project memory files persist locally. Update `MEMORY.md`
-in that directory as an index.
+### Repository-specific facts (that project's own repo)
+For facts specific to ONE repo (build quirks, project conventions, CI
+behavior): commit them to **that repo's own agent docs** via a PR
+(`CLAUDE.md`, `.github/copilot-instructions.md`, or whatever agent-doc
+infrastructure it already has), so the whole team and every `@claude`
+session there sees it. If that repo has no agent-doc infrastructure yet,
+write to its local Claude project memory directory instead —
+`~/.claude/projects/<project-path>/memory/` — as **short-lived staging
+only, not a durable destination**, and flag that a PR adding agent-doc
+infrastructure to that repo (plus migrating the staged memory there) is
+still needed. The project path is the repo's directory path with `/`
+replaced by `-` — e.g. `/Users/you/Documents/GitHub/rme` →
+`~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/`. Update
+`MEMORY.md` in that directory as an index either way.
 
 ### Shared ai-config skills (`~/.claude/skills/`)
 For reusable workflows that other agents should also follow:
@@ -60,10 +67,10 @@ For standing instructions that should always be in context:
 |----------|---------|-------|
 | Bug diagnosis | "bash EOF error = CRLF line endings" | `/memories/debugging.md` |
 | Tool quirk | "glab has no GITLAB_TOKEN env var" | `/memories/tools.md` |
-| Codebase fact | "CI only runs on branch pushes, not PR events" | `~/.claude/projects/<path>/memory/` |
+| Codebase fact | "CI only runs on branch pushes, not PR events" | That repo's own agent docs (or staging) |
 | Workflow | "Always run r-pkg-spellcheck before push" | Skill file |
 | Preference | "Always request d-morrison as reviewer" | `/memories/preferences.md` |
-| Failed approach | "Don't use merge_request_event with $CI_OPEN_MERGE_REQUESTS" | `~/.claude/projects/<path>/memory/` |
+| Failed approach | "Don't use merge_request_event with $CI_OPEN_MERGE_REQUESTS" | That repo's own agent docs (or staging) |
 
 ## Process
 
