@@ -164,7 +164,7 @@ When two sibling PRs both add the same new file(s), syncing one branch after the
 other merges can produce `CONFLICT (add/add)` across many paths. Fast, safe
 pattern:
 
-- Compare `git show :2:<file>` vs `git show :3:<file>` for **every conflicted file**.
+- Compare `git show ":2:<file>"` vs `git show ":3:<file>"` for **every conflicted file** (quote the whole revision argument — bash parses a bare `<` mid-word as input redirection, breaking the command).
   Representative files can establish a likely pattern, but they do not replace
   the per-file check (especially where late review fixes landed).
 - Keep the side with the newer baseline (often incoming `main`), then re-apply

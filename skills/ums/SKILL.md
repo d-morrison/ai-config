@@ -126,7 +126,8 @@ committed pass.
 
    **Project-specific items** (a convention or gotcha tied to one repo we
    own): commit to *that* repo's own agent docs (`CLAUDE.md`,
-   `.github/agents/*.md`, `.github/instructions/*.md`) via a branch + PR in
+   `.github/agents/*.md`, `.github/instructions/*.md`,
+   `.github/copilot-instructions.md`) via a branch + PR in
    that repo — not ai-config. Discover its path the same way, `cd`-ing into
    that repo's own checkout instead of the ai-config one, then follow the
    same branch/commit/push/PR steps above. If that repo has no agent-doc
@@ -157,7 +158,8 @@ committed pass.
   `memories/MEMORY.md` as an index entry
 
 - [ ] Did I discover a repo convention for a repo **we own** that has checked-in
-  agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, or `.github/instructions/*.md`),
+  agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`,
+  `.github/instructions/*.md`, or `.github/copilot-instructions.md`),
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
   without agent-doc infrastructure, fall back to that repo's local Claude project
@@ -223,7 +225,7 @@ add a review gate for the cases that need one.
   draft skills) into your commit/PR. Stage the specific files you touched.
 - ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
-  `CLAUDE.md`, `.github/instructions/`) via a PR, or in
+  `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`) via a PR, or in
   `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the
   repo has no agent-doc infrastructure. See the checklist item above and
   `memories/preferences.md` for the full rule.
