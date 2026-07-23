@@ -230,7 +230,7 @@ pre-empt these when authoring shell, especially under `set -euo pipefail`:
   and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp "<dir>"/.tmp.XXXXXX);
   trap 'rm -f "${tmp:-}"' EXIT; … > "$tmp"; mv -f "$tmp" "$dest"; trap - EXIT`.
   Belt-and-suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` — but the `-name` glob must match
+  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` -- but the `-name` glob must match
   the `mktemp` prefix you chose, or it silently misses every orphan
   (`.tmp.XXXXXX` → `'.tmp.*'`; mktemp's bare `tmp.XXXXXX` default → `'tmp.*'`).
 - **Bounds-check value-taking flags before `shift 2`.** In a `set -e` arg
@@ -492,9 +492,9 @@ finally trips over it. (ucdavis/bcs#349.)
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has three separate hazards
 when the fix is still uncommitted -- only the first is the destructive
-silent-discard case; the other two are ambiguity failures that stop the
-command outright (a wrong branch switch, or a rejected flag) rather than
-silently losing work.
+silent-discard case. The second still succeeds, just at doing the wrong
+thing (a branch switch instead of a restore) rather than losing work. The
+third fails loudly with a rejected-flag error instead of doing anything.
 
 First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
 the **index**, not HEAD. Normally the index matches HEAD, so this goes
@@ -520,8 +520,10 @@ still needs `--` too.
 Sequence it as: **commit the fix first.** Then temporarily revert by
 checking out the file's *pre-fix* content from the parent commit --
 `git checkout HEAD~1 -- "<file>"` -- not by stashing: once the fix is
-committed the working tree is clean, so `git stash push -- "<file>"` finds
-nothing to save and silently no-ops, leaving the fix in place during the
+committed the working tree is clean, so `git stash push -- "<file>"` prints
+"No local changes to save" and exits successfully without creating a stash
+-- not a truly silent no-op, but easy to miss in a script or a scrollback,
+and it leaves the fix in place during the
 "prove it fails" run. Prove the failure, then restore the fix with
 `git checkout HEAD -- "<file>"`. A scripted counter-edit (sed/perl) works
 too, applied the same way -- edit, prove the failure, then restore via
