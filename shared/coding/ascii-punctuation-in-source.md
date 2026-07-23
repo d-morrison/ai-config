@@ -42,8 +42,10 @@ by an ASCII-only check, which makes a stray em-dash a hard build failure:
 
 Where no CI gate covers a file (commonly a Markdown doc in a repo whose check
 only scans `.R`/`.qmd`), the rule is still required, not optional: keep the
-file's *punctuation* ASCII anyway (this rule doesn't ban other non-ASCII
-characters, like an accented name or a quoted foreign term), and treat
+file's punctuation and the specific stray symbols named above (the
+multiplication sign, U+00D7) ASCII anyway -- this rule doesn't ban other
+non-ASCII characters in general, like an accented name or a quoted foreign
+term, only the named glyphs -- and treat
 extending the repo's non-ASCII check to also scan `.md` as the enforcement
 follow-up. When the glyph must appear in
 rendered output, keep the source ASCII in a context-appropriate way. In an R
