@@ -96,9 +96,17 @@ committed pass.
 
    *No PR yet:* branch off main first — a direct-to-main push is denied by
    auto-mode and bypasses review.
+   **In a cross-fork session (this checkout's `origin` is your own fork, not
+   the upstream repo), don't branch from a bare `origin/main` here** — the
+   fork's `main` can be stale relative to upstream's default branch, and by
+   the time step 2 below discovers the real upstream default branch it's too
+   late: the branch (and its commits) already exist on the stale base.
+   Discover the upstream default branch first (`gh repo view
+   "<upstream-owner>/<repo>" --json defaultBranchRef -q
+   .defaultBranchRef.name`), fetch and branch from *that* ref instead:
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-   git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
+   git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH — same-repo case; see the cross-fork note above otherwise
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
    git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
@@ -152,7 +160,7 @@ committed pass.
 
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
-   - [ ] **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
+   - [ ] **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F "body=@<file>"`), never inline double-quoted body strings
    - [ ] **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
    - [ ] **Recovery signature:** if shell logs `command not found` during a comment/create command, first check whether `gh`/`glab` is actually installed (`which gh`); if it is unavailable in this session (expected in remote/web sessions), fall back to the MCP tool mapping in `tool-mappings.md` instead of retrying the CLI — if it *is* installed, the likely cause is backtick substitution mangling the body; re-run using a file-backed body and re-check posted content
 
