@@ -490,12 +490,15 @@ finally trips over it. (ucdavis/bcs#349.)
 ## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
 
 The standard "prove the new fixture catches the regression" step (temporarily
-revert the fix, confirm the test fails, restore) has a destructive failure
-mode when the fix is still uncommitted, for two separate reasons.
+revert the fix, confirm the test fails, restore) has three separate hazards
+when the fix is still uncommitted -- only the first is the destructive
+silent-discard case; the other two are ambiguity failures that stop the
+command outright (a wrong branch switch, or a rejected flag) rather than
+silently losing work.
 
 First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
 the **index**, not HEAD. Normally the index matches HEAD, so this goes
-unnoticed -- but not when something's staged (verified: staged one version,
+unnoticed -- but not when *this file* is staged (verified: staged one version,
 ran plain `git checkout "<file>"` without `--`, got the staged content
 back, not HEAD's). That silently discards the whole uncommitted fix along
 with the temporary revert -- there is nothing to restore back to.
