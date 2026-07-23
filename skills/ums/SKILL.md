@@ -116,11 +116,17 @@ committed pass.
    owner-qualified form:
    `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<current-branch>" -f "state=open" --jq '.[] | {number, url, state}'`
    (for `dem-extra1/ai-config`, that is `gh api --method GET "repos/d-morrison/ai-config/pulls" -f "head=dem-extra1:<current-branch>" -f "state=open" ...`).
-   If no open PR exists and upstream is accessible, open it immediately as cross-fork
-   with non-interactive metadata and the reviewer request in the same command
-   (bare `gh pr create` without `--fill`/`--title`/`--body` prompts
-   interactively and can hang a headless session):
-   `gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch> --fill --reviewer d-morrison`.
+   If no open PR exists and upstream is accessible, open it as a cross-fork PR:
+   prepare explicit title and body first, show the draft for approval (per the
+   "always show the draft before posting" rule in `memories/preferences.md`),
+   then create non-interactively — bare `gh pr create` without `--fill`/
+   `--title`/`--body` prompts interactively and can hang a headless session:
+   ```bash
+   gh pr create --repo "<upstream-owner>/<repo>" --base main \
+     --head "<head-owner>:<current-branch>" \
+     --title "ums: <summary>" --body-file /tmp/ums-pr-body.md \
+     --reviewer d-morrison
+   ```
    If upstream is not accessible in-session, push and explicitly hand off that
    upstream PR creation is still required.
 
@@ -131,9 +137,11 @@ committed pass.
    that repo — not ai-config. Discover its path the same way, `cd`-ing into
    that repo's own checkout instead of the ai-config one, then follow the
    same branch/commit/push/PR steps above. If that repo has no agent-doc
-   infrastructure, fall back to its local Claude project memory
-   (`~/.claude/projects/<project-path>/memory/`, write directly, no commit)
-   — see the checklist item below.
+   infrastructure yet, write to its local Claude project memory
+   (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only —
+   this is not a durable destination; hand off that the project repo still needs
+   agent-doc infrastructure added (via a PR) and the staged memory migrated there.
+   See the checklist item below.
 
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
@@ -162,8 +170,9 @@ committed pass.
   `.github/instructions/*.md`, or `.github/copilot-instructions.md`),
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
-  without agent-doc infrastructure, fall back to that repo's local Claude project
-  memory: `~/.claude/projects/<project-path>/memory/` (write directly; no commit).
+  without agent-doc infrastructure yet, write to `~/.claude/projects/<project-path>/memory/`
+  as short-lived staging only — hand off that a PR adding agent docs to that repo
+  is still required.
 - [ ] Did the user express a new preference? → `/memories/preferences.md`
 - [ ] Did a workflow emerge that could be a new skill? → run `spot-skill-opportunities`
   to judge whether it's genuinely recurring, then `skill-builder` to create it
@@ -225,10 +234,11 @@ add a review gate for the cases that need one.
   draft skills) into your commit/PR. Stage the specific files you touched.
 - ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
-  `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`) via a PR, or in
-  `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the
-  repo has no agent-doc infrastructure. See the checklist item above and
-  `memories/preferences.md` for the full rule.
+  `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`) via a PR;
+  if the repo has no agent-doc infrastructure yet,
+  `~/.claude/projects/<project-path>/memory/` is short-lived staging only —
+  hand off that a PR adding those agent docs is still required. See the checklist
+  item above and `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including
   `tools.md`, `preferences.md`) without checking the surrounding indentation
   first. These files mix 0-indent top-level bullets with 2-/4-indent sub-bullets and
