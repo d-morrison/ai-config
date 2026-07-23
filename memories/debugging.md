@@ -164,8 +164,9 @@ When two sibling PRs both add the same new file(s), syncing one branch after the
 other merges can produce `CONFLICT (add/add)` across many paths. Fast, safe
 pattern:
 
-- Compare `git show :2:<file>` vs `git show :3:<file>` for a few representative
-  files first (especially the files with known post-review fixes).
+- Compare `git show :2:<file>` vs `git show :3:<file>` for **every conflicted file**.
+  Representative files can establish a likely pattern, but they do not replace
+  the per-file check (especially where late review fixes landed).
 - Keep the side with the newer baseline (often incoming `main`), then re-apply
   newer deltas from the other side (e.g., review-driven pins/validation fixes).
 - Re-run the PR's key verifier immediately after resolution (not just marker
