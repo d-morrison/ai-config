@@ -12,7 +12,7 @@
 ## Operational checklist pattern for write actions
 
 - **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
-- **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F body=@<file>`; avoid inline double-quoted body args.
+- **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F "body=@<file>"`; avoid inline double-quoted body args.
 - **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead, with the branch passed as a `-f` GET field rather than interpolated into the raw URL — a branch name containing `#`, `&`, or `+` breaks a hand-built query string but is passed through correctly as a field: `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'`.
 - **Failure signature:** stderr like `command not found` during `gh ... --body` can mean two different things — check which first: if `gh`/`glab` itself is unavailable (expected in remote/web sessions; `which gh`), fall back to the mapped MCP tool instead of retrying the CLI; if the CLI is present, the likely cause is shell-expanded backticks mangling the body — re-run using a file-backed body.
 
@@ -689,10 +689,10 @@ by #328.)
 - When you need to land your current commit on that branch (for example, to
   update an existing PR branch), avoid switching branches: push your current
   HEAD directly to the target remote branch with
-  `git push <remote> HEAD:<target-branch>`. Note that this pushes **all commits
+  `git push "<remote>" HEAD:"<target-branch>"`. Note that this pushes **all commits
   reachable from HEAD**, not just your latest one; before pushing, verify the
   outgoing range is safe — the target branch should be an ancestor of HEAD
-  (`git merge-base --is-ancestor <target-branch-tip> HEAD`), and there should be
+  (`git merge-base --is-ancestor "<target-branch-tip>" HEAD`), and there should be
   no unrelated commits between them — to avoid advancing the PR branch beyond
   what you intended. Don't hard-code `origin` without
   checking: in a fork/multi-remote setup, `origin` may be your own fork while
@@ -700,7 +700,7 @@ by #328.)
   `upstream`), so pushing to `origin` silently creates/advances a same-named
   branch there instead of updating the intended PR. Confirm which remote
   actually owns the PR's head (`git remote -v`, or match the PR's
-  `head.repo` from `gh pr view <N> --json headRepositoryOwner,headRepository`)
+  `head.repo` from `gh pr view "<N>" --json headRepositoryOwner,headRepository`)
   before picking the refspec's remote.
 - This avoids clobber-prone workarounds (`checkout -B`) and avoids opening a
   new sibling PR by mistake.

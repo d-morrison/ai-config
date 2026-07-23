@@ -50,11 +50,11 @@ git commit -m "ums: <brief summary>"   # COMMIT
 git push origin HEAD                   # PUSH
 ```
 
-*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review.
+*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review. **In a cross-fork session (this checkout’s `origin` is your own fork, not the upstream repo), don’t branch from a bare `origin/main` here** — the fork’s `main` can be stale relative to upstream’s default branch, and by the time step 2 below discovers the real upstream default branch it’s too late: the branch (and its commits) already exist on the stale base. Discover the upstream default branch first (`gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name`), fetch and branch from *that* ref instead:
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
+git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH — same-repo case; see the cross-fork note above otherwise
 git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
 git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
@@ -81,7 +81,7 @@ If upstream is not accessible in-session, push and explicitly hand off that upst
 
 **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
 
-**Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
+**Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F "body=@<file>"`), never inline double-quoted body strings
 
 **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
 
