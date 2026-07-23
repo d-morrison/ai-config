@@ -82,13 +82,17 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    The bar for `clean`: "Looks good" / "no findings" / "approved" with zero
 >    follow-on bullets under any heading. A rebuttal the reviewer still disputes
 >    is **open**, not clean.
-> 2. **External reviewer verdict** -- the comment above is the `@claude` bot
->    only; a formal Copilot review is a separate object it won't show. Request
->    it and check for a genuine (non-stub) verdict at the current head:
+> 2. **External (Copilot) reviewer verdict -- read-only, don't request one.**
+>    The comment above is the `@claude` bot only; a formal Copilot review is a
+>    separate object it won't show. This step **only inspects an existing
+>    Copilot review** -- it never POSTs a review request. Requesting a review
+>    is a mutation (triggers a review job, consumes quota, can collide with a
+>    concurrent `ardi` loop), which breaks this skill's whole justification for
+>    fanning out subagents concurrently (*read-only, side-effect-free*). If no
+>    genuine verdict already exists at the current head, report that fact --
+>    don't try to produce one; that's `ardi`'s job.
 >    ```bash
 >    set -o pipefail
->    gh api "repos/<owner>/<repo>/pulls/<N>/requested_reviewers" \
->      -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
 >    head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
 >    review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
 >      | jq -s --arg h "$head" \
@@ -99,15 +103,19 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >        | jq -s --arg rid "$review_id" \
 >        '[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line: (.line // .original_line), body}'
 >    else
->      echo "no fresh Copilot review at the current head -- treat as in-flight, not clean"
+>      echo "no Copilot review exists at the current head"
 >    fi
 >    ```
 >    Clean requires **both** an affirmative zero-new-findings overview (e.g.
 >    "generated no new comments" -- never a literally empty body) **and** zero
 >    matched inline comments. A stub-like non-answer ("ineligible", "reached
->    their quota limit") is not a verdict. If no formal reviewer is reachable
->    at all, a self-review is the fallback -- never report clean on green CI
->    plus self-review alone when an external reviewer is reachable.
+>    their quota limit") is not a verdict.
+>    **This step cannot determine *why* no Copilot verdict exists** -- it
+>    can't tell "Copilot was never asked" from "Copilot is unreachable" from
+>    "a self-review was posted instead." Don't guess; report the plain
+>    evidence-based fact (`no verdict at head`), and leave the
+>    availability/self-review judgment call to `ardi`, which actually drives
+>    the PR and can request reviews.
 > 3. **CI state** — `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
 >    check, don't just say "red".
 > 4. **Unresolved threads** — count open inline review threads
@@ -140,8 +148,8 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >
 > Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `N open` with the
 > headline finding / `none found` / `in-flight`), external (`clean` / `N open`
-> / `no verdict at head` / `self-review only`), threads (`resolved` / `N open`
-> / `N+ open (cap)`), behind-main (`up to date` / `N commits`).
+> / `no verdict at head`), threads (`resolved` / `N open` / `N+ open (cap)`),
+> behind-main (`up to date` / `N commits`).
 
 ### 3. Assemble (orchestrator)
 
@@ -191,10 +199,11 @@ A Markdown table, one row per open PR, with these columns:
   (filter didn't match / no review yet), or `in-flight` if a review run is
   still going.
 - **External** -- `clean` (a genuine, non-stub Copilot verdict at the current
-  head, per subagent item 2), `N open` (findings in that verdict), `no
-  verdict at head` (Copilot hasn't posted at the current commit yet -- treat
-  as in-flight, not clean), or `self-review only` (no external reviewer was
-  reachable; a self-review is not sufficient once one becomes reachable).
+  head, per subagent item 2), `N open` (findings in that verdict), or `no
+  verdict at head` (no Copilot review exists yet at the current commit).
+  This step is read-only and doesn't request a review, so it can't tell
+  "Copilot was never asked" from "unreachable" from "a self-review covers
+  it" -- report the plain fact, don't guess at the reason.
 - **Threads** — `resolved` (none open), `N open` (unresolved inline review
   threads), or `N+ open (cap)` (100-thread cap hit — cannot confirm clean).
 - **Behind main** — `up to date` or `N commits` (offer `sync-pr-branch`).
@@ -202,12 +211,17 @@ A Markdown table, one row per open PR, with these columns:
 Below the table, list each PR's open findings briefly (or "none"), and call out
 anything needing action: branches behind main, failing CI, drafts, or reviews
 that returned `null`. Do **not** label a PR "ready to merge" unless it is
-**fully clean** -- its review is genuinely clean *and* an external reviewer's
-verdict is `clean` at the current head whenever one is reachable (`self-review
-only` does not qualify once a reachable reviewer exists) *and* all CI
+**fully clean** -- at least one of Review (`@claude`) or External (Copilot) is
+`clean` at the current head (the canonical rule needs one genuine external
+verdict, not both -- a clean Claude verdict alone is sufficient, and so is a
+clean Copilot verdict alone) *and* neither one has open findings *and* all CI
 workflows are green *and* it's not behind main *and* every inline review
 thread is resolved (the only open conversation being the final all-clear and
-your reply). Never hedge with "ready except for one nit."
+your reply). If both Review and External come back `none found` / `no verdict
+at head`, this skill has no evidence of a genuine external verdict at all --
+report the PR as not confirmed clean and point at `ardi` to obtain one; don't
+guess whether a self-review already covers it. Never hedge with "ready except
+for one nit."
 
 ## Why fan-out is safe here (and the write-loops stay series)
 
