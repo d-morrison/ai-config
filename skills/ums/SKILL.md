@@ -105,8 +105,8 @@ committed pass.
    on that exact branch, while `gh pr list --head ums-pr635-lessons` found
    it). Query the REST API instead, whose `head` filter does honor the
    owner-qualified form:
-   `gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<current-branch>&state=open" --jq '.[] | {number, url, state}'`
-   (for `dem-extra1/ai-config`, that is `repos/d-morrison/ai-config/pulls?head=dem-extra1:<current-branch>`).
+   `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<current-branch>" -f "state=open" --jq '.[] | {number, url, state}'`
+   (for `dem-extra1/ai-config`, that is `gh api --method GET "repos/d-morrison/ai-config/pulls" -f "head=dem-extra1:<current-branch>" -f "state=open" ...`).
    If no open PR exists and upstream is accessible, open it immediately as cross-fork
    with non-interactive metadata and the reviewer request in the same command
    (bare `gh pr create` without `--fill`/`--title`/`--body` prompts
@@ -118,8 +118,8 @@ committed pass.
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
    - [ ] **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
-   - [ ] **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<branch>&state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
-   - [ ] **Recovery signature:** if shell logs `command not found` during a comment/create command, assume command substitution mangled the body; re-run using a file-backed body and re-check posted content
+   - [ ] **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
+   - [ ] **Recovery signature:** if shell logs `command not found` during a comment/create command, first check whether `gh`/`glab` is actually installed (`which gh`); if it is unavailable in this session (expected in remote/web sessions), fall back to the MCP tool mapping in `tool-mappings.md` instead of retrying the CLI — if it *is* installed, the likely cause is backtick substitution mangling the body; re-run using a file-backed body and re-check posted content
 
 5. **Report what was updated.** Provide a brief summary table:
 
