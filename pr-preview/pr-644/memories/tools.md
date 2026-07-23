@@ -14,7 +14,7 @@
 - **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
 - **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F body=@<file>`; avoid inline double-quoted body args.
 - **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead, with the branch passed as a `-f` GET field rather than interpolated into the raw URL — a branch name containing `#`, `&`, or `+` breaks a hand-built query string but is passed through correctly as a field: `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'`.
-- **Failure signature:** stderr like `command not found` during `gh ... --body` usually indicates shell-expanded backticks; treat as a malformed post, not a transient CLI error.
+- **Failure signature:** stderr like `command not found` during `gh ... --body` can mean two different things — check which first: if `gh`/`glab` itself is unavailable (expected in remote/web sessions; `which gh`), fall back to the mapped MCP tool instead of retrying the CLI; if the CLI is present, the likely cause is shell-expanded backticks mangling the body — re-run using a file-backed body.
 
 ## gh (GitHub CLI)
 - `gh` opens a pager (alternate buffer) that hangs the agent terminal.
@@ -3336,6 +3336,11 @@ much more wall-clock/tokens than its own diff would justify, checking
 of problem rather than trusting the subagent's own narration that it's
 "still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
 `comments`/`units`/`patch_coverage` steps.)
+
+## Rex + base regex engines in R
+
+- `rex::rex()` patterns often emit PCRE constructs; do not pass those directly to APIs that use POSIX regex defaults (for example `list.files(pattern = ...)`). List/filter in two steps and match with `grepl(..., perl = TRUE)` (and similarly `gregexpr`/`gsub` with `perl = TRUE`) when using rex-built patterns.
+- `rex` shortcut symbols (`any_spaces`, `spaces`, `capture`, etc.) are not exported as `rex::name`; either keep them unqualified within `rex::rex(...)` and register shortcuts for R CMD check, or build explicit fragments with exported APIs (`rex::regex`, `rex::escape`) so static analysis does not depend on shortcut registration side effects.
 
 ## Windows Git Bash: `python`/`python3` may resolve to the Store stub; use `py`
 

@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="ARD + Iterate: apply the ARD framework within an iterate loop on a single PR/MR. Read the latest review, Address/Rebut/Defer every finding, push fixes, post the ARD summary, then re-request review — repeating until the verdict is clean. Use when asked to ‘ardi’, ‘dc’, ‘drive’, ‘clean’, ‘drive to clean’, ‘iterate’, ‘iterate until clean’, ‘iterate this MR’, ‘drive this PR to clean’, ‘address the review comments’, ‘@claude review again and fix what it finds’, or after receiving a review you want to resolve completely / carry a PR all the way to mergeable.">
+<meta name="description" content="ARD + Iterate: apply the ARD framework within an iterate loop on a single PR/MR. Read the latest review, Address/Rebut/Defer every finding, push fixes, post the ARD summary, then re-request review — repeating until the verdict is clean. Runs a per-round checklist before each re-review trigger (latest review analyzed for current head, all findings dispositioned, fixes pushed and summary posted) and a fully-clean exit checklist before declaring clean (all CI green, zero findings, all inline threads resolved, only final all-clear exchange open). Use when asked to ‘ardi’, ‘dc’, ‘drive’, ‘clean’, ‘drive to clean’, ‘iterate’, ‘iterate until clean’, ‘iterate this MR’, ‘drive this PR to clean’, ‘address the review comments’, ‘@claude review again and fix what it finds’, or after receiving a review you want to resolve completely / carry a PR all the way to mergeable.">
 
 <title>skill – ai-config</title>
 <style>
@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -345,9 +345,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#ardi-ard-iterate-single-prmr" id="toc-ardi-ard-iterate-single-prmr" class="nav-link active" data-scroll-target="#ardi-ard-iterate-single-prmr">ARDI — ARD + Iterate (single PR/MR)</a>
   <ul class="collapse">
-  <li><a href="#procedure" id="toc-procedure" class="nav-link" data-scroll-target="#procedure">Procedure</a></li>
+  <li><a href="#procedure" id="toc-procedure" class="nav-link" data-scroll-target="#procedure">Procedure</a>
+  <ul class="collapse">
+  <li><a href="#per-round-checklist" id="toc-per-round-checklist" class="nav-link" data-scroll-target="#per-round-checklist">Per-round checklist</a></li>
+  </ul></li>
   <li><a href="#fix-broken-ciworkflows-too" id="toc-fix-broken-ciworkflows-too" class="nav-link" data-scroll-target="#fix-broken-ciworkflows-too">Fix broken CI/workflows too</a></li>
-  <li><a href="#the-bar-fully-clean" id="toc-the-bar-fully-clean" class="nav-link" data-scroll-target="#the-bar-fully-clean">The bar: “fully clean”</a></li>
+  <li><a href="#the-bar-fully-clean" id="toc-the-bar-fully-clean" class="nav-link" data-scroll-target="#the-bar-fully-clean">The bar: “fully clean”</a>
+  <ul class="collapse">
+  <li><a href="#fully-clean-exit-checklist" id="toc-fully-clean-exit-checklist" class="nav-link" data-scroll-target="#fully-clean-exit-checklist">Fully-clean exit checklist</a></li>
+  </ul></li>
   <li><a href="#asymptotic-noise-guard-and-deadlocks" id="toc-asymptotic-noise-guard-and-deadlocks" class="nav-link" data-scroll-target="#asymptotic-noise-guard-and-deadlocks">Asymptotic-noise guard and deadlocks</a></li>
   <li><a href="#on-clean" id="toc-on-clean" class="nav-link" data-scroll-target="#on-clean">On clean</a></li>
   </ul></li>
@@ -411,8 +417,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr list <span class="at">--state</span> open <span class="at">--json</span> number,title,headRefName,mergeable,mergeStateStatus,comments <span class="dt">\</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")'</span>   <span class="co"># LIST_PRS</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Verify each candidate with <code>git merge-tree --write-tree origin/main origin/&lt;branch&gt;</code> (git ≥ 2.38; see <code>resolve-conflicts</code>, “Verify before you act”) before claiming — <code>UNKNOWN</code> isn’t proof of a real conflict, and <code>CONFLICTING</code> can be stale if a sibling PR merged since GitHub last computed it. Claim and fix confirmed conflicts using the cascade procedure in <code>post-merge</code> step 1.5. Re-check after each resolution — new ones can appear at any time. This turns idle wait time into productive conflict prevention.</p></li>
-<li><p><strong>Repeat from step 2</strong> until the PR/MR is <strong>fully clean</strong> (see <em>The bar: “fully clean”</em> below — zero findings <strong>and</strong> all CI workflows and check runs green and completed <strong>and</strong> every inline thread resolved). Don’t exit on a clean review body alone.</p></li>
 </ol>
+<section id="per-round-checklist" class="level3">
+<h3 class="anchored" data-anchor-id="per-round-checklist">Per-round checklist</h3>
+<p>Per <a href="../../shared/workflow/skill-checklists.md"><code>shared/workflow/skill-checklists.md</code></a>, confirm each box before advancing to the next round:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">The latest review analyzed is for the current head commit (not a stale prior run).</label></li>
+<li><label><input type="checkbox">Every finding from that review has an ARD disposition.</label></li>
+<li><label><input type="checkbox">If code changed, main was synced in first when needed, then fixes were pushed.</label></li>
+<li><label><input type="checkbox">ARD summary was posted and corresponding inline-thread replies/resolutions were handled.</label></li>
+<li><label><input type="checkbox">Re-review trigger was chosen correctly: push-trigger only when code was pushed; explicit mention/dispatch only when no code was pushed.</label></li>
+</ul>
+<ol start="7" type="1">
+<li><strong>Repeat from step 2</strong> until the PR/MR is <strong>fully clean</strong> (see <em>The bar: “fully clean”</em> below — zero findings <strong>and</strong> all CI workflows and check runs green and completed <strong>and</strong> every inline thread resolved). Don’t exit on a clean review body alone.</li>
+</ol>
+</section>
 </section>
 <section id="fix-broken-ciworkflows-too" class="level2">
 <h2 class="anchored" data-anchor-id="fix-broken-ciworkflows-too">Fix broken CI/workflows too</h2>
@@ -432,6 +451,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>The latest review is totally clean</strong> — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly <strong>Addressed</strong> is either <strong>Deferred</strong> to a tracked issue or <strong>Rebutted with a rebuttal that actually convinced the reviewer</strong> (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does <strong>not</strong> count as clean. Don’t stop at “ready with one minor nit.”</li>
 </ol>
 <p><strong>Threads:</strong> at fully-clean, every <strong>inline</strong> review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the <code>ard</code> skill, step 4b.)</p>
+<section id="fully-clean-exit-checklist" class="level3">
+<h3 class="anchored" data-anchor-id="fully-clean-exit-checklist">Fully-clean exit checklist</h3>
+<p>Per <a href="../../shared/workflow/skill-checklists.md"><code>shared/workflow/skill-checklists.md</code></a>, confirm each box before declaring “clean”:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">All workflows and check runs are green <strong>and completed</strong> for the current head.</label></li>
+<li><label><input type="checkbox">Latest review has zero findings and no disputed rebuttals.</label></li>
+<li><label><input type="checkbox">Every inline review thread is resolved.</label></li>
+<li><label><input type="checkbox">The only open conversation is the final all-clear exchange (the reviewer’s all-clear comment and your reply — normally a top-level PR comment, not an inline thread).</label></li>
+</ul>
+</section>
 </section>
 <section id="asymptotic-noise-guard-and-deadlocks" class="level2">
 <h2 class="anchored" data-anchor-id="asymptotic-noise-guard-and-deadlocks">Asymptotic-noise guard and deadlocks</h2>

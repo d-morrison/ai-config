@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it’s correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to ‘address reviews’ / ‘respond to the review’, or as the inner loop of the ardi skill.">
+<meta name="description" content="Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it’s correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Runs a round-close checklist before reporting the round done: every finding captured, every Address committed and pushed, every Defer tracked, every inline thread replied-to. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to ‘address reviews’ / ‘respond to the review’, or as the inner loop of the ardi skill.">
 
 <title>skill – ai-config</title>
 <style>
@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -357,6 +357,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#commit-addressed-fixes-one-commit-per-review-round" id="toc-commit-addressed-fixes-one-commit-per-review-round" class="nav-link" data-scroll-target="#commit-addressed-fixes-one-commit-per-review-round">3. Commit Addressed fixes (one commit per review round)</a></li>
   <li><a href="#post-one-summary-comment" id="toc-post-one-summary-comment" class="nav-link" data-scroll-target="#post-one-summary-comment">4. Post one summary comment</a></li>
   <li><a href="#b.-reply-to-every-inline-review-thread-and-resolve-where-appropriate" id="toc-b.-reply-to-every-inline-review-thread-and-resolve-where-appropriate" class="nav-link" data-scroll-target="#b.-reply-to-every-inline-review-thread-and-resolve-where-appropriate">4b. Reply to every inline review thread — and resolve where appropriate</a></li>
+  <li><a href="#ard-round-close-checklist" id="toc-ard-round-close-checklist" class="nav-link" data-scroll-target="#ard-round-close-checklist">ARD round-close checklist</a></li>
   <li><a href="#report-back-with-a-link" id="toc-report-back-with-a-link" class="nav-link" data-scroll-target="#report-back-with-a-link">5. Report back with a link</a></li>
   </ul></li>
   <li><a href="#rules" id="toc-rules" class="nav-link" data-scroll-target="#rules">Rules</a></li>
@@ -524,6 +525,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>Don’t resolve a thread you haven’t replied to. Every inline comment ends with both a reply and (where appropriate) a resolution — silence on a thread reads as ignored, exactly the failure ARD exists to prevent.</p>
 <p><strong>End-state (fully clean):</strong> when the PR/MR is fully clean, <strong>every inline review thread is resolved</strong>, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. A leftover open inline thread (an unaccepted rebuttal, an un-resolved Address) means you’re not clean yet.</p>
+</section>
+<section id="ard-round-close-checklist" class="level3">
+<h3 class="anchored" data-anchor-id="ard-round-close-checklist">ARD round-close checklist</h3>
+<p>Per <a href="../../shared/workflow/skill-checklists.md"><code>shared/workflow/skill-checklists.md</code></a>, confirm each box before reporting the round done:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Every finding is captured exactly once in the ARD table (after deduping summary + inline duplicates).</label></li>
+<li><label><input type="checkbox">Every table row has exactly one disposition (A/R/D/K), and no change request is labeled K.</label></li>
+<li><label><input type="checkbox">Every Address row points to a pushed commit SHA.</label></li>
+<li><label><input type="checkbox">Every Defer row links a filed tracking issue.</label></li>
+<li><label><input type="checkbox">Every inline thread has a reply; settled Address/Defer/Acknowledge threads are resolved; unresolved rebuttals stay open.</label></li>
+<li><label><input type="checkbox">The summary comment is posted from a body file (not inline), and no accidental review-trigger mention is present unless this round must explicitly re-request review.</label></li>
+</ul>
 </section>
 <section id="report-back-with-a-link" class="level3">
 <h3 class="anchored" data-anchor-id="report-back-with-a-link">5. Report back with a link</h3>
