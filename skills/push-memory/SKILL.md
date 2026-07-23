@@ -54,7 +54,9 @@ Two things route elsewhere before you go further:
   `.github/copilot-instructions.md`, or whatever it already has) via a PR,
   falling back to its local Claude project memory
   (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only
-  when it has no agent-doc infrastructure yet. If it's an **external repo we
+  when it has no agent-doc infrastructure yet — in that case, hand off that
+  a PR adding agent-doc infrastructure to that repo (plus migrating the
+  staged memory there) is still needed. If it's an **external repo we
   don't own**, never open a direct PR — follow
   [`upstream-issues`](../../shared/workflow/upstream-issues.md) (policy
   check, draft, explicit user approval) and stage in local project memory
@@ -151,8 +153,12 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
   repo's own agent docs via a PR (its local project memory is short-lived
   staging only, when it has no agent-doc infrastructure yet), not shared
   `ai-config`.
-- Don't edit or commit anything in the repo you're working in — only the
-  `ai-config` target file(s).
+- **For the general-memory-to-`ai-config` path** (the case this skill exists
+  for): don't edit or commit anything in the repo you're working in — only
+  the `ai-config` target file(s). This doesn't apply to the
+  project-specific-fact case above, which commits to the owned repo on
+  purpose — including when that owned repo happens to be the one you're
+  currently working in.
 - Don't push straight to `ai-config`'s `main`, and don't `git add -A` — stage
   only the file(s) you wrote.
 - Don't run a full session review or touch skill files (that's `ums`).

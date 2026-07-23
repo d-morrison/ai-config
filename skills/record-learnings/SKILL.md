@@ -90,7 +90,21 @@ For standing instructions that should always be in context:
 4. **Write concisely** — bullet points, not prose. Include the *why* not just
    the *what*. If you created a *new* file under `/memories/`, also add a row
    for it to `memories/MEMORY.md` (the index)
-5. **If it's a skill (or a dedicated fan-out worker)** — hand off to
+5. **Deliver, per where step 2/3 routed it:**
+   - **Repository-specific fact, a repo we own** — commit it to that repo's
+     own agent docs via a PR (`CLAUDE.md`, `.github/copilot-instructions.md`,
+     or whatever it already has). If that repo has no agent-doc
+     infrastructure yet, write to its local Claude project memory instead as
+     short-lived staging only, and hand off that a PR adding agent-doc
+     infrastructure (plus migrating the staged memory there) is still
+     needed.
+   - **Repository-specific fact, an external repo we don't own** — never
+     open a direct PR autonomously; follow `upstream-issues` (policy check,
+     draft, explicit user approval), staging in local project memory until
+     approved.
+   - **User-wide memory** — commit and push to `d-morrison/ai-config`
+     (branch + PR if none is open yet).
+6. **If it's a skill (or a dedicated fan-out worker)** — hand off to
    `spot-skill-opportunities` to judge whether the pattern is genuinely
    recurring (not a one-off), then to `skill-builder` to scaffold a new
    user-invocable workflow in `~/.claude/skills/` (symlink to the cloned repo;
@@ -137,7 +151,7 @@ After adding or updating any skill file, always commit and push to origin:
 ## Relationship to other skills
 
 - **`spot-skill-opportunities`** — the dedicated recognition step for the
-  "is this a skill?" case in step 5 above; hand off to it rather than judging
+  "is this a skill?" case in step 6 above; hand off to it rather than judging
   recurrence inline here.
 - **`skill-builder`** — scaffolds the `SKILL.md` once `spot-skill-opportunities`
   (or this skill directly) decides a new one is warranted.
