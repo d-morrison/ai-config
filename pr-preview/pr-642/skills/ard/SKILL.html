@@ -551,7 +551,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Ambiguous finding</strong> — if you can’t tell whether it’s a change request or an observation, treat it as a finding and Address or Rebut. Don’t assume it’s informational.</li>
 <li><strong>Reviewers contradict each other</strong> — Address the most recent reviewer; note the contradiction in your response so the user can arbitrate.</li>
 <li><strong>Finding duplicates a deferred item</strong> — Rebut by pointing to the existing issue. Keeping the <strong>Deferred / Out-of-Scope</strong> section current in the PR/MR description should prevent re-flagging; if it recurs, update that section.</li>
-<li><strong>Findings sourced from a different PR than the target branch</strong> — treat the cited review as the finding source, but apply fixes on the target PR branch the user names. Post the ARD summary on the target PR, then reply on each original inline thread with the target commit SHA and target PR link so the provenance stays auditable across both threads.</li>
+<li><strong>Findings sourced from a different PR/MR than the target branch</strong> — treat the cited review as the finding source, but apply dispositions on the target PR/MR branch the user names. Post the ARD summary on the target PR/MR, then reply on each original inline thread with the target PR/MR link plus disposition-specific evidence: Address -&gt; target fix commit SHA; Rebut -&gt; target PR/MR comment link with the falsifiable evidence; Defer -&gt; follow-up issue link; Acknowledge -&gt; brief acknowledgment. This keeps provenance auditable across both threads without requiring a commit in non-Address rounds.</li>
 </ul>
 
 
