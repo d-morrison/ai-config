@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -493,20 +493,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The one summary comment is <strong>not</strong> enough on its own. A reviewer who left inline comments wants a response <strong>on each thread</strong>, not just a table posted elsewhere. For every inline comment, post a short reply on its own thread with the disposition (and the commit SHA for an Address), then <strong>resolve</strong> the thread once the item is genuinely settled.</p>
 <p><strong>GitHub</strong> — reply on the comment’s thread (<code>REPLY_REVIEW_COMMENT</code>), then resolve via GraphQL (<code>RESOLVE_REVIEW_THREAD</code>):</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reply on the same thread as inline comment &lt;comment_id&gt;:</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api repos/{owner}/{repo}/pulls/<span class="op">&lt;</span>N<span class="op">&gt;</span>/comments <span class="dt">\</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> body=<span class="st">"✅ Addressed in &lt;sha&gt;."</span> <span class="at">-F</span> in_reply_to=<span class="op">&lt;</span>comment_id<span class="op">&gt;</span>   <span class="co"># REPLY_REVIEW_COMMENT</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># List threads to get the node id, then resolve the settled one:</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query { repository(owner:"&lt;owner&gt;",name:"&lt;repo&gt;") {</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="st">  pullRequest(number:&lt;N&gt;) { reviewThreads(first:100) { nodes {</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="st">    id isResolved comments(first:1){ nodes { databaseId body } } } } } } }'</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'mutation {</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="st">  resolveReviewThread(input:{threadId:"&lt;thread_node_id&gt;"}) { thread { isResolved } } }'</span>   <span class="co"># RESOLVE_REVIEW_THREAD</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (quote every argument containing a &lt;placeholder&gt; -- bash treats a bare `&lt;`</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># as a redirection operator even mid-word, so an unquoted path like</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># /tmp/reply-&lt;comment_id&gt;.md silently writes to the wrong file)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&gt;</span> <span class="st">"/tmp/reply-&lt;comment_id&gt;.md"</span> <span class="op">&lt;&lt;'EOF'</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="st">✅ Addressed in `&lt;sha&gt;`.</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api <span class="st">"repos/{owner}/{repo}/pulls/&lt;N&gt;/comments"</span> <span class="dt">\</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-F</span> in_reply_to=<span class="st">"&lt;comment_id&gt;"</span> <span class="at">-F</span> body=<span class="st">"@/tmp/reply-&lt;comment_id&gt;.md"</span>   <span class="co"># REPLY_REVIEW_COMMENT</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># List threads to get the node id, then resolve the settled one:</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query { repository(owner:"&lt;owner&gt;",name:"&lt;repo&gt;") {</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="st">  pullRequest(number:&lt;N&gt;) { reviewThreads(first:100) { nodes {</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="st">    id isResolved comments(first:1){ nodes { databaseId body } } } } } } }'</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'mutation {</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="st">  resolveReviewThread(input:{threadId:"&lt;thread_node_id&gt;"}) { thread { isResolved } } }'</span>   <span class="co"># RESOLVE_REVIEW_THREAD</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>In a remote/web session without <code>gh</code>, resolve <code>RESOLVE_REVIEW_THREAD</code> via <code>mcp__github__resolve_review_thread</code> instead (see <code>tool-mappings.md</code>).</p>
 <p><strong>GitLab</strong> — reply to the discussion, then resolve it:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> api <span class="at">-X</span> POST <span class="st">"projects/:id/merge_requests/&lt;N&gt;/discussions/&lt;discussion_id&gt;/notes"</span> <span class="dt">\</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> body=<span class="st">"Addressed in &lt;sha&gt;."</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> api <span class="at">-X</span> PUT <span class="st">"projects/:id/merge_requests/&lt;N&gt;/discussions/&lt;discussion_id&gt;?resolved=true"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&gt;</span> <span class="st">"/tmp/reply-&lt;discussion_id&gt;.md"</span> <span class="op">&lt;&lt;'EOF'</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">Addressed in `&lt;sha&gt;`.</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> api <span class="at">-X</span> POST <span class="st">"projects/:id/merge_requests/&lt;N&gt;/discussions/&lt;discussion_id&gt;/notes"</span> <span class="dt">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-F</span> body=<span class="st">"@/tmp/reply-&lt;discussion_id&gt;.md"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> api <span class="at">-X</span> PUT <span class="st">"projects/:id/merge_requests/&lt;N&gt;/discussions/&lt;discussion_id&gt;?resolved=true"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Resolve only when the item is actually settled:</strong></p>
 <ul>
 <li><strong>Address</strong> — resolve after the fix is <strong>pushed</strong> (reply names the SHA). Never resolve an Address whose fix isn’t on the branch yet. Not confident the fix fully settles the concern? When the finding is ambiguous, turns on a design choice, or admits only a partial fix, reply explaining what you did and <strong>ask for confirmation</strong> instead of resolving. Leave the thread open for the reviewer to verify.</li>

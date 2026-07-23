@@ -40,6 +40,7 @@ Each conflict hunk has three inputs — the common **base**, **our** side, and *
 - Two different features touching neighbouring lines → keep **both** edits.
 - A refactor on one side + a bugfix on the other → apply the bugfix *to the refactored code*.
 - A rename on one side + an edit to the old name on the other → carry the edit onto the new name.
+- **`CONFLICT (add/add)` on the same newly-added file** (common with sibling PRs) → compare `:2:` vs `:3:` first; keep the side that carries the newer baseline (often `main` after a sibling PR merged), then manually re-apply any newer deltas from the other side (review fixes, wording corrections, version pins) before staging.
 
 If you can’t see why a side changed the hunk, you’re not ready to resolve it — go read the history first (step 2).
 

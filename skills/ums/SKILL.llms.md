@@ -12,59 +12,87 @@ Actively review recent session context and update all relevant memory files and 
 
 ## Procedure
 
-1.  **Scan recent context.** Review the conversation for:
+**Scan recent context.** Review the conversation for:
 
-    - Mistakes made and corrected (skill gaps)
-    - New preferences expressed by the user
-    - Tool quirks discovered
-    - Workflow steps that were missing or unclear in existing skills
-    - Debugging insights
-    - Codebase conventions discovered
+- Mistakes made and corrected (skill gaps)
+- New preferences expressed by the user
+- Tool quirks discovered
+- Workflow steps that were missing or unclear in existing skills
+- Debugging insights
+- Codebase conventions discovered
 
-2.  **Categorize each learning.** For each item, decide:
+**Categorize each learning.** For each item, decide:
 
-    - Is it a **skill update**? (workflow step missing, procedure unclear)
-    - Is it a **memory note**? (tool quirk, preference, debugging insight)
-    - Is it **both**? (general guidance → update skill AND preferences)
-    - Is it already recorded? (check before writing — avoid duplicates)
+- Is it a **skill update**? (workflow step missing, procedure unclear)
+- Is it a **memory note**? (tool quirk, preference, debugging insight)
+- Is it **both**? (general guidance → update skill AND preferences)
+- Is it already recorded? (check before writing — avoid duplicates)
+- Is it **cross-project or project-specific**? (`memories/preferences.md`’s “Memory and skill storage” rule: cross-project lessons commit to `d-morrison/ai-config`; a convention/gotcha tied to one repo we own commits to *that* repo’s own agent docs instead — see the checklist item below for where. This changes step 4’s target, not just the content.)
 
-3.  **Apply updates.** For each item:
+**Apply updates.** For each item:
 
-    - Read the target file first (skill or memory) to understand current state
-    - Make the edit — concise bullet points, not prose
-    - If updating a skill: the change should be specific enough that following the skill next time would avoid the mistake
+- Read the target file first (skill or memory) to understand current state
+- Make the edit — concise bullet points, not prose
+- If updating a skill: the change should be specific enough that following the skill next time would avoid the mistake
 
-4.  **Commit and push ALL ai-config changes — via a branch + PR, not direct to `main`.** Skills AND memory files both live in the ai-config repo. Discover its path with `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point `-C` at a **skill subdir** (any one), not the `~/.claude/skills` parent. `bootstrap.sh` may symlink skills *per-child* into a real `~/.claude/skills` directory (cloud/web sessions pre-populate it), so the parent itself isn’t a symlink into the repo and `git -C` there fails with “not a git repository”; a child like `…/skills/ums` follows the symlink into the repo. (Both beat the older `dirname "$(readlink …)"`, which resolves only one symlink hop.) Never leave ANY changes (skills, memories, etc.) as local-only uncommitted edits. Run **one** of the two paths below — not both:
+**Commit and push — via a branch + PR, not direct to `main`, in whichever repo step 2 routed the item to.**
 
-    **Stage only the files you actually edited — NEVER `git add -A`.** The working tree often holds unrelated in-flight edits (the user’s own UMS commits, another skill being drafted); `git add -A` sweeps those into your commit and onto your PR, where they bloat the review and extend the cycle. List the specific paths instead. Then **`git status` to confirm only your intended files are staged** — if something unexpected is there, the working tree had in-flight work; unstage it rather than bundling it. (Avoid `git add -p` here: it needs a terminal and hangs in non-interactive sessions.)
+**Cross-project items** (skills, cross-project memory notes): both live in the ai-config repo. Discover its path with `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point `-C` at a **skill subdir** (any one), not the `~/.claude/skills` parent. `bootstrap.sh` may symlink skills *per-child* into a real `~/.claude/skills` directory (cloud/web sessions pre-populate it), so the parent itself isn’t a symlink into the repo and `git -C` there fails with “not a git repository”; a child like `…/skills/ums` follows the symlink into the repo. (Both beat the older `dirname "$(readlink …)"`, which resolves only one symlink hop.) Never leave ANY changes (skills, memories, etc.) as local-only uncommitted edits. Run **one** of the two paths below — not both:
 
-    *Already on the open PR’s branch* (e.g. mid-ARDI): commit + push to it.
+**Stage only the files you actually edited — NEVER `git add -A`.** The working tree often holds unrelated in-flight edits (the user’s own UMS commits, another skill being drafted); `git add -A` sweeps those into your commit and onto your PR, where they bloat the review and extend the cycle. List the specific paths instead. Then **`git status` to confirm only your intended files are staged** — if something unexpected is there, the working tree had in-flight work; unstage it rather than bundling it. (Avoid `git add -p` here: it needs a terminal and hangs in non-interactive sessions.)
 
-    ``` bash
-    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-    git commit -m "ums: <brief summary>"   # COMMIT
-    git push origin HEAD                   # PUSH
-    ```
+*Already on the open PR’s branch* (e.g. mid-ARDI): commit + push to it.
 
-    *No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review.
+``` bash
+cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+git commit -m "ums: <brief summary>"   # COMMIT
+git push origin HEAD                   # PUSH
+```
 
-    ``` bash
-    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-    git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
-    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
-    git commit -m "ums: <brief summary>"   # COMMIT
-    git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then request d-morrison as reviewer
-    ```
+*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review. **In a cross-fork session (this checkout’s `origin` is your own fork, not the upstream repo), don’t branch from a bare `origin/main` here** — the fork’s `main` can be stale relative to upstream’s default branch, and by the time step 2 below discovers the real upstream default branch it’s too late: the branch (and its commits) already exist on the stale base. Discover the upstream default branch first (`gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name`), fetch and branch from *that* ref instead:
 
-    **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
+``` bash
+cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH — same-repo case; see the cross-fork note above otherwise
+git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+git commit -m "ums: <brief summary>"   # COMMIT
+git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
+```
 
-5.  **Report what was updated.** Provide a brief summary table:
+**CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
 
-    | What | Where | Change |
-    |----|----|----|
-    | Poll for new reviews | `iterate/SKILL.md` | Added explicit polling procedure |
-    | glab has no –state flag | `/memories/tools.md` | New bullet |
+**After every push in UMS, verify PR state for the current branch in the intended base repo.** `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head — it only matches a bare branch name, even when a matching PR genuinely exists (verified directly: `gh pr list --head d-morrison:ums-pr635-lessons` returned `[]` against a real open PR on that exact branch, while `gh pr list --head ums-pr635-lessons` found it). Query the REST API instead, whose `head` filter does honor the owner-qualified form: `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<current-branch>" -f "state=open" --jq '.[] | {number, url, state}'` (for `dem-extra1/ai-config`, that is `gh api --method GET "repos/d-morrison/ai-config/pulls" -f "head=dem-extra1:<current-branch>" -f "state=open" ...`). If no open PR exists and upstream is accessible, open it as a cross-fork PR: prepare explicit title and body first, show the draft for approval (per the “always show the draft before posting” rule in `memories/preferences.md`), then create non-interactively – bare `gh pr create` without `--fill`/`--title`/`--body` prompts interactively and can hang a headless session:
+
+``` bash
+gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef \
+  -q .defaultBranchRef.name   # discover the base -- don't hard-code main
+gh pr create --repo "<upstream-owner>/<repo>" --base "<discovered-default-branch>" \
+  --head "<head-owner>:<current-branch>" \
+  --title "ums: <summary>" --body-file /tmp/ums-pr-body.md \
+  --reviewer d-morrison
+```
+
+If upstream is not accessible in-session, push and explicitly hand off that upstream PR creation is still required.
+
+**Project-specific items** (a convention or gotcha tied to one repo we own): commit to *that* repo’s own agent docs (`CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a branch + PR in that repo — not ai-config. Discover its path the same way, `cd`-ing into that repo’s own checkout instead of the ai-config one, then follow the same branch/commit/push/PR steps above, substituting that repo’s own default branch for every `main`/`origin main` reference above (don’t hard-code `main` – a project routed here may default to `master` or another name; discover it the same way: `gh repo view <owner>/<repo> --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only – this is not a durable destination; hand off that the project repo still needs agent-doc infrastructure added (via a PR) and the staged memory migrated there. See the checklist item below.
+
+**Operational checklist (run in order):**
+
+**Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
+
+**Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F "body=@<file>"`), never inline double-quoted body strings
+
+**Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
+
+**Recovery signature:** if shell logs `command not found` during a comment/create command, check whichever CLI the failing command actually invoked (`which gh` or `which glab` — not always `gh`). If `gh` is unavailable in this session (expected in remote/web sessions), fall back to the MCP tool mapping in `tool-mappings.md` instead of retrying the CLI — `tool-mappings.yml` has no `glab` operations, so a missing `glab` has no MCP fallback; hand off or block instead of retrying. If the CLI that failed *is* installed, the likely cause is backtick substitution mangling the body; re-run using a file-backed body and re-check posted content
+
+**Report what was updated.** Provide a brief summary table:
+
+| What | Where | Change |
+|----|----|----|
+| Poll for new reviews | `iterate/SKILL.md` | Added explicit polling procedure |
+| glab has no –state flag | `/memories/tools.md` | New bullet |
 
 ## What to look for (checklist)
 
@@ -78,7 +106,7 @@ Did I learn a debugging pattern? → `/memories/debugging.md`
 
 Did I create a *new* file under `/memories/`? → register it in `memories/MEMORY.md` as an index entry
 
-Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, or `.github/instructions/*.md`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure, fall back to that repo’s local Claude project memory: `~/.claude/projects/<project-path>/memory/` (write directly; no commit).
+Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure yet, write to this session’s own local project-memory mechanism (Claude Code: `~/.claude/projects/<project-path>/memory/` — a non-Claude session should use whatever the equivalent local staging location is for its own agent) as short-lived staging only — hand off that a PR adding agent docs to that repo is still required.
 
 Did the user express a new preference? → `/memories/preferences.md`
 
@@ -115,7 +143,7 @@ Both write to the same destinations. `ums` fires proactively, as soon as a learn
 - ❌ Skipping the “check existing notes” step and creating duplicates
 - ❌ Updating only preferences when a skill also needs the fix
 - ❌ `git add -A` — it sweeps unrelated in-flight edits (the user’s work, other draft skills) into your commit/PR. Stage the specific files you touched.
-- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`) via a PR, or in `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the repo has no agent-doc infrastructure. See the checklist item above and `memories/preferences.md` for the full rule.
+- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a PR; if the repo has no agent-doc infrastructure yet, this session’s own local project-memory mechanism (Claude Code: `~/.claude/projects/<project-path>/memory/` — substitute the equivalent for a non-Claude agent) is short-lived staging only — hand off that a PR adding those agent docs is still required. See the checklist item above and `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including `tools.md`, `preferences.md`) without checking the surrounding indentation first. These files mix 0-indent top-level bullets with 2-/4-indent sub-bullets and multi-paragraph continuations; a new top-level bullet dropped in the middle of an existing parent’s sub-list re-parents whatever follows it in Markdown (a sibling sub-bullet silently becomes this new bullet’s child). Before committing an insertion, re-read the few lines immediately above and below the insertion point and confirm the indentation still matches what it did before — or place the new bullet after the complete enclosing list instead of inside it. (Caught by `@claude` review on ai-config#335: a new 0-indent bullet landed between two sibling sub-bullets of an existing parent, breaking the nesting.)
 
 Back to top
