@@ -52,8 +52,6 @@ Where no CI gate covers a file (commonly a Markdown doc in a repo whose check
 only scans `.R`/`.qmd`), the rule is still required, not optional: keep the
 file's punctuation and the specific stray symbols named above (the
 multiplication sign, U+00D7) ASCII anyway.
-This rule doesn't ban other non-ASCII characters in general, like an accented
-name or a quoted foreign term -- only the named glyphs.
 Treat adding or extending the repo's non-ASCII check to also scan `.md` as
 the enforcement follow-up: a repo with no such check yet needs to add one, and
 a repo whose check already scans `.R`/`.qmd` needs to extend it. For
