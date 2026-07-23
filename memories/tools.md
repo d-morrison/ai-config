@@ -229,6 +229,10 @@
   single `pull_request_read` `get` compared against that SHA — would have
   settled it in one call. See
   [`efficient-pr-babysitting`](../shared/workflow/efficient-pr-babysitting.md).)
+- **`gh pr view --json checks` is not a valid field.** When you need the
+  combined status/check rollup from `gh pr view`, ask for `statusCheckRollup`
+  instead; when you need the actual CI conclusions, use `gh pr checks` or the
+  REST check-runs endpoint.
 - **`mcp__github__push_files` strips executable bits** — files pushed via this
   tool always land with mode `100644`, regardless of their original mode. Scripts
   that were `100755` become non-executable. This is harmless when the workflow
