@@ -34,14 +34,14 @@ Actively review recent session context and update all relevant memory files and 
     - Make the edit — concise bullet points, not prose
     - If updating a skill: the change should be specific enough that following the skill next time would avoid the mistake
 
-4.  **Commit and push ALL ai-config changes — via a branch + PR, not direct to `main`.** Skills AND memory files both live in the ai-config repo. Discover its path with `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point `-C` at a **skill subdir** (any one), not the `~/.claude/skills` parent. `bootstrap.sh` may symlink skills *per-child* into a real `~/.claude/skills` directory (cloud/web sessions pre-populate it), so the parent itself isn’t a symlink into the repo and `git -C` there fails with “not a git repository”; a child like `…/skills/ums` follows the symlink into the repo. (Both beat the older `dirname "$(readlink …)"`, which resolves only one symlink hop.) Never leave ANY changes (skills, memories, etc.) as local-only uncommitted edits. Run **one** of the two paths below — not both:
+4.  **Commit and push ALL ai-config changes — via a branch + PR, not direct to `main`.** Skills AND memory files both live in the ai-config repo. Discover its path with `git -C ~/.Codex/skills/ums rev-parse --show-toplevel` — point `-C` at a **skill subdir** (any one), not the `~/.Codex/skills` parent. `bootstrap.sh` may symlink skills *per-child* into a real `~/.Codex/skills` directory (cloud/web sessions pre-populate it), so the parent itself isn’t a symlink into the repo and `git -C` there fails with “not a git repository”; a child like `…/skills/ums` follows the symlink into the repo. (Both beat the older `dirname "$(readlink …)"`, which resolves only one symlink hop.) Never leave ANY changes (skills, memories, etc.) as local-only uncommitted edits. Run **one** of the two paths below — not both:
 
     **Stage only the files you actually edited — NEVER `git add -A`.** The working tree often holds unrelated in-flight edits (the user’s own UMS commits, another skill being drafted); `git add -A` sweeps those into your commit and onto your PR, where they bloat the review and extend the cycle. List the specific paths instead. Then **`git status` to confirm only your intended files are staged** — if something unexpected is there, the working tree had in-flight work; unstage it rather than bundling it. (Avoid `git add -p` here: it needs a terminal and hangs in non-interactive sessions.)
 
     *Already on the open PR’s branch* (e.g. mid-ARDI): commit + push to it.
 
     ``` bash
-    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+    cd "$(git -C ~/.Codex/skills/ums rev-parse --show-toplevel)"
     git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
     git commit -m "ums: <brief summary>"   # COMMIT
     git push origin HEAD                   # PUSH
@@ -50,7 +50,7 @@ Actively review recent session context and update all relevant memory files and 
     *No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review.
 
     ``` bash
-    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+    cd "$(git -C ~/.Codex/skills/ums rev-parse --show-toplevel)"
     git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
     git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
     git commit -m "ums: <brief summary>"   # COMMIT
@@ -78,7 +78,7 @@ Did I learn a debugging pattern? → `/memories/debugging.md`
 
 Did I create a *new* file under `/memories/`? → register it in `memories/MEMORY.md` as an index entry
 
-Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, or `.github/instructions/*.md`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure, fall back to that repo’s local Claude project memory: `~/.claude/projects/<project-path>/memory/` (write directly; no commit).
+Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, or `.github/instructions/*.md`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure, fall back to that repo’s local Claude project memory: `~/.Codex/projects/<project-path>/memory/` (write directly; no commit).
 
 Did the user express a new preference? → `/memories/preferences.md`
 
@@ -115,7 +115,7 @@ Both write to the same destinations. `ums` fires proactively, as soon as a learn
 - ❌ Skipping the “check existing notes” step and creating duplicates
 - ❌ Updating only preferences when a skill also needs the fix
 - ❌ `git add -A` — it sweeps unrelated in-flight edits (the user’s work, other draft skills) into your commit/PR. Stage the specific files you touched.
-- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`) via a PR, or in `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the repo has no agent-doc infrastructure. See the checklist item above and `memories/preferences.md` for the full rule.
+- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`) via a PR, or in `~/.Codex/projects/<project-path>/memory/` (local project memory, no commit) if the repo has no agent-doc infrastructure. See the checklist item above and `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including `tools.md`, `preferences.md`) without checking the surrounding indentation first. These files mix 0-indent top-level bullets with 2-/4-indent sub-bullets and multi-paragraph continuations; a new top-level bullet dropped in the middle of an existing parent’s sub-list re-parents whatever follows it in Markdown (a sibling sub-bullet silently becomes this new bullet’s child). Before committing an insertion, re-read the few lines immediately above and below the insertion point and confirm the indentation still matches what it did before — or place the new bullet after the complete enclosing list instead of inside it. (Caught by `@claude` review on ai-config#335: a new 0-indent bullet landed between two sibling sub-bullets of an existing parent, breaking the nesting.)
 
 Back to top
