@@ -8,7 +8,14 @@ A PR/MR is **fully clean** when **both** of these hold:
    **`codecov/patch` is a separate check from the repo's own Coverage workflow job, and both must be green.** The Coverage job runs the coverage-instrumented test suite; `codecov/patch` is the Codecov service's own status check, gating the PR's DIFF against a minimum patch-coverage percentage --- a repo can have a fully green Coverage job while `codecov/patch` still fails (uncovered new lines in the diff). When delegating implement-a-PR work to a subagent, name this check explicitly in the brief ("ensure `codecov/patch` passes, not just the test suite") --- a subagent that only runs the local test suite and checks it's green has no way to know it also needs to check a service-side status check unless told.
 2. **The latest review is totally clean:** no nits, and every item that wasn't directly **Addressed** is either **Deferred** to a tracked follow-up issue, or **Rebutted with a rebuttal that actually convinced the reviewer** --- i.e. the reviewer did *not* re-raise it on the next round.
    A rebuttal the reviewer still disputes does **not** count as clean.
-   That review must be a genuine posted verdict at the current head commit, from an external reviewer if one is reachable --- self-review is a fallback for when no working external reviewer is available, never a substitute once one is (see the `ardi` skill's step 2 for the availability-recheck procedure). Re-check availability right before declaring clean, not just at whichever round self-review first started; an inferred "probably clean" from green CI and resolved threads does not satisfy this.
+   That review must be a genuine posted verdict at the current head commit,
+   from an external reviewer if one is reachable --- self-review is a
+   fallback for when no working external reviewer is available, never a
+   substitute once one is (see the `ardi` skill's step 2 for the
+   availability-recheck procedure).
+   Re-check availability right before declaring clean, not just at whichever
+   round self-review first started; an inferred "probably clean" from green
+   CI and resolved threads does not satisfy this.
 
 **A clean CI run and a clean review verdict are a snapshot, not a standing
 guarantee of mergeability.** `main` can advance after your last check ---

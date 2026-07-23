@@ -39,8 +39,8 @@ finding → push → post summary → re-request review → repeat until clean.
    don't rely on the top-level review body alone. Fetch both the review overview and its inline
    comments:
    ```bash
-   gh api repos/<owner>/<repo>/pulls/<N>/reviews/<review-id> --jq '{state, body}'
-   gh api repos/<owner>/<repo>/pulls/<N>/comments --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
+   gh api "repos/<owner>/<repo>/pulls/<N>/reviews/<review-id>" --jq '{state, body}'
+   gh api "repos/<owner>/<repo>/pulls/<N>/comments" --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
    ```
 
    - **GitHub:**

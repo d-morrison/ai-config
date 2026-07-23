@@ -70,9 +70,17 @@ A PR is fully clean when:
 2. The latest review has no flagged items — no nits, no "consider", no "minor
    observation". The reviewer's "Not a blocker" label is not a pass; fix it or
    defer it.
+3. That review is a genuine posted verdict at the current head commit, from an
+   external reviewer whenever one is reachable. Self-review is only the
+   fallback for when no working external reviewer is available -- never a
+   substitute once one is -- and availability gets re-checked right before
+   declaring clean, not assumed from an earlier round.
 
 At fully clean, every inline review thread is resolved. The only open
 conversation is the final all-clear exchange.
+
+See [`shared/workflow/fully-clean.md`](shared/workflow/fully-clean.md) for the
+full definition this page summarizes.
 
 **Deadlock:** if you and the reviewer can't reach consensus after a rebuttal
 exchange, escalate to a human reviewer (`gh pr edit <N> --add-reviewer
