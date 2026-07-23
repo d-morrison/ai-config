@@ -56,7 +56,9 @@ For an **external repo we don't own**, never open a direct PR
 autonomously — follow [`upstream-issues`](../../shared/workflow/upstream-issues.md):
 check its contribution policy first, then draft and get explicit user
 approval before posting anything. Stage the fact in local Claude project
-memory (short-lived, not durable) until approved.
+memory (short-lived, not durable) until approved, and update that
+directory's `MEMORY.md` as an index entry, same as the owned-repo staging
+fallback above.
 
 ### Shared ai-config skills (`~/.claude/skills/`)
 For reusable workflows that other agents should also follow:
@@ -95,12 +97,13 @@ For standing instructions that should always be in context:
      own agent docs via a PR (`CLAUDE.md`, `.github/copilot-instructions.md`,
      or whatever it already has). If that repo has no agent-doc
      infrastructure yet, write to its local Claude project memory instead as
-     short-lived staging only, and hand off that a PR adding agent-doc
-     infrastructure (plus migrating the staged memory there) is still
-     needed.
+     short-lived staging only (update that directory's `MEMORY.md` as an
+     index entry), and hand off that a PR adding agent-doc infrastructure
+     (plus migrating the staged memory there) is still needed.
    - **Repository-specific fact, an external repo we don't own** — never
      open a direct PR autonomously; follow `upstream-issues` (policy check,
-     draft, explicit user approval), staging in local project memory until
+     draft, explicit user approval), staging in local project memory
+     (update `MEMORY.md` there too) until
      approved.
    - **User-wide memory** — commit and push to `d-morrison/ai-config`
      (branch + PR if none is open yet).

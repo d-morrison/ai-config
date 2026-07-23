@@ -60,7 +60,8 @@ Two things route elsewhere before you go further:
   don't own**, never open a direct PR — follow
   [`upstream-issues`](../../shared/workflow/upstream-issues.md) (policy
   check, draft, explicit user approval) and stage in local project memory
-  until approved.
+  until approved, updating that directory's `MEMORY.md` as an index entry
+  too.
 - **Automated every-time action** ("after each commit run X"). Memory can't
   execute it — that's a **hook** in `settings.json` (use `update-config`). Say
   so and route it there.

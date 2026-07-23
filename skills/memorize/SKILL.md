@@ -68,7 +68,8 @@ those forms — this skill is what it hands off to once memory is the answer.
      the repo's contribution policy first (some ban autonomous AI PRs/issues
      outright), then draft and get **explicit user approval** before posting
      anything. Until approved, stage the fact in that repo's local Claude
-     project memory as short-lived, not-yet-durable staging.
+     project memory as short-lived, not-yet-durable staging, and update
+     `MEMORY.md` there as an index entry too.
    - **General standing rule** — an always-apply working preference across ALL
      repos ("always link PRs in tables", "use Pacific time") →
      `~/.claude/CLAUDE.md` (it's loaded every session)
