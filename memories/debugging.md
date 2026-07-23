@@ -158,6 +158,21 @@ the PR's intent** and check files that merged "cleanly" but belong to this PR
 PR's own invariant (here: the ref-scrub) over files main re-touched, since A may
 have re-introduced exactly what B removed.
 
+## `CONFLICT (add/add)` after a sibling PR merge: consolidate baseline + deltas
+
+When two sibling PRs both add the same new file(s), syncing one branch after the
+other merges can produce `CONFLICT (add/add)` across many paths. Fast, safe
+pattern:
+
+- Compare `git show ":2:<file>"` vs `git show ":3:<file>"` for **every conflicted file** (quote the whole revision argument — bash parses a bare `<` mid-word as input redirection, breaking the command).
+  Representative files can establish a likely pattern, but they do not replace
+  the per-file check (especially where late review fixes landed).
+- Keep the side with the newer baseline (often incoming `main`), then re-apply
+  newer deltas from the other side (e.g., review-driven pins/validation fixes).
+- Re-run the PR's key verifier immediately after resolution (not just marker
+  checks), because this class of conflict is easy to "resolve" while dropping a
+  small but critical late-round fix.
+
 ## A parallel session can force-push your PR branch out from under you
 On Lacaedemon/sparta#150 another driver (a second `@claude` task, or GitHub's
 "Update with rebase") force-pushed the PR branch three times, each time replacing
