@@ -57,6 +57,22 @@ finding → push → post summary → re-request review → repeat until clean.
      with the `ard` skill's step 1 (`gh pr view <N> --comments` plus the
      inline-thread API), which collects every reviewer's comments regardless of
      login.
+
+     **Copilot code review doesn't post as a PR comment at all -- it's a
+     formal GitHub review**, invisible to the command above. Request it
+     (`POST /repos/<owner>/<repo>/pulls/<N>/requested_reviewers` with
+     `reviewers: ["copilot-pull-request-reviewer[bot]"]`) and check whether
+     it posted a verdict *at the current head*:
+     ```bash
+     head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+     gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
+       --jq '.[] | select(.user.login=="copilot-pull-request-reviewer[bot]") | .commit_id' \
+       | grep -qx "$head" && echo "fresh verdict at current head" || echo "no fresh review yet -- wait or re-request"
+     ```
+     A stub-like non-answer ("ineligible", "reached their quota limit") is
+     not a verdict -- treat it the same as a skipped/stub `@claude` run (see
+     the "Do the review yourself" fallback in `CLAUDE.md`) and retry later
+     or fall back accordingly.
    - **GitLab:** poll the MR notes (`sort=desc`) for a review note that
      references your latest short SHA before proceeding; if none has appeared,
      wait and retry rather than reading a stale verdict.
@@ -75,18 +91,18 @@ finding → push → post summary → re-request review → repeat until clean.
 
     **If the reviewer explicitly skips or cannot produce a verdict** (for
     example, quota exhaustion, an outage, or a policy that prevents a reviewer
-    from self-reviewing its own work), self-review immediately — don't stall
+    from self-reviewing its own work), self-review immediately -- don't stall
     the PR waiting on it. In the same round, also check whether a
     **different** configured external reviewer is available (e.g. Copilot
     code review, if the repo/org has it) and request it in parallel with
-    posting the self-review, not after — the two reviewers can fail
+    posting the self-review, not after -- the two reviewers can fail
     independently, and self-review is a fallback for when *no* working
     external reviewer is reachable, never a substitute once one is. When you
     self-review: read the current PR diff against its base, check each
     changed call path and edge case, run the focused tests and relevant
     lint/documentation checks, and address every finding you identify. Note
     the skip in your ARD summary comment. **Re-check reviewer availability
-    every round, not just once** — a reviewer that was unavailable a few
+    every round, not just once** -- a reviewer that was unavailable a few
     pushes ago can become available mid-session. A skipped review is never a
     clean external verdict on its own and does not authorize marking the PR
     as approved — see *The bar: "fully clean"* below, which requires an
@@ -260,7 +276,7 @@ The loop ends only at **fully clean**, which means **both**:
    rebuttal the reviewer still disputes does **not** count as clean. Don't stop
    at "ready with one minor nit." **That review must be a genuine posted
    verdict at the current head, from an external reviewer if one is
-   available** — check availability again right before declaring clean, not
+   reachable** -- check availability again right before declaring clean, not
    just at the round where self-review first started; an inferred "probably
    clean" from green CI and resolved threads does not satisfy this.
 
@@ -279,7 +295,7 @@ confirm each box before declaring "clean":
       head.
 - [ ] Latest review has zero findings and no disputed rebuttals.
 - [ ] That review is a genuine posted verdict at the current head from an
-      external reviewer, if one is reachable — re-checked right before
+      external reviewer, if one is reachable -- re-checked right before
       declaring clean, not just assumed from an earlier round's self-review.
 - [ ] Every inline review thread is resolved.
 - [ ] The only open conversation is the final all-clear exchange (the
