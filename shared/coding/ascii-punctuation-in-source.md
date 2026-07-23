@@ -34,7 +34,7 @@ re-introducing the glyphs on the next copy-paste into a file.
 by a check that makes a stray em-dash a hard build failure, though the two
 common ones reject different things:
 
-- R CMD check's "checking code files for non-ASCII characters" flags
+- R CMD check's "checking R files for non-ASCII characters" flags
   non-ASCII bytes in code and string literals in `R/`, but not in comments
   -- "Writing R Extensions" explicitly says other characters "are accepted
   in comments" (verified against the current manual). Under `error_on =
