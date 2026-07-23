@@ -92,8 +92,10 @@ finding → push → post summary → re-request review → repeat until clean.
      A genuine clean Copilot overview is **not** an empty string -- it reads
      something like "Copilot reviewed N files and generated no new comments."
      Don't require a literally empty body; parse the overview for a
-     zero-new-findings phrasing (or zero inline comments as the fallback
-     signal) instead. And dispositioning a finding-bearing review's comments
+     zero-new-findings phrasing **and** confirm zero matched inline comments
+     -- both, not either alone, since zero inline comments with no
+     affirmative zero-findings overview doesn't rule out a non-verdict
+     formal review. And dispositioning a finding-bearing review's comments
      yourself does **not** make that same review the all-clear -- the
      fully-clean bar needs a *later* review, at the still-current head, that
      doesn't re-raise them. So the all-clear is either (a) a review with a
