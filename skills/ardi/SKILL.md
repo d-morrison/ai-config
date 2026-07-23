@@ -75,21 +75,23 @@ finding → push → post summary → re-request review → repeat until clean.
 
     **If the reviewer explicitly skips or cannot produce a verdict** (for
     example, quota exhaustion, an outage, or a policy that prevents a reviewer
-    from self-reviewing its own work), first check whether a **different**
-    configured external reviewer is available (e.g. Copilot code review, if
-    the repo/org has it) before falling back to self-review — the two can
-    fail independently, and self-review is a fallback for when *no* working
-    external reviewer is reachable, never a substitute once one is. Request
-    it and wait for a verdict posted at the PR's *current* head commit; only
-    self-review if none is available. When you do self-review: read the
-    current PR diff against its base, check each changed call path and edge
-    case, run the focused tests and relevant lint/documentation checks, and
-    address every finding you identify. Note the skip in your ARD summary
-    comment. **Re-check reviewer availability every round, not just once** —
-    a reviewer that was unavailable a few pushes ago can become available
-    mid-session, and the moment it does, request it instead of continuing to
-    self-review. A skipped review is never a clean external verdict and does
-    not authorize marking the PR as approved.
+    from self-reviewing its own work), self-review immediately — don't stall
+    the PR waiting on it. In the same round, also check whether a
+    **different** configured external reviewer is available (e.g. Copilot
+    code review, if the repo/org has it) and request it in parallel with
+    posting the self-review, not after — the two reviewers can fail
+    independently, and self-review is a fallback for when *no* working
+    external reviewer is reachable, never a substitute once one is. When you
+    self-review: read the current PR diff against its base, check each
+    changed call path and edge case, run the focused tests and relevant
+    lint/documentation checks, and address every finding you identify. Note
+    the skip in your ARD summary comment. **Re-check reviewer availability
+    every round, not just once** — a reviewer that was unavailable a few
+    pushes ago can become available mid-session. A skipped review is never a
+    clean external verdict on its own and does not authorize marking the PR
+    as approved — see *The bar: "fully clean"* below, which requires an
+    external verdict at the current head whenever one is reachable, not just
+    a self-review.
 
 3. **ARD every finding — regardless of severity label.** "Not a blocker",
    "minor", "nit", "optional", "consider", "if you want" are for the user's
