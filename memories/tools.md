@@ -539,6 +539,15 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   grandparent base is), note in the body that it supersedes the closed PR
   number with identical commits, and comment on the closed PR linking the
   replacement.
+- **When run from a worktree/checkout that's currently on the branch being
+  merged, `gh pr merge --delete-branch` also switches that checkout to the
+  default branch and fast-forwards it, and deletes the now-merged local
+  branch** — a normal, convenient side effect, not a bug. Don't follow it
+  with the usual post-merge `git checkout main && git pull && git branch -d
+  <branch>` sequence on autopilot: the checkout is already on `main` and
+  up to date, and `git branch -d <branch>` errors `branch '<branch>' not
+  found` since `gh` already deleted it. Check `git branch --show-current`
+  first before running any of those.
 
 ## Git — renaming an open PR's *head* branch can close the PR (no reopen)
 
