@@ -14,8 +14,8 @@ Copilot, and any agent that reads markdown instruction files.
 | `codex-skills/` | Generated Codex wrappers (`~/.codex/skills/`) |
 | `commands/` | Slash commands (`~/.claude/commands/`) |
 | `.claude/agents/` | Read-only custom subagents (see [Agents](agents.qmd)) |
-| `memories/` | Persistent notes and preferences (shared with [UCD-SERG lab manual](https://ucd-serg.github.io/lab-manual/)) |
-| `shared/` | Single-topic guidance, fragments shared with [UCD-SERG lab manual](https://ucd-serg.github.io/lab-manual/) |
+| `memories/` | Persistent notes and preferences (shared with VS Code Copilot) |
+| `shared/` | Single-topic guidance fragments shared with [UCD-SERG lab manual](https://ucd-serg.github.io/lab-manual/) |
 
 ## Three ways to use these skills
 
