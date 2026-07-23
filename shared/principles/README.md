@@ -126,7 +126,10 @@ concerns.
 
 Operationalized by:
 [`one-function-per-file`](../coding/one-function-per-file.md),
-[`decompose-to-functions`](../coding/decompose-to-functions.md), and the
+[`decompose-to-functions`](../coding/decompose-to-functions.md),
+[`configurable-parameters`](../coding/configurable-parameters.md) (a unit
+composes across call sites only when what varies between them is exposed
+as a parameter, not buried as a literal), and the
 "highly modular and idiomatic" review priorities in
 [`gha`'s `CLAUDE.md`](https://github.com/d-morrison/gha/blob/main/CLAUDE.md)
 (favor small, single-purpose functions over long monolithic blocks;
