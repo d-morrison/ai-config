@@ -40,8 +40,11 @@ finding → push → post summary → re-request review → repeat until clean.
    comments:
    ```bash
    gh api "repos/<owner>/<repo>/pulls/<N>/reviews/<review-id>" --jq '{state, body}'
-   gh api "repos/<owner>/<repo>/pulls/<N>/comments" --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
+   gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
    ```
+   The comments endpoint returns pages oldest-first -- without `--paginate`
+   a later review's inline comments can sit past the first page and never
+   reach the filter, making a review with real findings look empty.
 
    - **GitHub:**
      ```bash
@@ -126,9 +129,9 @@ finding → push → post summary → re-request review → repeat until clean.
     every round, not just once** -- a reviewer that was unavailable a few
     pushes ago can become available mid-session. A skipped review is never a
     clean external verdict on its own and does not authorize marking the PR
-    as approved -- see *The bar: "fully clean"* below, which requires an
-    external verdict at the current head whenever one is reachable, not just
-    a self-review.
+    as approved -- see [*The bar: "fully clean"*](#the-bar-fully-clean),
+    which requires an external verdict at the current head whenever one is
+    reachable, not just a self-review.
 
 3. **ARD every finding — regardless of severity label.** "Not a blocker",
    "minor", "nit", "optional", "consider", "if you want" are for the user's
