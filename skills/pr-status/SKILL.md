@@ -67,6 +67,22 @@ The reviewer's bot login **varies by API and setup**:
 GitHub tools like `mcp__github_ci__get_ci_status` are an alternative where the
 `gh` JSON parsing gets fragile.)
 
+## Check for a genuine external verdict, not just self-review
+
+The `@claude` comment above isn't the whole picture. Per
+[`fully-clean.md`](../../shared/workflow/fully-clean.md), reporting a PR
+clean/ready requires a **genuine posted verdict at the current head from an
+external reviewer, whenever one is reachable** -- a self-review (posted when
+`@claude` was skipped or stubbed) is a fallback, never a substitute, once an
+external reviewer becomes available again. Formal reviews (e.g. Copilot)
+don't show up in the comments query above at all -- they're a separate
+review object. Run the availability/current-head check from
+[`ardi`'s step 2](../ardi/SKILL.md) (request the reviewer, fetch the matched
+review's body + inline comments at the current `commit_id`, require a
+zero-findings verdict) before declaring a PR ready. Green CI plus a clean
+self-review is not sufficient on its own if an external reviewer is
+reachable.
+
 ## Parse for findings before declaring clean
 
 Read the full latest review body and scan for any "Findings", "Issues",
@@ -77,7 +93,9 @@ the reviewer is still disputing is **open**, not clean — a rebuttal counts onl
 once it convinced the reviewer (they dropped the item).
 
 A PR is only **fully clean / ready to merge** when its review is clean *and*
-all CI workflows are green *and* every inline review thread is resolved (the
+an external reviewer's verdict is clean at the current head whenever one is
+reachable (see *Check for a genuine external verdict* above) *and* all CI
+workflows are green *and* every inline review thread is resolved (the
 only open conversation being the final all-clear and your reply to it — see
 *Check thread-resolution state* below). Do **not** report "ready to merge with
 one minor nit noted" / "harmless as-is" / "can address if you want" — that

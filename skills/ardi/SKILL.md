@@ -40,7 +40,7 @@ finding → push → post summary → re-request review → repeat until clean.
    comments:
    ```bash
    gh api "repos/<owner>/<repo>/pulls/<N>/reviews/<review-id>" --jq '{state, body}'
-   gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
+   gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate --jq '.[] | select(.pull_request_review_id == <review-id>) | {line: (.line // .original_line), body}'
    ```
    The comments endpoint returns pages oldest-first -- without `--paginate`
    a later review's inline comments can sit past the first page and never
@@ -84,7 +84,7 @@ finding → push → post summary → re-request review → repeat until clean.
        gh api "repos/<owner>/<repo>/pulls/<N>/reviews/$review_id" --jq '{state, body}'
        gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate \
          | jq -s --arg rid "$review_id" \
-         '[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line, body}'
+         '[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line: (.line // .original_line), body}'
      else
        echo "no fresh review yet -- wait or re-request"
      fi

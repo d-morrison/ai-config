@@ -82,9 +82,34 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    The bar for `clean`: "Looks good" / "no findings" / "approved" with zero
 >    follow-on bullets under any heading. A rebuttal the reviewer still disputes
 >    is **open**, not clean.
-> 2. **CI state** — `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
+> 2. **External reviewer verdict** -- the comment above is the `@claude` bot
+>    only; a formal Copilot review is a separate object it won't show. Request
+>    it and check for a genuine (non-stub) verdict at the current head:
+>    ```bash
+>    gh api "repos/<owner>/<repo>/pulls/<N>/requested_reviewers" \
+>      -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
+>    head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+>    review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
+>      | jq -s --arg h "$head" \
+>      '[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$h)] | last | .id')"
+>    if [ -n "$review_id" ] && [ "$review_id" != "null" ]; then
+>      gh api "repos/<owner>/<repo>/pulls/<N>/reviews/$review_id" --jq '{state, body}'
+>      gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate \
+>        | jq -s --arg rid "$review_id" \
+>        '[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line: (.line // .original_line), body}'
+>    else
+>      echo "no fresh Copilot review at the current head -- treat as in-flight, not clean"
+>    fi
+>    ```
+>    Clean requires **both** an affirmative zero-new-findings overview (e.g.
+>    "generated no new comments" -- never a literally empty body) **and** zero
+>    matched inline comments. A stub-like non-answer ("ineligible", "reached
+>    their quota limit") is not a verdict. If no formal reviewer is reachable
+>    at all, a self-review is the fallback -- never report clean on green CI
+>    plus self-review alone when an external reviewer is reachable.
+> 3. **CI state** — `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
 >    check, don't just say "red".
-> 3. **Unresolved threads** — count open inline review threads
+> 4. **Unresolved threads** — count open inline review threads
 >    (`READ_PR_REVIEW_COMMENTS`). Run exactly:
 >    ```bash
 >    gh api graphql -f query='query {
@@ -107,13 +132,14 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    resolved), `N open` (e.g. `3 open`) — that many unresolved threads, or
 >    `N+ open (cap)` — the 100-thread cap was hit, **cannot confirm clean** —
 >    treat as unresolved.
-> 4. **Behind main?** — fetch the head ref too (a fresh subagent has no local
+> 5. **Behind main?** — fetch the head ref too (a fresh subagent has no local
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.
 >    >0 means main has moved ahead.
 >
 > Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `N open` with the
-> headline finding / `none found` / `in-flight`), threads (`resolved` / `N open`
+> headline finding / `none found` / `in-flight`), external (`clean` / `N open`
+> / `no verdict at head` / `self-review only`), threads (`resolved` / `N open`
 > / `N+ open (cap)`), behind-main (`up to date` / `N commits`).
 
 ### 3. Assemble (orchestrator)
@@ -127,7 +153,7 @@ to the series version — only the way the signals are gathered changed.
 ### Graceful degradation to series
 
 If subagent fan-out is unavailable (no `Agent` tool in the session), fall back
-to gathering the four signals **in series** — loop the same per-PR gather over
+to gathering the five signals **in series** -- loop the same per-PR gather over
 each PR from step 1. The output is the same; it's just slower.
 
 ## Read the LATEST review (the subtle part)
@@ -154,7 +180,7 @@ rebuttal only counts once it convinced the reviewer (they dropped the item).
 
 A Markdown table, one row per open PR, with these columns:
 
-| PR | Title | Branch | CI | Review | Threads | Behind main |
+| PR | Title | Branch | CI | Review | External | Threads | Behind main |
 
 - **PR** — make the number a markdown link,
   `[#<N>](https://github.com/<owner>/<repo>/pull/<N>)` (repo policy — never a
@@ -163,6 +189,11 @@ A Markdown table, one row per open PR, with these columns:
 - **Review** — `clean`, `N open` (with the headline finding), `none found`
   (filter didn't match / no review yet), or `in-flight` if a review run is
   still going.
+- **External** -- `clean` (a genuine, non-stub Copilot verdict at the current
+  head, per subagent item 2), `N open` (findings in that verdict), `no
+  verdict at head` (Copilot hasn't posted at the current commit yet -- treat
+  as in-flight, not clean), or `self-review only` (no external reviewer was
+  reachable; a self-review is not sufficient once one becomes reachable).
 - **Threads** — `resolved` (none open), `N open` (unresolved inline review
   threads), or `N+ open (cap)` (100-thread cap hit — cannot confirm clean).
 - **Behind main** — `up to date` or `N commits` (offer `sync-pr-branch`).
@@ -170,10 +201,12 @@ A Markdown table, one row per open PR, with these columns:
 Below the table, list each PR's open findings briefly (or "none"), and call out
 anything needing action: branches behind main, failing CI, drafts, or reviews
 that returned `null`. Do **not** label a PR "ready to merge" unless it is
-**fully clean** — its review is genuinely clean *and* all CI workflows are
-green *and* it's not behind main *and* every inline review thread is resolved
-(the only open conversation being the final all-clear and your reply). Never
-hedge with "ready except for one nit."
+**fully clean** -- its review is genuinely clean *and* an external reviewer's
+verdict is `clean` at the current head whenever one is reachable (`self-review
+only` does not qualify once a reachable reviewer exists) *and* all CI
+workflows are green *and* it's not behind main *and* every inline review
+thread is resolved (the only open conversation being the final all-clear and
+your reply). Never hedge with "ready except for one nit."
 
 ## Why fan-out is safe here (and the write-loops stay series)
 
