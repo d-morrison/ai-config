@@ -223,6 +223,8 @@
 - **AI memories, skills, and commands never stay local-only.** When I capture a durable learning, commit it to the right repo via PR — GENERAL/cross-project learnings go to `d-morrison/ai-config` (as bullets in the right `memories/*.md` topic file); PROJECT-SPECIFIC learnings go to that project's own repo (its `CLAUDE.md` / agent docs / `.claude/memories/`).
   A memory kept only under `~/.claude/projects/<path>/memory/` or `~/.codex/memories/` is invisible to other sessions, machines, and humans, and rots silently — so migrate it.
   Capturing a learning isn't done until it's committed where the right audience will see it.
+- In Codex sessions, treat `d-morrison/ai-config` as the canonical home for cross-project memories even if a local `~/.codex/memories/` store is present.
+  The local store is not the durable source of truth; if ai-config access is missing from the environment, restore access first rather than writing the memory only locally.
 - When committing, stage the SPECIFIC files you touched — NEVER `git add -A`.
   The working tree often holds unrelated in-flight edits (the user's own UMS/skill commits, another draft); `git add -A` silently sweeps those into your commit and onto your PR, bloating the review and extending the cycle.
   List paths explicitly, and `git status` before committing to confirm only intended files are staged. (Learned the hard way: a `git add -A` swept the user's `scout-peers` skill into an unrelated `/prune` PR, adding several extra review rounds.)
@@ -351,6 +353,10 @@
 - When writing multi-step workflow instructions, order the steps to match the actual execution sequence.
   A reviewer flagged on ai-config#186 that "Use the existing PR branch" was placed before "Claim a GitHub PR/issue" in CLAUDE.md, even though you must claim the PR before you look up and switch to its branch.
   Wrong ordering misleads the reader about the correct flow.
+- When a user explicitly says to contribute to an existing PR (for example "this should go on #280"), keep the work on that PR's head branch and push there.
+  Do not open a new sibling PR to `main` unless the user asks to supersede the original; if the documented push-scope exception applies (e.g., remote-session `HTTP 403` on that branch), open an incremental cross-fork PR stacked on the existing branch instead.
+- After pushing to any non-default branch for maintenance work (including ai-config memory/skill branches), explicitly verify whether that branch already has an open PR in the intended base repo before ending the task.
+  Check with `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open"` — not `gh pr list --repo ... --head <owner>:<branch>`, which silently returns empty for an owner-qualified head even when a matching PR exists (verified directly: it returned `[]` against a real open PR that the bare branch-only form found). If none exists and upstream is accessible, prepare explicit title and body, show the draft for approval (per the "always show the draft before posting" rule below), then create non-interactively with `--repo`/`--base`/`--head`/`--title`/`--body-file`/`--reviewer`; otherwise hand off that upstream PR creation is still required.
 - Repo-specific knowledge does NOT belong in ai-config.
   When a UMS/learnings pass turns up a convention, gotcha, or workflow note tied to one repo we own, check it INTO that repo's own agent docs (`CLAUDE.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`) via a PR, so the whole team and every `@claude` session working there sees it — not just my private ai-config memory.
   The `memories/repo/` pattern is retired (don't add to it; `memories/repo/bcs.md` was relocated into ucdavis/bcs on ai-config#226, and `sparta.md` was relocated into Lacaedemon/sparta on ai-config#248). ai-config still owns genuinely cross-repo lore (`memories/debugging.md`, `tools.md`) and my own preferences/workflows — only the single-repo notes move out. (Learned on ai-config#226.)
@@ -540,7 +546,11 @@ limits) before using up claude quota"). The `delegate-to-codex` skill (alias
 - Commits by `dem-extra1` to repos owned by `d-morrison`, `ucd-serg`, or `ucdavis` → the true author is `d-morrison` (demorrison@ucdavis.edu); set `--author="Douglas Morrison <demorrison@ucdavis.edu>"` (or amend) when the committing identity is `dem-extra1`.
 - Commits to `sparta` by `d-morrison` → the true author is `dem-extra1` (dougmor@gmail.com); set `--author="dem-extra1 <dougmor@gmail.com>"` when the committing identity is `d-morrison`.
 
-## Code organization defaults
+## Code organization
+- One function per file, across languages (not just R) --- the exception is a trivial two-line wrapper/helper, not a general "where practical" hedge or a "major function" loophole that lets other private helpers ride along (see `shared/coding/one-function-per-file.md`).
+- Keep source files under ~100 lines of code, splitting large helpers into their own files.
 
-- One function per file, across languages (not just R) — the exception is a trivial two-line wrapper/helper, not a "major function" loophole that lets other private helpers ride along (see `shared/coding/one-function-per-file.md`).
-- Keep source files around 100 lines where practical by splitting large helpers into their own files.
+## Memory and skill storage
+- Never leave durable memories or skills as local-only files (e.g., directly under `~/.codex/`).
+- Commit cross-project memories/skills to `d-morrison/ai-config`; commit project-specific guidance to that project's own repo.
+- If ai-config is temporarily out of scope in the current session, treat local storage as short-lived staging and hand off the required upstream PR.

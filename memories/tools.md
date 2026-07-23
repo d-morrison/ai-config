@@ -1,5 +1,21 @@
 # Local tools & CLIs
 
+## Copilot tool availability can change mid-session
+
+- Honor `tools_changed_notice` events literally. If a notice says a tool is no
+  longer available (e.g., `create`, `edit`), switch immediately to still-listed
+  alternatives (typically `apply_patch` + `view` + `bash`) instead of retrying
+  the removed tool.
+- For UMS/maintenance passes this matters because stale muscle memory ("use
+  create/edit") can fail repeatedly after the tool list changes.
+
+## Operational checklist pattern for write actions
+
+- **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
+- **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F "body=@<file>"`; avoid inline double-quoted body args.
+- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead, with the branch passed as a `-f` GET field rather than interpolated into the raw URL — a branch name containing `#`, `&`, or `+` breaks a hand-built query string but is passed through correctly as a field: `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'`.
+- **Failure signature:** stderr like `command not found` during a `gh`/`glab ... --body` call can mean two different things — check which first, probing whichever CLI actually failed (`which gh` or `which glab`, not always `gh`): if `gh` itself is unavailable (expected in remote/web sessions), fall back to the mapped MCP tool instead of retrying the CLI — `tool-mappings.yml` has no `glab` operations, so a missing `glab` has no MCP fallback; hand off or block instead. If the CLI that failed is present, the likely cause is shell-expanded backticks mangling the body — re-run using a file-backed body.
+
 ## gh (GitHub CLI)
 - `gh` opens a pager (alternate buffer) that hangs the agent terminal.
 - Always disable it: pipe `| cat` or set `GH_PAGER=cat` (e.g. `gh pr view 116 | cat`).
@@ -229,6 +245,10 @@
   single `pull_request_read` `get` compared against that SHA — would have
   settled it in one call. See
   [`efficient-pr-babysitting`](../shared/workflow/efficient-pr-babysitting.md).)
+- **`gh pr view --json checks` is not a valid field.** When you need the
+  combined status/check rollup from `gh pr view`, ask for `statusCheckRollup`
+  instead; when you need the actual CI conclusions, use `gh pr checks` or the
+  REST check-runs endpoint.
 - **`mcp__github__push_files` strips executable bits** — files pushed via this
   tool always land with mode `100644`, regardless of their original mode. Scripts
   that were `100755` become non-executable. This is harmless when the workflow
@@ -667,6 +687,28 @@ by #328.)
   post-merge tidy ran the fallback form inside a session worktree; the
   primary showed nine phantom staged reversals of the just-merged PR until
   restored.)
+
+## Git — if a target branch is already checked out in another worktree, push by refspec instead of switching
+- Attempting to `checkout` a branch already active elsewhere fails with
+  `fatal: '<branch>' is already used by worktree at ...`.
+- When you need to land your current commit on that branch (for example, to
+  update an existing PR branch), avoid switching branches: push your current
+  HEAD directly to the target remote branch with
+  `git push "<remote>" HEAD:"<target-branch>"`. Note that this pushes **all commits
+  reachable from HEAD**, not just your latest one; before pushing, verify the
+  outgoing range is safe — the target branch should be an ancestor of HEAD
+  (`git merge-base --is-ancestor "<target-branch-tip>" HEAD`), and there should be
+  no unrelated commits between them — to avoid advancing the PR branch beyond
+  what you intended. Don't hard-code `origin` without
+  checking: in a fork/multi-remote setup, `origin` may be your own fork while
+  the existing PR's head branch lives on a different remote (e.g.
+  `upstream`), so pushing to `origin` silently creates/advances a same-named
+  branch there instead of updating the intended PR. Confirm which remote
+  actually owns the PR's head (`git remote -v`, or match the PR's
+  `head.repo` from `gh pr view "<N>" --json headRepositoryOwner,headRepository`)
+  before picking the refspec's remote.
+- This avoids clobber-prone workarounds (`checkout -B`) and avoids opening a
+  new sibling PR by mistake.
 
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.

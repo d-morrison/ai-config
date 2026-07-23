@@ -279,3 +279,12 @@ These are either machine-specific, sensitive, or pure session state:
 If a per-machine variation appears that's worth syncing (e.g., a global
 `CLAUDE.md`), add it as a top-level entry here and update `bootstrap.sh`
 only if it needs special handling beyond a directory symlink.
+
+## Similar projects
+
+Other AI coding-agent skill and config repos worth a look for ideas or
+comparison:
+
+- [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) —
+  production-grade engineering skills for AI coding agents (Claude Code,
+  Codex, Cursor, and others).
