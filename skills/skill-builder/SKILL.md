@@ -107,6 +107,11 @@ allowed-tools:               # real skill: list its tools. alias: mirror the can
 
 ## Conventions (match the existing family)
 
+- **Decide checklist fit explicitly.** Before adding a checklist section to a
+  skill (new or extended), apply
+  [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md):
+  add one only for repeatable, high-cost, mechanically verifiable failure
+  modes. If the skill is mostly judgment/exploration, skip checklist boilerplate.
 - **Pair short names with spelled-out aliases.** When the canonical skill has an
   acronym/short name (`gi`, `sup`, `ums`, `dc`), also create the spelled-out
   alias dir (`grab-issue`, `send-upstream`, `update-memories-and-skills`) — and
