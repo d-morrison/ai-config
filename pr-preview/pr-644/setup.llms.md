@@ -49,8 +49,10 @@ Claude Code installs the plugin at session start. Skills are namespaced: `/ai-co
 
 Or try it interactively in any Claude Code session:
 
-    /plugin marketplace add d-morrison/ai-config
-    /plugin install ai-config@d-morrison
+``` text
+/plugin marketplace add d-morrison/ai-config
+/plugin install ai-config@d-morrison
+```
 
 ## `@claude` bot on PRs
 

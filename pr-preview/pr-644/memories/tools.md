@@ -13,7 +13,7 @@
 
 - **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
 - **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F body=@<file>`; avoid inline double-quoted body args.
-- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead: `gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<branch>&state=open" --jq '.[] | {number, url, state}'`.
+- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead, with the branch passed as a `-f` GET field rather than interpolated into the raw URL — a branch name containing `#`, `&`, or `+` breaks a hand-built query string but is passed through correctly as a field: `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'`.
 - **Failure signature:** stderr like `command not found` during `gh ... --body` usually indicates shell-expanded backticks; treat as a malformed post, not a transient CLI error.
 
 ## gh (GitHub CLI)
@@ -689,7 +689,12 @@ by #328.)
 - When you need to land your current commit on that branch (for example, to
   update an existing PR branch), avoid switching branches: push your current
   HEAD directly to the target remote branch with
-  `git push <remote> HEAD:<target-branch>`. Don't hard-code `origin` without
+  `git push <remote> HEAD:<target-branch>`. Note that this pushes **all commits
+  reachable from HEAD**, not just your latest one; before pushing, verify the
+  outgoing range is safe — the target branch should be an ancestor of HEAD
+  (`git merge-base --is-ancestor <target-branch-tip> HEAD`), and there should be
+  no unrelated commits between them — to avoid advancing the PR branch beyond
+  what you intended. Don't hard-code `origin` without
   checking: in a fork/multi-remote setup, `origin` may be your own fork while
   the existing PR's head branch lives on a different remote (e.g.
   `upstream`), so pushing to `origin` silently creates/advances a same-named
@@ -3331,3 +3336,39 @@ much more wall-clock/tokens than its own diff would justify, checking
 of problem rather than trusting the subagent's own narration that it's
 "still verifying." (Sparta `gii-mwc` session, 2026-07-19, `tools/check.sh`'s
 `comments`/`units`/`patch_coverage` steps.)
+
+## Windows Git Bash: `python`/`python3` may resolve to the Store stub; use `py`
+
+On at least one Windows setup, `python` and `python3` both resolve on
+`PATH` inside the Git Bash tool, but only to the Windows Store
+install-shortcut stub. They print `Python was not found; run without
+arguments to install from the Microsoft Store, or disable this shortcut
+from Settings > Apps > Advanced app settings > App execution aliases`
+instead of running the script, with a nonzero exit code. The `py` launcher
+(the standard Windows Python launcher, installed alongside python.org
+Python) works fine and should be the first thing tried when `python3 -c
+"..."` fails with that specific message — don't waste a retry loop guessing
+at other causes. When scripting a small one-off transform inline (e.g. a
+Bash tool call doing a targeted string replacement Edit's exact-match
+failed on), resolve which launcher actually works before using it, rather
+than relying on the combined exit status of `A || B` (which tells you
+*something* succeeded, not *which side*): probe each candidate
+non-mutating and stop if neither works, rather than assuming the last one
+must be fine. Use `if`/`elif`, not a `||`-chained subshell assignment
+(`(cmd && VAR=x) || ...` looks like it works but the subshell's `VAR=x`
+never reaches the parent shell — verified this by testing both forms
+before publishing this note) —
+```sh
+if python3 -c "pass" >/dev/null 2>&1; then PY=python3
+elif py -c "pass" >/dev/null 2>&1; then PY=py
+else echo "no working python launcher found"; exit 1
+fi
+```
+— then invoke `$PY` for the real transform. This both avoids risking a
+second, possibly destructive run of a real script under a bare `||`
+fallback, and fails loudly instead of proceeding with an unverified
+command if neither launcher actually works. (ai-config#635,
+2026-07-22/23: hit repeatedly running `scripts/validate-skills.py`, and
+again scripting a one-off text replacement after an `Edit` tool call's
+`old_string` failed to match despite `grep` showing byte-identical content
+in the file.)
