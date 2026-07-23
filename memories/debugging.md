@@ -476,16 +476,24 @@ finally trips over it. (ucdavis/bcs#349.)
 
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has a destructive failure
-mode when the fix is still uncommitted: `git checkout "<file>"` / `git restore
-"<file>"` restores from HEAD, which silently discards the whole uncommitted fix
-along with the temporary revert — there is nothing to restore back to.
+mode when the fix is still uncommitted: `git checkout -- "<file>"` / `git
+restore "<file>"` restores from the **index** (normally the same content as
+HEAD, but not when something's staged — verified: staging one version then
+running plain `git checkout <file>` restored the staged content, not HEAD's),
+which silently discards the whole uncommitted fix along with the temporary
+revert — there is nothing to restore back to. Use `--` before the path (or
+`git restore`, which doesn't have this ambiguity) — a bare `git checkout
+<file>` is parsed as a branch-switch attempt first if a branch happens to
+share the file's name (verified: `git branch <file>` then plain `git checkout
+<file>` switched branches instead of restoring the file).
 Sequence it as: **commit the fix**, then revert temporarily (`git stash push
 "<file>"`, or a scripted counter-edit), prove the failure, then `git stash pop`
 / re-checkout the committed state. If a counter-edit was applied with
 sed/perl instead of stash, restoring via `git checkout` is only safe because
-the fix is already in HEAD. (Self-hit on Lacaedemon/sparta PR #870,
+the fix is already in HEAD (and the index matches it — nothing else staged).
+(Self-hit on Lacaedemon/sparta PR #870,
 2026-07-15: proved the overlap test failed against the density-blind layout
-via a perl counter-edit, then `git checkout scripts/SelectionManager.gd` to
+via a perl counter-edit, then `git checkout -- scripts/SelectionManager.gd` to
 "restore" — which discarded four uncommitted fix edits; all were re-applied
 from conversation context, but only because they were small and recent.)
 
