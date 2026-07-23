@@ -491,16 +491,21 @@ finally trips over it. (ucdavis/bcs#349.)
 
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has a destructive failure
-mode when the fix is still uncommitted: `git checkout -- "<file>"` / `git
-restore "<file>"` restores from the **index** (normally the same content as
-HEAD, but not when something's staged — verified: staging one version then
-running plain `git checkout <file>` restored the staged content, not HEAD's),
-which silently discards the whole uncommitted fix along with the temporary
-revert — there is nothing to restore back to. Use `--` before the path (or
-`git restore`, which doesn't have this ambiguity) — a bare `git checkout
-<file>` is parsed as a branch-switch attempt first if a branch happens to
-share the file's name (verified: `git branch <file>` then plain `git checkout
-<file>` switched branches instead of restoring the file).
+mode when the fix is still uncommitted, for two separate reasons.
+
+First, `git checkout -- "<file>"` / `git restore "<file>"` restores from the
+**index**, not HEAD. Normally the index matches HEAD, so this goes unnoticed
+-- but not when something's staged (verified: staged one version, ran plain
+`git checkout <file>`, got the staged content back, not HEAD's). That
+silently discards the whole uncommitted fix along with the temporary revert
+-- there is nothing to restore back to.
+
+Second, a bare `git checkout <file>` (no `--`) is parsed as a branch-switch
+attempt first if a branch happens to share the file's name (verified:
+`git branch <file>`, then plain `git checkout <file>` switched branches
+instead of restoring the file).
+
+Use `--` before the path, or `git restore` (which has neither ambiguity).
 Sequence it as: **commit the fix**, then revert temporarily (`git stash push
 "<file>"`, or a scripted counter-edit), prove the failure, then `git stash pop`
 / re-checkout the committed state. If a counter-edit was applied with
