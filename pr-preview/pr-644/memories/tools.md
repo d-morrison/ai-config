@@ -689,7 +689,14 @@ by #328.)
 - When you need to land your current commit on that branch (for example, to
   update an existing PR branch), avoid switching branches: push your current
   HEAD directly to the target remote branch with
-  `git push origin HEAD:<target-branch>`.
+  `git push <remote> HEAD:<target-branch>`. Don't hard-code `origin` without
+  checking: in a fork/multi-remote setup, `origin` may be your own fork while
+  the existing PR's head branch lives on a different remote (e.g.
+  `upstream`), so pushing to `origin` silently creates/advances a same-named
+  branch there instead of updating the intended PR. Confirm which remote
+  actually owns the PR's head (`git remote -v`, or match the PR's
+  `head.repo` from `gh pr view <N> --json headRepositoryOwner,headRepository`)
+  before picking the refspec's remote.
 - This avoids clobber-prone workarounds (`checkout -B`) and avoids opening a
   new sibling PR by mistake.
 
