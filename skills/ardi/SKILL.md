@@ -16,29 +16,6 @@ finding → push → post summary → re-request review → repeat until clean.
 
 ## Procedure
 
-### Per-round checklist
-
-Before advancing to the next round, confirm each box:
-
-- [ ] The latest review analyzed is for the current head commit (not a stale
-      prior run).
-- [ ] Every finding from that review has an ARD disposition.
-- [ ] If code changed, main was synced in first when needed, then fixes were
-      pushed.
-- [ ] ARD summary was posted and corresponding inline-thread replies/resolutions
-      were handled.
-- [ ] Re-review trigger was chosen correctly: push-trigger only when code was
-      pushed; explicit mention/dispatch only when no code was pushed.
-
-### Fully-clean exit checklist
-
-Before declaring "clean", confirm each box:
-
-- [ ] All workflows and check runs are green **and completed** for the current
-      head.
-- [ ] Latest review has zero findings and no disputed rebuttals.
-- [ ] Every inline review thread is resolved except the final all-clear exchange.
-
 1. **Identify and claim the PR/MR.** Use the current branch's open MR, or
    the one the user specified. Post a brief claim comment (`COMMENT_PR`) so a
    parallel `@claude` CI run or another person doesn't start a colliding
@@ -221,6 +198,21 @@ Before declaring "clean", confirm each box:
    1.5. Re-check after each resolution — new ones can appear at any time.
    This turns idle wait time into productive conflict prevention.
 
+### Per-round checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
+confirm each box before advancing to the next round:
+
+- [ ] The latest review analyzed is for the current head commit (not a stale
+      prior run).
+- [ ] Every finding from that review has an ARD disposition.
+- [ ] If code changed, main was synced in first when needed, then fixes were
+      pushed.
+- [ ] ARD summary was posted and corresponding inline-thread replies/resolutions
+      were handled.
+- [ ] Re-review trigger was chosen correctly: push-trigger only when code was
+      pushed; explicit mention/dispatch only when no code was pushed.
+
 7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
    "fully clean"* below — zero findings **and** all CI workflows and check
    runs green and completed **and** every inline thread resolved). Don't exit
@@ -264,6 +256,16 @@ the only conversation left open is the final all-clear exchange — the
 reviewer's all-clear comment (usually a top-level PR comment, not an inline
 thread) and your reply to it. (Thread mechanics live in the `ard` skill, step
 4b.)
+
+### Fully-clean exit checklist
+
+Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
+confirm each box before declaring "clean":
+
+- [ ] All workflows and check runs are green **and completed** for the current
+      head.
+- [ ] Latest review has zero findings and no disputed rebuttals.
+- [ ] Every inline review thread is resolved except the final all-clear exchange.
 
 ## Asymptotic-noise guard and deadlocks
 
