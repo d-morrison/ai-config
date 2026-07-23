@@ -13,7 +13,7 @@
 
 - **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
 - **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F body=@<file>`; avoid inline double-quoted body args.
-- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner, e.g. `gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<branch>`), and confirm the intended object actually exists/updated.
+- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner) and confirm the intended object actually exists/updated. `gh pr list --head <owner>:<branch>` silently returns empty for an owner-qualified head even when a matching PR exists — verified directly against a real open PR (`gh pr list --head d-morrison:ums-pr635-lessons` returned `[]`; the bare `--head ums-pr635-lessons` found it). Use the REST API instead: `gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<branch>&state=open" --jq '.[] | {number, url, state}'`.
 - **Failure signature:** stderr like `command not found` during `gh ... --body` usually indicates shell-expanded backticks; treat as a malformed post, not a transient CLI error.
 
 ## gh (GitHub CLI)

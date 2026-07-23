@@ -98,9 +98,15 @@ committed pass.
    was committed — verify with `git status` / `git log` before any `git reset
    --hard`, or you'll silently discard the still-uncommitted edits.
 
-   **After every push in UMS, verify PR state for the current branch in the intended base repo.** Run
-   `gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<current-branch> --json number,url,state`
-   (for `dem-extra1/ai-config`, that is `--repo d-morrison/ai-config --head dem-extra1:<current-branch>`).
+   **After every push in UMS, verify PR state for the current branch in the intended base repo.** `gh pr list --head <owner>:<branch>` silently returns
+   empty for an owner-qualified head — it only matches a bare branch name,
+   even when a matching PR genuinely exists (verified directly: `gh pr list
+   --head d-morrison:ums-pr635-lessons` returned `[]` against a real open PR
+   on that exact branch, while `gh pr list --head ums-pr635-lessons` found
+   it). Query the REST API instead, whose `head` filter does honor the
+   owner-qualified form:
+   `gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<current-branch>&state=open" --jq '.[] | {number, url, state}'`
+   (for `dem-extra1/ai-config`, that is `repos/d-morrison/ai-config/pulls?head=dem-extra1:<current-branch>`).
    If no open PR exists and upstream is accessible, open it immediately as cross-fork
    (`gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch>`)
    and request `d-morrison` as reviewer. If upstream is not accessible in-session,
@@ -109,7 +115,7 @@ committed pass.
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
    - [ ] **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
-   - [ ] **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<branch> --json number,url,state`)
+   - [ ] **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api "repos/<upstream-owner>/<repo>/pulls?head=<head-owner>:<branch>&state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
    - [ ] **Recovery signature:** if shell logs `command not found` during a comment/create command, assume command substitution mangled the body; re-run using a file-backed body and re-check posted content
 
 5. **Report what was updated.** Provide a brief summary table:
