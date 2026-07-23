@@ -282,7 +282,7 @@ only if it needs special handling beyond a directory symlink.
 
 ## Similar projects
 
-Other portable, git-synced AI agent config repos worth a look for ideas or
+Other AI coding-agent skill and config repos worth a look for ideas or
 comparison:
 
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) —
