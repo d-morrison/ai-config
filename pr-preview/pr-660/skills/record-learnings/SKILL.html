@@ -360,7 +360,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="repository-specific-facts-that-projects-own-repo" class="level3">
 <h3 class="anchored" data-anchor-id="repository-specific-facts-that-projects-own-repo">Repository-specific facts (that project’s own repo)</h3>
 <p>For facts specific to ONE repo (build quirks, project conventions, CI behavior), if it’s a repo <strong>we own</strong>: commit them to <strong>that repo’s own agent docs</strong> via a PR (<code>CLAUDE.md</code>, <code>.github/copilot-instructions.md</code>, or whatever agent-doc infrastructure it already has), so the whole team and every <code>@claude</code> session there can see them. If that repo has no agent-doc infrastructure yet, write to its local Claude project memory directory instead — <code>~/.claude/projects/&lt;project-path&gt;/memory/</code> — as <strong>short-lived staging only, not a durable destination</strong>, and flag that a PR adding agent-doc infrastructure to that repo (plus migrating the staged memory there) is still needed. The project path is the repo’s directory path with <code>/</code> replaced by <code>-</code> — e.g.&nbsp;<code>/Users/you/Documents/GitHub/rme</code> → <code>~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/</code>. Update <code>MEMORY.md</code> in that directory as an index when you used this local-staging fallback — not when the fact was committed directly to the owned repo’s own agent docs, which needs no local copy.</p>
-<p>For an <strong>external repo we don’t own</strong>, never open a direct PR autonomously — follow <a href="../../shared/workflow/upstream-issues.md"><code>upstream-issues</code></a>: check its contribution policy first, then draft and get explicit user approval before posting anything. Stage the fact in local Claude project memory (short-lived, not durable) until approved.</p>
+<p>For an <strong>external repo we don’t own</strong>, never open a direct PR autonomously — follow <a href="../../shared/workflow/upstream-issues.md"><code>upstream-issues</code></a>: check its contribution policy first, then draft and get explicit user approval before posting anything. Stage the fact in local Claude project memory (short-lived, not durable) until approved, and update that directory’s <code>MEMORY.md</code> as an index entry, same as the owned-repo staging fallback above.</p>
 </section>
 <section id="shared-ai-config-skills-.claudeskills" class="level3">
 <h3 class="anchored" data-anchor-id="shared-ai-config-skills-.claudeskills">Shared ai-config skills (<code>~/.claude/skills/</code>)</h3>
@@ -427,6 +427,12 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Categorize</strong> — is it user-wide, repo-specific, or a reusable workflow?</li>
 <li><strong>Check existing notes</strong> — read the target file first to avoid duplicates and maintain organization</li>
 <li><strong>Write concisely</strong> — bullet points, not prose. Include the <em>why</em> not just the <em>what</em>. If you created a <em>new</em> file under <code>/memories/</code>, also add a row for it to <code>memories/MEMORY.md</code> (the index)</li>
+<li><strong>Deliver, per where step 2/3 routed it:</strong>
+<ul>
+<li><strong>Repository-specific fact, a repo we own</strong> — commit it to that repo’s own agent docs via a PR (<code>CLAUDE.md</code>, <code>.github/copilot-instructions.md</code>, or whatever it already has). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory instead as short-lived staging only (update that directory’s <code>MEMORY.md</code> as an index entry), and hand off that a PR adding agent-doc infrastructure (plus migrating the staged memory there) is still needed.</li>
+<li><strong>Repository-specific fact, an external repo we don’t own</strong> — never open a direct PR autonomously; follow <code>upstream-issues</code> (policy check, draft, explicit user approval), staging in local project memory (update <code>MEMORY.md</code> there too) until approved.</li>
+<li><strong>User-wide memory</strong> — commit and push to <code>d-morrison/ai-config</code> (branch + PR if none is open yet).</li>
+</ul></li>
 <li><strong>If it’s a skill (or a dedicated fan-out worker)</strong> — hand off to <code>spot-skill-opportunities</code> to judge whether the pattern is genuinely recurring (not a one-off), then to <code>skill-builder</code> to scaffold a new user-invocable workflow in <code>~/.claude/skills/</code> (symlink to the cloned repo; discover the repo path with <code>git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel</code>), or to <code>agent-builder</code> to scaffold a persistent read-only subagent in <code>.claude/agents/</code> when the pattern is really a worker persona a heavy skill’s fan-out step needs.</li>
 </ol>
 </section>
@@ -447,7 +453,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="relationship-to-other-skills" class="level2">
 <h2 class="anchored" data-anchor-id="relationship-to-other-skills">Relationship to other skills</h2>
 <ul>
-<li><strong><code>spot-skill-opportunities</code></strong> — the dedicated recognition step for the “is this a skill?” case in step 5 above; hand off to it rather than judging recurrence inline here.</li>
+<li><strong><code>spot-skill-opportunities</code></strong> — the dedicated recognition step for the “is this a skill?” case in step 6 above; hand off to it rather than judging recurrence inline here.</li>
 <li><strong><code>skill-builder</code></strong> — scaffolds the <code>SKILL.md</code> once <code>spot-skill-opportunities</code> (or this skill directly) decides a new one is warranted.</li>
 <li><strong><code>agent-builder</code></strong> — the same construction step for a dedicated read-only fan-out worker (<code>.claude/agents/&lt;name&gt;.md</code>) rather than a user-invocable skill.</li>
 <li><strong><code>ums</code></strong> — the reflective, full-context-sweep counterpart to this skill’s in-place, fact-at-a-time recording. Both fire proactively, as the learning or fact arises; <code>ums</code> additionally runs as a backstop before <code>/clear</code>.</li>
