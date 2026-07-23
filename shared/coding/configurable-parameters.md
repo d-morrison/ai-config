@@ -8,13 +8,24 @@ change it.
 
 ## The exemption
 
-**Empirically known physical constants** (gravity, unit conversions,
-measured material properties) and **true mathematical constants** are
-exempt --- values with an external provenance that no caller has any
-business varying. The test: would a caller ever legitimately want a
-different value for a different call, run, or configuration? If yes, it's a
-parameter. If the value is fixed by the physical world or by mathematics
-itself, it stays a literal.
+**Universal physical constants** (the speed of light, Avogadro's number,
+unit-conversion factors between fixed units) and **true mathematical
+constants** (pi, e) are exempt --- values with no legitimate reason for any
+caller to want a different one, ever. The test: would a caller ever
+legitimately want a different value for a different call, run, or
+configuration? If yes, it's a parameter. If the value is fixed by the
+physical world or by mathematics itself and cannot vary by context, it
+stays a literal.
+
+**Not exempt: quantities that are measured or vary by context.** Local
+gravitational acceleration varies by latitude and altitude (a caller
+modeling a specific location may need a different `g`); a material
+property varies by material and environment (a caller working with a
+different material needs a different value). These look constant at a
+single call site, but they still fail the variability test above --- a
+different caller, a different location, or a different material
+legitimately wants a different number. Treat them as parameters with the
+commonly used value as the default, not as exemptions.
 
 ## Distinct from avoid-hardcoding-external-data
 
@@ -36,10 +47,11 @@ and when call sites have accumulated downstream state that assumes the old
 value (timing, layout, positioning baked into other artifacts), that
 edit can cascade into a large, unplanned retiming/rework sweep instead of
 a single call-site argument change.
-(Lacaedemon/sparta#945 changed a shared compile-time battlefield-size
-constant and had to retime 19 existing clips that had baked in the old
-size; Lacaedemon/sparta#960 tracks moving to per-demo configurability to
-avoid repeating this.)
+(Lacaedemon/sparta#946 changed a shared compile-time battlefield-size
+constant and had to audit all 19 default-spawn demo clips, retargeting or
+retiming 8 of them that had baked in the old geometry;
+Lacaedemon/sparta#964 later moved to per-battle map definitions so this
+class of change no longer needs a repo-wide clip sweep.)
 
 ## In review
 
