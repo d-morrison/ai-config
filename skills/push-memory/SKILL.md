@@ -54,10 +54,11 @@ Two things route elsewhere before you go further:
   `.github/copilot-instructions.md`, or whatever it already has) via a PR,
   falling back to its local Claude project memory
   (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only
-  when it has no agent-doc infrastructure yet — in that case, hand off that
+  when it has no agent-doc infrastructure yet — in that case, update
+  `MEMORY.md` in that directory as an index entry, and hand off that
   a PR adding agent-doc infrastructure to that repo (plus migrating the
   staged memory there) is still needed. If it's an **external repo we
-  don't own**, never open a direct PR — follow
+  don't own**, never open a direct PR **autonomously** — follow
   [`upstream-issues`](../../shared/workflow/upstream-issues.md) (policy
   check, draft, explicit user approval) and stage in local project memory
   until approved, updating that directory's `MEMORY.md` as an index entry

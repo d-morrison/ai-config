@@ -89,7 +89,7 @@ committed pass.
    *Already on the open PR's branch* (e.g. mid-ARDI): commit + push to it.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-   git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+   git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
    git push origin HEAD                   # PUSH
    ```
@@ -101,7 +101,7 @@ committed pass.
    ```bash
    cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
    git fetch origin main && git checkout -b "ums-<topic>" origin/main   # FETCH + CREATE_BRANCH
-   git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+   git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
    git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
    ```
@@ -116,7 +116,7 @@ committed pass.
    base="$(gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name)"
    git fetch "https://github.com/<upstream-owner>/<repo>.git" "$base"   # FETCH — the actual upstream, not `origin` (your fork)
    git checkout -b "ums-<topic>" FETCH_HEAD   # CREATE_BRANCH — from the fetched upstream ref, not a stale origin/main
-   git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+   git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
    git push -u origin HEAD   # PUSH — to your fork; PR creation is handled by the post-push verification step below
    ```
