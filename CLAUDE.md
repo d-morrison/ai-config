@@ -312,7 +312,7 @@ Either way: don't wait on the bot indefinitely — do the review yourself and ke
 Before self-reviewing, check whether a *different* configured reviewer (e.g. Copilot code review, if the repo/org has it) is actually available, not just whether the `@claude` bot specifically produced a verdict — the two can fail independently (one quota-exhausted, the other working fine, or vice versa).
 If an external AI review is obtainable, request it (and wait for a verdict posted at the PR's *current* head commit — a stale review from before your latest push doesn't count) instead of self-reviewing, even if you've been self-reviewing earlier rounds of the same PR.
 Re-check availability each round: a reviewer that was ineligible/quota-exhausted a few pushes ago (a missing license, a temporary rate limit) can become available mid-session, and self-review should stop being the default the moment it does.
-Before reporting any PR "ready for review" or "fully clean," confirm a genuine all-clear review is posted at the current head — not just that CI is green and threads are resolved; a clean state you inferred yourself doesn't satisfy this.
+Before reporting a PR **fully clean** / **ready** (ARDI's own terminal-state terms — see `fully-clean.md`), confirm a genuine all-clear review is posted at the current head — not just that CI is green and threads are resolved; a clean state you inferred yourself doesn't satisfy this.
 
 ## Watch and ARDI every PR you touch — don't ask first
 

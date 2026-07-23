@@ -75,14 +75,21 @@ finding → push → post summary → re-request review → repeat until clean.
 
     **If the reviewer explicitly skips or cannot produce a verdict** (for
     example, quota exhaustion, an outage, or a policy that prevents a reviewer
-    from self-reviewing its own work), perform a full self-review before
-    proceeding: read the current PR diff against its base, check each changed
-    call path and edge case, run the focused tests and relevant
-    lint/documentation checks, and address every finding you identify. Treat
-    the skip as reviewer-unavailable: note it in your ARD summary comment, then
-    retry or obtain an independent review when possible. A skipped review is
-    never a clean external verdict and does not authorize marking the PR as
-    approved.
+    from self-reviewing its own work), first check whether a **different**
+    configured external reviewer is available (e.g. Copilot code review, if
+    the repo/org has it) before falling back to self-review — the two can
+    fail independently, and self-review is a fallback for when *no* working
+    external reviewer is reachable, never a substitute once one is. Request
+    it and wait for a verdict posted at the PR's *current* head commit; only
+    self-review if none is available. When you do self-review: read the
+    current PR diff against its base, check each changed call path and edge
+    case, run the focused tests and relevant lint/documentation checks, and
+    address every finding you identify. Note the skip in your ARD summary
+    comment. **Re-check reviewer availability every round, not just once** —
+    a reviewer that was unavailable a few pushes ago can become available
+    mid-session, and the moment it does, request it instead of continuing to
+    self-review. A skipped review is never a clean external verdict and does
+    not authorize marking the PR as approved.
 
 3. **ARD every finding — regardless of severity label.** "Not a blocker",
    "minor", "nit", "optional", "consider", "if you want" are for the user's
@@ -249,7 +256,11 @@ The loop ends only at **fully clean**, which means **both**:
    **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually
    convinced the reviewer** (they didn't re-raise it on the next round). A
    rebuttal the reviewer still disputes does **not** count as clean. Don't stop
-   at "ready with one minor nit."
+   at "ready with one minor nit." **That review must be a genuine posted
+   verdict at the current head, from an external reviewer if one is
+   available** — check availability again right before declaring clean, not
+   just at the round where self-review first started; an inferred "probably
+   clean" from green CI and resolved threads does not satisfy this.
 
 **Threads:** at fully-clean, every **inline** review thread is resolved, and
 the only conversation left open is the final all-clear exchange — the
