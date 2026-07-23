@@ -116,13 +116,18 @@ committed pass.
    owner-qualified form:
    `gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<current-branch>" -f "state=open" --jq '.[] | {number, url, state}'`
    (for `dem-extra1/ai-config`, that is `gh api --method GET "repos/d-morrison/ai-config/pulls" -f "head=dem-extra1:<current-branch>" -f "state=open" ...`).
-   If no open PR exists and upstream is accessible, open it immediately as cross-fork
-   with non-interactive metadata and the reviewer request in the same command
-   (bare `gh pr create` without `--fill`/`--title`/`--body` prompts
-   interactively and can hang a headless session):
-   `gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch> --fill --reviewer d-morrison`.
-   If upstream is not accessible in-session, push and explicitly hand off that
-   upstream PR creation is still required.
+   If no open PR exists and upstream is accessible, open it as cross-fork —
+   bare `gh pr create` without `--fill`/`--title`/`--body` prompts
+   interactively and can hang a headless session, so prepare explicit title
+   and body text first, but **show that draft in the conversation and wait
+   for explicit approval before running the create command**, per the
+   standing "always show the draft before posting to any external system"
+   rule; don't run `--fill` unattended:
+   `gh pr create --repo <upstream-owner>/<repo> --base <upstream-default-branch> --head <head-owner>:<current-branch> --title "<approved title>" --body "<approved body>" --reviewer d-morrison`
+   (discover `<upstream-default-branch>` — don't hard-code `main`, e.g. via
+   `gh repo view <upstream-owner>/<repo> --json defaultBranchRef -q
+   .defaultBranchRef.name`). If upstream is not accessible in-session, push
+   and explicitly hand off that upstream PR creation is still required.
 
    **Project-specific items** (a convention or gotcha tied to one repo we
    own): commit to *that* repo's own agent docs (`CLAUDE.md`,
@@ -130,10 +135,18 @@ committed pass.
    `.github/copilot-instructions.md`) via a branch + PR in
    that repo — not ai-config. Discover its path the same way, `cd`-ing into
    that repo's own checkout instead of the ai-config one, then follow the
-   same branch/commit/push/PR steps above. If that repo has no agent-doc
-   infrastructure, fall back to its local Claude project memory
+   same branch/commit/push/PR steps above, substituting that repo's own
+   default branch for every `main`/`origin main` reference above (don't
+   hard-code `main` — a project routed here may default to `master` or
+   another name; discover it the same way: `gh repo view <owner>/<repo>
+   --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no
+   agent-doc infrastructure, fall back to its local Claude project memory
    (`~/.claude/projects/<project-path>/memory/`, write directly, no commit)
-   — see the checklist item below.
+   as **short-lived staging only** — per `memories/preferences.md`'s memory-
+   and-skill-storage rule, this is not a permanent destination; flag it to
+   the user and hand off that the repo still needs durable, committed
+   agent-doc infrastructure before this guidance is genuinely persisted —
+   see the checklist item below.
 
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
