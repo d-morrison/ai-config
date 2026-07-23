@@ -514,11 +514,14 @@ revert the fix, confirm the test fails, restore) is only safe once the fix is
 
 - **Index vs. HEAD.** Both flags matter -- the default `git restore
   --source=HEAD~1 -- "<file>"` only touches the working tree, leaving the
-  fix still staged in the index. That's not the true pre-fix state, and can
-  invalidate a test that inspects staged files or `git diff --cached`
-  (verified: default form left `git status` showing ` M` -- index still
-  matched the fix -- while `--staged --worktree` correctly showed `M ` with
-  both matching the parent).
+  fix still staged in the index (verified: default form left `git status`
+  showing ` M`; `--staged --worktree` correctly showed `M `). That fixes a
+  test that reads staged/working file *content* (`git show :"<file>"`, a
+  checked-out worktree). It does **not** fix a test built on `git diff
+  --cached`: HEAD is still the fix commit, so the cached diff is a non-empty
+  reverse patch of the fix, not the empty diff a "clean at the parent"
+  check would expect (verified directly). A test like that needs a
+  detached worktree at `HEAD~1` instead, not an index/working-tree restore.
 - **Uncommitted fix.** Reverting before committing is destructive, not just
   imprecise: `git checkout -- "<file>"` restores from the index, not HEAD.
   If the fix is unstaged (the index still matches HEAD), this silently
