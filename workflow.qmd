@@ -66,7 +66,8 @@ automatically. Aliases: `dc`, `drive`, `clean`, `iterate`.
 
 A PR is fully clean when:
 
-1. All CI workflows are green (every required check, not just the review job).
+1. All CI workflows and check runs are green and completed -- not just the
+   required checks, and not just the review job.
 2. The latest review has no flagged items — no nits, no "consider", no "minor
    observation". The reviewer's "Not a blocker" label is not a pass; fix it or
    defer it.

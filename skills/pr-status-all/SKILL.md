@@ -86,6 +86,7 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    only; a formal Copilot review is a separate object it won't show. Request
 >    it and check for a genuine (non-stub) verdict at the current head:
 >    ```bash
+>    set -o pipefail
 >    gh api "repos/<owner>/<repo>/pulls/<N>/requested_reviewers" \
 >      -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
 >    head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
