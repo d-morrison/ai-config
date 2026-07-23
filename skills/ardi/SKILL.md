@@ -67,16 +67,21 @@ finding → push → post summary → re-request review → repeat until clean.
      whether that review is clean. Fetch the matched review's own overview
      **and** its inline comments (same two-call shape as the review-link case
      above) before treating it as an all-clear:
+     `gh api`'s own `--jq` flag has no `--arg`/`--argjson` (see
+     [`memories/tools.md`](../../memories/tools.md)'s `gh api`/`jq` note) --
+     pipe the raw paginated output into standalone `jq -s` instead, which
+     supports both:
      ```bash
+     set -o pipefail
      head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
      review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
-       --jq --arg head "$head" \
-       '[.[] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$head)] | last | .id')"
+       | jq -s --arg head "$head" \
+       '[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$head)] | last | .id')"
      if [ -n "$review_id" ] && [ "$review_id" != "null" ]; then
        gh api "repos/<owner>/<repo>/pulls/<N>/reviews/$review_id" --jq '{state, body}'
-       gh api "repos/<owner>/<repo>/pulls/<N>/comments" \
-         --jq --arg rid "$review_id" \
-         '.[] | select(.pull_request_review_id == ($rid | tonumber)) | {line, body}'
+       gh api "repos/<owner>/<repo>/pulls/<N>/comments" --paginate \
+         | jq -s --arg rid "$review_id" \
+         '[.[][] | select(.pull_request_review_id == ($rid | tonumber))] | .[] | {line, body}'
      else
        echo "no fresh review yet -- wait or re-request"
      fi
