@@ -1,6 +1,6 @@
 ---
 name: ard
-description: "Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it's correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to 'address reviews' / 'respond to the review', or as the inner loop of the `ardi` skill."
+description: "Address, Rebut, Defer, or Acknowledge: respond to every review comment on a PR/MR with exactly one disposition. For each item a reviewer (human or bot) raises, choose one — fix it (Address), explain why it's correct as-is (Rebut), file a follow-up issue (Defer), or acknowledge a no-change-requested observation (Acknowledge). Silently ignoring a comment is never acceptable. Runs a round-close checklist before reporting the round done: every finding captured, every Address committed and pushed, every Defer tracked, every inline thread replied-to. Works on GitHub (gh) and GitLab (glab). Use after receiving a review, when asked to 'address reviews' / 'respond to the review', or as the inner loop of the `ardi` skill."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -227,7 +227,7 @@ yet.
 Per [`shared/workflow/skill-checklists.md`](../../shared/workflow/skill-checklists.md),
 confirm each box before reporting the round done:
 
-- [ ] Every in-scope finding is captured exactly once in the ARD table (after
+- [ ] Every finding is captured exactly once in the ARD table (after
       deduping summary + inline duplicates).
 - [ ] Every table row has exactly one disposition (A/R/D/K), and no change
       request is labeled K.
