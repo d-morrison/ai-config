@@ -16,6 +16,29 @@ finding → push → post summary → re-request review → repeat until clean.
 
 ## Procedure
 
+### Per-round checklist
+
+Before advancing to the next round, confirm each box:
+
+- [ ] The latest review analyzed is for the current head commit (not a stale
+      prior run).
+- [ ] Every finding from that review has an ARD disposition.
+- [ ] If code changed, main was synced in first when needed, then fixes were
+      pushed.
+- [ ] ARD summary was posted and corresponding inline-thread replies/resolutions
+      were handled.
+- [ ] Re-review trigger was chosen correctly: push-trigger only when code was
+      pushed; explicit mention/dispatch only when no code was pushed.
+
+### Fully-clean exit checklist
+
+Before declaring "clean", confirm each box:
+
+- [ ] All workflows and check runs are green **and completed** for the current
+      head.
+- [ ] Latest review has zero findings and no disputed rebuttals.
+- [ ] Every inline review thread is resolved except the final all-clear exchange.
+
 1. **Identify and claim the PR/MR.** Use the current branch's open MR, or
    the one the user specified. Post a brief claim comment (`COMMENT_PR`) so a
    parallel `@claude` CI run or another person doesn't start a colliding
