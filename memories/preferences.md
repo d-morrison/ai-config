@@ -112,6 +112,7 @@
   Never jump straight into a PR without a tracking issue behind it. (see the `st` / `start-task` skill — the issue is the durable record of intent/scope/"done" and lets the PR auto-close it via `Closes #N`.)
   Search EVEN when the idea emerged organically mid-conversation (a design discussion, a code-review finding) and feels novel — "I haven't seen it this session" is not evidence it doesn't exist.
   Always `gh issue list --search "<keywords>" --state all` before every `gh issue create`, regardless of how the idea surfaced. (Learned on sparta: filed #447 without searching; the user had already filed #446 with the same core ask minutes earlier, and #447 had to be closed as a duplicate and folded into #446.)
+- When filing a follow-up issue in a repo that has a generic issue template, don't paste the template boilerplate verbatim into the body; write a concise, task-specific issue and include only the fields that materially help diagnosis/action.
 - When implementing a user instruction that edits a tracked file in the repo (e.g. CLAUDE.md, README, a config file), the task is not done at "made the local edit."
   Go all the way: file an issue, commit on a branch, and open a PR — without waiting to be asked.
   Stopping at a local edit leaves the change uncommitted and invisible to reviewers.
