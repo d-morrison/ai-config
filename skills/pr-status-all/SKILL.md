@@ -54,7 +54,7 @@ needs **no worktrees** — each subagent only reads PR signals, nothing mutates,
 and there is nothing to collide on.
 
 Give each subagent its PR number and `headRefName`, and have it gather the
-**four independent signals** below and return one structured row. Carry the
+**five independent signals** below and return one structured row. Carry the
 disciplines into the prompt — a subagent that doesn't follow *Read the LATEST
 review* will silently misreport:
 
