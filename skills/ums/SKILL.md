@@ -49,6 +49,12 @@ committed pass.
    - Is it a **memory note**? (tool quirk, preference, debugging insight)
    - Is it **both**? (general guidance → update skill AND preferences)
    - Is it already recorded? (check before writing — avoid duplicates)
+   - Is it **cross-project or project-specific**? (`memories/preferences.md`'s
+     "Memory and skill storage" rule: cross-project lessons commit to
+     `d-morrison/ai-config`; a convention/gotcha tied to one repo we own
+     commits to *that* repo's own agent docs instead — see the checklist
+     item below for where. This changes step 4's target, not just the
+     content.)
 
 3. **Apply updates.** For each item:
    - Read the target file first (skill or memory) to understand current state
@@ -56,9 +62,12 @@ committed pass.
    - If updating a skill: the change should be specific enough that following
      the skill next time would avoid the mistake
 
-4. **Commit and push ALL ai-config changes — via a branch + PR, not direct to
-   `main`.** Skills AND memory files both live in the ai-config repo. Discover
-   its path with `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point
+4. **Commit and push — via a branch + PR, not direct to `main`, in whichever
+   repo step 2 routed the item to.**
+
+   **Cross-project items** (skills, cross-project memory notes): both live in
+   the ai-config repo. Discover its path with
+   `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point
    `-C` at a **skill subdir** (any one), not the `~/.claude/skills` parent.
    `bootstrap.sh` may symlink skills *per-child* into a real `~/.claude/skills`
    directory (cloud/web sessions pre-populate it), so the parent itself isn't a
@@ -114,6 +123,16 @@ committed pass.
    `gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch> --fill --reviewer d-morrison`.
    If upstream is not accessible in-session, push and explicitly hand off that
    upstream PR creation is still required.
+
+   **Project-specific items** (a convention or gotcha tied to one repo we
+   own): commit to *that* repo's own agent docs (`CLAUDE.md`,
+   `.github/agents/*.md`, `.github/instructions/*.md`) via a branch + PR in
+   that repo — not ai-config. Discover its path the same way, `cd`-ing into
+   that repo's own checkout instead of the ai-config one, then follow the
+   same branch/commit/push/PR steps above. If that repo has no agent-doc
+   infrastructure, fall back to its local Claude project memory
+   (`~/.claude/projects/<project-path>/memory/`, write directly, no commit)
+   — see the checklist item below.
 
    **Operational checklist (run in order):**
    - [ ] **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
