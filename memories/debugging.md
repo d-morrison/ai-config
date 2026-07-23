@@ -493,19 +493,27 @@ The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has a destructive failure
 mode when the fix is still uncommitted, for two separate reasons.
 
-First, `git checkout -- "<file>"` / `git restore "<file>"` restores from the
-**index**, not HEAD. Normally the index matches HEAD, so this goes unnoticed
--- but not when something's staged (verified: staged one version, ran plain
-`git checkout <file>`, got the staged content back, not HEAD's). That
-silently discards the whole uncommitted fix along with the temporary revert
--- there is nothing to restore back to.
+First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
+the **index**, not HEAD. Normally the index matches HEAD, so this goes
+unnoticed -- but not when something's staged (verified: staged one version,
+ran plain `git checkout "<file>"` without `--`, got the staged content
+back, not HEAD's). That silently discards the whole uncommitted fix along
+with the temporary revert -- there is nothing to restore back to.
 
-Second, a bare `git checkout <file>` (no `--`) is parsed as a branch-switch
-attempt first if a branch happens to share the file's name (verified:
-`git branch <file>`, then plain `git checkout <file>` switched branches
-instead of restoring the file).
+Second, a bare `git checkout "<file>"` (no `--`) is parsed as a
+branch-switch attempt first if a branch happens to share the file's name
+(verified: `git branch "<file>"`, then plain `git checkout "<file>"`
+switched branches instead of restoring the file).
 
-Use `--` before the path, or `git restore` (which has neither ambiguity).
+Third, a path beginning with `-` (e.g. `-old.txt`) is parsed by *both*
+commands as an option even when shell-quoted -- quoting only protects
+against bash's own parsing, not git's argument parser (verified: staged a
+dash-prefixed filename, `git restore "-weirdfile.txt"` failed with an
+"unknown switch" error -- git read the leading `-w` as a flag).
+
+Use `--` before the path with **either** command -- `git restore` avoids
+the branch-switch ambiguity but not the dash-prefixed-path one, so it
+still needs `--` too.
 Sequence it as: **commit the fix first.** Then temporarily revert by
 checking out the file's *pre-fix* content from the parent commit --
 `git checkout HEAD~1 -- "<file>"` -- not by stashing: once the fix is
