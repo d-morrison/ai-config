@@ -114,7 +114,7 @@ The one summary comment is **not** enough on its own. A reviewer who left inline
 cat > "/tmp/reply-<comment_id>.md" <<'EOF'
 ✅ Addressed in `<sha>`.
 EOF
-gh api repos/{owner}/{repo}/pulls/<N>/comments \
+gh api "repos/{owner}/{repo}/pulls/<N>/comments" \
   -F in_reply_to="<comment_id>" -F body="@/tmp/reply-<comment_id>.md"   # REPLY_REVIEW_COMMENT
 
 # List threads to get the node id, then resolve the settled one:

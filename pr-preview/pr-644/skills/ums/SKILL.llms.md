@@ -50,14 +50,14 @@ git commit -m "ums: <brief summary>"   # COMMIT
 git push origin HEAD                   # PUSH
 ```
 
-*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review.
+*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review. **In a cross-fork session (this checkout’s `origin` is your own fork, not the upstream repo), don’t branch from a bare `origin/main` here** — the fork’s `main` can be stale relative to upstream’s default branch, and by the time step 2 below discovers the real upstream default branch it’s too late: the branch (and its commits) already exist on the stale base. Discover the upstream default branch first (`gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name`), fetch and branch from *that* ref instead:
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
+git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH — same-repo case; see the cross-fork note above otherwise
 git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
-git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then request d-morrison as reviewer
+git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
 ```
 
 **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
@@ -75,13 +75,13 @@ gh pr create --repo "<upstream-owner>/<repo>" --base "<discovered-default-branch
 
 If upstream is not accessible in-session, push and explicitly hand off that upstream PR creation is still required.
 
-**Project-specific items** (a convention or gotcha tied to one repo we own): commit to *that* repo’s own agent docs (`CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`) via a branch + PR in that repo — not ai-config. Discover its path the same way, `cd`-ing into that repo’s own checkout instead of the ai-config one, then follow the same branch/commit/push/PR steps above, substituting that repo’s own default branch for every `main`/`origin main` reference above (don’t hard-code `main` – a project routed here may default to `master` or another name; discover it the same way: `gh repo view <owner>/<repo> --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only – this is not a durable destination; hand off that the project repo still needs agent-doc infrastructure added (via a PR) and the staged memory migrated there. See the checklist item below.
+**Project-specific items** (a convention or gotcha tied to one repo we own): commit to *that* repo’s own agent docs (`CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a branch + PR in that repo — not ai-config. Discover its path the same way, `cd`-ing into that repo’s own checkout instead of the ai-config one, then follow the same branch/commit/push/PR steps above, substituting that repo’s own default branch for every `main`/`origin main` reference above (don’t hard-code `main` – a project routed here may default to `master` or another name; discover it the same way: `gh repo view <owner>/<repo> --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only – this is not a durable destination; hand off that the project repo still needs agent-doc infrastructure added (via a PR) and the staged memory migrated there. See the checklist item below.
 
 **Operational checklist (run in order):**
 
 **Preflight:** confirm branch + cleanliness (`git branch --show-current` / `git status --short`)
 
-**Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
+**Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F "body=@<file>"`), never inline double-quoted body strings
 
 **Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh api --method GET "repos/<upstream-owner>/<repo>/pulls" -f "head=<head-owner>:<branch>" -f "state=open" --jq '.[] | {number, url, state}'` — not `gh pr list --head <owner>:<branch>`, which silently returns empty for an owner-qualified head)
 
@@ -106,7 +106,7 @@ Did I learn a debugging pattern? → `/memories/debugging.md`
 
 Did I create a *new* file under `/memories/`? → register it in `memories/MEMORY.md` as an index entry
 
-Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, or `.github/copilot-instructions.md`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure yet, write to `~/.claude/projects/<project-path>/memory/` as short-lived staging only — hand off that a PR adding agent docs to that repo is still required.
+Did I discover a repo convention for a repo **we own** that has checked-in agent docs? → put it IN that repo (its `CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`), via a PR, so the whole team and every `@claude` session there sees it. Do NOT keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo without agent-doc infrastructure yet, write to `~/.claude/projects/<project-path>/memory/` as short-lived staging only — hand off that a PR adding agent docs to that repo is still required.
 
 Did the user express a new preference? → `/memories/preferences.md`
 
@@ -143,7 +143,7 @@ Both write to the same destinations. `ums` fires proactively, as soon as a learn
 - ❌ Skipping the “check existing notes” step and creating duplicates
 - ❌ Updating only preferences when a skill also needs the fix
 - ❌ `git add -A` — it sweeps unrelated in-flight edits (the user’s work, other draft skills) into your commit/PR. Stage the specific files you touched.
-- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`) via a PR; if the repo has no agent-doc infrastructure yet, `~/.claude/projects/<project-path>/memory/` is short-lived staging only — hand off that a PR adding those agent docs is still required. See the checklist item above and `memories/preferences.md` for the full rule.
+- ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired. Put repo-specific lore in the repo’s own agent docs (`.github/agents/`, `CLAUDE.md`, `.github/instructions/`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a PR; if the repo has no agent-doc infrastructure yet, `~/.claude/projects/<project-path>/memory/` is short-lived staging only — hand off that a PR adding those agent docs is still required. See the checklist item above and `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including `tools.md`, `preferences.md`) without checking the surrounding indentation first. These files mix 0-indent top-level bullets with 2-/4-indent sub-bullets and multi-paragraph continuations; a new top-level bullet dropped in the middle of an existing parent’s sub-list re-parents whatever follows it in Markdown (a sibling sub-bullet silently becomes this new bullet’s child). Before committing an insertion, re-read the few lines immediately above and below the insertion point and confirm the indentation still matches what it did before — or place the new bullet after the complete enclosing list instead of inside it. (Caught by `@claude` review on ai-config#335: a new 0-indent bullet landed between two sibling sub-bullets of an existing parent, breaking the nesting.)
 
 Back to top
