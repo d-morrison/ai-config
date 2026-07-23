@@ -122,6 +122,8 @@ All workflows and check runs are green **and completed** for the current head.
 
 Latest review has zero findings and no disputed rebuttals.
 
+That review is a genuine posted verdict at the current head from an external reviewer, if one is reachable — re-checked right before declaring clean, not just assumed from an earlier round’s self-review.
+
 Every inline review thread is resolved.
 
 The only open conversation is the final all-clear exchange (the reviewer’s all-clear comment and your reply — normally a top-level PR comment, not an inline thread).
