@@ -33,11 +33,14 @@ re-introducing the glyphs on the next copy-paste into a file.
 by a check that makes a stray em-dash a hard build failure, though the two
 common ones reject different things:
 
-- R CMD check's "checking code files for non-ASCII characters" flags any
-  non-ASCII byte in `R/` -- truly ASCII-only; under `error_on = "note"` it
-  fails the build. Note that a helper defined in `data-raw/` (excluded from
-  the build) passes silently until the function moves into `R/`, at which
-  point the same em-dash starts failing CI.
+- R CMD check's "checking code files for non-ASCII characters" flags
+  non-ASCII bytes in code and string literals in `R/`, but not in comments
+  -- "Writing R Extensions" explicitly says other characters "are accepted
+  in comments" (verified against the current manual). Under `error_on =
+  "note"` a flagged (non-comment) occurrence fails the build. Note that a
+  helper defined in `data-raw/` (excluded from the build) passes silently
+  until the function moves into `R/`, at which point the same em-dash in
+  code starts failing CI.
 - Some repos run a dedicated non-standard-character workflow -- e.g. the
   UCD-SERG lab manual's own check, or `d-morrison/gha`'s reusable
   `check-non-standard-chars` -- which rejects only a specific glyph set
