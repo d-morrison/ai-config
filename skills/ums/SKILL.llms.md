@@ -45,19 +45,36 @@ Actively review recent session context and update all relevant memory files and 
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
 git push origin HEAD                   # PUSH
 ```
 
-*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review. **In a cross-fork session (this checkout’s `origin` is your own fork, not the upstream repo), don’t branch from a bare `origin/main` here** — the fork’s `main` can be stale relative to upstream’s default branch, and by the time step 2 below discovers the real upstream default branch it’s too late: the branch (and its commits) already exist on the stale base. Discover the upstream default branch first (`gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name`), fetch and branch from *that* ref instead:
+*No PR yet:* branch off main first — a direct-to-main push is denied by auto-mode and bypasses review.
+
+*Same-repo case* (this checkout’s `origin` IS the repo you’re targeting):
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
-git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH — same-repo case; see the cross-fork note above otherwise
-git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
+git fetch origin main && git checkout -b "ums-<topic>" origin/main   # FETCH + CREATE_BRANCH
+git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
 git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
+```
+
+*Cross-fork case* (this checkout’s `origin` is your own fork, not the upstream repo you’re targeting): don’t branch from a bare `origin/main` here – the fork’s `main` can be stale relative to upstream’s default branch. Fetch the intended **upstream** repo explicitly (not just look up its default-branch name) and branch from that fetched ref:
+
+``` bash
+cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+base="$(gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name)" \
+  && git fetch "https://github.com/<upstream-owner>/<repo>.git" "$base" \
+  && git checkout -b "ums-<topic>" FETCH_HEAD
+# chained with && on purpose -- a failed lookup or fetch must stop the
+# checkout, or it silently reuses an older FETCH_HEAD from a prior fetch,
+# recreating the stale-base problem this block exists to prevent
+git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
+git commit -m "ums: <brief summary>"   # COMMIT
+git push -u origin HEAD   # PUSH -- to your fork; PR creation is handled by the post-push verification step below
 ```
 
 **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
@@ -75,7 +92,7 @@ gh pr create --repo "<upstream-owner>/<repo>" --base "<discovered-default-branch
 
 If upstream is not accessible in-session, push and explicitly hand off that upstream PR creation is still required.
 
-**Project-specific items** (a convention or gotcha tied to one repo we own): commit to *that* repo’s own agent docs (`CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a branch + PR in that repo — not ai-config. Discover its path the same way, `cd`-ing into that repo’s own checkout instead of the ai-config one, then follow the same branch/commit/push/PR steps above, substituting that repo’s own default branch for every `main`/`origin main` reference above (don’t hard-code `main` – a project routed here may default to `master` or another name; discover it the same way: `gh repo view <owner>/<repo> --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only – this is not a durable destination; hand off that the project repo still needs agent-doc infrastructure added (via a PR) and the staged memory migrated there. See the checklist item below.
+**Project-specific items** (a convention or gotcha tied to one repo we own): commit to *that* repo’s own agent docs (`CLAUDE.md`, `.github/agents/*.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`, or checked-in `.claude/memories/`) via a branch + PR in that repo — not ai-config. Discover its path the same way, `cd`-ing into that repo’s own checkout instead of the ai-config one, then follow the same branch/commit/push/PR steps above, substituting that repo’s own default branch for every `main`/`origin main` reference above (don’t hard-code `main` – a project routed here may default to `master` or another name; discover it the same way: `gh repo view "<owner>/<repo>" --json defaultBranchRef -q .defaultBranchRef.name`). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only – this is not a durable destination; hand off that the project repo still needs agent-doc infrastructure added (via a PR) and the staged memory migrated there. See the checklist item below.
 
 **Operational checklist (run in order):**
 
