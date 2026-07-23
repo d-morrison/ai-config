@@ -599,3 +599,14 @@ occurrence, not the flagged one.)
   visibly lopsided for almost every real unit in the game — passed the
   full test suite undetected until an independent review deliberately
   picked a non-exact-multiple count to check.)
+
+## R `gsub()` correction: `fixed = TRUE` keeps replacement literal
+
+Correction to an earlier note: with `gsub(..., fixed = TRUE)`, both matching and
+replacement are treated literally (no backreferences), so this mode does *not*
+interpret replacement escapes like `\\1`.
+
+If you do need regex matching (`fixed = FALSE`), replacement escapes can still
+apply, so validate any claim about replacement behavior against a runnable
+example before recording a generalized rule.
+(Correction logged from review on d-morrison/ai-config#641, 2026-07-22.)

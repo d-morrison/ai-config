@@ -23,7 +23,17 @@
 - **Rate limit is shared (5000/hr) and split GraphQL vs REST.** All tools/sessions/agents share the one user's 5000/hr; **GraphQL has its own, smaller pool that exhausts first** — `gh pr checks`, `gh pr view --json comments`, `gh pr list --json` use GraphQL. When GraphQL is spent, get the same data via REST (still has budget): `gh api repos/<o>/<r>/pulls/<n>`, `.../commits/<sha>/check-runs`, `.../issues/<n>/comments`. `gh api rate_limit --jq .resources` is **free** (doesn't count) — check `core` vs `graphql` remaining/reset before retrying. Don't tight-poll; use a background watcher with `sleep` (parallel sessions drain the shared pool fast).
 - **The @claude review bot's author name differs by API:** its comment author is `claude[bot]` in REST (`.user.login`) but `claude` in GraphQL (`.author.login`). A watcher filtering REST comments for `.user.login == "claude"` silently finds nothing — use `"claude[bot]"`.
 - **A third variant: on `d-morrison/gha` itself, the review comment posts as `github-actions[bot]`, not `claude`/`claude[bot]`.** Filtering `.user.login == "claude"` (or `"claude[bot]"`) there returns nothing even though a real, complete review was posted — the workflow's own `gather-context` job comment even says "REST author login is `claude[bot]`", which doesn't match what the bot actually posts under in that repo. Don't conclude "no review yet" from an empty filter on one login string: if it comes back empty, list all comment authors (`gh api repos/<o>/<r>/issues/<N>/comments --jq '.[] | .user.login'`) and check the body for the `**Claude finished` marker regardless of which login posted it. (gha#278, 2026-07-21: `select(.author.login == "claude")` and `select(.user.login | test("claude"))` both came up empty; the actual review comments were under `github-actions[bot]`.)
-- **Polling for the bot's verdict: match `Claude finished`, don't exclude a placeholder.** While a run is underway, the bot's comment holds an in-progress placeholder whose wording *varies between runs* ("### Review in progress …", "Claude Code is working…"), so a watcher that exits when comments exist, or when one known placeholder phrase disappears, fires early on the next differently-worded placeholder. Completed runs (review and agent alike) start the body with `**Claude finished`. Poll `gh api repos/<o>/<r>/issues/<N>/comments --jq '[.[] | select(.user.login=="claude[bot]")] | last | .body'` and wait for that marker. (Cost two wasted watch rounds on ai-config#357 before keying on it.)
+- **Polling for the bot's verdict: match `Claude finished`, don't exclude a placeholder.** While a run is underway, the bot's comment holds an in-progress placeholder whose wording *varies between runs* ("### Review in progress …", "Claude Code is working…"), so a watcher that exits when comments exist, or when one known placeholder phrase disappears, fires early on the next differently-worded placeholder. Completed runs (review and agent alike) start the body with `**Claude finished`. **Filter on that body marker, not on an author login** --- the login itself varies by repo (see the `github-actions[bot]` variant in the bullet above), so a login-only filter can come up empty even once a review has posted.
+  - **When re-triggering a run on a thread that already has a completed `**Claude finished` comment from an earlier run, also scope the filter to comments newer than a baseline ID captured before the trigger** --- otherwise the poll matches the *prior* run's already-finished comment immediately and never actually waits for the new one. **`gh api`'s own `--jq` flag has no way to inject a variable (no `--argjson`) and only fetches the first REST page (30 comments) unless told to paginate, and `--paginate`'s `--slurp` companion flag is rejected outright when combined with `--jq`** --- pipe the raw paginated output into standalone `jq -s` instead, which supports both. **Enable `pipefail` in each shell process that runs one of these pipelines** so an upstream `gh api` failure does not get masked by a successful downstream `jq`:
+    ```bash
+    set -o pipefail
+    BASELINE=$(gh api repos/<o>/<r>/issues/<N>/comments --paginate | jq -s '[.[][] | .id] | max // 0')
+    # ... trigger the new run ...
+    set -o pipefail
+    gh api repos/<o>/<r>/issues/<N>/comments --paginate | jq -s --argjson baseline "$BASELINE" \
+      '[.[][] | select(.id > $baseline and (.body | startswith("**Claude finished")))] | last | .body'
+    ```
+    When polling for the *first* run on a fresh thread (no prior completed comment to collide with), the simpler unscoped form still needs `--paginate` for the same >30-comment reason (a REST issue-comments page is oldest-first, so page 1 alone can miss the newest comment entirely once a thread grows past one page): `gh api repos/<o>/<r>/issues/<N>/comments --paginate | jq -s '[.[][] | select(.body | startswith("**Claude finished"))] | last | .body'`. (Cost two wasted watch rounds on ai-config#357 before keying on the marker; the login-filtered version of this command was flagged as stale by review on ai-config#636; the unscoped-across-reruns version was flagged by a follow-up review on ai-config#637 and confirmed concretely on gha#278, whose thread holds two separate `**Claude finished` comments, one per run; and the `gh api --jq --argjson`/pagination gaps in *that* fix were themselves flagged by a still-later review on the same PR, caught only after #637 had already merged.)
 - **A reply posted via `gh pr comment`/`gh api` from within a session shows up under the *human user's own* GitHub account, not a bot identity — don't mistake it for an independent human review when auditing a PR's review state.** `gh` authenticates as whatever account is logged in locally (often the user's own, e.g. seen as `dem-extra1` on `Lacaedemon/sparta`), so when an agent (or a dispatched subagent) replies to an inline review comment on the user's behalf, `gh api repos/<o>/<r>/pulls/<N>/reviews` lists it as a `COMMENTED` review authored by the user — indistinguishable at a glance from the user genuinely opening the PR in a browser and typing a reply themselves. Before treating an unexpected review entry as a signal that the human intervened, check whether its body/inline-comment content reads like the agent's own scripted reply (referencing a specific commit SHA, restating verification numbers) rather than free-form human commentary — if so, it's the session's own tooling, not new human input.
 - **`gh pr view --json` does not accept `merged` as a field.** Use `state` (returns `"MERGED"`) and `mergedAt` (ISO timestamp, null if not merged) to check merge status. Example: `gh pr view <N> --json state,mergedAt`.
 - **`gh pr edit` exits 1 on repos with Projects Classic — use `gh api` to update PR body.** `gh pr edit <N> --body "..."` / `--body-file <f>` returns exit code 1 with a GraphQL deprecation warning (`Projects (classic) is being deprecated…`). Sometimes the edit lands anyway; **sometimes it does not apply at all** (seen on sparta 2026-06-30: three `gh pr edit --body-file` attempts left the body unchanged with the `SHA_PLACEHOLDER` still in place). Either way, don't trust it — verify with `gh api repos/<o>/<r>/pulls/<N> --jq .body`, and just use the REST PATCH directly, which always exits 0 and applies: `gh api -X PATCH repos/<o>/<r>/pulls/<N> -f body="..."`. For a multi-line body, read it from a file with `-F body=@<path>` (capital `-F` to pull the field value from the file) rather than cramming it into `-f body="..."`.
@@ -547,6 +557,15 @@ closed-issue references in multiple PR bodies, and stacking conflicts mid-ARDI.
   grandparent base is), note in the body that it supersedes the closed PR
   number with identical commits, and comment on the closed PR linking the
   replacement.
+- **When run from a worktree/checkout that's currently on the branch being
+  merged, `gh pr merge --delete-branch` also switches that checkout to the
+  default branch and fast-forwards it, and deletes the now-merged local
+  branch** — a normal, convenient side effect, not a bug. Don't follow it
+  with the usual post-merge `git checkout main && git pull && git branch -d
+  <branch>` sequence on autopilot: the checkout is already on `main` and
+  up to date, and `git branch -d <branch>` errors `branch '<branch>' not
+  found` since `gh` already deleted it. Check `git branch --show-current`
+  first before running any of those.
 
 ## Git — renaming an open PR's *head* branch can close the PR (no reopen)
 
@@ -1390,6 +1409,26 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   roxygen also changes every inheriting function's `.Rd`, so grep `man/` for the
   changed sentence. (bcs#225; serocalculator#562 --- but prefer installing the
   toolchain over all of this.)
+- **Codoc mismatch with escaped-dot defaults: limit the lesson to the observed case.**
+  In d-morrison/altdoc#30, changing the default regex from an escaped dot (`\\.`) to
+  a bracket expression (`[.]`) resolved an `R CMD check` codoc mismatch for
+  `setup_github_actions()`. Keep this note scoped to that concrete escaped-dot case;
+  avoid generalizing to other escape sequences without direct evidence.
+  (d-morrison/altdoc#30, 2026-07-22.)
+- **Internal helper functions as default argument values appear literally in `.Rd` usage
+  blocks.** If you write `foo = .helper_default()` as a parameter default, the roxygen
+  `\usage{}` section shows `.helper_default()` verbatim — which is confusing to users
+  copy-pasting the signature. Inline the literal value directly in the function
+  signature instead. (d-morrison/altdoc#30.)
+
+## YAML authoring (GitHub Actions / workflow files)
+- **Regex values with backslashes: prefer single-quoted YAML, but document both forms
+  correctly.** YAML double-quoted scalars process escapes, so you must double each
+  backslash there (e.g. `"foo\\.bar"` for a single literal backslash before `.`).
+  Single-quoted scalars preserve backslashes as-is (e.g. `'foo\.bar'` for that same
+  single backslash), which is usually easier to reason about in workflow templates.
+  This applies to `branches-or-tags-to-list` / regex inputs in reusable-workflow YAML.
+  (d-morrison/altdoc#30.)
 
 ## GitHub access from bash in remote/web sessions
 - The git proxy proxies ONLY git operations — there is no `gh`/`glab` and no

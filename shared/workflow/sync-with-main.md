@@ -40,6 +40,7 @@ main's. A conflict-free merge can silently put them at parity — main advanced
 of main, compare versions:
 
 ```bash
+git fetch origin main
 git show origin/main:DESCRIPTION | grep ^Version
 grep ^Version DESCRIPTION
 ```
@@ -78,6 +79,26 @@ empty-commit draft PR failed `validate` on a stale `codex-skills/` generated
 tree, and the `require-changelog` job on a newly-added `CHANGELOG.md`
 requirement from PR #354 --- both were `main` having advanced past a
 checkout that predated the session, not a defect in the new skill.)
+
+**The same staleness trap has a silent variant with no CI failure to flag
+it: a worktree/branch named after a PR's followup can still be based on a
+`main` from before that PR actually merged.** A worktree directory or
+branch name suggesting "after PR #N" (e.g. `pr-N-followup-...`) is not
+proof the branch's actual base commit postdates #N's merge --- it can have
+been created earlier and simply named for its intended purpose. Trusting
+that naming, then reasoning from `git show <hash>` for a commit found via
+`git log --all` (which lists every reachable commit across all refs, not
+just your branch's ancestry) can make content look present when it isn't
+actually in your branch yet. Verify with `git log --oneline HEAD..origin/main`
+or by reading the actual blob your branch would produce (`git show
+HEAD:<path>`, or the working tree itself before assuming what it contains),
+not a commit hash pulled from `--all`. If `main` has moved, merge it in
+before building further edits on the assumption the missing content exists.
+(`ai-config#637`: a worktree named `pr-636-followup-...` was cut from a
+`main` snapshot that predated #636's own merge; an edit referencing "the
+bullet above" -- added by #636 -- was written and committed before the
+bullet actually existed on the branch, caught only when `git push` reported
+`main has moved` and the subsequent merge produced a real conflict.)
 
 **A real conflict inside a file whose logic is also copied elsewhere (an
 extracted script, a doc example) needs the copy re-synced too, not just the
