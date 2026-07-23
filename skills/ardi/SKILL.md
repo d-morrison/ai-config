@@ -189,8 +189,9 @@ finding → push → post summary → re-request review → repeat until clean.
    This turns idle wait time into productive conflict prevention.
 
 7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
-   "fully clean"* below — zero findings **and** all CI workflows green **and**
-   every inline thread resolved). Don't exit on a clean review body alone.
+   "fully clean"* below — zero findings **and** all CI workflows and check
+   runs green and completed **and** every inline thread resolved). Don't exit
+   on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
@@ -212,8 +213,11 @@ The goal is green CI + clean review, not just clean review.
 
 The loop ends only at **fully clean**, which means **both**:
 
-1. **All CI workflows green** — every required check, not just the review job
-   (see *Fix broken CI/workflows too* above).
+1. **All CI workflows and check runs are green and completed** — every check,
+   not just required ones and not just the review job; never still queued or
+   in progress (see *Fix broken CI/workflows too* above, and
+   `shared/workflow/fully-clean.md` for the check-run-vs-workflow-run and
+   API-casing gotchas).
 2. **The latest review is totally clean** — zero flagged items under any
    heading. "Looks good" / "no findings" / "approved" with no follow-on
    bullets. Every item that wasn't directly **Addressed** is either
