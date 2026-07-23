@@ -62,7 +62,7 @@ git commit -m "ums: <brief summary>"   # COMMIT
 git push -u origin HEAD   # PUSH — PR creation is handled by the post-push verification step below
 ```
 
-*Cross-fork case* (this checkout’s `origin` is your own fork, not the upstream repo you’re targeting): don’t branch from a bare `origin/main` here — the fork’s `main` can be stale relative to upstream’s default branch. Fetch the intended **upstream** repo explicitly (not just look up its default-branch name) and branch from that fetched ref:
+*Cross-fork case* (this checkout’s `origin` is your own fork, not the upstream repo you’re targeting): don’t branch from a bare `origin/main` here – the fork’s `main` can be stale relative to upstream’s default branch. Fetch the intended **upstream** repo explicitly (not just look up its default-branch name) and branch from that fetched ref:
 
 ``` bash
 cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
@@ -74,7 +74,7 @@ base="$(gh repo view "<upstream-owner>/<repo>" --json defaultBranchRef -q .defau
 # recreating the stale-base problem this block exists to prevent
 git add "skills/<name>/SKILL.md" "memories/<file>.md"   # the files you touched
 git commit -m "ums: <brief summary>"   # COMMIT
-git push -u origin HEAD   # PUSH — to your fork; PR creation is handled by the post-push verification step below
+git push -u origin HEAD   # PUSH -- to your fork; PR creation is handled by the post-push verification step below
 ```
 
 **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
