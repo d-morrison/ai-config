@@ -227,10 +227,21 @@ the end. Run `grep -n "^## " -- "<file>"` before appending.
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
 - **`mktemp` + rename: add a cleanup trap.** A process killed between `mktemp`
-  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp "<dir>"/.tmp.XXXXXX);
+  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp -- "<dir>"/.tmp.XXXXXX);
   trap 'rm -f "${tmp:-}"' EXIT; … > "$tmp"; mv -f "$tmp" "$dest"; trap - EXIT`.
-  Belt-and-suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` -- but the `-name` glob must match
+  Quoting alone isn't enough here: a `<dir>` value starting with `-` (e.g.
+  `-cache`) makes the whole substituted template start with `-`, and
+  `mktemp` parses that as an option regardless of quoting (verified:
+  `mktemp "-cache"/.tmp.XXXXXX` fails with "unknown option -- c"; `mktemp --
+  "-cache"/.tmp.XXXXXX` correctly treats it as a path instead). Belt-and-
+  suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
+  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` -- **`--` does not fix
+  this for `find`** the way it does for `mktemp`: GNU `find`'s own
+  path-vs-expression parser still reads a dash-prefixed argument as an
+  expression even after `--` (verified: `find -- "-weird"` fails with
+  "unknown predicate `-weird'"). Make sure `<dir>` itself never starts with
+  `-` -- prefix a relative one with `./`, or use an absolute path, before
+  it reaches `find`. Separately, the `-name` glob must match
   the `mktemp` prefix you chose, or it silently misses every orphan
   (`.tmp.XXXXXX` → `'.tmp.*'`; mktemp's bare `tmp.XXXXXX` default → `'tmp.*'`).
 - **Bounds-check value-taking flags before `shift 2`.** In a `set -e` arg
@@ -495,11 +506,12 @@ when the fix is still uncommitted. The first can silently destroy the fix
 (the unstaged case) or silently no-op the revert (the staged case),
 depending on what's in the index. The second still succeeds, just at doing
 the wrong thing (a branch switch instead of a restore) rather than losing
-work. The third fails loudly with a rejected-flag error instead of doing
-anything.
+work. The third usually fails loudly with a rejected-flag error, but not
+always: a filename that happens to match a real flag (e.g. `-p`) instead
+triggers that flag's behavior silently, with no error at all.
 
 First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
-the **index**, not HEAD, and which one that destroys depends on whether the
+the **index**, not HEAD. Which outcome you get depends on whether the
 fix is staged. **Unstaged** fix (the common case -- an edit not yet
 `git add`ed): the index still matches HEAD (pre-fix), so this silently
 discards the whole working-tree-only fix -- there is nothing left to
@@ -520,14 +532,26 @@ Third, a path beginning with `-` (e.g. `-old.txt`) is parsed by *both*
 commands as an option even when shell-quoted -- quoting only protects
 against bash's own parsing, not git's argument parser (verified: staged a
 dash-prefixed filename, `git restore "-weirdfile.txt"` failed with an
-"unknown switch" error -- git read the leading `-w` as a flag).
+"unknown switch" error -- git read the leading `-w` as a flag). Not every
+dash-prefixed name errors, though: one that matches a real flag silently
+triggers it instead (verified: `git restore "-p"` on a file literally named
+`-p` opened interactive patch mode rather than restoring it -- no error at
+all, and no indication the intended file was never touched).
 
 Use `--` before the path with **either** command -- `git restore` avoids
 the branch-switch ambiguity but not the dash-prefixed-path one, so it
 still needs `--` too.
 Sequence it as: **commit the fix first.** Then temporarily revert by
 checking out the file's *pre-fix* content from the parent commit --
-`git checkout HEAD~1 -- "<file>"` -- not by stashing: once the fix is
+`git checkout HEAD~1 -- "<file>"` -- not by stashing. This form breaks when
+the fix itself added `<file>` (it didn't exist at `HEAD~1` yet): the
+pathspec doesn't match anything and the command errors out instead of
+reverting (verified: `git checkout HEAD~1 -- newfile.txt` on a file first
+committed at `HEAD` fails with "did not match any file(s) known to git").
+`git restore --source=HEAD~1 -- "<file>"` handles that case correctly --
+when the file didn't exist at `HEAD~1` it removes the file entirely,
+matching the true pre-fix state (verified against the same fixture). Once
+the fix is
 committed the working tree is clean, so `git stash push -- "<file>"` prints
 "No local changes to save" and exits successfully without creating a stash
 -- not a truly silent no-op, but easy to miss in a script or a scrollback,
