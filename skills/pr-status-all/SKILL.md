@@ -66,22 +66,29 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 > Gather the status of PR **#<N>** (branch `<headRefName>`) in this repo and
 > return a single structured row. Do not push, merge, or modify anything.
 >
-> 1. **Latest review verdict** — read the *most recent* review comment and parse
->    it for findings. Run exactly (`READ_PR_COMMENTS` — abstract operation
+> 1. **Latest review verdict, checked for currency against the head.** Read
+>    the *most recent* review comment **and** the timestamp of the latest
+>    commit, in one call, so a "clean" verdict posted before the last push
+>    can't be mistaken for current (`READ_PR_COMMENTS` -- abstract operation
 >    token; resolve to your model's tool via
 >    [`tool-mappings.md`](../../tool-mappings.md)):
 >    ```bash
->    gh pr view <N> --json comments \
->      --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'
+>    gh pr view <N> --json comments,commits \
+>      --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate)}'
 >    ```
 >    The reviewer login varies by setup: `gh pr view` reports `claude`; the
->    REST API reports `claude[bot]`. `startswith("claude")` matches both. If the
->    result is `null`, the reviewer may post as `github-actions[bot]` or another
->    login — **never report "clean"**; broaden the filter or say no review was
->    found.
->    The bar for `clean`: "Looks good" / "no findings" / "approved" with zero
->    follow-on bullets under any heading. A rebuttal the reviewer still disputes
->    is **open**, not clean.
+>    REST API reports `claude[bot]`. `startswith("claude")` matches both. If
+>    `.review` is `null`, the reviewer may post as `github-actions[bot]` or
+>    another login -- **never report "clean"**; broaden the filter or say no
+>    review was found.
+>    **If `.review.createdAt` is earlier than `.lastCommitDate`, the review
+>    predates the latest push** -- report `in-flight`, not the review body's
+>    verdict, regardless of what it says (both are ISO 8601 UTC timestamps, so
+>    a plain string comparison works).
+>    Only once the review postdates the last commit, apply the bar for
+>    `clean`: "Looks good" / "no findings" / "approved" with zero follow-on
+>    bullets under any heading. A rebuttal the reviewer still disputes is
+>    **open**, not clean.
 > 2. **External (Copilot) reviewer verdict -- read-only, don't request one.**
 >    The comment above is the `@claude` bot only; a formal Copilot review is a
 >    separate object it won't show. This step **only inspects an existing
@@ -197,7 +204,9 @@ A Markdown table, one row per open PR, with these columns:
 - **CI** — ✅ / ❌ (name the failing check) / ⏳ pending.
 - **Review** — `clean`, `N open` (with the headline finding), `none found`
   (filter didn't match / no review yet), or `in-flight` if a review run is
-  still going.
+  still going **or** the latest review predates the latest commit (per
+  subagent item 1's currency check) -- either way, the current head hasn't
+  been reviewed yet.
 - **External** -- `clean` (a genuine, non-stub Copilot verdict at the current
   head, per subagent item 2), `N open` (findings in that verdict), or `no
   verdict at head` (no Copilot review exists yet at the current commit).
