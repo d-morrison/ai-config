@@ -501,67 +501,51 @@ finally trips over it. (ucdavis/bcs#349.)
 ## Prove-the-test-fails reverts: commit the fix first, never revert uncommitted work
 
 The standard "prove the new fixture catches the regression" step (temporarily
-revert the fix, confirm the test fails, restore) has three separate hazards
-when the fix is still uncommitted. The first can silently destroy the fix
-(the unstaged case) or silently no-op the revert (the staged case),
-depending on what's in the index. The second still succeeds, just at doing
-the wrong thing (a branch switch instead of a restore) rather than losing
-work. The third usually fails loudly with a rejected-flag error, but not
-always: a filename that happens to match a real flag (e.g. `-p`) instead
-triggers that flag's behavior silently, with no error at all.
+revert the fix, confirm the test fails, restore) is only safe once the fix is
+**committed**. Sequence:
 
-First, `git checkout -- "<file>"` / `git restore -- "<file>"` restores from
-the **index**, not HEAD. Which outcome you get depends on whether the
-fix is staged. **Unstaged** fix (the common case -- an edit not yet
-`git add`ed): the index still matches HEAD (pre-fix), so this silently
-discards the whole working-tree-only fix -- there is nothing left to
-restore back to (verified: edited the file without staging, ran plain
-`git checkout "<file>"`, got HEAD's pre-fix content back, the edit gone).
-**Staged** fix: the index now holds the fix itself, so checkout hands the
-fix right back instead -- the fix survives, but the "revert" silently
-no-ops instead of showing pre-fix behavior, defeating the point of the step
-just as surely (verified: staged the fix, ran the same checkout, got the
-staged fix back unchanged, not HEAD's pre-fix content).
+1. Commit the fix.
+2. Revert to the parent commit's state: `git restore --source=HEAD~1 --staged
+   --worktree -- "<file>"`.
+3. Run the test, confirm it fails.
+4. Restore the fix: `git checkout HEAD -- "<file>"`.
 
-Second, a bare `git checkout "<file>"` (no `--`) is parsed as a
-branch-switch attempt first if a branch happens to share the file's name
-(verified: `git branch "<file>"`, then plain `git checkout "<file>"`
-switched branches instead of restoring the file).
+**Why `--staged --worktree`, and why not other forms:**
 
-Third, a path beginning with `-` (e.g. `-old.txt`) is parsed by *both*
-commands as an option even when shell-quoted -- quoting only protects
-against bash's own parsing, not git's argument parser (verified: staged a
-dash-prefixed filename, `git restore "-weirdfile.txt"` failed with an
-"unknown switch" error -- git read the leading `-w` as a flag). Not every
-dash-prefixed name errors, though: one that matches a real flag silently
-triggers it instead (verified: `git restore "-p"` on a file literally named
-`-p` opened interactive patch mode rather than restoring it -- no error at
-all, and no indication the intended file was never touched).
+- **Index vs. HEAD.** Both flags matter -- the default `git restore
+  --source=HEAD~1 -- "<file>"` only touches the working tree, leaving the
+  fix still staged in the index. That's not the true pre-fix state, and can
+  invalidate a test that inspects staged files or `git diff --cached`
+  (verified: default form left `git status` showing ` M` -- index still
+  matched the fix -- while `--staged --worktree` correctly showed `M ` with
+  both matching the parent).
+- **Uncommitted fix.** Reverting before committing is destructive, not just
+  imprecise: `git checkout -- "<file>"` restores from the index, not HEAD.
+  If the fix is unstaged (the index still matches HEAD), this silently
+  discards the working-tree-only fix with nothing to restore back to. If
+  the fix is staged, checkout hands it right back instead, silently
+  no-opping the "revert" -- both defeat the point of the step, differently
+  (verified both cases directly).
+- **Branch/option parsing.** `git checkout "<file>"` (no `--`) can switch
+  branches instead of restoring, if a branch shares the file's name
+  (verified). A dash-prefixed filename is parsed as an option by *both*
+  `checkout` and `restore` even when shell-quoted -- usually a loud error,
+  but a name matching a real flag (e.g. `-p`) silently triggers that flag's
+  behavior instead (verified: `git restore "-p"` opened interactive patch
+  mode with no error at all). Always use `--` before the path.
+- **Newly added file.** `git checkout HEAD~1 -- "<file>"` errors out if the
+  fix itself added `<file>` (no match in the parent tree) -- `git restore
+  --source=HEAD~1 --staged --worktree -- "<file>"` handles this correctly
+  by removing the file entirely (verified both cases).
+- **Stashing instead.** Once the fix is committed the working tree is
+  clean, so `git stash push -- "<file>"` prints "No local changes to save"
+  and exits 0 without creating a stash -- not silent, but easy to miss, and
+  it leaves the fix in place during the "prove it fails" run (verified).
 
-Use `--` before the path with **either** command -- `git restore` avoids
-the branch-switch ambiguity but not the dash-prefixed-path one, so it
-still needs `--` too.
-Sequence it as: **commit the fix first.** Then temporarily revert by
-checking out the file's *pre-fix* content from the parent commit --
-`git checkout HEAD~1 -- "<file>"` -- not by stashing. This form breaks when
-the fix itself added `<file>` (it didn't exist at `HEAD~1` yet): the
-pathspec doesn't match anything and the command errors out instead of
-reverting (verified: `git checkout HEAD~1 -- newfile.txt` on a file first
-committed at `HEAD` fails with "did not match any file(s) known to git").
-`git restore --source=HEAD~1 -- "<file>"` handles that case correctly --
-when the file didn't exist at `HEAD~1` it removes the file entirely,
-matching the true pre-fix state (verified against the same fixture). Once
-the fix is
-committed the working tree is clean, so `git stash push -- "<file>"` prints
-"No local changes to save" and exits successfully without creating a stash
--- not a truly silent no-op, but easy to miss in a script or a scrollback,
-and it leaves the fix in place during the
-"prove it fails" run. Prove the failure, then restore the fix with
-`git checkout HEAD -- "<file>"`. A scripted counter-edit (sed/perl) works
-too, applied the same way -- edit, prove the failure, then restore via
-`git checkout HEAD -- "<file>"`, which is safe here specifically because
-the fix is already committed (and the index matches HEAD -- nothing else
-staged).
+A scripted counter-edit (sed/perl) works the same way: edit, prove the
+failure, restore via `git checkout HEAD -- "<file>"` -- safe here because
+the fix is already committed and the index matches HEAD.
+
 (Self-hit on Lacaedemon/sparta PR #870,
 2026-07-15: proved the overlap test failed against the density-blind layout
 via a perl counter-edit, then `git checkout -- scripts/SelectionManager.gd` to
