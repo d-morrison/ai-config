@@ -321,6 +321,8 @@ Only post the mention when a round pushed no code (all Rebut/Defer). (Hit on ai-
 Surface to me only when an item is ambiguous, architecturally significant, or deadlocked (the escalation rule above still applies), or when the PR is clean.
 Stop watching only when the PR merges or closes, or I tell you to back off.
 
+**Standing directive:** Always run ARDI on any PR I create — do not stop at "PR opened," drive every one to fully clean before reporting ready.
+
 ## Babysit PRs efficiently — batch pushes, trust CI's own reports, skip redundant lookups
 
 @shared/workflow/efficient-pr-babysitting.md
