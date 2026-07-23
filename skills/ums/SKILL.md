@@ -58,9 +58,9 @@ committed pass.
 
 4. **Commit and push ALL ai-config changes — via a branch + PR, not direct to
    `main`.** Skills AND memory files both live in the ai-config repo. Discover
-   its path with `git -C ~/.claude/skills/ums rev-parse --show-toplevel` — point
-   `-C` at a **skill subdir** (any one), not the `~/.claude/skills` parent.
-   `bootstrap.sh` may symlink skills *per-child* into a real `~/.claude/skills`
+   its path with `git -C ~/.Codex/skills/ums rev-parse --show-toplevel` — point
+   `-C` at a **skill subdir** (any one), not the `~/.Codex/skills` parent.
+   `bootstrap.sh` may symlink skills *per-child* into a real `~/.Codex/skills`
    directory (cloud/web sessions pre-populate it), so the parent itself isn't a
    symlink into the repo and `git -C` there fails with "not a git repository";
    a child like `…/skills/ums` follows the symlink into the repo. (Both beat the
@@ -79,7 +79,7 @@ committed pass.
 
    *Already on the open PR's branch* (e.g. mid-ARDI): commit + push to it.
    ```bash
-   cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+   cd "$(git -C ~/.Codex/skills/ums rev-parse --show-toplevel)"
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
    git push origin HEAD                   # PUSH
@@ -88,7 +88,7 @@ committed pass.
    *No PR yet:* branch off main first — a direct-to-main push is denied by
    auto-mode and bypasses review.
    ```bash
-   cd "$(git -C ~/.claude/skills/ums rev-parse --show-toplevel)"
+   cd "$(git -C ~/.Codex/skills/ums rev-parse --show-toplevel)"
    git fetch origin main && git checkout -b ums-<topic> origin/main   # FETCH + CREATE_BRANCH
    git add skills/<name>/SKILL.md memories/<file>.md   # the files you touched
    git commit -m "ums: <brief summary>"   # COMMIT
@@ -119,7 +119,7 @@ committed pass.
   via a PR, so the whole team and every `@claude` session there sees it. Do NOT
   keep repo-specific notes in ai-config (`memories/repo/` is retired). For a repo
   without agent-doc infrastructure, fall back to that repo's local Claude project
-  memory: `~/.claude/projects/<project-path>/memory/` (write directly; no commit).
+  memory: `~/.Codex/projects/<project-path>/memory/` (write directly; no commit).
 - [ ] Did the user express a new preference? → `/memories/preferences.md`
 - [ ] Did a workflow emerge that could be a new skill? → run `spot-skill-opportunities`
   to judge whether it's genuinely recurring, then `skill-builder` to create it
@@ -182,7 +182,7 @@ add a review gate for the cases that need one.
 - ❌ Creating `memories/repo/<repo>.md` for any repo — this pattern is retired.
   Put repo-specific lore in the repo's own agent docs (`.github/agents/`,
   `CLAUDE.md`, `.github/instructions/`) via a PR, or in
-  `~/.claude/projects/<project-path>/memory/` (local project memory, no commit) if the
+  `~/.Codex/projects/<project-path>/memory/` (local project memory, no commit) if the
   repo has no agent-doc infrastructure. See the checklist item above and
   `memories/preferences.md` for the full rule.
 - ❌ Inserting a new bullet into any memory file with nested lists (including
