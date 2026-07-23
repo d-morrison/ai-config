@@ -24,11 +24,22 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
       The reviewer’s bot login varies by setup — `gh pr view` reports it as `claude`, the REST API as `claude[bot]`, and some setups post as `github-actions[bot]`. `startswith("claude")` matches across `gh pr view` and `gh api`; broaden it if your reviewer posts under another login, or you’ll silently read `null` and false-pass. **This command captures the *bot* review only** — for a **human** reviewer (any login), gather comments with the `ard` skill’s step 1 (`gh pr view <N> --comments` plus the inline-thread API), which collects every reviewer’s comments regardless of login.
 
+      **Copilot code review doesn’t post as a PR comment at all – it’s a formal GitHub review**, invisible to the command above. Request it (`POST /repos/<owner>/<repo>/pulls/<N>/requested_reviewers` with `reviewers: ["copilot-pull-request-reviewer[bot]"]`) and check whether it posted a verdict *at the current head*:
+
+      ``` bash
+      head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+      gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
+        --jq '.[] | select(.user.login=="copilot-pull-request-reviewer[bot]") | .commit_id' \
+        | grep -qx "$head" && echo "fresh verdict at current head" || echo "no fresh review yet -- wait or re-request"
+      ```
+
+      A stub-like non-answer (“ineligible”, “reached their quota limit”) is not a verdict – treat it the same as a skipped/stub `@claude` run (see the “Do the review yourself” fallback in `CLAUDE.md`) and retry later or fall back accordingly.
+
     - **GitLab:** poll the MR notes (`sort=desc`) for a review note that references your latest short SHA before proceeding; if none has appeared, wait and retry rather than reading a stale verdict.
 
     **If the latest review is a cancellation, the live verdict is stale — don’t re-do already-applied fixes.** A `cancel-in-progress` cancellation (on setups that cancel superseded review runs) means the last *complete* review’s findings may already have been fixed by a commit that landed after it, with the confirming re-review killed before it could post. Before treating those findings as outstanding work, **diff the current code against each one** to see what’s already addressed — then push only what’s genuinely needed and let a fresh review confirm. Re-applying fixes that are already in the tree wastes a round and muddies the diff. If *nothing* remains outstanding (every finding is already applied), don’t push an empty commit — skip to step 6 and re-request the review directly.
 
-    **If the reviewer explicitly skips or cannot produce a verdict** (for example, quota exhaustion, an outage, or a policy that prevents a reviewer from self-reviewing its own work), self-review immediately — don’t stall the PR waiting on it. In the same round, also check whether a **different** configured external reviewer is available (e.g. Copilot code review, if the repo/org has it) and request it in parallel with posting the self-review, not after — the two reviewers can fail independently, and self-review is a fallback for when *no* working external reviewer is reachable, never a substitute once one is. When you self-review: read the current PR diff against its base, check each changed call path and edge case, run the focused tests and relevant lint/documentation checks, and address every finding you identify. Note the skip in your ARD summary comment. **Re-check reviewer availability every round, not just once** — a reviewer that was unavailable a few pushes ago can become available mid-session. A skipped review is never a clean external verdict on its own and does not authorize marking the PR as approved — see *The bar: “fully clean”* below, which requires an external verdict at the current head whenever one is reachable, not just a self-review.
+    **If the reviewer explicitly skips or cannot produce a verdict** (for example, quota exhaustion, an outage, or a policy that prevents a reviewer from self-reviewing its own work), self-review immediately – don’t stall the PR waiting on it. In the same round, also check whether a **different** configured external reviewer is available (e.g. Copilot code review, if the repo/org has it) and request it in parallel with posting the self-review, not after – the two reviewers can fail independently, and self-review is a fallback for when *no* working external reviewer is reachable, never a substitute once one is. When you self-review: read the current PR diff against its base, check each changed call path and edge case, run the focused tests and relevant lint/documentation checks, and address every finding you identify. Note the skip in your ARD summary comment. **Re-check reviewer availability every round, not just once** – a reviewer that was unavailable a few pushes ago can become available mid-session. A skipped review is never a clean external verdict on its own and does not authorize marking the PR as approved – see *The bar: “fully clean”* below, which requires an external verdict at the current head whenever one is reachable, not just a self-review.
 
 3.  **ARD every finding — regardless of severity label.** “Not a blocker”, “minor”, “nit”, “optional”, “consider”, “if you want” are for the user’s prioritization, not a pass for the implementer. For each flagged item, choose exactly one:
 
@@ -110,7 +121,7 @@ The goal is green CI + clean review, not just clean review.
 The loop ends only at **fully clean**, which means **both**:
 
 1.  **All CI workflows and check runs are green and completed** — every check, not just required ones and not just the review job; never still queued or in progress (see *Fix broken CI/workflows too* above, and `shared/workflow/fully-clean.md` for the check-run-vs-workflow-run and API-casing gotchas).
-2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.” **That review must be a genuine posted verdict at the current head, from an external reviewer if one is available** — check availability again right before declaring clean, not just at the round where self-review first started; an inferred “probably clean” from green CI and resolved threads does not satisfy this.
+2.  **The latest review is totally clean** — zero flagged items under any heading. “Looks good” / “no findings” / “approved” with no follow-on bullets. Every item that wasn’t directly **Addressed** is either **Deferred** to a tracked issue or **Rebutted with a rebuttal that actually convinced the reviewer** (they didn’t re-raise it on the next round). A rebuttal the reviewer still disputes does **not** count as clean. Don’t stop at “ready with one minor nit.” **That review must be a genuine posted verdict at the current head, from an external reviewer if one is reachable** – check availability again right before declaring clean, not just at the round where self-review first started; an inferred “probably clean” from green CI and resolved threads does not satisfy this.
 
 **Threads:** at fully-clean, every **inline** review thread is resolved, and the only conversation left open is the final all-clear exchange — the reviewer’s all-clear comment (usually a top-level PR comment, not an inline thread) and your reply to it. (Thread mechanics live in the `ard` skill, step 4b.)
 
@@ -122,7 +133,7 @@ All workflows and check runs are green **and completed** for the current head.
 
 Latest review has zero findings and no disputed rebuttals.
 
-That review is a genuine posted verdict at the current head from an external reviewer, if one is reachable — re-checked right before declaring clean, not just assumed from an earlier round’s self-review.
+That review is a genuine posted verdict at the current head from an external reviewer, if one is reachable – re-checked right before declaring clean, not just assumed from an earlier round’s self-review.
 
 Every inline review thread is resolved.
 
