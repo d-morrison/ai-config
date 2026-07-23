@@ -86,6 +86,9 @@ gh issue comment <N> --body "Done with my local session — unclaiming."   # COM
 
 ## Notes
 
+- If the user explicitly says to contribute to a specific existing PR, keep
+  your changes on that PR's current head branch and push there; do not open a
+  sibling PR unless they ask to supersede it.
 - **Claim an issue you just filed and will implement now, too.** Filing an
   issue then starting work on it yourself is still a write session. Post the
   claim (or open and link the PR with `Closes #N`) *promptly* — a parallel

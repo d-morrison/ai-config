@@ -647,6 +647,16 @@ by #328.)
   primary showed nine phantom staged reversals of the just-merged PR until
   restored.)
 
+## Git — if a target branch is already checked out in another worktree, push by refspec instead of switching
+- Attempting to `checkout` a branch already active elsewhere fails with
+  `fatal: '<branch>' is already used by worktree at ...`.
+- When you need to land your current commit on that branch (for example, to
+  update an existing PR branch), avoid switching branches: push your current
+  HEAD directly to the target remote branch with
+  `git push origin HEAD:<target-branch>`.
+- This avoids clobber-prone workarounds (`checkout -B`) and avoids opening a
+  new sibling PR by mistake.
+
 ## Git — `merge --continue` takes no arguments
 - `git merge --continue --no-edit` fails with `fatal: --continue expects no arguments`.
 - After resolving conflicts and staging (`git add <files>`), use `git merge --continue` alone.

@@ -348,6 +348,8 @@
 - When writing multi-step workflow instructions, order the steps to match the actual execution sequence.
   A reviewer flagged on ai-config#186 that "Use the existing PR branch" was placed before "Claim a GitHub PR/issue" in CLAUDE.md, even though you must claim the PR before you look up and switch to its branch.
   Wrong ordering misleads the reader about the correct flow.
+- When a user explicitly says to contribute to an existing PR (for example "this should go on #280"), keep the work on that PR's head branch and push there.
+  Do not open a new sibling PR to `main` unless the user asks to supersede the original.
 - Repo-specific knowledge does NOT belong in ai-config.
   When a UMS/learnings pass turns up a convention, gotcha, or workflow note tied to one repo we own, check it INTO that repo's own agent docs (`CLAUDE.md`, `.github/instructions/*.md`, `.github/copilot-instructions.md`) via a PR, so the whole team and every `@claude` session working there sees it — not just my private ai-config memory.
   The `memories/repo/` pattern is retired (don't add to it; `memories/repo/bcs.md` was relocated into ucdavis/bcs on ai-config#226, and `sparta.md` was relocated into Lacaedemon/sparta on ai-config#248). ai-config still owns genuinely cross-repo lore (`memories/debugging.md`, `tools.md`) and my own preferences/workflows — only the single-repo notes move out. (Learned on ai-config#226.)
