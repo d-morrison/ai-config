@@ -33,6 +33,16 @@ finding → push → post summary → re-request review → repeat until clean.
    state**, not the review verdict — always parse the latest review *body*
    for findings.
 
+   **When the user provides a specific review link/ID** (e.g. `#pullrequestreview-4761444085`):
+   Fetch that review directly via the GitHub API using its ID. Many bot reviews have a
+   generic overview body but the actual findings live in **inline comments on specific lines** —
+   don't rely on the top-level review body alone. Fetch both the review overview and its inline
+   comments:
+   ```bash
+   gh api repos/<owner>/<repo>/pulls/<N>/reviews/<review-id> --jq '{state, body}'
+   gh api repos/<owner>/<repo>/pulls/<N>/comments --jq '.[] | select(.pull_request_review_id == <review-id>) | {line, body}'
+   ```
+
    - **GitHub:**
      ```bash
      gh pr view <N> --json comments \
