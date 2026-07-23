@@ -233,7 +233,10 @@ def write() -> int:
         # files that don't match .gitattributes' `eol=lf` until git's own
         # normalization touches them (confusing when diagnosing sync issues
         # locally; see ai-config#655).
-        path.write_text(text, encoding="utf-8", newline="\n")
+        # write_bytes() never translates newlines (unlike write_text(), whose
+        # newline= kwarg needs Python 3.10+ -- this repo declares no minimum
+        # version), so this forces LF on every platform/Python version alike.
+        path.write_bytes(text.encode("utf-8"))
 
     expected_dirs = {path.parent for path in expected}
     for child in sorted(WRAPPER_DIR.iterdir()):
