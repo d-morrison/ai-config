@@ -50,11 +50,12 @@ Treat adding or extending the repo's non-ASCII check to also scan `.md` as
 the enforcement follow-up: a repo with no such check yet needs to add one, and
 a repo whose check already scans `.R`/`.qmd` needs to extend it.
 When the glyph must appear in rendered output, keep the source ASCII in a
-context-appropriate way. In an R
-or Python string literal (a status message, a plot label), use the `\uXXXX`
-escape, which the language decodes to the character. In `.qmd`/`.md` prose,
-`\uXXXX` is not interpreted by Pandoc and renders literally: use a math span
-(`$\times$`), an HTML entity (`&times;`), or reword to avoid the glyph.
+context-appropriate way.
+In an R or Python string literal (a status message, a plot label), use the
+`\uXXXX` escape, which the language decodes to the character.
+In `.qmd`/`.md` prose, `\uXXXX` is not interpreted by Pandoc and renders
+literally: use a math span (`$\times$`), an HTML entity (`&times;`), or
+reword to avoid the glyph.
 
 Apply it when writing and when reviewing a diff: a raw em-dash in a roxygen
 block, a `.qmd`, or a `.md` doc is a review finding, given the **same review
