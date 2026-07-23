@@ -165,7 +165,7 @@ my sync-merge commit with a rebase that dropped my conflict resolutions and
 reverted fixes. Defenses:
 - **Before pushing to a shared PR branch, `git fetch` and check that `origin/<branch>`
   hasn't moved since your last push** — don't assume your last push is still HEAD.
-  `git log --oneline HEAD..origin/<branch>`: non-empty means a parallel session pushed
+  `git log --oneline "HEAD..origin/<branch>"`: non-empty means a parallel session pushed
   past you. (This handles unpushed local commits, where a bare `rev-parse HEAD` vs
   `origin` would always differ by design.)
 - **When it was force-pushed, reset to origin and re-verify the content** (refs,
@@ -206,16 +206,16 @@ Before adding a new `##` section to an existing skill or memory file, grep the
 file for the section heading. It's easy to append a section that already exists —
 the scout-peers duplicate `## Relationship to other skills` bug (ai-config#132)
 happened because an existing section was missed and a duplicate was appended at
-the end. Run `grep -n "^## " <file>` before appending.
+the end. Run `grep -n "^## " "<file>"` before appending.
 
 ## Writing robust bash scripts (recurring review findings)
 Lessons the reviewer flagged across the `session-lock` PR (d-morrison/ai-config#38) —
 pre-empt these when authoring shell, especially under `set -euo pipefail`:
 - **`mktemp` + rename: add a cleanup trap.** A process killed between `mktemp`
-  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp <dir>/.tmp.XXXXXX);
+  and the `mv` orphans temp files forever. Pattern: `tmp=$(mktemp "<dir>"/.tmp.XXXXXX);
   trap 'rm -f "${tmp:-}"' EXIT; … > "$tmp"; mv -f "$tmp" "$dest"; trap - EXIT`.
   Belt-and-suspenders for `SIGKILL` (trap can't fire): a prune path that sweeps
-  `find <dir> -name '.tmp.*' -mmin +60 -delete` — but the `-name` glob must match
+  `find "<dir>" -name '.tmp.*' -mmin +60 -delete` — but the `-name` glob must match
   the `mktemp` prefix you chose, or it silently misses every orphan
   (`.tmp.XXXXXX` → `'.tmp.*'`; mktemp's bare `tmp.XXXXXX` default → `'tmp.*'`).
 - **Bounds-check value-taking flags before `shift 2`.** In a `set -e` arg
@@ -329,7 +329,7 @@ Hit across ucdavis/bcs#264 (the snapr-based `expect_snapshot_data` suite):
   snapr's own `expect_snapshot_data` pruning path; I didn't pin down which. The
   defense below holds either way.) Regenerate **per file** with
   `testthat::test_file("tests/testthat/test-<fn>.R")`, stage only the snapshots
-  you meant to touch (`git add tests/testthat/_snaps/<fn>.md`), and if the suite
+  you meant to touch (`git add "tests/testthat/_snaps/<fn>.md"`), and if the suite
   did prune others, restore them: `git checkout origin/main -- tests/testthat/_snaps`.
 - **snapr snapshot tests are skipped unless `NOT_CRAN=true`** (they're guarded
   like `skip_on_cran()`); locally you must set the env var or every snapshot
@@ -385,13 +385,13 @@ whenever local `git log --show-signature` can't verify it — but locally that
 check needs `gpg.ssh.allowedSignersFile` configured, which this environment
 usually doesn't set up. A commit made with `commit.gpgsign=true` /
 `gpg.format=ssh` and the right `user.signingkey` is still genuinely signed even
-when the local verify fails; `git cat-file -p <sha>` shows a real
+when the local verify fails; `git cat-file -p "<sha>"` shows a real
 `-----BEGIN SSH SIGNATURE-----` block with the correct author/committer email.
 GitHub verifies independently (it publishes the corresponding public signing
 key), so the commit still shows Verified there.
 
 Before treating the hook's feedback as an actionable problem: check
-`git cat-file -p <sha> | head -8` for the `gpgsig` block and confirm
+`git cat-file -p "<sha>" | head -8` for the `gpgsig` block and confirm
 `author`/`committer` say `noreply@anthropic.com`. If both hold, the "N" is a
 local-verification artifact, not a real signing gap — no amend/re-sign needed.
 Only act on the hook's suggested fix (config + `--amend --reset-author`) for a
@@ -476,11 +476,11 @@ finally trips over it. (ucdavis/bcs#349.)
 
 The standard "prove the new fixture catches the regression" step (temporarily
 revert the fix, confirm the test fails, restore) has a destructive failure
-mode when the fix is still uncommitted: `git checkout <file>` / `git restore
-<file>` restores from HEAD, which silently discards the whole uncommitted fix
+mode when the fix is still uncommitted: `git checkout "<file>"` / `git restore
+"<file>"` restores from HEAD, which silently discards the whole uncommitted fix
 along with the temporary revert — there is nothing to restore back to.
 Sequence it as: **commit the fix**, then revert temporarily (`git stash push
-<file>`, or a scripted counter-edit), prove the failure, then `git stash pop`
+"<file>"`, or a scripted counter-edit), prove the failure, then `git stash pop`
 / re-checkout the committed state. If a counter-edit was applied with
 sed/perl instead of stash, restoring via `git checkout` is only safe because
 the fix is already in HEAD. (Self-hit on Lacaedemon/sparta PR #870,
