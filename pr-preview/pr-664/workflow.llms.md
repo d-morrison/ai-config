@@ -46,7 +46,7 @@ The [`ardi`](skills/ardi/SKILL.llms.md) skill (`/ardi`) runs this full loop auto
 
 A PR is fully clean when:
 
-1.  All CI workflows are green (every required check, not just the review job).
+1.  All CI workflows and check runs are green and completed – not just the required checks, and not just the review job.
 2.  The latest review has no flagged items — no nits, no “consider”, no “minor observation”. The reviewer’s “Not a blocker” label is not a pass; fix it or defer it.
 3.  That review is a genuine posted verdict at the current head commit, from an external reviewer whenever one is reachable. Self-review is only the fallback for when no working external reviewer is available – never a substitute once one is – and availability gets re-checked right before declaring clean, not assumed from an earlier round.
 
