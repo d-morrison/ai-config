@@ -59,7 +59,7 @@ git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then req
 
 **CAUTION:** if a compound `add && commit && push` is **denied**, *nothing* was committed — verify with `git status` / `git log` before any `git reset --hard`, or you’ll silently discard the still-uncommitted edits.
 
-**After every push in UMS, verify PR state for the current branch.** Run `gh pr list --head <current-branch> --json number,url,state` (or equivalent). If no open PR exists, open one immediately (`gh pr create --fill`) and request `d-morrison` as reviewer; do not assume a long-lived branch already has a PR.
+**After every push in UMS, verify PR state for the current branch in the intended base repo.** Run `gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<current-branch> --json number,url,state` (for `dem-extra1/ai-config`, that is `--repo d-morrison/ai-config --head dem-extra1:<current-branch>`). If no open PR exists and upstream is accessible, open it immediately as cross-fork (`gh pr create --repo <upstream-owner>/<repo> --base main --head <head-owner>:<current-branch>`) and request `d-morrison` as reviewer. If upstream is not accessible in-session, push and explicitly hand off that upstream PR creation is still required.
 
 **Operational checklist (run in order):**
 
@@ -67,7 +67,7 @@ git push -u origin HEAD && gh pr create --fill   # PUSH + CREATE_PR — then req
 
 **Safe write form:** for any external post with markdown/backticks, use file-backed bodies (`--body-file` or `-F body=@<file>`), never inline double-quoted body strings
 
-**Postcondition:** after push, verify open PR exists for head branch (`gh pr list --head <branch> --json number,url,state`)
+**Postcondition:** after push, verify open PR exists in the intended base repo for the head owner/branch (`gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<branch> --json number,url,state`)
 
 **Recovery signature:** if shell logs `command not found` during a comment/create command, assume command substitution mangled the body; re-run using a file-backed body and re-check posted content
 

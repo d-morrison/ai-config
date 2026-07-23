@@ -13,7 +13,7 @@
 
 - **Preflight gate:** verify target branch/repo and whether the action should update an existing PR versus create a new one.
 - **Safe command form:** when content includes markdown/backticks, write to a temp file and pass `--body-file` or `-F body=@<file>`; avoid inline double-quoted body args.
-- **Postcondition gate:** after push/post/create, query GitHub state (`gh pr list --head ...`, `gh api ... --jq ...`) and confirm the intended object actually exists/updated.
+- **Postcondition gate:** after push/post/create, query GitHub state in the intended base repo (for PRs, include both repo and head owner, e.g. `gh pr list --repo <upstream-owner>/<repo> --head <head-owner>:<branch>`), and confirm the intended object actually exists/updated.
 - **Failure signature:** stderr like `command not found` during `gh ... --body` usually indicates shell-expanded backticks; treat as a malformed post, not a transient CLI error.
 
 ## gh (GitHub CLI)
@@ -1039,6 +1039,13 @@ by #328.)
 - The `latex-macros` submodule (d-morrison/macros) is uninitialized on a fresh
   clone → `git submodule update --init latex-macros` before any render, else
   `{{< include latex-macros/macros.qmd >}}` fails for every chapter.
+- More generally, when Quarto errors with `Include directive failed` / `could
+  not find file ...` and the missing path is under a submodule directory,
+  check `git submodule status` first and initialize/update that submodule in
+  the current worktree before debugging include paths (`git submodule update
+  --init <path>`). (Observed in UCD-SERG/serocalculator, 2026-07-22: missing
+  `../macros/macros.qmd` was from an uninitialized `macros` submodule, not a
+  bad include expression.)
 - In a Quarto **project** (observed on rme), `{{< include >}}` paths for files
   rendered via a root wrapper resolved from the PROJECT ROOT *in practice* —
   even for *nested* includes inside subfiles (a `{{< include _root.qmd >}}`
