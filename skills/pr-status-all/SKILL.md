@@ -85,7 +85,17 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    predates the latest push** -- report `in-flight`, not the review body's
 >    verdict, regardless of what it says (both are ISO 8601 UTC timestamps, so
 >    a plain string comparison works).
->    Only once the review postdates the last commit, apply the bar for
+>    **This timing comparison is best-effort, not proof** -- a review run
+>    *started* against an older commit can finish and post *after* a newer
+>    push lands, making `createdAt` look current even though the reviewed
+>    content is stale (issue comments carry no structured `commit_id` to
+>    check directly, unlike formal reviews). When the review body names the
+>    commit it reviewed (the `@claude` bot commonly writes "commit `<sha>`"),
+>    cross-check that mentioned SHA's prefix against `<headRefOid>` as a
+>    corroborating signal; treat a mismatch as `in-flight` even if the
+>    timing check alone would have said `clean`.
+>    Only once the review postdates the last commit (and, when available, the
+>    mentioned SHA matches), apply the bar for
 >    `clean`: "Looks good" / "no findings" / "approved" with zero follow-on
 >    bullets under any heading. A rebuttal the reviewer still disputes is
 >    **open**, not clean.
@@ -113,10 +123,15 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >      echo "no Copilot review exists at the current head"
 >    fi
 >    ```
->    Clean requires **both** an affirmative zero-new-findings overview (e.g.
->    "generated no new comments" -- never a literally empty body) **and** zero
->    matched inline comments. A stub-like non-answer ("ineligible", "reached
->    their quota limit") is not a verdict.
+>    Clean requires **three** things: an affirmative zero-new-findings
+>    overview (e.g. "generated no new comments" -- never a literally empty
+>    body), zero matched inline comments, **and no "Comments suppressed due
+>    to low confidence" block in the body** -- a "no new comments" overview
+>    can still carry real low-confidence findings collapsed into a
+>    `<details>` block that never becomes a formal inline comment (verified:
+>    PR #660's review 4767752501 read "generated no new comments" while
+>    carrying 3 suppressed findings). A stub-like non-answer ("ineligible",
+>    "reached their quota limit") is not a verdict either.
 >    **This step cannot determine *why* no Copilot verdict exists** -- it
 >    can't tell "Copilot was never asked" from "Copilot is unreachable" from
 >    "a self-review was posted instead." Don't guess; report the plain
