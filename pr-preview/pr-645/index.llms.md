@@ -9,9 +9,9 @@ Portable AI agent config — skills, memories, and commands synced across machin
 | `skills/` | Reusable workflow skills for Claude Code (`~/.claude/skills/`) |
 | `codex-skills/` | Generated Codex wrappers (`~/.codex/skills/`) |
 | `commands/` | Slash commands (`~/.claude/commands/`) |
-| `.claude/agents/` | Read-only custom subagents that skills fan work out to (see [Agents](agents.llms.md)) |
-| `memories/` | Persistent notes and preferences (shared with VS Code Copilot) |
-| `shared/` | Single-topic guidance fragments shared with the [UCD-SERG lab manual](https://ucd-serg.github.io/lab-manual/) |
+| `.claude/agents/` | Read-only custom subagents (see [Agents](agents.llms.md)) |
+| `memories/` | Persistent notes and preferences (shared VS Code Copilot) |
+| `shared/` | Single-topic guidance with [UCD-SERG lab manual](https://ucd-serg.github.io/lab-manual/) |
 
 ## Three ways to use these skills
 
