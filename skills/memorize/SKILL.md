@@ -50,7 +50,7 @@ those forms — this skill is what it hands off to once memory is the answer.
      commit it to **that project's own repo** via a PR (its `CLAUDE.md`,
      `.github/copilot-instructions.md`, or whatever agent-doc infrastructure
      it already has), so the whole team and every `@claude` session there
-     sees it. (NOT `memories/repo/` inside ai-config; that directory is
+     can see it. (NOT `memories/repo/` inside ai-config; that directory is
      removed.) If the repo has no agent-doc infrastructure yet, write to its
      local Claude project memory instead —
      `~/.claude/projects/<project-path>/memory/<file>.md` — as **short-lived
@@ -59,7 +59,9 @@ those forms — this skill is what it hands off to once memory is the answer.
      memory there) is still needed. The project path is the repo's
      directory path with `/` replaced by `-` — e.g.
      `/Users/you/Documents/GitHub/rme` → `-Users-you-Documents-GitHub-rme`.
-     Update `MEMORY.md` in that directory as an index entry either way.
+     Update `MEMORY.md` in that directory as an index entry when you used
+     this local-staging fallback — not when the fact was committed directly
+     to the owned repo's own agent docs, which needs no local copy.
    - **Project-specific, an external repo we don't own** — never open a
      direct PR autonomously. Route it through
      [`upstream-issues`](../../shared/workflow/upstream-issues.md): check

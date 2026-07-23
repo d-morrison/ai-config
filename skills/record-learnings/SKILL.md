@@ -40,7 +40,7 @@ For facts specific to ONE repo (build quirks, project conventions, CI
 behavior), if it's a repo **we own**: commit them to **that repo's own
 agent docs** via a PR (`CLAUDE.md`, `.github/copilot-instructions.md`, or
 whatever agent-doc infrastructure it already has), so the whole team and
-every `@claude` session there sees it. If that repo has no agent-doc
+every `@claude` session there can see them. If that repo has no agent-doc
 infrastructure yet, write to its local Claude project memory directory
 instead — `~/.claude/projects/<project-path>/memory/` — as **short-lived
 staging only, not a durable destination**, and flag that a PR adding
@@ -48,7 +48,9 @@ agent-doc infrastructure to that repo (plus migrating the staged memory
 there) is still needed. The project path is the repo's directory path
 with `/` replaced by `-` — e.g. `/Users/you/Documents/GitHub/rme` →
 `~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/`. Update
-`MEMORY.md` in that directory as an index either way.
+`MEMORY.md` in that directory as an index when you used this local-staging
+fallback — not when the fact was committed directly to the owned repo's
+own agent docs, which needs no local copy.
 
 For an **external repo we don't own**, never open a direct PR
 autonomously — follow [`upstream-issues`](../../shared/workflow/upstream-issues.md):
