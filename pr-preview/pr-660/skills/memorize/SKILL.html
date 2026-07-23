@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-d03312063cfab2e1753bdcbb830eb4d1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-c98d9d0b3b0a085d3ddf71e6e91476d8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -395,7 +395,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><strong>Project’s own repo, owned</strong> — commit, push a branch, and open a PR there, same as any other change to that repo.</li>
 <li><strong>Project’s own repo, external (not owned)</strong> — never push/open a PR directly; follow <code>upstream-issues</code> (policy check, draft, explicit user approval) instead.</li>
-<li><strong><code>~/.claude/projects/*/memory/</code> staging</strong> (the project repo has no agent-doc infrastructure yet, or is external and not yet approved) — no git commit; it persists locally only. Tell the user this is temporary staging and what’s still needed (agent-doc infra added via a PR, or upstream approval).</li>
+<li><strong><code>~/.claude/projects/*/memory/</code> staging</strong> (the project repo has no agent-doc infrastructure yet, or is external and not yet approved) — no git commit; it persists locally only. Update <code>MEMORY.md</code> in that directory as an index entry. Tell the user this is temporary staging and what’s still needed (agent-doc infra added via a PR, or upstream approval).</li>
 <li><strong><code>/memories/session/</code></strong> — skip; conversation-only notes shouldn’t enter the shared repo.</li>
 <li><strong>Everything else — including <code>~/.claude/CLAUDE.md</code> writes — gets committed</strong> to ai-config. This assumes <code>bootstrap.sh</code> has symlinked <code>memories/</code> and <code>CLAUDE.md</code> into the ai-config repo (the expected setup) and that ai-config is your working repo. When you’re <strong>working primarily in another repo</strong> and want to push a general memory to ai-config from there, use <code>push-memory</code> instead — it delivers on a branch + PR and never touches the repo you’re in. Resolve the repo from the <code>memories/</code> symlink and stage the file by its path <em>within</em> the repo (<code>git rev-parse --show-toplevel</code> follows the symlink to the repo root, robust across one or many hops — unlike single-hop <code>readlink</code>):</li>
 </ul>
