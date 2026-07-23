@@ -76,12 +76,19 @@ external reviewer, whenever one is reachable** -- a self-review (posted when
 `@claude` was skipped or stubbed) is a fallback, never a substitute, once an
 external reviewer becomes available again. Formal reviews (e.g. Copilot)
 don't show up in the comments query above at all -- they're a separate
-review object. Run the availability/current-head check from
-[`ardi`'s step 2](../ardi/SKILL.md) (request the reviewer, fetch the matched
-review's body + inline comments at the current `commit_id`, require a
-zero-findings verdict) before declaring a PR ready. Green CI plus a clean
-self-review is not sufficient on its own if an external reviewer is
-reachable.
+review object.
+
+**This is a status query -- inspect an existing Copilot review, don't
+request one.** Requesting a review is a mutation: it triggers a review job,
+consumes reviewer quota, and can collide with an active `ardi` loop driving
+the same PR. Use the read-only half of
+[`ardi`'s step 2](../ardi/SKILL.md) -- fetch the matched review's body +
+inline comments at the current `commit_id` and require a zero-findings
+verdict -- but skip the `POST /requested_reviewers` call. If no genuine
+Copilot verdict exists at the current head, report `no verdict at head` and
+offer to run `ardi` (which can request one); don't request it yourself here.
+Green CI plus a clean self-review is not sufficient on its own if an
+external reviewer is reachable.
 
 ## Parse for findings before declaring clean
 
