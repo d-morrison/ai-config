@@ -4,6 +4,7 @@ description: "ARDIA + Edit Instructions: first run ARDIA (drive every open PR/MR
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -95,6 +96,12 @@ review survey across PRs. The UMS phase reasons over the whole session's learnin
 at once and is not decomposable, so it stays inline. Consult
 `shared/workflow/when-to-orchestrate.md` (the shared-runner exception).
 
+Phase 1 can still delegate sidecar work directly via the `Agent` tool within a
+single PR's own ARDI round --- see `ardia`'s "Lightweight sidecar delegation"
+note, including its guidance on giving a judgment-heavy sidecar task a
+stronger model. Phase 2 has no sidecar-delegation angle of its own, per the
+non-decomposable note above.
+
 ## Relationship to other skills
 
 - **`ardia`** / `adria` — Phase 1 in full (itself nests `ardi`, `ard`).
@@ -103,3 +110,5 @@ at once and is not decomposable, so it stays inline. Consult
   explicit "do it now, after the loop" checkpoint.
 - Use **`ardia`** alone to only clear the PR queue, or **`ums`** alone to only
   update instructions. `ardiaei` is the clean-then-capture combination.
+- **`select-model`** — decision tree for picking a subagent's model tier when
+  Phase 1 delegates sidecar work (see Orchestration).

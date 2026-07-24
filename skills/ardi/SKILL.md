@@ -4,6 +4,7 @@ description: "ARD + Iterate: apply the ARD framework within an iterate loop on a
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -233,6 +234,21 @@ includes:
   cause.
 
 The goal is green CI + clean review, not just clean review.
+
+## Delegating sidecar work
+
+Some steps benefit from a subagent rather than blocking the round on the main
+thread --- investigating a CI failure whose cause isn't obvious (see above),
+verifying a reviewer's factual claim before Addressing/Rebutting it, or
+checking a sibling PR for a merge conflict during the opportunistic sweep.
+Delegate that via the `Agent` tool and keep driving the round itself (ARD,
+push, post summary, re-request review) on the main thread.
+
+For a judgment-heavy sidecar task (a subtle root-cause hunt, adjudicating a
+deadlocked rebuttal before escalating to a human), give the subagent a
+stronger model via the `Agent` tool's `model` parameter (e.g. `model:
+'opus'`) --- see [`select-model`](../../skills/select-model/SKILL.md)'s
+decision tree for when the bump is warranted.
 
 ## The bar: "fully clean"
 

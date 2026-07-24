@@ -4,6 +4,7 @@ description: "Grab Issues Iteratively: loop over the repo's open issues — grab
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -93,6 +94,24 @@ If stopping due to max-issues, ask:
 
 Go back to step (a) with the next issue.
 
+### 2. Delegate sidecar work when helpful
+
+Within an iteration, hand independent sidecar work off to a subagent via the
+`Agent` tool instead of doing it inline --- a history/precedent investigation,
+a verification pass on the implementation, research into how a similar issue
+was solved elsewhere. Keep the critical path (claim, draft PR, implement,
+ARDI) on the main thread so the loop keeps moving; this is a single sidecar
+call within one iteration, not a way to run whole issues concurrently --- for
+that, see [`gip`](../gip/SKILL.md).
+
+When the sidecar task is judgment-heavy (a tricky bug hunt, an
+architecturally significant call, an adversarial review pass before the
+implementation goes out for real review), give the subagent a stronger model
+via the `Agent` tool's `model` parameter (e.g. `model: 'opus'`) instead of
+leaving it at the session default --- see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for when
+the bump is warranted.
+
 ## Stacking rules
 
 When stacking MRs (basing a new branch on an unmerged MR branch):
@@ -150,6 +169,8 @@ When the loop ends, print a summary:
 - **`defer-issue`** — if sub-tasks emerge, defer them (they'll be picked up
   in a later iteration of this very loop)
 - **`sync-pr-branch`** — used when stacking to keep branches current
+- **`select-model`** — decision tree for picking a subagent's model tier when
+  delegating sidecar work (see Procedure, step 2)
 
 ## Auto-proceed mode
 

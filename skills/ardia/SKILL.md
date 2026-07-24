@@ -4,6 +4,7 @@ description: "ARD + Iterate-All: apply ARDI (ARD + iterate) to every open PR/MR 
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -127,6 +128,18 @@ and triage its findings in parallel, then feed that into the serial fix loop.
 Consult `shared/workflow/when-to-orchestrate.md` (the shared-runner exception);
 default to the serial loop, and propose the read-only fan-out only when there are
 many PRs to survey.
+
+### Lightweight sidecar delegation
+
+Separately from the Workflow-based survey fan-out above, a single PR's ARDI
+round (see `ardi`) can delegate sidecar work directly via the `Agent` tool ---
+verifying a disputed factual claim, investigating an unclear CI failure, or
+drafting a reply to one reviewer thread --- while the main thread keeps
+driving that round forward. This is a lighter-weight call than the Workflow
+tool covers above and needs no opt-in gate. Give the subagent a stronger
+model (e.g. `model: 'opus'` on the `Agent` tool call) for judgment-heavy
+sidecar work --- see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree.
 
 ## Recurring / unattended runs
 
