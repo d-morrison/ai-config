@@ -105,6 +105,7 @@ TOKEN_PATTERN = re.compile(r"`([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`")
 NON_OPERATION_TOKENS = {
     "ALLOWED_TOOLS",
     "ANTHROPIC_API_KEY",
+    "CHANGES_REQUESTED",  # GitHub review state constant, not an operation token
     "CHERRY_PICK_HEAD",
     "CLAUDE_CODE_OAUTH_TOKEN",
     "ENTITY_NUMBER",
