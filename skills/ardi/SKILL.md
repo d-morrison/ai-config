@@ -76,7 +76,7 @@ finding → push → post summary → re-request review → repeat until clean.
      supports both:
      ```bash
      set -o pipefail
-     head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+     head="$(gh pr view "<N>" --json headRefOid -q .headRefOid)"
      review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
        | jq -s --arg head "$head" \
        '[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$head)] | last | .id')"
@@ -287,10 +287,10 @@ confirm each box before advancing to the next round:
 - [ ] Re-review trigger was chosen correctly: push-trigger only when code was
       pushed; explicit mention/dispatch only when no code was pushed.
 
-7. **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar:
-   "fully clean"* below — zero findings **and** all CI workflows and check
-   runs green and completed **and** every inline thread resolved). Don't exit
-   on a clean review body alone.
+7. **Repeat from step 2** until the PR/MR is **fully clean** (see
+   [*The bar: "fully clean"*](#the-bar-fully-clean) -- zero findings **and**
+   all CI workflows and check runs green and completed **and** every inline
+   thread resolved). Don't exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
 
