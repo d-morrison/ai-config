@@ -2394,6 +2394,24 @@ not block `claude-review`.)
   step against a canned fixture — the same category of gap `sync-with-main.md`'s "derived
   artifacts" and "extracted copy" entries describe, but for a composite action's runtime
   resolution specifically rather than a checked-out script's content.
+- **A nested `uses: ./...` composite-action reference INSIDE another composite action
+  resolves against `$GITHUB_WORKSPACE` (the top-level workflow's own checkout), not
+  against the repo the enclosing composite was itself fetched from -- a distinct failure
+  mode from the `job_workflow_ref` case just above, but the same underlying lesson.**
+  Confirmed via [`actions/runner#1348`](https://github.com/actions/runner/issues/1348)
+  ("Local composite actions always relative to top level repository"). Extracting a new
+  shared composite (e.g. a base-URL-derivation helper) and having two sibling composites
+  reach it via a local `uses: ./.github/actions/<new-composite>` step looks correct and
+  even passes selftest when the selftest job happens to check out the same repo the
+  composite lives in (masking the bug) -- but breaks for every real consumer, whose own
+  checkout doesn't contain that path. I stated the opposite claim confidently in a code
+  comment ("a same-repo local path resolves against the repository this action was
+  fetched from") before a later review round caught it -- a wrong belief stated as fact,
+  not just a missed check. **Fix: reach the sibling composite's script directly via
+  `${{ github.action_path }}/../other-composite/script.py`, never via a nested `uses:`**
+  -- `github.action_path` is correct regardless of caller context, the same principle
+  #197 (above) established for `job_workflow_ref`. (d-morrison/gha#284, rounds 1-3 fixed
+  other genuine bugs first; this one wasn't caught until round 4.)
 - **An unrelated open PR can independently patch the same root cause as an incidental,
   second commit — without ever linking the issue — surfacing only as a merge conflict
   after your own fix lands.** `post-merge`'s cascade-conflict-scan step (1.5) is what
