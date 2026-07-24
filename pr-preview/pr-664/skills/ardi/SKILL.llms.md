@@ -26,11 +26,11 @@ Drive one PR/MR to a clean review verdict by looping: read review → ARD every 
 
       The reviewer’s bot login varies by setup — `gh pr view` reports it as `claude`, the REST API as `claude[bot]`, and some setups post as `github-actions[bot]`. `startswith("claude")` matches across `gh pr view` and `gh api`; broaden it if your reviewer posts under another login, or you’ll silently read `null` and false-pass. **This command captures the *bot* review only** — for a **human** reviewer (any login), gather comments with the `ard` skill’s step 1 (`gh pr view <N> --comments` plus the inline-thread API), which collects every reviewer’s comments regardless of login.
 
-      **Copilot code review doesn’t post as a PR comment at all – it’s a formal GitHub review**, invisible to the command above. Request it (`POST /repos/<owner>/<repo>/pulls/<N>/requested_reviewers` with `reviewers: ["copilot-pull-request-reviewer[bot]"]`) and check whether it posted a verdict *at the current head*. Finding a review object at the right `commit_id` only proves Copilot *looked* – it says nothing about whether that review is clean. Fetch the matched review’s own overview **and** its inline comments (same two-call shape as the review-link case above) before treating it as an all-clear: `gh api`’s own `--jq` flag has no `--arg`/`--argjson` (see [`memories/tools.md`](../../memories/tools.md)’s `gh api`/`jq` note) – pipe the raw paginated output into standalone `jq -s` instead, which supports both:
+      **Copilot code review doesn’t post as a PR comment at all – it’s a formal GitHub review**, invisible to the command above. Request it (`REQUEST_COPILOT_REVIEW` – abstract operation token; resolve to your model’s tool via [`tool-mappings.md`](../../tool-mappings.md)) and check whether it posted a verdict *at the current head*. Finding a review object at the right `commit_id` only proves Copilot *looked* – it says nothing about whether that review is clean. Fetch the matched review’s own overview **and** its inline comments (same two-call shape as the review-link case above; the reviews list itself is `READ_PR_REVIEWS`) before treating it as an all-clear: `gh api`’s own `--jq` flag has no `--arg`/`--argjson` (see [`memories/tools.md`](../../memories/tools.md)’s `gh api`/`jq` note) – pipe the raw paginated output into standalone `jq -s` instead, which supports both:
 
       ``` bash
       set -o pipefail
-      head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+      head="$(gh pr view "<N>" --json headRefOid -q .headRefOid)"
       review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
         | jq -s --arg head "$head" \
         '[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$head)] | last | .id')"
@@ -115,7 +115,7 @@ ARD summary was posted and corresponding inline-thread replies/resolutions were 
 
 Re-review trigger was chosen correctly: push-trigger only when code was pushed; explicit mention/dispatch only when no code was pushed.
 
-7.  **Repeat from step 2** until the PR/MR is **fully clean** (see *The bar: “fully clean”* below — zero findings **and** all CI workflows and check runs green and completed **and** every inline thread resolved). Don’t exit on a clean review body alone.
+7.  **Repeat from step 2** until the PR/MR is **fully clean** (see [*The bar: “fully clean”*](#the-bar-fully-clean) – zero findings **and** all CI workflows and check runs green and completed **and** every inline thread resolved). Don’t exit on a clean review body alone.
 
 ## Fix broken CI/workflows too
 

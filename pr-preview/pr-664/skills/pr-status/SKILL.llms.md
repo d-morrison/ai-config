@@ -30,7 +30,7 @@ A PR can merge between a “status?” call and a follow-up “status?” in the
 ## Read the LATEST review, checked for currency
 
 ``` bash
-gh pr view <N> --json comments,commits,headRefOid \
+gh pr view "<N>" --json comments,commits,headRefOid \
   --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'
 ```
 
@@ -58,14 +58,14 @@ Read the full latest review body and scan for any “Findings”, “Issues”, 
 
 ## Check for a blocking human CHANGES_REQUESTED
 
-A bot’s clean verdict does **not** clear a human’s formal review state. A `CHANGES_REQUESTED` review submitted via GitHub’s review UI is invisible to the comments query above – it’s a separate object, and often has an **empty** top-level body with the actual finding in an inline comment:
+A bot’s clean verdict does **not** clear a human’s formal review state. A `CHANGES_REQUESTED` review submitted via GitHub’s review UI is invisible to the comments query above – it’s a separate object, and often has an **empty** top-level body with the actual finding in an inline comment (`READ_PR_REVIEWS` – abstract operation token; resolve to your model’s tool via [`tool-mappings.md`](../../tool-mappings.md)):
 
 ``` bash
-gh pr view <N> --json reviews \
-  --jq '[.reviews[] | select(.author.login != null)] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | .[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
+gh pr view "<N>" --json reviews \
+  --jq '[.reviews[] | select(.author.login != null and (.state == "APPROVED" or .state == "CHANGES_REQUESTED"))] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | .[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
 ```
 
-**`--json reviews` returns the full review history, not one entry per reviewer** – an early `CHANGES_REQUESTED` from a reviewer who later approved would otherwise block forever. The `group_by` / `sort_by` / `last` chain reduces to each author’s *latest* review before filtering, matching what GitHub’s own UI shows as the current state (verified against this skill’s own PR: an author with an old `COMMENTED` round and no `CHANGES_REQUESTED` correctly produces no output).
+**`--json reviews` returns the full review history, not one entry per reviewer, and a reviewer’s *decisive* state persists across neutral comments** – GitHub only clears `CHANGES_REQUESTED` when that same reviewer later `APPROVED`s, or via an explicit dismissal; a neutral `COMMENTED` review in between does **not** clear it (verified against GitHub’s own docs and community reports). Filtering to only `APPROVED`/ `CHANGES_REQUESTED` states *before* reducing to each author’s latest review is required – reducing over *all* states first would let a later `COMMENTED` round hide an earlier `CHANGES_REQUESTED` (verified with a synthetic fixture: a `CHANGES_REQUESTED` followed by a `COMMENTED` from the same author incorrectly produced no output under the naive reduction, and correctly still blocked once state-filtered first).
 
 If this returns anything, the PR is **blocking** regardless of what any bot says – only the human (or an explicit dismissal) resolves it. Report it as open and name the reviewer; don’t let a later “Ready for merge” bot comment paper over it.
 
