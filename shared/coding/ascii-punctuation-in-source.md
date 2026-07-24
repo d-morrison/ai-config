@@ -72,3 +72,16 @@ block, a `.qmd`, or a `.md` doc is a review finding, regardless of whether
 this particular file is one a CI check currently scans.
 Give it the **same review weight** as a CI-breaking issue -- this is not a
 claim that it always breaks CI, since not every file type is scanned.
+
+**When self-checking a multi-commit PR, re-scan the WHOLE diff against the
+base branch before each push -- not just the files touched by the latest
+commit.** A narrower check (`git diff -U0 <files-from-this-commit> | grep
+...`) can miss an em-dash sitting in a file an *earlier* commit introduced,
+because that file never entered the narrower command's scope again. Use
+`git diff -U0 origin/main -- <all-changed-files>` (or `git diff -U0
+origin/main` with no path filter) so a fix pushed in round 2 doesn't
+silently leave round 1's violation standing. (gha#286: a changelog fragment
+added in the PR's first commit had a raw em-dash that a same-session grep
+check caught on that commit but missed on a later, narrower re-check scoped
+only to the commit being amended -- the gap was closed by the repo's own
+automated `@claude` self-review, not by the author's manual check.)
