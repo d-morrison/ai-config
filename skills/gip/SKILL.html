@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -13,10 +13,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -40,14 +43,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-8a591ff59271d21f6a5d1e80b3747fb5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -465,13 +468,31 @@ Work GitHub issue <strong>#<n></n></strong> (“
 &lt;li&gt;❌ Re-running the triage / independence gate inside each subagent — that’s once-per-run orchestrator work.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;div id="quarto-navigation-envelope" class="hidden"&gt;
-&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1zaWRlYmFyLXRpdGxl"&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXItdGl0bGU="&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6SG9tZQ=="&gt;Home&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2luZGV4Lmh0bWw="&gt;/index.html&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6U2V0dXA="&gt;Setup&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3NldHVwLmh0bWw="&gt;/setup.html&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6U2tpbGxz"&gt;Skills&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3NraWxscy5odG1s"&gt;/skills.html&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6QWdlbnRz"&gt;Agents&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2FnZW50cy5odG1s"&gt;/agents.html&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6V29ya2Zsb3c="&gt;Workflow&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3dvcmtmbG93Lmh0bWw="&gt;/workflow.html&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6aHR0cHM6Ly9naXRodWIuY29tL2QtbW9ycmlzb24vYWktY29uZmln"&gt;https://github.com/d-morrison/ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1zaWRlYmFyLXRpdGxl"&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXItdGl0bGU="&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6SG9tZQ=="&gt;Home&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2luZGV4Lmh0bWw="&gt;/index.html&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6U2V0dXA="&gt;Setup&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3NldHVwLmh0bWw="&gt;/setup.html&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6U2tpbGxz"&gt;Skills&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3NraWxscy5odG1s"&gt;/skills.html&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6QWdlbnRz"&gt;Agents&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L2FnZW50cy5odG1s"&gt;/agents.html&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6V29ya2Zsb3c="&gt;Workflow&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6L3dvcmtmbG93Lmh0bWw="&gt;/workflow.html&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLWludC1uYXZiYXI6aHR0cHM6Ly9naXRodWIuY29tL2QtbW9ycmlzb24vYWktY29uZmln"&gt;https://github.com/d-morrison/ai-config&lt;/span&gt;&lt;/p&gt;
 &lt;div class="hidden quarto-markdown-envelope-contents" data-render-id="Zm9vdGVyLWNlbnRlcg=="&gt;
 &lt;p&gt;Built with &lt;a href="https://quarto.org/"&gt;Quarto&lt;/a&gt;&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;div id="quarto-meta-markdown" class="hidden"&gt;
-&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGF0aXRsZQ=="&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkdGl0bGU="&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZHRpdGxl"&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGFzaXRlbmFtZQ=="&gt;ai-config&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkZGVzYw=="&gt;Grab Issues in Parallel: grab several provably-independent open issues and work them concurrently — one worktree-isolated subagent per issue, each implementing its issue, opening an MR/PR, and ARDI-ing it to clean. The parallel counterpart to the deliberately-serial &lt;code&gt;gii&lt;/code&gt;. Use when asked to ‘gip’, ‘grab issues in parallel’, ‘work several issues at once’, ‘parallelize the backlog’, ‘do these issues concurrently’, or ‘fan out the issue queue’.&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZGRkZXNj"&gt;Grab Issues in Parallel: grab several provably-independent open issues and work them concurrently — one worktree-isolated subagent per issue, each implementing its issue, opening an MR/PR, and ARDI-ing it to clean. The parallel counterpart to the deliberately-serial &lt;code&gt;gii&lt;/code&gt;. Use when asked to ‘gip’, ‘grab issues in parallel’, ‘work several issues at once’, ‘parallelize the backlog’, ‘do these issues concurrently’, or ‘fan out the issue queue’.&lt;/span&gt; &lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGFzaXRlZGVzYw=="&gt;Portable AI agent config — skills, memories, and commands synced across machines via git&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGF0aXRsZQ=="&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkdGl0bGU="&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZHRpdGxl"&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGFzaXRlbmFtZQ=="&gt;ai-config&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLXR3aXR0ZXJjYXJkZGVzYw=="&gt;Grab Issues in Parallel: grab several provably-independent open issues and work them concurrently — one worktree-isolated subagent per issue, each implementing its issue, opening an MR/PR, and ARDI-ing it to clean. The parallel counterpart to the deliberately-serial &lt;code&gt;gii&lt;/code&gt;. Use when asked to ‘gip’, ‘grab issues in parallel’, ‘work several issues at once’, ‘parallelize the backlog’, ‘do these issues concurrently’, or ‘fan out the issue queue’.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW9nY2FyZGRkZXNj"&gt;Grab Issues in Parallel: grab several provably-independent open issues and work them concurrently — one worktree-isolated subagent per issue, each implementing its issue, opening an MR/PR, and ARDI-ing it to clean. The parallel counterpart to the deliberately-serial &lt;code&gt;gii&lt;/code&gt;. Use when asked to ‘gip’, ‘grab issues in parallel’, ‘work several issues at once’, ‘parallelize the backlog’, ‘do these issues concurrently’, or ‘fan out the issue queue’.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class="hidden quarto-markdown-envelope-contents" data-render-id="cXVhcnRvLW1ldGFzaXRlZGVzYw=="&gt;Portable AI agent config — skills, memories, and commands synced across machines via git&lt;/span&gt;&lt;/p&gt;
 &lt;/div&gt;
 &lt;/section&gt;
 &lt;/section&gt;

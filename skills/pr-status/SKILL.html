@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -13,10 +13,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -75,14 +78,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-8a591ff59271d21f6a5d1e80b3747fb5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -348,8 +351,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#when-this-fires" id="toc-when-this-fires" class="nav-link" data-scroll-target="#when-this-fires">When this fires</a></li>
   <li><a href="#verify-the-pr-is-still-open-first" id="toc-verify-the-pr-is-still-open-first" class="nav-link" data-scroll-target="#verify-the-pr-is-still-open-first">Verify the PR is still open first</a></li>
   <li><a href="#ci-green-review-clean" id="toc-ci-green-review-clean" class="nav-link" data-scroll-target="#ci-green-review-clean">CI green ≠ review clean</a></li>
-  <li><a href="#read-the-latest-review" id="toc-read-the-latest-review" class="nav-link" data-scroll-target="#read-the-latest-review">Read the LATEST review</a></li>
+  <li><a href="#read-the-latest-review-checked-for-currency" id="toc-read-the-latest-review-checked-for-currency" class="nav-link" data-scroll-target="#read-the-latest-review-checked-for-currency">Read the LATEST review, checked for currency</a></li>
+  <li><a href="#check-for-a-genuine-external-verdict-not-just-self-review" id="toc-check-for-a-genuine-external-verdict-not-just-self-review" class="nav-link" data-scroll-target="#check-for-a-genuine-external-verdict-not-just-self-review">Check for a genuine external verdict, not just self-review</a></li>
   <li><a href="#parse-for-findings-before-declaring-clean" id="toc-parse-for-findings-before-declaring-clean" class="nav-link" data-scroll-target="#parse-for-findings-before-declaring-clean">Parse for findings before declaring clean</a></li>
+  <li><a href="#check-for-a-blocking-human-changes_requested" id="toc-check-for-a-blocking-human-changes_requested" class="nav-link" data-scroll-target="#check-for-a-blocking-human-changes_requested">Check for a blocking human CHANGES_REQUESTED</a></li>
   <li><a href="#check-thread-resolution-state" id="toc-check-thread-resolution-state" class="nav-link" data-scroll-target="#check-thread-resolution-state">Check thread-resolution state</a></li>
   <li><a href="#output" id="toc-output" class="nav-link" data-scroll-target="#output">Output</a></li>
   </ul></li>
@@ -389,10 +394,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="ci-green-review-clean">CI green ≠ review clean</h2>
 <p><code>gh pr checks &lt;N&gt;</code> (<code>PR_CHECKS</code>) going green is about <strong>CI state</strong>, not the review verdict. A PR can have all checks passing and still have unaddressed review findings. Always parse the latest <strong>review body</strong> for findings — don’t infer “clean” from green checks.</p>
 </section>
-<section id="read-the-latest-review" class="level2">
-<h2 class="anchored" data-anchor-id="read-the-latest-review">Read the LATEST review</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="op">&lt;</span>N<span class="op">&gt;</span> --json comments <span class="dt">\</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'[.comments[] | select(.author.login | startswith("claude"))] | last | .body'</span>   <span class="co"># READ_PR_COMMENTS</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="read-the-latest-review-checked-for-currency" class="level2">
+<h2 class="anchored" data-anchor-id="read-the-latest-review-checked-for-currency">Read the LATEST review, checked for currency</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="st">"&lt;N&gt;"</span> <span class="at">--json</span> comments,commits,headRefOid <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>This call fetches more than <code>READ_PR_COMMENTS</code> maps to</strong> – <code>tool-mappings.md</code> maps that token to a comments-only MCP call (<code>pull_request_read(method=get_comments)</code>), which returns neither <code>commits</code> nor <code>headRefOid</code>. In a remote/MCP session without <code>gh</code>, fetch those two fields with a separate call (e.g.&nbsp;<code>pull_request_read(method=get)</code> for <code>headRefOid</code>, plus the commits list) rather than assuming the token mapping covers this expanded query.</p>
+<p><strong>If <code>.review.createdAt</code> is earlier than <code>.lastCommitDate</code>, the review predates the latest push</strong> – treat it as stale, not current, regardless of what its body says (both are ISO 8601 UTC timestamps, so a plain string comparison works). This timing check alone is <strong>not proof of currency</strong>: <code>committedDate</code> is the commit’s local committer timestamp, not when GitHub received the push, so a commit authored earlier but pushed later can pass the timing check while still being newer than the review. When the review body names the commit it reviewed (the <code>@claude</code> bot commonly writes “commit <code>&lt;sha&gt;</code>”), cross-check that SHA’s prefix against <code>.headRefOid</code>. <strong>Require a SHA match to call it <code>clean</code></strong> – when the review passes the timing check but names no SHA (or the mentioned SHA doesn’t match), report <strong><code>unverified</code></strong>, not clean, every time, not just when the gap “looks small” (there’s no reliable way to judge that from the timing check alone).</p>
 <p>The reviewer’s bot login <strong>varies by API and setup</strong>:</p>
 <ul>
 <li><code>gh pr view</code> reports it as <code>claude</code></li>
@@ -401,29 +408,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p><code>startswith("claude")</code> matches the <span class="citation" data-cites="claude">@claude</span> bot across both <code>gh pr view</code> and <code>gh api</code>. If your reviewer posts under a different login (e.g. <code>github-actions[bot]</code>), <strong>broaden the filter</strong> — otherwise the <code>--jq</code> returns <code>null</code> and you silently false-pass a PR with open findings. (Structured MCP GitHub tools like <code>mcp__github_ci__get_ci_status</code> are an alternative where the <code>gh</code> JSON parsing gets fragile.)</p>
 </section>
+<section id="check-for-a-genuine-external-verdict-not-just-self-review" class="level2">
+<h2 class="anchored" data-anchor-id="check-for-a-genuine-external-verdict-not-just-self-review">Check for a genuine external verdict, not just self-review</h2>
+<p>The <code>@claude</code> comment above isn’t the whole picture. Per <a href="../../shared/workflow/fully-clean.md"><code>fully-clean.md</code></a>, reporting a PR clean/ready requires a <strong>genuine posted verdict at the current head from an external reviewer, whenever one is reachable</strong> – a self-review (posted when <code>@claude</code> was skipped or stubbed) is a fallback, never a substitute, once an external reviewer becomes available again. Formal reviews (e.g.&nbsp;Copilot) don’t show up in the comments query above at all – they’re a separate review object.</p>
+<p><strong>This is a status query – inspect an existing Copilot review, don’t request one.</strong> Requesting a review is a mutation: it triggers a review job, consumes reviewer quota, and can collide with an active <code>ardi</code> loop driving the same PR. Use the read-only half of <a href="../../skills/ardi/SKILL.html"><code>ardi</code>’s step 2</a> – fetch the matched review’s body + inline comments at the current <code>commit_id</code> and require a zero-findings verdict – but skip the <code>POST /requested_reviewers</code> call. If no genuine Copilot verdict exists at the current head, report <code>no verdict at head</code> and offer to run <code>ardi</code> (which can request one); don’t request it yourself here. Green CI plus a clean self-review is not sufficient on its own if an external reviewer is reachable.</p>
+</section>
 <section id="parse-for-findings-before-declaring-clean" class="level2">
 <h2 class="anchored" data-anchor-id="parse-for-findings-before-declaring-clean">Parse for findings before declaring clean</h2>
 <p>Read the full latest review body and scan for any “Findings”, “Issues”, “Remaining”, “Non-blocking”, “Minor”, “Could improve”, “Consider”, etc. section. The bar for reporting <strong>clean</strong>: “Looks good” / “no findings” / “approved” with <strong>zero</strong> follow-on bullets under any heading. A posted rebuttal the reviewer is still disputing is <strong>open</strong>, not clean — a rebuttal counts only once it convinced the reviewer (they dropped the item).</p>
-<p>A PR is only <strong>fully clean / ready to merge</strong> when its review is clean <em>and</em> all CI workflows are green <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply to it — see <em>Check thread-resolution state</em> below). Do <strong>not</strong> report “ready to merge with one minor nit noted” / “harmless as-is” / “can address if you want” — that hedging just pushes triage back to the user. If there are open items, report them as open (and offer to run <code>ardi</code> to clear them).</p>
+</section>
+<section id="check-for-a-blocking-human-changes_requested" class="level2">
+<h2 class="anchored" data-anchor-id="check-for-a-blocking-human-changes_requested">Check for a blocking human CHANGES_REQUESTED</h2>
+<p>A bot’s clean verdict does <strong>not</strong> clear a human’s formal review state. A <code>CHANGES_REQUESTED</code> review submitted via GitHub’s review UI is invisible to the comments query above – it’s a separate object, and often has an <strong>empty</strong> top-level body with the actual finding in an inline comment (<code>READ_PR_REVIEWS</code> – abstract operation token; resolve to your model’s tool via <a href="../../tool-mappings.md"><code>tool-mappings.md</code></a>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr view <span class="st">"&lt;N&gt;"</span> <span class="at">--json</span> reviews <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jq</span> <span class="st">'[.reviews[] | select(.author.login != null and (.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED"))] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | .[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong><code>--json reviews</code> returns the full review history, not one entry per reviewer, and a reviewer’s <em>decisive</em> state persists across neutral comments</strong> – GitHub only clears <code>CHANGES_REQUESTED</code> when that same reviewer later <code>APPROVED</code>s, or via an explicit dismissal; a neutral <code>COMMENTED</code> review in between does <strong>not</strong> clear it (verified against GitHub’s own docs and community reports). Filtering to only <code>APPROVED</code>/ <code>CHANGES_REQUESTED</code>/<code>DISMISSED</code> states <em>before</em> reducing to each author’s latest review is required – reducing over <em>all</em> states first would let a later <code>COMMENTED</code> round hide an earlier <code>CHANGES_REQUESTED</code> (verified with a synthetic fixture: a <code>CHANGES_REQUESTED</code> followed by a <code>COMMENTED</code> from the same author incorrectly produced no output under the naive reduction, and correctly still blocked once state-filtered first). <strong><code>DISMISSED</code> must stay in the filter, not just <code>APPROVED</code>/<code>CHANGES_REQUESTED</code></strong> – an explicit dismissal is itself one of the two ways a <code>CHANGES_REQUESTED</code> clears, so dropping it before the per-author reduction lets an older <code>CHANGES_REQUESTED</code> win over its own later dismissal (verified with a second synthetic fixture: <code>CHANGES_REQUESTED</code> then <code>DISMISSED</code> from the same author incorrectly still returned the author as blocking under an <code>APPROVED</code>/<code>CHANGES_REQUESTED</code>-only filter, and correctly returned nothing once <code>DISMISSED</code> was included in the filter). The final <code>select(.state == "CHANGES_REQUESTED")</code> still excludes <code>DISMISSED</code> reviews from the blocking list – only its <em>presence</em> in the pre-reduction filter matters.</p>
+<p>If this returns anything, the PR is <strong>blocking</strong> regardless of what any bot says – only the human (or an explicit dismissal) resolves it. Report it as open and name the reviewer; don’t let a later “Ready for merge” bot comment paper over it.</p>
+<p>A PR is only <strong>fully clean / ready to merge</strong> when <strong>at least one</strong> of the <code>@claude</code> comment or an external reviewer’s verdict (see <em>Check for a genuine external verdict</em> above) is clean at the current head – the canonical rule needs one genuine external verdict, not both; if a reachable external reviewer hasn’t posted a current-head verdict at all, that’s <code>no verdict at head</code>, not automatically a fail, but it means the <code>@claude</code> comment alone has to carry the “clean” claim <em>and</em> no human <code>CHANGES_REQUESTED</code> review is outstanding <em>and</em> all CI workflows are green <em>and</em> every inline review thread is resolved (the only open conversation being the final all-clear and your reply to it — see <em>Check thread-resolution state</em> below). Do <strong>not</strong> report “ready to merge with one minor nit noted” / “harmless as-is” / “can address if you want” — that hedging just pushes triage back to the user. If there are open items, report them as open (and offer to run <code>ardi</code> to clear them).</p>
 </section>
 <section id="check-thread-resolution-state" class="level2">
 <h2 class="anchored" data-anchor-id="check-thread-resolution-state">Check thread-resolution state</h2>
 <p>A clean review <em>body</em> isn’t the whole bar — unresolved inline threads count as open too. Count the unresolved ones via GraphQL:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query {</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">  repository(owner:"&lt;owner&gt;", name:"&lt;repo&gt;") {</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">    pullRequest(number:&lt;N&gt;) {</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">      reviewThreads(first:100) {</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">        totalCount</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">        nodes { isResolved }</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">      }</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">    }</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">}'</span> <span class="at">--jq</span> <span class="st">'.data.repository.pullRequest.reviewThreads as $rt |</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">  ($rt.nodes | map(select(.isResolved | not)) | length) as $open |</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">  if $rt.totalCount &gt; ($rt.nodes | length)</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="st">  then "\($open)+ open (totalCount \($rt.totalCount); cap reached — may undercount)"</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">  else "\($open)"</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">  end'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> api graphql <span class="at">-f</span> query=<span class="st">'query {</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">  repository(owner:"&lt;owner&gt;", name:"&lt;repo&gt;") {</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">    pullRequest(number:&lt;N&gt;) {</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">      reviewThreads(first:100) {</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">        totalCount</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">        nodes { isResolved }</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">      }</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">    }</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="st">}'</span> <span class="at">--jq</span> <span class="st">'.data.repository.pullRequest.reviewThreads as $rt |</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">  ($rt.nodes | map(select(.isResolved | not)) | length) as $open |</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st">  if $rt.totalCount &gt; ($rt.nodes | length)</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">  then "\($open)+ open (totalCount \($rt.totalCount); cap reached — may undercount)"</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">  else "\($open)"</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">  end'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Interpret the output as:</p>
 <ul>
 <li><code>0</code> — all threads resolved; clean on this dimension.</li>
