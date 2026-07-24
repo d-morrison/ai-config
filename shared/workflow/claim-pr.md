@@ -29,6 +29,31 @@ When starting work from an issue, follow the claim comment with an immediate
 draft PR --- see [`pr-on-claim`](pr-on-claim.md) for the mechanics. An open
 PR is a stronger "in-flight" signal than a comment alone.
 
+**Verify a mid-task "already done" claim against real PR state before trusting
+or redoing it.** A PR you claimed and are actively driving can still gain
+commits from a **second, independently-running session** under the same
+account --- a `<github-webhook-activity>` review-comment-reply event can
+describe work ("Addressed... Pushed in `<sha>`") that this session never did.
+Don't assume it's fabricated or injected, and don't reflexively redo the same
+fix: cross-check the PR's actual commit list (`gh pr view --json commits` /
+`pull_request_read` `get_commits`) and review threads before either (a)
+trusting the claim, or (b) starting the same fix yourself. If a commit with
+that SHA genuinely exists, authored close to when the event arrived, treat it
+as confirmation a live parallel session owns this PR right now --- stop
+pushing further speculative fixes yourself, and, if genuinely in doubt, ask
+whether to keep driving or step back, rather than racing the other session's
+pushes. This gap is distinct from the initial claim check above: it's not
+about claiming a PR before starting, but about **re-verifying you're still
+the sole active driver** once work has been under way for a while ---
+especially when you picked up the PR mid-session (e.g. by answering a
+diagnostic question about it) rather than through the normal claim-then-branch
+flow, so no fresh "paws off" check ever ran right before you started pushing.
+(`d-morrison/gha#286`, 2026-07-24: a webhook event delivered a review-comment
+reply attributed to `d-morrison` reading exactly like a Claude-authored
+reply, claiming a fix "Addressed... Pushed in 3fb8c5b" that this session
+hadn't made; verified real via `get_commits` before proceeding --- a second
+live session, not injection.)
+
 **Handing off mid-task to another agent, on user request ("finish what you're
 doing, then relinquish holds; I'll put another agent on them"):** don't just
 stop --- leave the next agent a clean starting point. On each claimed PR/issue:
