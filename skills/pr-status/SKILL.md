@@ -50,21 +50,23 @@ from green checks.
 ## Read the LATEST review, checked for currency
 
 ```bash
-gh pr view <N> --json comments,commits \
-  --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate)}'   # READ_PR_COMMENTS
+gh pr view <N> --json comments,commits,headRefOid \
+  --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'   # READ_PR_COMMENTS
 ```
 
 **If `.review.createdAt` is earlier than `.lastCommitDate`, the review
 predates the latest push** -- treat it as stale, not current, regardless of
 what its body says (both are ISO 8601 UTC timestamps, so a plain string
-comparison works). This timing check is **best-effort, not proof**:
+comparison works). This timing check alone is **not proof of currency**:
 `committedDate` is the commit's local committer timestamp, not when GitHub
 received the push, so a commit authored earlier but pushed later can pass
 the timing check while still being newer than the review. When the review
 body names the commit it reviewed (the `@claude` bot commonly writes
-"commit `<sha>`"), cross-check that SHA's prefix against `<headRefOid>` --
-report the verdict as **unverified**, not clean, if no reliable SHA can be
-matched and the timing gap is small enough to be suspicious.
+"commit `<sha>`"), cross-check that SHA's prefix against `.headRefOid`.
+**Require a SHA match to call it `clean`** -- when the review passes the
+timing check but names no SHA (or the mentioned SHA doesn't match), report
+**`unverified`**, not clean, every time, not just when the gap "looks
+small" (there's no reliable way to judge that from the timing check alone).
 
 The reviewer's bot login **varies by API and setup**:
 
@@ -120,8 +122,16 @@ the comments query above -- it's a separate object, and often has an
 
 ```bash
 gh pr view <N> --json reviews \
-  --jq '.reviews[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
+  --jq '[.reviews[] | select(.author.login != null)] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | .[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
 ```
+
+**`--json reviews` returns the full review history, not one entry per
+reviewer** -- an early `CHANGES_REQUESTED` from a reviewer who later
+approved would otherwise block forever. The `group_by` / `sort_by` / `last`
+chain reduces to each author's *latest* review before filtering, matching
+what GitHub's own UI shows as the current state (verified against this
+skill's own PR: an author with an old `COMMENTED` round and no
+`CHANGES_REQUESTED` correctly produces no output).
 
 If this returns anything, the PR is **blocking** regardless of what any bot
 says -- only the human (or an explicit dismissal) resolves it. Report it as

@@ -73,8 +73,8 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    token; resolve to your model's tool via
 >    [`tool-mappings.md`](../../tool-mappings.md)):
 >    ```bash
->    gh pr view <N> --json comments,commits \
->      --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate)}'
+>    gh pr view <N> --json comments,commits,headRefOid \
+>      --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'
 >    ```
 >    The reviewer login varies by setup: `gh pr view` reports `claude`; the
 >    REST API reports `claude[bot]`. `startswith("claude")` matches both. If
@@ -91,7 +91,8 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    content is stale (issue comments carry no structured `commit_id` to
 >    check directly, unlike formal reviews). When the review body names the
 >    commit it reviewed (the `@claude` bot commonly writes "commit `<sha>`"),
->    cross-check that mentioned SHA's prefix against `<headRefOid>` as a
+>    cross-check that mentioned SHA's prefix against `.headRefOid` (now part
+>    of the same call above) as a
 >    corroborating signal; treat a mismatch as `in-flight` even if the
 >    timing check alone would have said `clean`.
 >    **When no SHA can be extracted from the body, don't fall back to trusting
@@ -179,10 +180,16 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    often empty (the finding lives in an inline comment):
 >    ```bash
 >    gh pr view <N> --json reviews \
->      --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED")] | length'
+>      --jq '[.reviews[] | select(.author.login != null)] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | [.[] | select(.state == "CHANGES_REQUESTED") | .author.login]'
 >    ```
->    Any count `> 0` **blocks** regardless of what any bot says -- only the
->    human (or an explicit dismissal) resolves it.
+>    **`--json reviews` returns the full review history, not one entry per
+>    reviewer** -- reduce to each author's *latest* review before filtering,
+>    or an old `CHANGES_REQUESTED` blocks forever even after that reviewer
+>    later approves (verified against this PR: an author with only an
+>    earlier `COMMENTED` round correctly produces an empty array). Any
+>    non-empty result **blocks** regardless of what any bot says -- only the
+>    human (or an explicit dismissal) resolves it. Return the reviewer login(s)
+>    from the array, not just a count.
 >
 > Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `unverified`
 > / `N open` with the headline finding / `none found` / `in-flight`),
@@ -201,28 +208,12 @@ to the series version — only the way the signals are gathered changed.
 ### Graceful degradation to series
 
 If subagent fan-out is unavailable (no `Agent` tool in the session), fall back
-to gathering the six signals **in series** -- loop the same per-PR gather over
-each PR from step 1. The output is the same; it's just slower.
-
-## Read the LATEST review (the subtle part)
-
-```bash
-gh pr view <N> --json comments \
-  --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
-```
-
-`startswith("claude")` matches the @claude bot across both API modes
-(`gh pr view` → `claude`; REST API → `claude[bot]`). If the result is `null`,
-the reviewer may post as `github-actions[bot]` or another login — you must
-**not** silently report that as "clean": broaden the filter or flag that no
-review was found.
-
-Scan the latest body for any "Findings", "Issues", "Remaining",
-"Non-blocking", "Minor", "Could improve", "Consider", etc. section. The bar for
-**clean**: "Looks good" / "no findings" / "approved" with **zero** follow-on
-bullets under any heading. Anything else is **open** — count the items. A
-posted rebuttal the reviewer is still disputing is **open**, not clean: a
-rebuttal only counts once it convinced the reviewer (they dropped the item).
+to gathering the six signals **in series** -- loop the exact same per-PR
+gather (items 1-6 above, including the currency check and the human
+`CHANGES_REQUESTED` check) over each PR from step 1. The output is the same;
+it's just slower. Don't substitute a simplified comments-only query here --
+that would silently drop the current-head and human-review guarantees the
+rest of this skill relies on.
 
 ## Output
 
