@@ -51,8 +51,16 @@ from green checks.
 
 ```bash
 gh pr view <N> --json comments,commits,headRefOid \
-  --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'   # READ_PR_COMMENTS
+  --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'
 ```
+
+**This call fetches more than `READ_PR_COMMENTS` maps to** --
+`tool-mappings.md` maps that token to a comments-only MCP call
+(`pull_request_read(method=get_comments)`), which returns neither `commits`
+nor `headRefOid`. In a remote/MCP session without `gh`, fetch those two
+fields with a separate call (e.g. `pull_request_read(method=get)` for
+`headRefOid`, plus the commits list) rather than assuming the token mapping
+covers this expanded query.
 
 **If `.review.createdAt` is earlier than `.lastCommitDate`, the review
 predates the latest push** -- treat it as stale, not current, regardless of
@@ -138,9 +146,13 @@ says -- only the human (or an explicit dismissal) resolves it. Report it as
 open and name the reviewer; don't let a later "Ready for merge" bot comment
 paper over it.
 
-A PR is only **fully clean / ready to merge** when its review is clean *and*
-an external reviewer's verdict is clean at the current head whenever one is
-reachable (see *Check for a genuine external verdict* above) *and* no human
+A PR is only **fully clean / ready to merge** when **at least one** of the
+`@claude` comment or an external reviewer's verdict (see *Check for a
+genuine external verdict* above) is clean at the current head -- the
+canonical rule needs one genuine external verdict, not both; if a reachable
+external reviewer hasn't posted a current-head verdict at all, that's `no
+verdict at head`, not automatically a fail, but it means the `@claude`
+comment alone has to carry the "clean" claim *and* no human
 `CHANGES_REQUESTED` review is outstanding *and* all CI
 workflows are green *and* every inline review thread is resolved (the
 only open conversation being the final all-clear and your reply to it — see

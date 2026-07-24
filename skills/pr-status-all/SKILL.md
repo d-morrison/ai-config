@@ -69,13 +69,17 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 > 1. **Latest review verdict, checked for currency against the head.** Read
 >    the *most recent* review comment **and** the timestamp of the latest
 >    commit, in one call, so a "clean" verdict posted before the last push
->    can't be mistaken for current (`READ_PR_COMMENTS` -- abstract operation
->    token; resolve to your model's tool via
->    [`tool-mappings.md`](../../tool-mappings.md)):
+>    can't be mistaken for current:
 >    ```bash
 >    gh pr view <N> --json comments,commits,headRefOid \
 >      --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'
 >    ```
+>    **This fetches more than `READ_PR_COMMENTS` maps to** --
+>    [`tool-mappings.md`](../../tool-mappings.md)'s entry for that token is a
+>    comments-only MCP call, which returns neither `commits` nor
+>    `headRefOid`. In a remote/MCP session without `gh`, fetch those two
+>    fields with a separate call rather than assuming the token mapping
+>    covers this expanded query.
 >    The reviewer login varies by setup: `gh pr view` reports `claude`; the
 >    REST API reports `claude[bot]`. `startswith("claude")` matches both. If
 >    `.review` is `null`, the reviewer may post as `github-actions[bot]` or
@@ -145,9 +149,9 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    evidence-based fact (`no verdict at head`), and leave the
 >    availability/self-review judgment call to `ardi`, which actually drives
 >    the PR and can request reviews.
-> 3. **CI state** — `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
+> 3. **CI state** -- `gh pr checks <N>` (`PR_CHECKS`); name any failing/pending
 >    check, don't just say "red".
-> 4. **Unresolved threads** — count open inline review threads
+> 4. **Unresolved threads** -- count open inline review threads
 >    (`READ_PR_REVIEW_COMMENTS`). Run exactly:
 >    ```bash
 >    gh api graphql -f query='query {
@@ -170,7 +174,7 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    resolved), `N open` (e.g. `3 open`) — that many unresolved threads, or
 >    `N+ open (cap)` — the 100-thread cap was hit, **cannot confirm clean** —
 >    treat as unresolved.
-> 5. **Behind main?** — fetch the head ref too (a fresh subagent has no local
+> 5. **Behind main?** -- fetch the head ref too (a fresh subagent has no local
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.
 >    >0 means main has moved ahead.
