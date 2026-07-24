@@ -111,6 +111,18 @@
     human-actor push is the only lever left. (serocalculator#564, 2026-07-20:
     the agent's bot-pushed empty commit didn't fire the review; a
     human-actor empty commit did.)
+  - **Root-caused and fixed at the source in gha#286 (issue gha#285):** the
+    misattribution isn't inherent to `workflow_dispatch` -- it's that `gh
+    workflow run <file> -f pr_number=<N>` with no `--ref` implicitly
+    dispatches against the repo's default branch. `claude.yml`'s and
+    `claude-review.yml`'s own dispatch calls now pass `--ref <PR-branch>`
+    explicitly, so a re-dispatched review's check-runs attach to the PR's
+    actual head commit and DO supersede a stale/cancelled `pull_request`-
+    triggered run. Once a repo's `@v2` pin picks this fix up (check
+    `slide-major-tag` has run since gha#286 merged), the empty-retrigger-
+    commit workaround above should no longer be necessary for a plain
+    `@claude review`/`/review` dispatch -- verify the fix landed before
+    reaching for the workaround on a repo that might already have it.
 - **A distinct stub-review signature: `is_error: false`, real `num_turns`/cost,
   but `permission_denials_count: 1` and no `Verdict` line.** (`permission_denials_count`
   is a field in the Claude Code SDK's runtime execution-output JSON, not
@@ -1805,6 +1817,27 @@ Needs `lintr (>= 3.1.2)` for the `linter_level` argument. (Landed as
   run re-reads the diff from scratch; a rebuttal reply in the thread does not persist
   into the next run's context. Keep the rebuttal text ready to post again. (Hit
   repeatedly on ai-config#267 with the MD060/table-column-style finding.)
+- **The agent can commit the right fix and still fail to push it, when the diff
+  touches `.github/workflows/*.yml` -- "refusing to allow a GitHub App to create
+  or update workflow ... without `workflows` permission".** `claude.yml`'s
+  `PUSH_TOKEN` (`secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN`) needs an
+  explicit `workflows` OAuth scope to push a commit that edits a workflow file;
+  a plain `GITHUB_TOKEN`/GitHub App token doesn't have it, and even a
+  configured `WORKFLOW_TOKEN` secret can be unset/not wired for a given
+  trigger path. The job reports `conclusion: failure` on its "Push branch and
+  finalize PR" step (`get_job_logs` with `failed_only: true` shows the exact
+  rejection), and the draft PR is left with only its empty seed commit -- the
+  correct fix exists only in that ephemeral run's checkout, never landed.
+  A session with a broader-scoped push (e.g. Claude Code on the web) doesn't
+  hit this, so the recovery is: read the failed job's logs for the actual
+  diagnosis, fetch the PR's real head branch (`pull_request_read`'s
+  `head.ref`, not the harness-assigned fallback branch -- see "Use the
+  existing PR branch" in `CLAUDE.md`), re-implement the same fix from that
+  session's own checkout, and push directly. (gha#286, fixing gha#285: the
+  agent's own commit correctly added `--ref` to every `gh workflow run`
+  dispatch call, including in `.github/workflows/claude-review.yml`, but the
+  push to `claude/issue-285-...` 403'd on exactly that file; re-implemented
+  and pushed from the Claude Code web session instead.)
 
 ## AskUserQuestion (Claude Code harness tool)
 - Each entry in `questions[]` **requires a `question` field** (the full question
@@ -2461,6 +2494,20 @@ not block `claude-review`.)
   running when X is *skipped* (non-PR events), but also lets it run when X *fails* —
   causing noise from a job that depended on work that didn't land. Full guard:
   `(needs.X.result == 'success' || needs.X.result == 'skipped')`. (Fixed in bcs#226.)
+- **The same `always()` gap exists one level down: a STEP gated `if: always()` that
+  reads `env: FOO: ${{ steps.earlier.outputs.bar }}` still runs -- with `FOO` empty --
+  if `earlier` failed, not just when an upstream JOB failed.** `always()` on a step
+  means "run regardless of prior step outcome," so an earlier step's failure to
+  write its output (script errored before the `>> "$GITHUB_OUTPUT"` line) silently
+  hands the later step an empty string, not a skip. If that empty value feeds a
+  command with real effects (a `--ref ""` on `gh workflow run`, a `--branch ""` on
+  some other CLI), the failure mode ranges from a confusing CLI error to a
+  misdirected action, not a clean no-op. Guard explicitly: `if [ -z "$FOO" ]; then
+  echo "::warning::..."; else <the real command>; fi` -- don't assume the value is
+  always populated just because the step that sets it "should" have run first.
+  (gha#286, Copilot review finding: three `always()`-gated steps in `claude.yml`
+  read `PR_BRANCH: ${{ steps.pr_checkout.outputs.branch }}` for a `gh workflow run
+  --ref "$PR_BRANCH"` call, unguarded against `pr_checkout` having failed.)
 - **Canonical GitHub privacy-safe noreply email is `<numeric-id>+<username>@users.noreply.github.com`.**
   The bare `<username>@users.noreply.github.com` is not privacy-safe and can match a real inbox.
   For `issue_comment` events, the actor's numeric ID is in `github.event.comment.user.id`:
