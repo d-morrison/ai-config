@@ -1,6 +1,6 @@
 When you state a factual claim about a **condition that can change over
-time**, attach the time the claim was true --- "as of 2026-07-24", "as of
-this writing", "(checked 2026-07)". This applies everywhere a reader may
+time**, attach the time the claim was true --- "as of 2026-07-24", or the
+abbreviated "(checked 2026-07)". This applies everywhere a reader may
 revisit the text later: chat replies, PR/issue/commit prose, docs, READMEs,
 code comments, and memory files.
 
