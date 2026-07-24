@@ -4,6 +4,7 @@ description: "Grab Issues + iterate-All: clear the repo's entire work queue in t
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
