@@ -591,6 +591,16 @@ The `find-ai-tells` skill (alias `ai-tells`) runs this same catalog on demand ag
 
 When running `code-review` or the `ard`/`ardi` loop on a diff that touches prose, apply this policy in addition to the normal review — those skills don't name it internally, but this CLAUDE.md directive governs regardless.
 
+## Writing style: timestamp factual claims about conditions that can change
+
+The complement to the fact-check above: a claim can be *true* yet still decay
+into a confident falsehood if it's stated as timeless present-tense fact when
+its truth is time-dependent (a package's CRAN status, a "current" version, a
+count). Attach the time the claim was true so a later reader knows to
+re-verify it.
+
+@shared/writing/timestamp-volatile-claims.md
+
 ## Writing style: math derivations — include every step; flag gaps in review
 
 <!-- Shared with the lab manual; edit shared/writing/math-derivation-steps.md, not here. -->
