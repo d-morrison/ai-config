@@ -48,10 +48,21 @@ cross-repo case.
 Two things route elsewhere before you go further:
 
 - **Project-specific fact** — a convention or gotcha tied to ONE repo ("this
-  repo renders with renv via `R_LIBS_USER`"). That belongs in that repo's local
-  project memory (`~/.claude/projects/<project-path>/memory/`) or its own
-  `CLAUDE.md`, **not** in shared `ai-config`. Route it there (see `memorize`);
-  don't push it here.
+  repo renders with renv via `R_LIBS_USER`"). That belongs **not** in shared
+  `ai-config`, but routed by ownership (see `memorize`); don't push it here:
+  if we own the repo, commit it to that repo's own agent docs (`CLAUDE.md`,
+  `.github/copilot-instructions.md`, or whatever it already has) via a PR,
+  falling back to its local Claude project memory
+  (`~/.claude/projects/<project-path>/memory/`) as short-lived staging only
+  when it has no agent-doc infrastructure yet — in that case, update
+  `MEMORY.md` in that directory as an index entry, and hand off that
+  a PR adding agent-doc infrastructure to that repo (plus migrating the
+  staged memory there) is still needed. If it's an **external repo we
+  don't own**, never open a direct PR **autonomously** — follow
+  [`upstream-issues`](../../shared/workflow/upstream-issues.md) (policy
+  check, draft, explicit user approval) and stage in local project memory
+  until approved, updating that directory's `MEMORY.md` as an index entry
+  too.
 - **Automated every-time action** ("after each commit run X"). Memory can't
   execute it — that's a **hook** in `settings.json` (use `update-config`). Say
   so and route it there.
@@ -140,10 +151,16 @@ file in `memories/` (e.g. `tools.md`, `debugging.md`). These are exactly
 
 ## Don't
 
-- Don't push a **project-specific** fact here — it belongs in that repo's local
-  memory or its own `CLAUDE.md`, not shared `ai-config`.
-- Don't edit or commit anything in the repo you're working in — only the
-  `ai-config` target file(s).
+- Don't push a **project-specific** fact here — it belongs committed to that
+  repo's own agent docs via a PR (its local project memory is short-lived
+  staging only, when it has no agent-doc infrastructure yet), not shared
+  `ai-config`.
+- **For the general-memory-to-`ai-config` path** (the case this skill exists
+  for): don't edit or commit anything in the repo you're working in — only
+  the `ai-config` target file(s). This doesn't apply to the
+  project-specific-fact case above, which commits to the owned repo on
+  purpose — including when that owned repo happens to be the one you're
+  currently working in.
 - Don't push straight to `ai-config`'s `main`, and don't `git add -A` — stage
   only the file(s) you wrote.
 - Don't run a full session review or touch skill files (that's `ums`).
