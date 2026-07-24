@@ -71,7 +71,7 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    commit, in one call, so a "clean" verdict posted before the last push
 >    can't be mistaken for current:
 >    ```bash
->    gh pr view <N> --json comments,commits,headRefOid \
+>    gh pr view "<N>" --json comments,commits,headRefOid \
 >      --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate), headRefOid: .headRefOid}'
 >    ```
 >    **This fetches more than `READ_PR_COMMENTS` maps to** --
@@ -105,8 +105,9 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    committer timestamp, not when GitHub received the push, and a commit
 >    authored earlier but pushed later can pass the timing check while still
 >    being newer than the review.
->    Only once the review postdates the last commit **and** (when a SHA is
->    nameable) that SHA matches, apply the bar for
+>    Only once the review postdates the last commit **and** a named SHA
+>    matches -- unconditionally; no SHA named means `unverified`, not
+>    `clean`, full stop -- apply the bar for
 >    `clean`: "Looks good" / "no findings" / "approved" with zero follow-on
 >    bullets under any heading. A rebuttal the reviewer still disputes is
 >    **open**, not clean.
@@ -121,7 +122,7 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    don't try to produce one; that's `ardi`'s job.
 >    ```bash
 >    set -o pipefail
->    head="$(gh pr view <N> --json headRefOid -q .headRefOid)"
+>    head="$(gh pr view "<N>" --json headRefOid -q .headRefOid)"
 >    review_id="$(gh api "repos/<owner>/<repo>/pulls/<N>/reviews" --paginate \
 >      | jq -s --arg h "$head" \
 >      '[.[][] | select(.user.login=="copilot-pull-request-reviewer[bot]" and .commit_id==$h)] | last | .id')"
@@ -178,19 +179,26 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    branch), then compare remote-tracking refs: `git fetch origin main
 >    <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`.
 >    >0 means main has moved ahead.
-> 6. **Blocking human `CHANGES_REQUESTED`.** A bot's clean verdict does
+> 6. **Blocking human `CHANGES_REQUESTED`** (`READ_PR_REVIEWS` -- abstract
+>    operation token; resolve to your model's tool via
+>    [`tool-mappings.md`](../../tool-mappings.md)). A bot's clean verdict does
 >    **not** clear a human's formal review state -- it's a separate object,
 >    invisible to the Signal 1 comments query, and its top-level body is
 >    often empty (the finding lives in an inline comment):
 >    ```bash
->    gh pr view <N> --json reviews \
->      --jq '[.reviews[] | select(.author.login != null)] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | [.[] | select(.state == "CHANGES_REQUESTED") | .author.login]'
+>    gh pr view "<N>" --json reviews \
+>      --jq '[.reviews[] | select(.author.login != null and (.state == "APPROVED" or .state == "CHANGES_REQUESTED"))] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | [.[] | select(.state == "CHANGES_REQUESTED") | .author.login]'
 >    ```
 >    **`--json reviews` returns the full review history, not one entry per
->    reviewer** -- reduce to each author's *latest* review before filtering,
->    or an old `CHANGES_REQUESTED` blocks forever even after that reviewer
->    later approves (verified against this PR: an author with only an
->    earlier `COMMENTED` round correctly produces an empty array). Any
+>    reviewer, and a reviewer's *decisive* state persists across neutral
+>    comments** -- GitHub only clears `CHANGES_REQUESTED` when that same
+>    reviewer later `APPROVED`s, or via an explicit dismissal; a neutral
+>    `COMMENTED` review in between does **not** clear it. Filter to only
+>    `APPROVED`/`CHANGES_REQUESTED` states *before* reducing to each
+>    author's latest review -- reducing over all states first lets a later
+>    `COMMENTED` round hide an earlier `CHANGES_REQUESTED` (verified with a
+>    synthetic fixture: naive reduction incorrectly cleared it, state-filtered
+>    reduction correctly kept it blocking). Any
 >    non-empty result **blocks** regardless of what any bot says -- only the
 >    human (or an explicit dismissal) resolves it. Return the reviewer login(s)
 >    from the array, not just a count.

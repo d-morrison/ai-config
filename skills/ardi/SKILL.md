@@ -63,13 +63,14 @@ finding → push → post summary → re-request review → repeat until clean.
 
      **Copilot code review doesn't post as a PR comment at all -- it's a
      formal GitHub review**, invisible to the command above. Request it
-     (`POST /repos/<owner>/<repo>/pulls/<N>/requested_reviewers` with
-     `reviewers: ["copilot-pull-request-reviewer[bot]"]`) and check whether
-     it posted a verdict *at the current head*. Finding a review object at the
-     right `commit_id` only proves Copilot *looked* -- it says nothing about
-     whether that review is clean. Fetch the matched review's own overview
-     **and** its inline comments (same two-call shape as the review-link case
-     above) before treating it as an all-clear:
+     (`REQUEST_COPILOT_REVIEW` -- abstract operation token; resolve to your
+     model's tool via [`tool-mappings.md`](../../tool-mappings.md)) and check
+     whether it posted a verdict *at the current head*. Finding a review
+     object at the right `commit_id` only proves Copilot *looked* -- it says
+     nothing about whether that review is clean. Fetch the matched review's
+     own overview **and** its inline comments (same two-call shape as the
+     review-link case above; the reviews list itself is `READ_PR_REVIEWS`)
+     before treating it as an all-clear:
      `gh api`'s own `--jq` flag has no `--arg`/`--argjson` (see
      [`memories/tools.md`](../../memories/tools.md)'s `gh api`/`jq` note) --
      pipe the raw paginated output into standalone `jq -s` instead, which
