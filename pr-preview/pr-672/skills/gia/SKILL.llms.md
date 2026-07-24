@@ -76,6 +76,8 @@ List the merge order across **both** phases — Phase 1 PRs can be stacked on ea
 
 Both GIA phases push commits that trigger shared review runners, so neither fans out freely — the same constraint that makes `ardia` serial and caps `gip`. You may orchestrate the read-only parts (survey all open PRs’ reviews, or triage the issue backlog) in parallel, but route the actual implement — push — review work through the serial or capped paths: `ardia` for the PR phase, `gip` for provably-independent issues. Consult `shared/workflow/when-to-orchestrate.md` (the shared-runner exception).
 
+Within either phase, a single PR’s own round can still delegate lightweight sidecar work via the `Agent` tool — see `ardia`’s “Lightweight sidecar delegation” note (Phase 1) and `gii`’s “Delegate sidecar work when helpful” note (Phase 2), including their guidance on picking a stronger, cheaper, or `codex`-backed subagent per [`select-model`](../../skills/select-model/SKILL.llms.md) and [`delegate-to-codex`](../../skills/delegate-to-codex/SKILL.llms.md).
+
 ## Relationship to other skills
 
 - **`ardia`** / `adria` — Phase 1 in full.

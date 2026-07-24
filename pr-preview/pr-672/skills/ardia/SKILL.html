@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -13,10 +13,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -75,14 +78,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-0e6a767e897e7be88fc84a61948225f0.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-a547dd1b4798262c927e2e52fa668cb1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-8a591ff59271d21f6a5d1e80b3747fb5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -428,7 +431,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>ARDIA drives PRs <strong>one at a time on purpose</strong> (see <em>Process PRs one at a time</em> above): each round pushes commits and triggers shared review runners, so parallel pushes collide and make per-PR status illegible. A Workflow does not change that external limit — do <strong>not</strong> fan out the push — re-review — merge loop. What you <em>can</em> orchestrate is the read-only survey: pull every open PR’s latest review and triage its findings in parallel, then feed that into the serial fix loop. Consult <code>shared/workflow/when-to-orchestrate.md</code> (the shared-runner exception); default to the serial loop, and propose the read-only fan-out only when there are many PRs to survey.</p>
 <section id="lightweight-sidecar-delegation" class="level3">
 <h3 class="anchored" data-anchor-id="lightweight-sidecar-delegation">Lightweight sidecar delegation</h3>
-<p>Separately from the Workflow-based survey fan-out above, a single PR’s ARDI round (see <code>ardi</code>) can delegate sidecar work directly via the <code>Agent</code> tool — verifying a disputed factual claim, investigating an unclear CI failure, or drafting a reply to one reviewer thread — while the main thread keeps driving that round forward. This is a lighter-weight call than the Workflow tool covers above and needs no opt-in gate. Give the subagent a stronger model (e.g.&nbsp;<code>model: 'opus'</code> on the <code>Agent</code> tool call) for judgment-heavy sidecar work — see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree.</p>
+<p>Separately from the Workflow-based survey fan-out above, a single PR’s ARDI round (see <code>ardi</code>) can delegate sidecar work directly via the <code>Agent</code> tool — verifying a disputed factual claim, investigating an unclear CI failure, or drafting a reply to one reviewer thread — while the main thread keeps driving that round forward. This is a lighter-weight call than the Workflow tool covers above and needs no opt-in gate. Give the subagent a stronger model (e.g.&nbsp;<code>model: 'opus'</code> on the <code>Agent</code> tool call) for judgment-heavy sidecar work, and symmetrically a cheaper/faster tier (<code>model: 'fable'</code> or <code>'haiku'</code>) for a mechanical one — see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree for both directions. For a heavy fan-out survey/verify pass, prefer a separately-billed provider (e.g.&nbsp;the <code>codex</code> CLI) first when available — see <a href="../../skills/delegate-to-codex/SKILL.html"><code>delegate-to-codex</code></a>.</p>
 </section>
 </section>
 <section id="recurring-unattended-runs" class="level2">
