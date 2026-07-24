@@ -70,7 +70,7 @@ operations:
     github_mcp: mcp__github__pull_request_read (method=get_reviews)
   - id: REQUEST_COPILOT_REVIEW
     description: Request a GitHub Copilot code review on a pull request.
-    cli: gh api repos/<owner>/<repo>/pulls/<N>/requested_reviewers -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
+    cli: gh api "repos/<owner>/<repo>/pulls/<N>/requested_reviewers" -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
     github_mcp: mcp__github__request_copilot_review
   - id: CREATE_PR
     description: Open a new pull request.
