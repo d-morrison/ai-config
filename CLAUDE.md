@@ -308,6 +308,22 @@ Both mean no bot will respond on this run; re-running the workflow only helps on
 
 Either way: don't wait on the bot indefinitely — do the review yourself and keep driving to fully-clean.
 
+**Self-review is the immediate fallback so the PR never stalls --
+but declaring the PR clean still requires an external verdict whenever one is reachable.**
+Don't wait to self-review: post it right away, same as above.
+But also check, the same round, whether a *different* configured reviewer is reachable
+(e.g. Copilot code review, if the repo/org has it) --
+not just whether the `@claude` bot specifically produced a verdict,
+since the two can fail independently (one quota-exhausted, the other working fine, or vice versa) --
+and request it in parallel with posting the self-review, not after.
+Re-check reachability every round:
+a reviewer that was ineligible/quota-exhausted a few pushes ago (a missing license, a temporary rate limit)
+can become reachable mid-session.
+Before reporting a PR **fully clean** / **ready** (ARDI's own terminal-state terms -- see `fully-clean.md`),
+confirm a genuine all-clear review is posted at the current head from an external reviewer, if one is reachable --
+a self-review alone, or a clean state you inferred yourself from green CI and resolved threads,
+doesn't satisfy this once an external verdict is obtainable.
+
 ## Watch and ARDI every PR you touch — don't ask first
 
 When you open (or are handed) a PR/MR in **any** repo, subscribe to its activity and run the ARDI loop to clean **automatically** — never ask "should I watch this?" or "should I iterate it?" first.

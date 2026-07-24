@@ -64,6 +64,14 @@ operations:
     description: Read a pull request's inline review-thread comments (also returns thread ids).
     cli: gh api repos/<owner>/<repo>/pulls/<N>/comments
     github_mcp: mcp__github__pull_request_read (method=get_review_comments)
+  - id: READ_PR_REVIEWS
+    description: Read a pull request's formal reviews (state per reviewer, e.g. APPROVED / CHANGES_REQUESTED / COMMENTED).
+    cli: gh pr view "<N>" --json reviews
+    github_mcp: mcp__github__pull_request_read (method=get_reviews)
+  - id: REQUEST_COPILOT_REVIEW
+    description: Request a GitHub Copilot code review on a pull request.
+    cli: gh api "repos/<owner>/<repo>/pulls/<N>/requested_reviewers" -X POST -f "reviewers[]=copilot-pull-request-reviewer[bot]"
+    github_mcp: mcp__github__request_copilot_review
   - id: CREATE_PR
     description: Open a new pull request.
     cli: gh pr create

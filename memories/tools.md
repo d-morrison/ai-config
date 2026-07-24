@@ -228,6 +228,16 @@
   unified diff — equivalent to `gh pr diff`) · `get_status` · `get_files` ·
   `get_commits` · `get_review_comments` · `get_reviews` · `get_comments` ·
   `get_check_runs`.
+- **`mcp__github__request_copilot_review` is a real, separate tool** (not a
+  `pull_request_read` method) -- requests a Copilot code review on a PR,
+  equivalent to `gh api .../requested_reviewers -X POST -f
+  "reviewers[]=copilot-pull-request-reviewer[bot]"`. Verified directly
+  against `github/github-mcp-server`'s own source
+  (`pkg/github/copilot.go`'s `RequestCopilotReview`), registered in the
+  **default** toolset (`pkg/github/tools.go`), not behind an opt-in flag --
+  don't assume a tool is a hallucination just because it's absent from this
+  file, which is a running collection of quirks encountered, not an
+  exhaustive registry.
 - **`get_status` can return "pending / 0 checks" even after CI has finished.**
   Use `get_check_runs` for the authoritative CI state — it returns the real
   job conclusions (`success`, `failure`, `skipped`). `get_status` aggregates
