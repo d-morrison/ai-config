@@ -138,8 +138,12 @@ drafting a reply to one reviewer thread --- while the main thread keeps
 driving that round forward. This is a lighter-weight call than the Workflow
 tool covers above and needs no opt-in gate. Give the subagent a stronger
 model (e.g. `model: 'opus'` on the `Agent` tool call) for judgment-heavy
-sidecar work --- see
-[`select-model`](../../skills/select-model/SKILL.md)'s decision tree.
+sidecar work, and symmetrically a cheaper/faster tier (`model: 'fable'` or
+`'haiku'`) for a mechanical one --- see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for both
+directions. For a heavy fan-out survey/verify pass, prefer a
+separately-billed provider (e.g. the `codex` CLI) first when available ---
+see [`delegate-to-codex`](../delegate-to-codex/SKILL.md).
 
 ## Recurring / unattended runs
 

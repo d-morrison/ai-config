@@ -99,8 +99,9 @@ at once and is not decomposable, so it stays inline. Consult
 Phase 1 can still delegate sidecar work directly via the `Agent` tool within a
 single PR's own ARDI round --- see `ardia`'s "Lightweight sidecar delegation"
 note, including its guidance on giving a judgment-heavy sidecar task a
-stronger model. Phase 2 has no sidecar-delegation angle of its own, per the
-non-decomposable note above.
+stronger model, a mechanical one a cheaper tier, and a heavy fan-out pass to
+`codex` when available. Phase 2 has no sidecar-delegation angle of its own,
+per the non-decomposable note above.
 
 ## Relationship to other skills
 

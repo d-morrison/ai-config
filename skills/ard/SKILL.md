@@ -275,8 +275,13 @@ the summary, and pushing fixes on the main thread.
 
 Give the subagent a stronger model (e.g. `model: 'opus'` on the `Agent` tool
 call) when the check is judgment-heavy --- a subtle behavioral claim, a
-disputed rebuttal --- rather than leaving it at the session default; see
-[`select-model`](../../skills/select-model/SKILL.md)'s decision tree.
+disputed rebuttal --- rather than leaving it at the session default.
+Symmetrically, drop to a cheaper/faster tier (`model: 'fable'` or `'haiku'`)
+for a mechanical check (a lookup, confirming a file/symbol still exists); see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for both
+directions. For a heavy fan-out verification pass, prefer a separately-billed
+provider (e.g. the `codex` CLI) first when available --- see
+[`delegate-to-codex`](../delegate-to-codex/SKILL.md).
 
 ## Integration with ardi
 

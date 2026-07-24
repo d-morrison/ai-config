@@ -131,6 +131,13 @@ work through the serial or capped paths: `ardia` for the PR phase, `gip` for
 provably-independent issues. Consult `shared/workflow/when-to-orchestrate.md` (the
 shared-runner exception).
 
+Within either phase, a single PR's own round can still delegate lightweight
+sidecar work via the `Agent` tool --- see `ardia`'s "Lightweight sidecar
+delegation" note (Phase 1) and `gii`'s "Delegate sidecar work when helpful"
+note (Phase 2), including their guidance on picking a stronger, cheaper, or
+`codex`-backed subagent per [`select-model`](../../skills/select-model/SKILL.md)
+and [`delegate-to-codex`](../delegate-to-codex/SKILL.md).
+
 ## Relationship to other skills
 
 - **`ardia`** / `adria` — Phase 1 in full.

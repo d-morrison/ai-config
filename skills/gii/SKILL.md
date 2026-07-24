@@ -94,7 +94,7 @@ If stopping due to max-issues, ask:
 
 Go back to step (a) with the next issue.
 
-### 2. Delegate sidecar work when helpful
+## Delegate sidecar work when helpful
 
 Within an iteration, hand independent sidecar work off to a subagent via the
 `Agent` tool instead of doing it inline --- a history/precedent investigation,
@@ -108,9 +108,15 @@ When the sidecar task is judgment-heavy (a tricky bug hunt, an
 architecturally significant call, an adversarial review pass before the
 implementation goes out for real review), give the subagent a stronger model
 via the `Agent` tool's `model` parameter (e.g. `model: 'opus'`) instead of
-leaving it at the session default --- see
-[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for when
-the bump is warranted.
+leaving it at the session default. Symmetrically, override to a cheaper/faster
+tier (`model: 'fable'` or `'haiku'`) for mechanical, bounded sidecar work --- a
+lookup, a formatting check, a repeated verification --- rather than defaulting
+to the session's own tier; see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for both
+directions. When the sidecar task is a heavy fan-out read/draft/verify pass
+and a separately-billed provider is available (e.g. the `codex` CLI), prefer
+spending that budget first and keep Claude/Agent-tool quota in reserve --- see
+[`delegate-to-codex`](../delegate-to-codex/SKILL.md).
 
 ## Stacking rules
 
@@ -170,7 +176,9 @@ When the loop ends, print a summary:
   in a later iteration of this very loop)
 - **`sync-pr-branch`** — used when stacking to keep branches current
 - **`select-model`** — decision tree for picking a subagent's model tier when
-  delegating sidecar work (see Procedure, step 2)
+  delegating sidecar work (see "Delegate sidecar work when helpful")
+- **`delegate-to-codex`** — when a sidecar task is a heavy fan-out
+  read/draft/verify pass and codex is available, prefer it first
 
 ## Auto-proceed mode
 
