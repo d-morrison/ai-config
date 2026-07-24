@@ -47,12 +47,24 @@ PR can have all checks passing and still have unaddressed review findings.
 Always parse the latest **review body** for findings — don't infer "clean"
 from green checks.
 
-## Read the LATEST review
+## Read the LATEST review, checked for currency
 
 ```bash
-gh pr view <N> --json comments \
-  --jq '[.comments[] | select(.author.login | startswith("claude"))] | last | .body'   # READ_PR_COMMENTS
+gh pr view <N> --json comments,commits \
+  --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate)}'   # READ_PR_COMMENTS
 ```
+
+**If `.review.createdAt` is earlier than `.lastCommitDate`, the review
+predates the latest push** -- treat it as stale, not current, regardless of
+what its body says (both are ISO 8601 UTC timestamps, so a plain string
+comparison works). This timing check is **best-effort, not proof**:
+`committedDate` is the commit's local committer timestamp, not when GitHub
+received the push, so a commit authored earlier but pushed later can pass
+the timing check while still being newer than the review. When the review
+body names the commit it reviewed (the `@claude` bot commonly writes
+"commit `<sha>`"), cross-check that SHA's prefix against `<headRefOid>` --
+report the verdict as **unverified**, not clean, if no reliable SHA can be
+matched and the timing gap is small enough to be suspicious.
 
 The reviewer's bot login **varies by API and setup**:
 
@@ -99,9 +111,27 @@ section. The bar for reporting **clean**: "Looks good" / "no findings" /
 the reviewer is still disputing is **open**, not clean — a rebuttal counts only
 once it convinced the reviewer (they dropped the item).
 
+## Check for a blocking human CHANGES_REQUESTED
+
+A bot's clean verdict does **not** clear a human's formal review state. A
+`CHANGES_REQUESTED` review submitted via GitHub's review UI is invisible to
+the comments query above -- it's a separate object, and often has an
+**empty** top-level body with the actual finding in an inline comment:
+
+```bash
+gh pr view <N> --json reviews \
+  --jq '.reviews[] | select(.state == "CHANGES_REQUESTED") | "\(.author.login) \(.submittedAt)"'
+```
+
+If this returns anything, the PR is **blocking** regardless of what any bot
+says -- only the human (or an explicit dismissal) resolves it. Report it as
+open and name the reviewer; don't let a later "Ready for merge" bot comment
+paper over it.
+
 A PR is only **fully clean / ready to merge** when its review is clean *and*
 an external reviewer's verdict is clean at the current head whenever one is
-reachable (see *Check for a genuine external verdict* above) *and* all CI
+reachable (see *Check for a genuine external verdict* above) *and* no human
+`CHANGES_REQUESTED` review is outstanding *and* all CI
 workflows are green *and* every inline review thread is resolved (the
 only open conversation being the final all-clear and your reply to it — see
 *Check thread-resolution state* below). Do **not** report "ready to merge with
