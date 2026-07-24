@@ -187,18 +187,27 @@ owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.n
 >    often empty (the finding lives in an inline comment):
 >    ```bash
 >    gh pr view "<N>" --json reviews \
->      --jq '[.reviews[] | select(.author.login != null and (.state == "APPROVED" or .state == "CHANGES_REQUESTED"))] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | [.[] | select(.state == "CHANGES_REQUESTED") | .author.login]'
+>      --jq '[.reviews[] | select(.author.login != null and (.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED"))] | group_by(.author.login) | map(sort_by(.submittedAt) | last) | [.[] | select(.state == "CHANGES_REQUESTED") | .author.login]'
 >    ```
 >    **`--json reviews` returns the full review history, not one entry per
 >    reviewer, and a reviewer's *decisive* state persists across neutral
 >    comments** -- GitHub only clears `CHANGES_REQUESTED` when that same
 >    reviewer later `APPROVED`s, or via an explicit dismissal; a neutral
 >    `COMMENTED` review in between does **not** clear it. Filter to only
->    `APPROVED`/`CHANGES_REQUESTED` states *before* reducing to each
->    author's latest review -- reducing over all states first lets a later
->    `COMMENTED` round hide an earlier `CHANGES_REQUESTED` (verified with a
->    synthetic fixture: naive reduction incorrectly cleared it, state-filtered
->    reduction correctly kept it blocking). Any
+>    `APPROVED`/`CHANGES_REQUESTED`/`DISMISSED` states *before* reducing to
+>    each author's latest review -- reducing over all states first lets a
+>    later `COMMENTED` round hide an earlier `CHANGES_REQUESTED` (verified
+>    with a synthetic fixture: naive reduction incorrectly cleared it,
+>    state-filtered reduction correctly kept it blocking). **Keep
+>    `DISMISSED` in the filter** -- dropping it would let an older
+>    `CHANGES_REQUESTED` outlive its own later dismissal, since the
+>    dismissal itself would never survive the reduction to compete as
+>    "latest" (verified with a second synthetic fixture:
+>    `CHANGES_REQUESTED` then `DISMISSED` incorrectly stayed blocking under
+>    an `APPROVED`/`CHANGES_REQUESTED`-only filter, correctly cleared once
+>    `DISMISSED` was included). The trailing `select(.state ==
+>    "CHANGES_REQUESTED")` still keeps `DISMISSED` reviews themselves out of
+>    the final blocking list. Any
 >    non-empty result **blocks** regardless of what any bot says -- only the
 >    human (or an explicit dismissal) resolves it. Return the reviewer login(s)
 >    from the array, not just a count.
