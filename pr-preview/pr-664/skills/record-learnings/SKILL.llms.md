@@ -19,9 +19,11 @@ For facts that apply across all projects: - Tool quirks (e.g., “gh opens a pag
 
 When you add a *new* file under `/memories/` (not just a bullet to an existing one), register it in `memories/MEMORY.md` as an index entry.
 
-### Repository memory (`~/.claude/projects/<project-path>/memory/`)
+### Repository-specific facts (that project’s own repo)
 
-For facts specific to ONE repo (build quirks, project conventions, CI behavior): write directly to that repo’s Claude project memory directory. The project path is the repo’s directory path with `/` replaced by `-` — e.g. `/Users/you/Documents/GitHub/rme` → `~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/`. No git commit needed — project memory files persist locally. Update `MEMORY.md` in that directory as an index.
+For facts specific to ONE repo (build quirks, project conventions, CI behavior), if it’s a repo **we own**: commit them to **that repo’s own agent docs** via a PR (`CLAUDE.md`, `.github/copilot-instructions.md`, or whatever agent-doc infrastructure it already has), so the whole team and every `@claude` session there can see them. If that repo has no agent-doc infrastructure yet, write to its local Claude project memory directory instead — `~/.claude/projects/<project-path>/memory/` — as **short-lived staging only, not a durable destination**, and flag that a PR adding agent-doc infrastructure to that repo (plus migrating the staged memory there) is still needed. The project path is the repo’s directory path with `/` replaced by `-` — e.g. `/Users/you/Documents/GitHub/rme` → `~/.claude/projects/-Users-you-Documents-GitHub-rme/memory/`. Update `MEMORY.md` in that directory as an index when you used this local-staging fallback — not when the fact was committed directly to the owned repo’s own agent docs, which needs no local copy.
+
+For an **external repo we don’t own**, never open a direct PR autonomously — follow [`upstream-issues`](../../shared/workflow/upstream-issues.md): check its contribution policy first, then draft and get explicit user approval before posting anything. Stage the fact in local Claude project memory (short-lived, not durable) until approved, and update that directory’s `MEMORY.md` as an index entry, same as the owned-repo staging fallback above.
 
 ### Shared ai-config skills (`~/.claude/skills/`)
 
@@ -37,10 +39,10 @@ For standing instructions that should always be in context: - Only for the most 
 |----|----|----|
 | Bug diagnosis | “bash EOF error = CRLF line endings” | `/memories/debugging.md` |
 | Tool quirk | “glab has no GITLAB_TOKEN env var” | `/memories/tools.md` |
-| Codebase fact | “CI only runs on branch pushes, not PR events” | `~/.claude/projects/<path>/memory/` |
+| Codebase fact | “CI only runs on branch pushes, not PR events” | That repo’s own agent docs (or staging) |
 | Workflow | “Always run r-pkg-spellcheck before push” | Skill file |
 | Preference | “Always request d-morrison as reviewer” | `/memories/preferences.md` |
-| Failed approach | “Don’t use merge_request_event with \$CI_OPEN_MERGE_REQUESTS” | `~/.claude/projects/<path>/memory/` |
+| Failed approach | “Don’t use merge_request_event with \$CI_OPEN_MERGE_REQUESTS” | That repo’s own agent docs (or staging) |
 
 ## Process
 
@@ -48,7 +50,11 @@ For standing instructions that should always be in context: - Only for the most 
 2.  **Categorize** — is it user-wide, repo-specific, or a reusable workflow?
 3.  **Check existing notes** — read the target file first to avoid duplicates and maintain organization
 4.  **Write concisely** — bullet points, not prose. Include the *why* not just the *what*. If you created a *new* file under `/memories/`, also add a row for it to `memories/MEMORY.md` (the index)
-5.  **If it’s a skill (or a dedicated fan-out worker)** — hand off to `spot-skill-opportunities` to judge whether the pattern is genuinely recurring (not a one-off), then to `skill-builder` to scaffold a new user-invocable workflow in `~/.claude/skills/` (symlink to the cloned repo; discover the repo path with `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`), or to `agent-builder` to scaffold a persistent read-only subagent in `.claude/agents/` when the pattern is really a worker persona a heavy skill’s fan-out step needs.
+5.  **Deliver, per where step 2/3 routed it:**
+    - **Repository-specific fact, a repo we own** — commit it to that repo’s own agent docs via a PR (`CLAUDE.md`, `.github/copilot-instructions.md`, or whatever it already has). If that repo has no agent-doc infrastructure yet, write to its local Claude project memory instead as short-lived staging only (update that directory’s `MEMORY.md` as an index entry), and hand off that a PR adding agent-doc infrastructure (plus migrating the staged memory there) is still needed.
+    - **Repository-specific fact, an external repo we don’t own** — never open a direct PR autonomously; follow `upstream-issues` (policy check, draft, explicit user approval), staging in local project memory (update `MEMORY.md` there too) until approved.
+    - **User-wide memory** — commit and push to `d-morrison/ai-config` (branch + PR if none is open yet).
+6.  **If it’s a skill (or a dedicated fan-out worker)** — hand off to `spot-skill-opportunities` to judge whether the pattern is genuinely recurring (not a one-off), then to `skill-builder` to scaffold a new user-invocable workflow in `~/.claude/skills/` (symlink to the cloned repo; discover the repo path with `git -C ~/.claude/skills/record-learnings rev-parse --show-toplevel`), or to `agent-builder` to scaffold a persistent read-only subagent in `.claude/agents/` when the pattern is really a worker persona a heavy skill’s fan-out step needs.
 
 ## Sharing with other agents
 
@@ -68,7 +74,7 @@ After adding or updating any skill file, always commit and push to origin: - If 
 
 ## Relationship to other skills
 
-- **`spot-skill-opportunities`** — the dedicated recognition step for the “is this a skill?” case in step 5 above; hand off to it rather than judging recurrence inline here.
+- **`spot-skill-opportunities`** — the dedicated recognition step for the “is this a skill?” case in step 6 above; hand off to it rather than judging recurrence inline here.
 - **`skill-builder`** — scaffolds the `SKILL.md` once `spot-skill-opportunities` (or this skill directly) decides a new one is warranted.
 - **`agent-builder`** — the same construction step for a dedicated read-only fan-out worker (`.claude/agents/<name>.md`) rather than a user-invocable skill.
 - **`ums`** — the reflective, full-context-sweep counterpart to this skill’s in-place, fact-at-a-time recording. Both fire proactively, as the learning or fact arises; `ums` additionally runs as a backstop before `/clear`.
