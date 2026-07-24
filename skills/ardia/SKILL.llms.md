@@ -57,6 +57,10 @@ Apply the ARDI loop (ARD + iterate) to every open PR/MR in the repo, driving eac
 
 ARDIA drives PRs **one at a time on purpose** (see *Process PRs one at a time* above): each round pushes commits and triggers shared review runners, so parallel pushes collide and make per-PR status illegible. A Workflow does not change that external limit — do **not** fan out the push — re-review — merge loop. What you *can* orchestrate is the read-only survey: pull every open PR’s latest review and triage its findings in parallel, then feed that into the serial fix loop. Consult `shared/workflow/when-to-orchestrate.md` (the shared-runner exception); default to the serial loop, and propose the read-only fan-out only when there are many PRs to survey.
 
+### Lightweight sidecar delegation
+
+Separately from the Workflow-based survey fan-out above, a single PR’s ARDI round (see `ardi`) can delegate sidecar work directly via the `Agent` tool — verifying a disputed factual claim, investigating an unclear CI failure, or researching how a prior PR handled the same pattern — while the main thread keeps driving that round forward. This is a lighter-weight call than the Workflow tool covers above and needs no opt-in gate. Give the subagent a stronger model (e.g. `model: 'opus'` on the `Agent` tool call) for judgment-heavy sidecar work, and symmetrically a cheaper/faster tier (`model: 'fable'` or `'haiku'`) for a mechanical one — see [`select-model`](../../skills/select-model/SKILL.llms.md)’s decision tree for both directions. For a heavy fan-out survey/verify pass, prefer a separately-billed provider (e.g. the `codex` CLI) first when available — see [`delegate-to-codex`](../../skills/delegate-to-codex/SKILL.llms.md).
+
 ## Recurring / unattended runs
 
 If asked to keep the queue clean on an interval, drive this skill from a recurring runner (e.g. the `loop` skill) rather than busy-waiting inside one invocation. Each tick re-enumerates open PRs (new ones appear, merged ones drop off) and runs the series loop over the current set.

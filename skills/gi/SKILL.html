@@ -365,6 +365,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#report" id="toc-report" class="nav-link" data-scroll-target="#report">12. Report</a></li>
   </ul></li>
   <li><a href="#concurrent-session-collisions" id="toc-concurrent-session-collisions" class="nav-link" data-scroll-target="#concurrent-session-collisions">Concurrent-session collisions</a></li>
+  <li><a href="#delegating-sidecar-work" id="toc-delegating-sidecar-work" class="nav-link" data-scroll-target="#delegating-sidecar-work">Delegating sidecar work</a></li>
   <li><a href="#handling-blocked-issues" id="toc-handling-blocked-issues" class="nav-link" data-scroll-target="#handling-blocked-issues">Handling blocked issues</a></li>
   <li><a href="#relationship-to-other-skills" id="toc-relationship-to-other-skills" class="nav-link" data-scroll-target="#relationship-to-other-skills">Relationship to other skills</a></li>
   <li><a href="#anti-patterns" id="toc-anti-patterns" class="nav-link" data-scroll-target="#anti-patterns">Anti-patterns</a></li>
@@ -577,6 +578,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>If a sibling PR landed first, sync <code>main</code> into your branch and <strong>read the resulting diff</strong> — keep only the parts the sibling missed, drop the duplicates, and reframe the PR (it no longer <code>Closes #&lt;N&gt;</code>; it’s a follow-up).</li>
 </ul>
 </section>
+<section id="delegating-sidecar-work" class="level2">
+<h2 class="anchored" data-anchor-id="delegating-sidecar-work">Delegating sidecar work</h2>
+<p>While implementing (step 9), delegate independent sidecar work to a subagent via the <code>Agent</code> tool when it won’t block the critical path — e.g.&nbsp;verifying a claim from the issue description, drafting a test fixture, or investigating a tangential failure surfaced along the way. Keep claiming, branching, opening the draft PR, and the ARDI loop itself on the main thread.</p>
+<p>For a judgment-heavy sidecar task (a subtle bug hunt, an architecturally significant design call), override the subagent’s model to a stronger tier via the <code>Agent</code> tool’s <code>model</code> parameter (e.g.&nbsp;<code>model: 'opus'</code>) rather than the session default. Symmetrically, drop to a cheaper/faster tier (<code>model: 'fable'</code> or <code>'haiku'</code>) for a mechanical, bounded sidecar task instead of leaving it at the session default — see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree for both directions. For a heavy fan-out read/draft/verify pass, prefer a separately-billed provider (e.g.&nbsp;the <code>codex</code> CLI) first when available, to conserve Claude/Agent-tool budget — see <a href="../../skills/delegate-to-codex/SKILL.html"><code>delegate-to-codex</code></a>.</p>
+</section>
 <section id="handling-blocked-issues" class="level2">
 <h2 class="anchored" data-anchor-id="handling-blocked-issues">Handling blocked issues</h2>
 <p>If during implementation you discover the issue is blocked (missing dependency, needs design decision, upstream bug):</p>
@@ -595,6 +601,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong><code>pr-on-claim</code></strong> — the rule behind step 8: open the draft PR up front so the work is visible to other sessions before you implement</li>
 <li><strong><code>split-concerns</code></strong> — if the implementation grows too large, offer to split</li>
 <li><strong><code>defer-issue</code></strong> — if sub-tasks emerge during implementation, defer them</li>
+<li><strong><code>select-model</code></strong> — decision tree for picking a subagent’s model tier when delegating sidecar work (see Delegating sidecar work)</li>
+<li><strong><code>delegate-to-codex</code></strong> — when a sidecar task is a heavy fan-out read/draft/verify pass and codex is available, prefer it first</li>
 </ul>
 </section>
 <section id="anti-patterns" class="level2">

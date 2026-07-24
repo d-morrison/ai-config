@@ -364,6 +364,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#report-back-with-a-link" id="toc-report-back-with-a-link" class="nav-link" data-scroll-target="#report-back-with-a-link">5. Report back with a link</a></li>
   </ul></li>
   <li><a href="#rules" id="toc-rules" class="nav-link" data-scroll-target="#rules">Rules</a></li>
+  <li><a href="#delegating-sidecar-work" id="toc-delegating-sidecar-work" class="nav-link" data-scroll-target="#delegating-sidecar-work">Delegating sidecar work</a></li>
   <li><a href="#integration-with-ardi" id="toc-integration-with-ardi" class="nav-link" data-scroll-target="#integration-with-ardi">Integration with ardi</a></li>
   <li><a href="#edge-cases" id="toc-edge-cases" class="nav-link" data-scroll-target="#edge-cases">Edge cases</a></li>
   </ul></li>
@@ -557,6 +558,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Push before you post.</strong> The reviewer should be able to verify Addressed fixes are on the branch.</li>
 <li><strong>A <code>suggestion</code> block is a hint, not gospel.</strong> Before committing a reviewer’s suggested fix, verify it actually works and handles the <em>general</em> case — not just the flagged spot. A confident suggestion can overcorrect (e.g.&nbsp;a regex tweak that fixes one form but breaks all the others). If the correct fix differs, apply that and note the divergence in your reply, so the reviewer sees why.</li>
 </ul>
+</section>
+<section id="delegating-sidecar-work" class="level2">
+<h2 class="anchored" data-anchor-id="delegating-sidecar-work">Delegating sidecar work</h2>
+<p>When dispositioning a finding (step 2) turns up something that needs independent digging — testing a reviewer’s factual claim before Addressing or Rebutting it (see the testing rule above), researching how a prior PR handled the same pattern, or checking whether a cited CI job still exists on <code>main</code> — hand it to a subagent via the <code>Agent</code> tool rather than blocking the rest of the round on it. Keep dispositioning the remaining findings, posting the summary, and pushing fixes on the main thread.</p>
+<p>Give the subagent a stronger model (e.g.&nbsp;<code>model: 'opus'</code> on the <code>Agent</code> tool call) when the check is judgment-heavy — a subtle behavioral claim, a disputed rebuttal — rather than leaving it at the session default. Symmetrically, drop to a cheaper/faster tier (<code>model: 'fable'</code> or <code>'haiku'</code>) for a mechanical check (a lookup, confirming a file/symbol still exists); see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree for both directions. For a heavy fan-out verification pass, prefer a separately-billed provider (e.g.&nbsp;the <code>codex</code> CLI) first when available — see <a href="../../skills/delegate-to-codex/SKILL.html"><code>delegate-to-codex</code></a>.</p>
 </section>
 <section id="integration-with-ardi" class="level2">
 <h2 class="anchored" data-anchor-id="integration-with-ardi">Integration with ardi</h2>

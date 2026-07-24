@@ -127,6 +127,12 @@ If the PR’s CI checks are failing (not just the review), investigate and fix t
 
 The goal is green CI + clean review, not just clean review.
 
+## Delegating sidecar work
+
+Some steps benefit from a subagent rather than blocking the round on the main thread — investigating a CI failure whose cause isn’t obvious (see above), verifying a reviewer’s factual claim before Addressing/Rebutting it, or checking a sibling PR for a merge conflict during the opportunistic sweep. Delegate that via the `Agent` tool and keep driving the round itself (ARD, push, post summary, re-request review) on the main thread.
+
+For a judgment-heavy sidecar task (a subtle root-cause hunt, adjudicating a deadlocked rebuttal before escalating to a human), give the subagent a stronger model via the `Agent` tool’s `model` parameter (e.g. `model: 'opus'`). Symmetrically, drop to a cheaper/faster tier (`model: 'fable'` or `'haiku'`) for a mechanical sidecar task — see [`select-model`](../../skills/select-model/SKILL.llms.md)’s decision tree for both directions. For a heavy fan-out investigation/verification pass, prefer a separately-billed provider (e.g. the `codex` CLI) first when available — see [`delegate-to-codex`](../../skills/delegate-to-codex/SKILL.llms.md).
+
 ## The bar: “fully clean”
 
 The loop ends only at **fully clean**, which means **both**:

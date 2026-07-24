@@ -353,6 +353,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#per-round-checklist" id="toc-per-round-checklist" class="nav-link" data-scroll-target="#per-round-checklist">Per-round checklist</a></li>
   </ul></li>
   <li><a href="#fix-broken-ciworkflows-too" id="toc-fix-broken-ciworkflows-too" class="nav-link" data-scroll-target="#fix-broken-ciworkflows-too">Fix broken CI/workflows too</a></li>
+  <li><a href="#delegating-sidecar-work" id="toc-delegating-sidecar-work" class="nav-link" data-scroll-target="#delegating-sidecar-work">Delegating sidecar work</a></li>
   <li><a href="#the-bar-fully-clean" id="toc-the-bar-fully-clean" class="nav-link" data-scroll-target="#the-bar-fully-clean">The bar: “fully clean”</a>
   <ul class="collapse">
   <li><a href="#fully-clean-exit-checklist" id="toc-fully-clean-exit-checklist" class="nav-link" data-scroll-target="#fully-clean-exit-checklist">Fully-clean exit checklist</a></li>
@@ -461,6 +462,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Flaky / infra failures</strong> — retry once; if it persists, investigate root cause.</li>
 </ul>
 <p>The goal is green CI + clean review, not just clean review.</p>
+</section>
+<section id="delegating-sidecar-work" class="level2">
+<h2 class="anchored" data-anchor-id="delegating-sidecar-work">Delegating sidecar work</h2>
+<p>Some steps benefit from a subagent rather than blocking the round on the main thread — investigating a CI failure whose cause isn’t obvious (see above), verifying a reviewer’s factual claim before Addressing/Rebutting it, or checking a sibling PR for a merge conflict during the opportunistic sweep. Delegate that via the <code>Agent</code> tool and keep driving the round itself (ARD, push, post summary, re-request review) on the main thread.</p>
+<p>For a judgment-heavy sidecar task (a subtle root-cause hunt, adjudicating a deadlocked rebuttal before escalating to a human), give the subagent a stronger model via the <code>Agent</code> tool’s <code>model</code> parameter (e.g.&nbsp;<code>model: 'opus'</code>). Symmetrically, drop to a cheaper/faster tier (<code>model: 'fable'</code> or <code>'haiku'</code>) for a mechanical sidecar task — see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree for both directions. For a heavy fan-out investigation/verification pass, prefer a separately-billed provider (e.g.&nbsp;the <code>codex</code> CLI) first when available — see <a href="../../skills/delegate-to-codex/SKILL.html"><code>delegate-to-codex</code></a>.</p>
 </section>
 <section id="the-bar-fully-clean" class="level2">
 <h2 class="anchored" data-anchor-id="the-bar-fully-clean">The bar: “fully clean”</h2>

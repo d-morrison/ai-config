@@ -354,6 +354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#establish-context" id="toc-establish-context" class="nav-link" data-scroll-target="#establish-context">0. Establish context</a></li>
   <li><a href="#enter-the-loop" id="toc-enter-the-loop" class="nav-link" data-scroll-target="#enter-the-loop">1. Enter the loop</a></li>
   </ul></li>
+  <li><a href="#delegate-sidecar-work-when-helpful" id="toc-delegate-sidecar-work-when-helpful" class="nav-link" data-scroll-target="#delegate-sidecar-work-when-helpful">Delegate sidecar work when helpful</a></li>
   <li><a href="#stacking-rules" id="toc-stacking-rules" class="nav-link" data-scroll-target="#stacking-rules">Stacking rules</a></li>
   <li><a href="#final-report" id="toc-final-report" class="nav-link" data-scroll-target="#final-report">Final report</a></li>
   <li><a href="#relationship-to-other-skills" id="toc-relationship-to-other-skills" class="nav-link" data-scroll-target="#relationship-to-other-skills">Relationship to other skills</a></li>
@@ -443,6 +444,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </section>
 </section>
+<section id="delegate-sidecar-work-when-helpful" class="level2">
+<h2 class="anchored" data-anchor-id="delegate-sidecar-work-when-helpful">Delegate sidecar work when helpful</h2>
+<p>Within an iteration, hand independent sidecar work off to a subagent via the <code>Agent</code> tool instead of doing it inline — a history/precedent investigation, a verification pass on the implementation, research into how a similar issue was solved elsewhere. Keep the critical path (claim, draft PR, implement, ARDI) on the main thread so the loop keeps moving; this is a single sidecar call within one iteration, not a way to run whole issues concurrently — for that, see <a href="../../skills/gip/SKILL.html"><code>gip</code></a>.</p>
+<p>When the sidecar task is judgment-heavy (a tricky bug hunt, an architecturally significant call, an adversarial review pass before the implementation goes out for real review), give the subagent a stronger model via the <code>Agent</code> tool’s <code>model</code> parameter (e.g.&nbsp;<code>model: 'opus'</code>) instead of leaving it at the session default. Symmetrically, override to a cheaper/faster tier (<code>model: 'fable'</code> or <code>'haiku'</code>) for mechanical, bounded sidecar work — a lookup, a formatting check, a repeated verification — rather than defaulting to the session’s own tier; see <a href="../../skills/select-model/SKILL.html"><code>select-model</code></a>’s decision tree for both directions. When the sidecar task is a heavy fan-out read/draft/verify pass and a separately-billed provider is available (e.g.&nbsp;the <code>codex</code> CLI), prefer spending that budget first and keep Claude/Agent-tool quota in reserve — see <a href="../../skills/delegate-to-codex/SKILL.html"><code>delegate-to-codex</code></a>.</p>
+</section>
 <section id="stacking-rules" class="level2">
 <h2 class="anchored" data-anchor-id="stacking-rules">Stacking rules</h2>
 <p>When stacking MRs (basing a new branch on an unmerged MR branch):</p>
@@ -484,6 +490,8 @@ Depends on: #&lt;N&gt;</code></pre></li>
 <li><strong><code>split-concerns</code></strong> — if an issue’s implementation grows too large, split</li>
 <li><strong><code>defer-issue</code></strong> — if sub-tasks emerge, defer them (they’ll be picked up in a later iteration of this very loop)</li>
 <li><strong><code>sync-pr-branch</code></strong> — used when stacking to keep branches current</li>
+<li><strong><code>select-model</code></strong> — decision tree for picking a subagent’s model tier when delegating sidecar work (see “Delegate sidecar work when helpful”)</li>
+<li><strong><code>delegate-to-codex</code></strong> — when a sidecar task is a heavy fan-out read/draft/verify pass and codex is available, prefer it first</li>
 </ul>
 </section>
 <section id="auto-proceed-mode" class="level2">
