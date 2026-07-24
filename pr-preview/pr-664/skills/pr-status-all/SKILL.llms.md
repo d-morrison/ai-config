@@ -28,7 +28,7 @@ This is fast and sequential — a single call to get the work units.
 
 Spawn **one subagent per open PR, all in a single batch** (multiple `Agent` calls in one message) so they run at once. The fan-out is read-only, so it needs **no worktrees** — each subagent only reads PR signals, nothing mutates, and there is nothing to collide on.
 
-Give each subagent its PR number and `headRefName`, and have it gather the **five independent signals** below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow *Read the LATEST review* will silently misreport:
+Give each subagent its PR number and `headRefName`, and have it gather the **six independent signals** below and return one structured row. Carry the disciplines into the prompt — a subagent that doesn’t follow *Read the LATEST review* will silently misreport:
 
 A subagent starts **fresh** — it sees only this prompt, not this skill file — so **inline the exact commands**; don’t point it at a section it can’t read. Fill in `<N>`, `<headRefName>`, `<owner>`, `<repo>` for each PR (resolve owner/repo once with `gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"'`):
 
@@ -41,7 +41,7 @@ A subagent starts **fresh** — it sees only this prompt, not this skill file �
 >       --jq '{review: ([.comments[] | select(.author.login | startswith("claude"))] | last), lastCommitDate: (.commits[-1].committedDate)}'
 >     ```
 >
->     The reviewer login varies by setup: `gh pr view` reports `claude`; the REST API reports `claude[bot]`. `startswith("claude")` matches both. If `.review` is `null`, the reviewer may post as `github-actions[bot]` or another login – **never report “clean”**; broaden the filter or say no review was found. **If `.review.createdAt` is earlier than `.lastCommitDate`, the review predates the latest push** – report `in-flight`, not the review body’s verdict, regardless of what it says (both are ISO 8601 UTC timestamps, so a plain string comparison works). **This timing comparison is best-effort, not proof** – a review run *started* against an older commit can finish and post *after* a newer push lands, making `createdAt` look current even though the reviewed content is stale (issue comments carry no structured `commit_id` to check directly, unlike formal reviews). When the review body names the commit it reviewed (the `@claude` bot commonly writes “commit `<sha>`”), cross-check that mentioned SHA’s prefix against `<headRefOid>` as a corroborating signal; treat a mismatch as `in-flight` even if the timing check alone would have said `clean`. Only once the review postdates the last commit (and, when available, the mentioned SHA matches), apply the bar for `clean`: “Looks good” / “no findings” / “approved” with zero follow-on bullets under any heading. A rebuttal the reviewer still disputes is **open**, not clean.
+>     The reviewer login varies by setup: `gh pr view` reports `claude`; the REST API reports `claude[bot]`. `startswith("claude")` matches both. If `.review` is `null`, the reviewer may post as `github-actions[bot]` or another login – **never report “clean”**; broaden the filter or say no review was found. **If `.review.createdAt` is earlier than `.lastCommitDate`, the review predates the latest push** – report `in-flight`, not the review body’s verdict, regardless of what it says (both are ISO 8601 UTC timestamps, so a plain string comparison works). **This timing comparison is best-effort, not proof** – a review run *started* against an older commit can finish and post *after* a newer push lands, making `createdAt` look current even though the reviewed content is stale (issue comments carry no structured `commit_id` to check directly, unlike formal reviews). When the review body names the commit it reviewed (the `@claude` bot commonly writes “commit `<sha>`”), cross-check that mentioned SHA’s prefix against `<headRefOid>` as a corroborating signal; treat a mismatch as `in-flight` even if the timing check alone would have said `clean`. **When no SHA can be extracted from the body, don’t fall back to trusting the timing check alone as proof of currency** – report `unverified` (not `clean`) instead, since `committedDate` is the commit’s local committer timestamp, not when GitHub received the push, and a commit authored earlier but pushed later can pass the timing check while still being newer than the review. Only once the review postdates the last commit **and** (when a SHA is nameable) that SHA matches, apply the bar for `clean`: “Looks good” / “no findings” / “approved” with zero follow-on bullets under any heading. A rebuttal the reviewer still disputes is **open**, not clean.
 >
 > 2.  **External (Copilot) reviewer verdict – read-only, don’t request one.** The comment above is the `@claude` bot only; a formal Copilot review is a separate object it won’t show. This step **only inspects an existing Copilot review** – it never POSTs a review request. Requesting a review is a mutation (triggers a review job, consumes quota, can collide with a concurrent `ardi` loop), which breaks this skill’s whole justification for fanning out subagents concurrently (*read-only, side-effect-free*). If no genuine verdict already exists at the current head, report that fact – don’t try to produce one; that’s `ardi`’s job.
 >
@@ -89,7 +89,16 @@ A subagent starts **fresh** — it sees only this prompt, not this skill file �
 >
 > 5.  **Behind main?** — fetch the head ref too (a fresh subagent has no local branch), then compare remote-tracking refs: `git fetch origin main <headRefName> -q && git rev-list --count origin/<headRefName>..origin/main`. \>0 means main has moved ahead.
 >
-> Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `N open` with the headline finding / `none found` / `in-flight`), external (`clean` / `N open` / `no verdict at head`), threads (`resolved` / `N open` / `N+ open (cap)`), behind-main (`up to date` / `N commits`).
+> 6.  **Blocking human `CHANGES_REQUESTED`.** A bot’s clean verdict does **not** clear a human’s formal review state – it’s a separate object, invisible to the Signal 1 comments query, and its top-level body is often empty (the finding lives in an inline comment):
+>
+>     ``` bash
+>     gh pr view <N> --json reviews \
+>       --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED")] | length'
+>     ```
+>
+>     Any count `> 0` **blocks** regardless of what any bot says – only the human (or an explicit dismissal) resolves it.
+>
+> Return: PR number, CI (✅/❌-with-name/⏳), review (`clean` / `unverified` / `N open` with the headline finding / `none found` / `in-flight`), external (`clean` / `N open` / `no verdict at head`), human-blocked (`none` / `N pending` – name the reviewer if `N` \> 0), threads (`resolved` / `N open` / `N+ open (cap)`), behind-main (`up to date` / `N commits`).
 
 ### 3. Assemble (orchestrator)
 
@@ -97,7 +106,7 @@ Collect the rows the subagents return and **pair each with the `title`, `headRef
 
 ### Graceful degradation to series
 
-If subagent fan-out is unavailable (no `Agent` tool in the session), fall back to gathering the five signals **in series** – loop the same per-PR gather over each PR from step 1. The output is the same; it’s just slower.
+If subagent fan-out is unavailable (no `Agent` tool in the session), fall back to gathering the six signals **in series** – loop the same per-PR gather over each PR from step 1. The output is the same; it’s just slower.
 
 ## Read the LATEST review (the subtle part)
 
@@ -114,16 +123,17 @@ Scan the latest body for any “Findings”, “Issues”, “Remaining”, “N
 
 A Markdown table, one row per open PR, with these columns:
 
-PR \| Title \| Branch \| CI \| Review \| External \| Threads \| Behind main \|
+PR \| Title \| Branch \| CI \| Review \| External \| Human \| Threads \| Behind main \|
 
 - **PR** — make the number a markdown link, `[#<N>](https://github.com/<owner>/<repo>/pull/<N>)` (repo policy — never a bare `#N`), so it’s one-click and compact.
 - **CI** — ✅ / ❌ (name the failing check) / ⏳ pending.
-- **Review** — `clean`, `N open` (with the headline finding), `none found` (filter didn’t match / no review yet), or `in-flight` if a review run is still going **or** the latest review predates the latest commit (per subagent item 1’s currency check) – either way, the current head hasn’t been reviewed yet.
+- **Review** – `clean`, `unverified` (postdates the last commit by timing alone but no SHA could corroborate it), `N open` (with the headline finding), `none found` (filter didn’t match / no review yet), or `in-flight` if a review run is still going **or** the latest review predates the latest commit (per subagent item 1’s currency check) – either way, the current head hasn’t been confirmed reviewed yet.
 - **External** – `clean` (a genuine, non-stub Copilot verdict at the current head, per subagent item 2), `N open` (findings in that verdict), or `no verdict at head` (no Copilot review exists yet at the current commit). This step is read-only and doesn’t request a review, so it can’t tell “Copilot was never asked” from “unreachable” from “a self-review covers it” – report the plain fact, don’t guess at the reason.
+- **Human** – `none` (no blocking human review) or `N pending` (name the reviewer login(s)) per subagent item 6. This overrides everything else – a `CHANGES_REQUESTED` review blocks regardless of any bot’s verdict.
 - **Threads** — `resolved` (none open), `N open` (unresolved inline review threads), or `N+ open (cap)` (100-thread cap hit — cannot confirm clean).
 - **Behind main** — `up to date` or `N commits` (offer `sync-pr-branch`).
 
-Below the table, list each PR’s open findings briefly (or “none”), and call out anything needing action: branches behind main, failing CI, drafts, or reviews that returned `null`. Do **not** label a PR “ready to merge” unless it is **fully clean** – at least one of Review (`@claude`) or External (Copilot) is `clean` at the current head (the canonical rule needs one genuine external verdict, not both – a clean Claude verdict alone is sufficient, and so is a clean Copilot verdict alone) *and* neither one has open findings *and* all CI workflows are green *and* it’s not behind main *and* every inline review thread is resolved (the only open conversation being the final all-clear and your reply). If both Review and External come back `none found` / `no verdict at head`, this skill has no evidence of a genuine external verdict at all – report the PR as not confirmed clean and point at `ardi` to obtain one; don’t guess whether a self-review already covers it. Never hedge with “ready except for one nit.”
+Below the table, list each PR’s open findings briefly (or “none”), and call out anything needing action: branches behind main, failing CI, drafts, reviews that returned `null`, or a pending human review. Do **not** label a PR “ready to merge” unless it is **fully clean** – **Human is `none`** (a blocking human review overrides everything below) *and* at least one of Review or External is `clean` at the current head (the canonical rule needs one genuine external verdict, not both – a clean Claude verdict alone is sufficient, and so is a clean Copilot verdict alone; `unverified` does **not** count as clean) *and* neither one has open findings *and* all CI workflows are green *and* it’s not behind main *and* every inline review thread is resolved (the only open conversation being the final all-clear and your reply). If both Review and External come back `none found` / `no verdict at head` / `unverified`, this skill has no evidence of a genuine external verdict at all – report the PR as not confirmed clean and point at `ardi` to obtain one; don’t guess whether a self-review already covers it. Never hedge with “ready except for one nit.”
 
 ## Why fan-out is safe here (and the write-loops stay series)
 
