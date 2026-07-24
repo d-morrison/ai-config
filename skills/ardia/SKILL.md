@@ -134,8 +134,8 @@ many PRs to survey.
 Separately from the Workflow-based survey fan-out above, a single PR's ARDI
 round (see `ardi`) can delegate sidecar work directly via the `Agent` tool ---
 verifying a disputed factual claim, investigating an unclear CI failure, or
-drafting a reply to one reviewer thread --- while the main thread keeps
-driving that round forward. This is a lighter-weight call than the Workflow
+researching how a prior PR handled the same pattern --- while the main thread
+keeps driving that round forward. This is a lighter-weight call than the Workflow
 tool covers above and needs no opt-in gate. Give the subagent a stronger
 model (e.g. `model: 'opus'` on the `Agent` tool call) for judgment-heavy
 sidecar work, and symmetrically a cheaper/faster tier (`model: 'fable'` or
