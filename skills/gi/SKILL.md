@@ -4,6 +4,7 @@ description: "Grab Issue: pick the highest-priority open issue from the repo's t
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -222,6 +223,26 @@ before merging (and treat an unexpected merge conflict as a signal):
   resulting diff** — keep only the parts the sibling missed, drop the
   duplicates, and reframe the PR (it no longer `Closes #<N>`; it's a follow-up).
 
+## Delegating sidecar work
+
+While implementing (step 9), delegate independent sidecar work to a subagent
+via the `Agent` tool when it won't block the critical path --- e.g. verifying
+a claim from the issue description, drafting a test fixture, or investigating
+a tangential failure surfaced along the way. Keep claiming, branching, opening
+the draft PR, and the ARDI loop itself on the main thread.
+
+For a judgment-heavy sidecar task (a subtle bug hunt, an architecturally
+significant design call), override the subagent's model to a stronger tier
+via the `Agent` tool's `model` parameter (e.g. `model: 'opus'`) rather than
+the session default. Symmetrically, drop to a cheaper/faster tier (`model:
+'fable'` or `'haiku'`) for a mechanical, bounded sidecar task instead of
+leaving it at the session default --- see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for both
+directions. For a heavy fan-out read/draft/verify pass, prefer a
+separately-billed provider (e.g. the `codex` CLI) first when available, to
+conserve Claude/Agent-tool budget --- see
+[`delegate-to-codex`](../delegate-to-codex/SKILL.md).
+
 ## Handling blocked issues
 
 If during implementation you discover the issue is blocked (missing
@@ -240,6 +261,10 @@ dependency, needs design decision, upstream bug):
   work is visible to other sessions before you implement
 - **`split-concerns`** — if the implementation grows too large, offer to split
 - **`defer-issue`** — if sub-tasks emerge during implementation, defer them
+- **`select-model`** — decision tree for picking a subagent's model tier when
+  delegating sidecar work (see Delegating sidecar work)
+- **`delegate-to-codex`** — when a sidecar task is a heavy fan-out
+  read/draft/verify pass and codex is available, prefer it first
 
 ## Anti-patterns
 

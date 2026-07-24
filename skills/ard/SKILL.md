@@ -4,6 +4,7 @@ description: "Address, Rebut, Defer, or Acknowledge: respond to every review com
 user-invocable: true
 allowed-tools:
   - Bash
+  - Agent
   - Read
   - Edit
   - Write
@@ -261,6 +262,26 @@ Tell the user what you did and give a **clickable URL** to the PR/MR (and to the
 - **Deferrals must be tracked.** A defer without a filed issue is just ignoring with extra words.
 - **Push before you post.** The reviewer should be able to verify Addressed fixes are on the branch.
 - **A `suggestion` block is a hint, not gospel.** Before committing a reviewer's suggested fix, verify it actually works and handles the *general* case — not just the flagged spot. A confident suggestion can overcorrect (e.g. a regex tweak that fixes one form but breaks all the others). If the correct fix differs, apply that and note the divergence in your reply, so the reviewer sees why.
+
+## Delegating sidecar work
+
+When dispositioning a finding (step 2) turns up something that needs
+independent digging --- testing a reviewer's factual claim before Addressing
+or Rebutting it (see the testing rule above), researching how a prior PR
+handled the same pattern, or checking whether a cited CI job still exists on
+`main` --- hand it to a subagent via the `Agent` tool rather than blocking the
+rest of the round on it. Keep dispositioning the remaining findings, posting
+the summary, and pushing fixes on the main thread.
+
+Give the subagent a stronger model (e.g. `model: 'opus'` on the `Agent` tool
+call) when the check is judgment-heavy --- a subtle behavioral claim, a
+disputed rebuttal --- rather than leaving it at the session default.
+Symmetrically, drop to a cheaper/faster tier (`model: 'fable'` or `'haiku'`)
+for a mechanical check (a lookup, confirming a file/symbol still exists); see
+[`select-model`](../../skills/select-model/SKILL.md)'s decision tree for both
+directions. For a heavy fan-out verification pass, prefer a separately-billed
+provider (e.g. the `codex` CLI) first when available --- see
+[`delegate-to-codex`](../delegate-to-codex/SKILL.md).
 
 ## Integration with ardi
 
