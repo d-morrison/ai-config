@@ -66,7 +66,7 @@ operations:
     github_mcp: mcp__github__pull_request_read (method=get_review_comments)
   - id: READ_PR_REVIEWS
     description: Read a pull request's formal reviews (state per reviewer, e.g. APPROVED / CHANGES_REQUESTED / COMMENTED).
-    cli: gh pr view <N> --json reviews
+    cli: gh pr view "<N>" --json reviews
     github_mcp: mcp__github__pull_request_read (method=get_reviews)
   - id: REQUEST_COPILOT_REVIEW
     description: Request a GitHub Copilot code review on a pull request.
